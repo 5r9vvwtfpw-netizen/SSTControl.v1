@@ -83,6 +83,9 @@ const createCompanySchema = z.object({
   nit: z.string().transform(v => v.replace(/[\s.\-]/g, '')).pipe(z.string().min(8, "El NIT debe tener mínimo 8 dígitos").max(10, "El NIT colombiano tiene máximo 10 dígitos").regex(/^\d+$/, "El NIT solo debe contener números")),
   city: z.string().min(1, "La ciudad es obligatoria"),
   ciiuCode: z.string().min(1, "El código CIIU es obligatorio"),
+  ciiuCode2: z.string().optional(),
+  ciiuCode3: z.string().optional(),
+  ciiuCode4: z.string().optional(),
   address: z.string().min(5, "La dirección debe tener al menos 5 caracteres"),
   contactPhone: z.string()
     .transform(v => v.replace(/[\s\-.()+]/g, ''))
@@ -204,6 +207,9 @@ export default function CrearEmpresaCiiuFirst() {
       nit: regNit || "",
       city: regCity || "",
       ciiuCode: quoteData?.ciiuCode || regCiiu || "",
+      ciiuCode2: "",
+      ciiuCode3: "",
+      ciiuCode4: "",
       address: regAddress || "",
       contactPhone: regPhone || "",
       contactEmail: regEmail || "",
@@ -452,6 +458,46 @@ export default function CrearEmpresaCiiuFirst() {
                         </FormItem>
                       )}
                     />
+
+                    {/* CIIUs secundarios opcionales */}
+                    {(["ciiuCode2","ciiuCode3","ciiuCode4"] as const).map((fieldName, i) => (
+                      <FormField
+                        key={fieldName}
+                        control={form.control}
+                        name={fieldName}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="flex items-center gap-1 text-muted-foreground">
+                              <Briefcase className="h-4 w-4" />
+                              Actividad {["Secundaria","Terciaria","Cuaternaria"][i]} (CIIU {i+2}) — opcional
+                            </FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value || ""}>
+                              <FormControl>
+                                <SelectTrigger className="h-12">
+                                  <SelectValue placeholder="Sin actividad adicional" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent className="max-h-80">
+                                <SelectItem value="">— Sin actividad adicional —</SelectItem>
+                                {Object.entries(CIIU_SECTIONS).map(([section, sectionName]) => (
+                                  <SelectGroup key={section}>
+                                    <SelectLabel className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted">
+                                      {section} - {sectionName}
+                                    </SelectLabel>
+                                    {CIIU_CODES.filter(c => c.section === section).map((ciiu) => (
+                                      <SelectItem key={ciiu.code} value={ciiu.code}>
+                                        {ciiu.code} - {ciiu.description}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectGroup>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    ))}
 
                     <FormField
                       control={form.control}

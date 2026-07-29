@@ -72,6 +72,9 @@ type CompanyFormData = {
   nit: string;
   city: string;
   ciiuCode: string;
+  ciiuCode2: string;
+  ciiuCode3: string;
+  ciiuCode4: string;
   address: string;
   contactPhone: string;
   contactEmail: string;
@@ -100,6 +103,9 @@ const initialFormData: CompanyFormData = {
   nit: "",
   city: "",
   ciiuCode: "",
+  ciiuCode2: "",
+  ciiuCode3: "",
+  ciiuCode4: "",
   address: "",
   contactPhone: "",
   contactEmail: "",
@@ -692,6 +698,9 @@ export default function CompanyManagement() {
       nit: company.nit,
       city: company.city || "",
       ciiuCode: company.ciiuCode || "",
+      ciiuCode2: (company as any).ciiuCode2 || "",
+      ciiuCode3: (company as any).ciiuCode3 || "",
+      ciiuCode4: (company as any).ciiuCode4 || "",
       address: company.address || "",
       contactPhone: company.contactPhone || "",
       contactEmail: company.contactEmail || "",
@@ -927,7 +936,7 @@ export default function CompanyManagement() {
                   </Select>
                 </div>
                 <div className="space-y-2 col-span-2">
-                  <Label htmlFor="ciiuCode">Actividad Económica (CIIU) *</Label>
+                  <Label htmlFor="ciiuCode">Actividad Económica Principal (CIIU) *</Label>
                   <Select
                     value={formData.ciiuCode}
                     onValueChange={(value) => setFormData({ ...formData, ciiuCode: value })}
@@ -951,6 +960,39 @@ export default function CompanyManagement() {
                     </SelectContent>
                   </Select>
                 </div>
+
+                {/* CIIUs secundarios opcionales */}
+                {(["ciiuCode2","ciiuCode3","ciiuCode4"] as const).map((key, i) => (
+                  <div key={key} className="space-y-2 col-span-2">
+                    <Label className="text-muted-foreground">
+                      Actividad {["Secundaria","Terciaria","Cuaternaria"][i]} (CIIU {i+2}) — opcional
+                    </Label>
+                    <Select
+                      value={formData[key] || ""}
+                      onValueChange={(value) => setFormData({ ...formData, [key]: value === "" ? "" : value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sin actividad adicional" />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-80">
+                        <SelectItem value="">— Sin actividad adicional —</SelectItem>
+                        {Object.entries(CIIU_SECTIONS).map(([section, sectionName]) => (
+                          <div key={section}>
+                            <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted">
+                              {section} - {sectionName}
+                            </div>
+                            {CIIU_CODES.filter(c => c.section === section).map((ciiu) => (
+                              <SelectItem key={ciiu.code} value={ciiu.code}>
+                                {ciiu.code} - {ciiu.description}
+                              </SelectItem>
+                            ))}
+                          </div>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ))}
+
                 <div className="space-y-2">
                   <Label htmlFor="address">Dirección</Label>
                   <Input

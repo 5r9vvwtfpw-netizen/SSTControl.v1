@@ -50,6 +50,7 @@ import { addGpsWebhookKey } from './migrations/add-gps-webhook-key';
 import { syncComunicacionesSstColumns } from './migrations/sync-comunicaciones-sst-columns';
 import { syncInspectionStatusEnum } from './migrations/sync-inspection-status-enum';
 import { cleanupDuplicateImplementarAcciones } from './migrations/cleanup-duplicate-implementar-acciones';
+import { syncCiiuMultiColumns } from './migrations/sync-ciiu-multi-columns';
 
 /**
  * Ejecuta migraciones de base de datos automáticamente
@@ -111,6 +112,7 @@ export async function runMigrations() {
     await syncComunicacionesSstColumns();
     await syncInspectionStatusEnum();
     await cleanupDuplicateImplementarAcciones();
+    await syncCiiuMultiColumns();
     console.log('✅ Migraciones completadas exitosamente');
   } catch (error: any) {
     console.error('⚠️ Error en migraciones:', error.message);

@@ -71,7 +71,10 @@ export const companies = pgTable("companies", {
   name: text("name").notNull(),
   nit: text("nit").notNull().unique(),
   city: text("city"), // Ciudad de Colombia para documentos oficiales
-  ciiuCode: text("ciiu_code"), // Código CIIU (Clasificación Industrial Internacional Uniforme) de actividad económica
+  ciiuCode: text("ciiu_code"),   // Actividad económica principal (CIIU - Decreto 1607/2002)
+  ciiuCode2: text("ciiu_code_2"), // Actividad económica secundaria (opcional)
+  ciiuCode3: text("ciiu_code_3"), // Actividad económica terciaria (opcional)
+  ciiuCode4: text("ciiu_code_4"), // Actividad económica cuaternaria (opcional)
   address: text("address"),
   contactPhone: text("contact_phone"),
   contactEmail: text("contact_email"),

@@ -56,12 +56,46 @@ export interface CiiuAutomationResult {
  * Opciones para la automatización CIIU
  */
 export interface CiiuAutomationOptions {
-  /** Código CIIU de la empresa (4 dígitos) */
+  /** Código CIIU principal de la empresa (4 dígitos) */
   ciiuCode?: string | null;
+  /** Código CIIU secundario (opcional) */
+  ciiuCode2?: string | null;
+  /** Código CIIU terciario (opcional) */
+  ciiuCode3?: string | null;
+  /** Código CIIU cuaternario (opcional) */
+  ciiuCode4?: string | null;
   /** Nivel de riesgo proporcionado manualmente (tiene prioridad sobre CIIU) */
   manualRiskLevel?: RiskLevel | null;
   /** Número de trabajadores de la empresa */
   numberOfWorkers: number;
+}
+
+/** Orden numérico de los niveles de riesgo para comparación */
+const RISK_ORDER: Record<string, number> = { I: 1, II: 2, III: 3, IV: 4, V: 5 };
+
+/**
+ * Dado un arreglo de códigos CIIU, retorna el nivel de riesgo más alto
+ * y el código que lo determinó (código dominante).
+ */
+function getHighestRiskFromCodes(codes: (string | null | undefined)[]): {
+  riskLevel: RiskLevel | null;
+  dominantCode: string | null;
+} {
+  let highestRisk: RiskLevel | null = null;
+  let dominantCode: string | null = null;
+
+  for (const code of codes) {
+    if (!code) continue;
+    const result = getRiskLevelFromCiiuDetailed(code);
+    if (result && result.source === 'exact') {
+      if (!highestRisk || RISK_ORDER[result.riskLevel] > RISK_ORDER[highestRisk]) {
+        highestRisk = result.riskLevel;
+        dominantCode = code;
+      }
+    }
+  }
+
+  return { riskLevel: highestRisk, dominantCode };
 }
 
 /**
@@ -87,7 +121,8 @@ export interface CiiuAutomationOptions {
  * // result.wasAutoAssigned = true
  */
 export function processCiiuAutomation(options: CiiuAutomationOptions): CiiuAutomationResult {
-  const { ciiuCode, manualRiskLevel, numberOfWorkers } = options;
+  const { ciiuCode, ciiuCode2, ciiuCode3, ciiuCode4, manualRiskLevel, numberOfWorkers } = options;
+  const allCodes = [ciiuCode, ciiuCode2, ciiuCode3, ciiuCode4];
   
   // Caso 1: Nivel de riesgo proporcionado manualmente (prioridad máxima)
   if (manualRiskLevel) {
@@ -104,39 +139,38 @@ export function processCiiuAutomation(options: CiiuAutomationOptions): CiiuAutom
     };
   }
   
-  // Caso 2: Hay código CIIU - intentar obtener riesgo automáticamente
-  if (ciiuCode) {
-    const ciiuResult = getRiskLevelFromCiiuDetailed(ciiuCode);
-    const classification = getCiiuClassification(ciiuCode);
-    
-    if (ciiuResult && ciiuResult.source === 'exact') {
-      // Código CIIU encontrado exactamente en la tabla
-      const chapter = calculateChapter(numberOfWorkers, ciiuResult.riskLevel);
+  // Caso 2: Hay uno o más CIIUs — tomar el de mayor riesgo
+  const validCodes = allCodes.filter(Boolean);
+  if (validCodes.length > 0) {
+    const { riskLevel: highestRisk, dominantCode } = getHighestRiskFromCodes(allCodes);
+
+    if (highestRisk && dominantCode) {
+      const chapter = calculateChapter(numberOfWorkers, highestRisk);
+      const classification = getCiiuClassification(dominantCode);
+      const activeCodes = allCodes.filter(Boolean).join(', ');
       return {
-        ciiuCode,
+        ciiuCode: ciiuCode || dominantCode,
         isValidCiiu: true,
-        riskLevel: ciiuResult.riskLevel,
+        riskLevel: highestRisk,
         calculatedChapter: chapter,
         standardsCount: getChapterStandards(chapter),
         riskSource: 'ciiu_exact',
         wasAutoAssigned: true,
         activityDescription: classification?.description,
-        message: `Nivel de riesgo ${ciiuResult.riskLevel} asignado automáticamente desde CIIU ${ciiuCode} (${classification?.description || 'Actividad económica'}). Aplican ${getChapterStandards(chapter)} estándares obligatorios según Resolución 0312/2019.`
+        message: `Nivel de riesgo ${highestRisk} asignado automáticamente desde CIIU ${dominantCode} (${classification?.description || 'Actividad económica'}). CIIUs activos: ${activeCodes}. Aplican ${getChapterStandards(chapter)} estándares según Resolución 0312/2019.`
       };
     }
-    
-    // MODO ESTRICTO: Código CIIU no encontrado - NO asignar riesgo automáticamente
-    // Esto fuerza al usuario a proporcionar el nivel de riesgo manualmente
-    // para evitar clasificaciones incorrectas
+
+    // Código(s) CIIU no encontrado(s) — requiere riesgo manual
     return {
-      ciiuCode,
+      ciiuCode: ciiuCode || '',
       isValidCiiu: false,
       riskLevel: null,
-      calculatedChapter: "1", // Placeholder - se calculará con el riesgo manual
+      calculatedChapter: "1",
       standardsCount: 7,
       riskSource: 'default',
       wasAutoAssigned: false,
-      message: `[CIIU-WARN] Código CIIU ${ciiuCode} no encontrado en tabla Decreto 1607/2002. Se requiere asignar nivel de riesgo manualmente para cumplir con normatividad.`
+      message: `[CIIU-WARN] Código(s) CIIU ${validCodes.join(', ')} no encontrado(s) en tabla Decreto 1607/2002. Se requiere asignar nivel de riesgo manualmente.`
     };
   }
   
@@ -167,6 +201,9 @@ export function processCiiuAutomation(options: CiiuAutomationOptions): CiiuAutom
  */
 export function prepareCompanyWithCiiuAutomation<T extends {
   ciiuCode?: string | null;
+  ciiuCode2?: string | null;
+  ciiuCode3?: string | null;
+  ciiuCode4?: string | null;
   riskLevel?: RiskLevel | null;
   numberOfWorkers?: number | null;
 }>(companyData: T): T & { 
@@ -176,16 +213,17 @@ export function prepareCompanyWithCiiuAutomation<T extends {
   _ciiuAutomationMessage?: string;
 } {
   const workers = companyData.numberOfWorkers ?? 1;
-  
-  // Determinar si debemos auto-asignar el nivel de riesgo
-  // Solo auto-asignar si:
-  // 1. Hay un código CIIU
-  // 2. No se proporcionó un nivel de riesgo manualmente
-  const shouldAutoAssign = companyData.ciiuCode && !companyData.riskLevel;
+
+  // Determinar si hay al menos un CIIU y no se proporcionó riesgo manual
+  const anyCiiu = companyData.ciiuCode || companyData.ciiuCode2 || companyData.ciiuCode3 || companyData.ciiuCode4;
+  const shouldAutoAssign = anyCiiu && !companyData.riskLevel;
   
   if (shouldAutoAssign) {
     const automation = processCiiuAutomation({
       ciiuCode: companyData.ciiuCode,
+      ciiuCode2: companyData.ciiuCode2,
+      ciiuCode3: companyData.ciiuCode3,
+      ciiuCode4: companyData.ciiuCode4,
       numberOfWorkers: workers
     });
     

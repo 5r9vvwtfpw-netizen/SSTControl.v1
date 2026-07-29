@@ -39,10 +39,16 @@ export interface CiiuFilterResult {
 }
 
 /**
- * Obtiene los datos de peligros para un código CIIU específico
+ * Obtiene los datos de peligros para uno o varios códigos CIIU.
+ * Cuando se pasan múltiples códigos hace un merge sin duplicados
+ * (backward-compatible: acepta string o string[]).
  */
-export function getCiiuPeligrosData(ciiuCode: string | null | undefined): CiiuFilterResult {
-  if (!ciiuCode) {
+export function getCiiuPeligrosData(
+  ciiuCode: string | string[] | null | undefined
+): CiiuFilterResult {
+  const codes = (Array.isArray(ciiuCode) ? ciiuCode : [ciiuCode]).filter(Boolean) as string[];
+
+  if (codes.length === 0) {
     return {
       found: false,
       ciiuData: null,
@@ -54,9 +60,11 @@ export function getCiiuPeligrosData(ciiuCode: string | null | undefined): CiiuFi
     };
   }
 
-  const ciiuData = peligrosPorCIIU.find(p => p.codigoCIIU === ciiuCode);
-  
-  if (!ciiuData) {
+  const matches = codes
+    .map(c => peligrosPorCIIU.find(p => p.codigoCIIU === c))
+    .filter(Boolean) as PeligroPorCIIU[];
+
+  if (matches.length === 0) {
     return {
       found: false,
       ciiuData: null,
@@ -67,15 +75,26 @@ export function getCiiuPeligrosData(ciiuCode: string | null | undefined): CiiuFi
       capacitacionesObligatorias: [],
     };
   }
+
+  // Merge: unión sin duplicados usando el código/texto como clave
+  const peligrosEspecificos = Array.from(
+    new Map(matches.flatMap(m => m.peligrosEspecificos).map(p => [p.codigo, p])).values()
+  );
+  const peligrosPrioritarios = Array.from(new Set(matches.flatMap(m => m.peligrosPrioritarios)));
+  const normativaEspecifica = Array.from(
+    new Map(matches.flatMap(m => m.normativaEspecifica).map(n => [n.codigo, n])).values()
+  );
+  const eppRecomendado = Array.from(new Set(matches.flatMap(m => m.eppRecomendado)));
+  const capacitacionesObligatorias = Array.from(new Set(matches.flatMap(m => m.capacitacionesObligatorias)));
 
   return {
     found: true,
-    ciiuData,
-    peligrosPrioritarios: ciiuData.peligrosPrioritarios,
-    peligrosEspecificos: ciiuData.peligrosEspecificos,
-    normativaEspecifica: ciiuData.normativaEspecifica,
-    eppRecomendado: ciiuData.eppRecomendado,
-    capacitacionesObligatorias: ciiuData.capacitacionesObligatorias,
+    ciiuData: matches[0], // principal para compatibilidad
+    peligrosPrioritarios,
+    peligrosEspecificos,
+    normativaEspecifica,
+    eppRecomendado,
+    capacitacionesObligatorias,
   };
 }
 
