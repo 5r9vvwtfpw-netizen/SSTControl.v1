@@ -14,7 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useToast } from "@/hooks/use-toast";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
-import { Plus, Pencil, Trash2, Video, FileText, BookOpen, GraduationCap, Settings, Eye, Send, Users, CheckCircle2, XCircle, ClipboardList, ChevronUp, ChevronDown, Wand2, Shield, Loader2, Upload, File } from "lucide-react";
+import { Plus, Pencil, Trash2, Video, FileText, BookOpen, GraduationCap, Settings, Eye, Send, Users, CheckCircle2, XCircle, ClipboardList, ChevronUp, ChevronDown, Wand2, Shield, Loader2, Upload, File, AlertCircle } from "lucide-react";
 import { Link } from "wouter";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AutomationAssistant, type PlantillaInfo } from "@/components/AutomationAssistant";
