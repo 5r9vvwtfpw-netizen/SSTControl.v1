@@ -33,7 +33,7 @@ const DEFAULTS: PropuestaData = {
   web: "sst.sagisas.co",
   email: "legal@sst-colombia.com",
   whatsapp: "+57 300 522 0679",
-  tagline: "Sin papeles, sin carpetas, sin hojas de cálculo. Todo automatizado y con trazabilidad completa.",
+  tagline: "Plataforma completa SG-SST con Resolución 0312/2019, PESV Supertransporte (Res. 40595/2022), gestión de accidentalidad, capacitaciones, inspecciones, COPASST y más. Incluye Portal del Empleado, Soporte 24 horas, Asistente Virtual IA y Actualizaciones Normativas automáticas — todo sin costo adicional. Sin papeles, sin carpetas, con trazabilidad total y generación de informes PDF en menos de 5 minutos.",
   empresa: "",
   nit: "",
   ciudad: "Medellín, Antioquia",
