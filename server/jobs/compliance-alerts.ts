@@ -319,6 +319,13 @@ export async function alertarVencimientosPesv(): Promise<number> {
             else if (d <= limite) proximos.push(`Revisión Técnica ${v.plate} (vence ${d.toLocaleDateString('es-CO')})`);
           }
         }
+        if (v.insuranceExpiry) {
+          const d = new Date(v.insuranceExpiry);
+          if (!isNaN(d.getTime())) {
+            if (d < hoy) vencidos.push(`Seguro (póliza) ${v.plate} (venció ${d.toLocaleDateString('es-CO')})`);
+            else if (d <= limite) proximos.push(`Seguro (póliza) ${v.plate} (vence ${d.toLocaleDateString('es-CO')})`);
+          }
+        }
       }
 
       // Verificar conductores
