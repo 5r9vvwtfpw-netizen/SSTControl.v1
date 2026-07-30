@@ -263,11 +263,11 @@ export async function generatePropuestaComercialPdf(params: PropuestaParams = {}
     doc.fontSize(7.5).font('Helvetica').fillColor(C.GOLD)
        .text(`${nombreProveedor} · NIT ${nitProveedor} · ${web} · ${whatsapp}`, 0, Q.h - 17, { width: Q.w, align: 'center' });
 
-    // Siguiente página: brochure en A4
-    doc.addPage({ size: 'A4', margin: 0 });
   }
 
-  // ── BROCHURE GENÉRICO (páginas siguientes) ────────────────────────────────────
+  // ── BROCHURE GENÉRICO (solo cuando NO hay propuesta personalizada) ─────────────
+  if (!tienePersonalizada) {
+  // Tamaño A4 ya está configurado desde el inicio cuando no hay personalizada
   const W = doc.page.width;
   const H = doc.page.height;
   const M = 40;
@@ -885,6 +885,8 @@ export async function generatePropuestaComercialPdf(params: PropuestaParams = {}
   doc.rect(0, P.h - 28, P.w, 28).fill(C.GREEN_DARK);
   doc.fontSize(7.5).font('Helvetica').fillColor(C.GOLD)
      .text(`${nombreProveedor} · NIT ${nitProveedor} · ${ciudad}`, 0, P.h - 17, { width: P.w, align: 'center' });
+
+  } // fin if (!tienePersonalizada)
 
   doc.flushPages();
   doc.end();
