@@ -443,10 +443,37 @@
   .page-footer strong { color: rgba(255,255,255,.8); }
 
   /* ── PRINT ── */
+  /* ── BOTÓN FLOTANTE ── */
+  .btn-pdf {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    background: linear-gradient(135deg, #166534, #15803d);
+    color: #fff;
+    border: none;
+    border-radius: 50px;
+    padding: 14px 26px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(22,101,52,.4);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 999;
+    transition: transform .15s, box-shadow .15s;
+  }
+  .btn-pdf:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(22,101,52,.5);
+  }
+
   @media print {
     body { background: #fff; }
     .page { box-shadow: none; margin: 0; border-radius: 0; }
     .header::after, .header::before { display: none; }
+    .btn-pdf { display: none; }
   }
 </style>
 </head>
@@ -663,5 +690,10 @@
   </div>
 
 </div><!-- /page -->
+
+<button class="btn-pdf" onclick="window.print()">
+  ⬇️ &nbsp;Descargar PDF
+</button>
+
 </body>
 </html>
