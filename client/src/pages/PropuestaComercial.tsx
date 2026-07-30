@@ -30,14 +30,14 @@ interface PropuestaData {
 }
 
 const DEFAULTS: PropuestaData = {
-  web: "www.sst-colombia.com.co",
-  email: "contacto@sst-colombia.com.co",
-  whatsapp: "+57 300 000 0000",
+  web: "sst.sagisas.co",
+  email: "legal@sst-colombia.com",
+  whatsapp: "+57 300 522 0679",
   tagline: "Sin papeles, sin carpetas, sin hojas de cálculo. Todo automatizado y con trazabilidad completa.",
   empresa: "",
   nit: "",
-  ciudad: "Bogotá D.C., Colombia",
-  nombreProveedor: "SADGI S.A.S.",
+  ciudad: "Medellín, Antioquia",
+  nombreProveedor: "SISTEMA AUTOMATIZADO DE GESTION INTEGRAL S.A.S",
   nitProveedor: "902.036.337-4",
   numTrabajadores: "20",
   precioPorTrabajador: "10000",

@@ -43,14 +43,14 @@ export interface PropuestaParams {
 }
 
 export async function generatePropuestaComercialPdf(params: PropuestaParams = {}): Promise<Buffer> {
-  const web            = params.web            || 'https://sst.sagisas.co/';
-  const email          = params.email          || 'admin@sst-colombia.com';
-  const whatsapp       = params.whatsapp       || '3115552054';
+  const web            = params.web            || 'sst.sagisas.co';
+  const email          = params.email          || 'legal@sst-colombia.com';
+  const whatsapp       = params.whatsapp       || '+57 300 522 0679';
   const tagline        = params.tagline        || 'Sin papeles, sin carpetas, sin hojas de cálculo. Todo automatizado y con trazabilidad completa.';
   const empresa        = params.empresa        || '';
   const nit            = params.nit            || '';
-  const ciudad         = params.ciudad         || 'Medellín, Colombia';
-  const nombreProveedor    = params.nombreProveedor    || 'SADGI S.A.S.';
+  const ciudad         = params.ciudad         || 'Medellín, Antioquia';
+  const nombreProveedor    = params.nombreProveedor    || 'SISTEMA AUTOMATIZADO DE GESTION INTEGRAL S.A.S';
   const nitProveedor       = params.nitProveedor       || '902.036.337-4';
   const contactName        = params.contactName        || 'Adriana Diaz';
   const precioPorTrabajador = params.precioPorTrabajador || '$10.000';
