@@ -64,7 +64,7 @@ export async function generatePropuestaComercialPdf(params: PropuestaParams = {}
   const horasPorVisita    = params.horasPorVisita              || '3';
   const nombreProfesional = params.nombreProfesional           || '';
   const diasPrueba        = parseInt(params.diasPrueba         || '7', 10);
-  const tienePersonalizada = !!(empresa && (numTrabajadores > 0 || tarifaGestion > 0 || tarifaAuditoria > 0));
+  const tienePersonalizada = !!(numTrabajadores > 0 || tarifaGestion > 0 || tarifaAuditoria > 0);
 
   const fmt = (n: number) => '$' + n.toLocaleString('es-CO', { maximumFractionDigits: 0 });
 
@@ -99,13 +99,20 @@ export async function generatePropuestaComercialPdf(params: PropuestaParams = {}
 
     doc.fontSize(8).font('Helvetica').fillColor('#b8d4c0')
        .text('PROPUESTA COMERCIAL · SG-SST AUTOMATIZADO', 0, 18, { width: Q.w, align: 'center' });
-    doc.fontSize(10).font('Helvetica').fillColor(C.WHITE)
-       .text('Presentada a:', 0, 36, { width: Q.w, align: 'center' });
-    doc.fontSize(26).font('Helvetica-Bold').fillColor(C.GOLD)
-       .text(empresa, Q.m, 52, { width: Q.w - Q.m * 2, align: 'center' });
-    if (nit) {
-      doc.fontSize(9).font('Helvetica').fillColor('#89a898')
-         .text(`NIT ${nit}`, 0, 90, { width: Q.w, align: 'center' });
+    if (empresa) {
+      doc.fontSize(10).font('Helvetica').fillColor(C.WHITE)
+         .text('Presentada a:', 0, 36, { width: Q.w, align: 'center' });
+      doc.fontSize(26).font('Helvetica-Bold').fillColor(C.GOLD)
+         .text(empresa, Q.m, 52, { width: Q.w - Q.m * 2, align: 'center' });
+      if (nit) {
+        doc.fontSize(9).font('Helvetica').fillColor('#89a898')
+           .text(`NIT ${nit}`, 0, 90, { width: Q.w, align: 'center' });
+      }
+    } else {
+      doc.fontSize(22).font('Helvetica-Bold').fillColor(C.GOLD)
+         .text('Propuesta Comercial', 0, 46, { width: Q.w, align: 'center' });
+      doc.fontSize(10).font('Helvetica').fillColor('#b8d4c0')
+         .text('Sistema de Gestión SG-SST Automatizado', 0, 80, { width: Q.w, align: 'center' });
     }
     const dateStr = new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' });
     doc.fontSize(8).font('Helvetica').fillColor('#89a898')
