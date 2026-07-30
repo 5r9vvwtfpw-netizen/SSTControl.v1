@@ -24,7 +24,7 @@ const TIPOS = {
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 async function getAdminUserForCompany(companyId: string) {
-  const admins = await storage.getUsersByRole(['company_admin', 'admin'], companyId);
+  const admins = await storage.getUsersByRole(['admin', 'responsable_sst', 'superusuario'], companyId);
   return admins.find(u => u.email) ?? null;
 }
 
