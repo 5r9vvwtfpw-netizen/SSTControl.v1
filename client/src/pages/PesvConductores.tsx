@@ -287,7 +287,16 @@ export default function PesvConductores() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
+    if (!formData.licenseExpiry) {
+      toast({ title: "Campo requerido", description: "Ingrese la fecha de vencimiento de la licencia de conducción.", variant: "destructive" });
+      return;
+    }
+    if (!formData.medicalExamExpiry) {
+      toast({ title: "Campo requerido", description: "Ingrese la fecha de vencimiento del examen médico.", variant: "destructive" });
+      return;
+    }
+
     const data = {
       ...formData,
       workerId: formData.workerId || undefined,
@@ -555,7 +564,7 @@ export default function PesvConductores() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="medicalExamExpiry">Vencimiento Examen Médico</Label>
+                    <Label htmlFor="medicalExamExpiry">Vencimiento Examen Médico <span className="text-red-500">*</span></Label>
                     <Input
                       id="medicalExamExpiry"
                       type="date"

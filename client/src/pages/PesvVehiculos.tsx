@@ -130,6 +130,10 @@ export default function PesvVehiculos() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!formData.insuranceExpiry) {
+      toast({ title: "Campo requerido", description: "Ingrese la fecha de vencimiento del Seguro.", variant: "destructive" });
+      return;
+    }
     if (!formData.soatExpiry) {
       toast({ title: "Campo requerido", description: "Ingrese la fecha de vencimiento del SOAT.", variant: "destructive" });
       return;
@@ -487,13 +491,14 @@ export default function PesvVehiculos() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="insuranceExpiry">Vencimiento Seguro</Label>
+                    <Label htmlFor="insuranceExpiry">Vencimiento Seguro <span className="text-red-500">*</span></Label>
                     <Input
                       id="insuranceExpiry"
                       type="date"
                       value={formData.insuranceExpiry}
                       onChange={(e) => setFormData({ ...formData, insuranceExpiry: e.target.value })}
                       data-testid="input-insurance-expiry"
+                      required
                     />
                   </div>
                   <div className="space-y-2">
