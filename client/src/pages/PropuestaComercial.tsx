@@ -309,6 +309,18 @@ export default function PropuestaComercial() {
               data-testid="input-visitas-mes"
             />
           </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="horasPorVisita">Horas por Visita</Label>
+            <Input
+              id="horasPorVisita"
+              type="number"
+              min="1"
+              placeholder="Ej: 3"
+              value={data.horasPorVisita}
+              onChange={handleChange("horasPorVisita")}
+              data-testid="input-horas-por-visita"
+            />
+          </div>
         </CardContent>
       </Card>
 
