@@ -111,8 +111,17 @@ export async function generatePropuestaComercialPdf(params: PropuestaParams = {}
     doc.fontSize(8).font('Helvetica').fillColor('#89a898')
        .text(`Fecha: ${dateStr}`, 0, heroH - 24, { width: Q.w, align: 'center' });
 
+    // Mensaje principal
+    let qy = heroH + 16;
+    const mensajePrincipal = `Esta cotizacion incluye un periodo de prueba gratuito de ${diasPrueba} dias y garantiza el cumplimiento normativo segun lo expuesto en la reunion virtual. La propuesta comprende dos componentes independientes: la plataforma SaaS (Sadgi SAS) y el servicio de auditoria y gestion por parte del profesional en SST. Los pagos de ambos servicios se realizaran de manera independiente. Operamos bajo un modelo de colaboracion sin exclusividad.`;
+    const msgH = 46;
+    doc.rect(Q.m, qy, Q.w - Q.m * 2, msgH).fill('#f0f7f2');
+    doc.rect(Q.m, qy, 4, msgH).fill(C.GOLD);
+    doc.fontSize(8).font('Helvetica').fillColor(C.GRAY_TEXT)
+       .text(mensajePrincipal, Q.m + 14, qy + 8, { width: Q.w - Q.m * 2 - 22, lineGap: 1.5 });
+    qy += msgH + 16;
+
     // Resumen de inversión
-    let qy = heroH + 22;
     doc.fontSize(11).font('Helvetica-Bold').fillColor(C.GREEN_DARK)
        .text('RESUMEN DE INVERSIÓN MENSUAL', Q.m, qy);
     doc.moveTo(Q.m, qy + 16).lineTo(Q.w - Q.m, qy + 16)
