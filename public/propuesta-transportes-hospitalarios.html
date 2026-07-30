@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Propuesta Comercial — TRANSPORTES HOSPITALARIOS S.A.S.</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --verde:       #14532d;
+    --verde-medio: #166534;
+    --verde-claro: #dcfce7;
+    --verde-borde: #bbf7d0;
+    --gris-oscuro: #111827;
+    --gris-medio:  #374151;
+    --gris-suave:  #6b7280;
+    --gris-claro:  #f9fafb;
+    --blanco:      #ffffff;
+    --dorado:      #d97706;
+    --dorado-bg:   #fef3c7;
+    --rojo-suave:  #fef2f2;
+    --borde:       #e5e7eb;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: #f3f4f6;
+    color: var(--gris-oscuro);
+    line-height: 1.6;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .page {
+    max-width: 900px;
+    margin: 32px auto;
+    background: var(--blanco);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,.12);
+  }
+
+  /* ── ENCABEZADO ── */
+  .header {
+    background: linear-gradient(135deg, #0f3d20 0%, #166534 60%, #15803d 100%);
+    padding: 48px 56px 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::after {
+    content: '';
+    position: absolute;
+    right: -60px; top: -60px;
+    width: 280px; height: 280px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.05);
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    right: 80px; bottom: -80px;
+    width: 200px; height: 200px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.04);
+  }
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 36px;
+  }
+  .brand { color: #fff; }
+  .brand-name {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -.5px;
+  }
+  .brand-sub {
+    font-size: 12px;
+    color: rgba(255,255,255,.65);
+    margin-top: 2px;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+  }
+  .doc-meta { text-align: right; }
+  .doc-meta .badge {
+    display: inline-block;
+    background: rgba(255,255,255,.15);
+    border: 1px solid rgba(255,255,255,.25);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 4px 12px;
+    border-radius: 20px;
+    margin-bottom: 8px;
+  }
+  .doc-meta .fecha {
+    font-size: 12px;
+    color: rgba(255,255,255,.6);
+  }
+  .header-title {
+    color: #fff;
+  }
+  .header-title h1 {
+    font-size: 15px;
+    font-weight: 500;
+    color: rgba(255,255,255,.7);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 8px;
+  }
+  .header-title h2 {
+    font-size: 30px;
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: -.5px;
+  }
+  .header-title h2 span { color: #86efac; }
+
+  /* ── SECCIONES ── */
+  .body { padding: 48px 56px; }
+
+  .section { margin-bottom: 44px; }
+  .section-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--verde-medio);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--borde);
+  }
+
+  /* ── INTRO ── */
+  .intro-box {
+    background: var(--gris-claro);
+    border-left: 4px solid var(--verde-medio);
+    border-radius: 0 8px 8px 0;
+    padding: 20px 24px;
+    font-size: 14.5px;
+    color: var(--gris-medio);
+    line-height: 1.7;
+  }
+  .intro-box strong { color: var(--gris-oscuro); }
+
+  /* ── SERVICIOS GRID ── */
+  .services-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .service-card {
+    border: 1.5px solid var(--borde);
+    border-radius: 12px;
+    padding: 20px;
+    transition: border-color .2s;
+  }
+  .service-card:hover { border-color: var(--verde-borde); }
+  .service-card .icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    background: var(--verde-claro);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    margin-bottom: 12px;
+  }
+  .service-card h3 {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--gris-oscuro);
+    margin-bottom: 6px;
+  }
+  .service-card p {
+    font-size: 12.5px;
+    color: var(--gris-suave);
+    line-height: 1.55;
+  }
+
+  /* ── BENEFICIOS INCLUIDOS ── */
+  .benefits-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+  .benefit {
+    text-align: center;
+    background: var(--verde-claro);
+    border-radius: 10px;
+    padding: 16px 12px;
+  }
+  .benefit .b-icon { font-size: 22px; margin-bottom: 8px; }
+  .benefit .b-label {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--verde);
+    line-height: 1.4;
+  }
+
+  /* ── TABLA DE INVERSIÓN ── */
+  .inversion-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+  }
+  .inversion-table thead tr {
+    background: var(--verde-medio);
+    color: #fff;
+  }
+  .inversion-table thead th {
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+  }
+  .inversion-table thead th:last-child { text-align: right; }
+  .inversion-table tbody tr {
+    border-bottom: 1px solid var(--borde);
+  }
+  .inversion-table tbody tr:nth-child(even) {
+    background: var(--gris-claro);
+  }
+  .inversion-table tbody td {
+    padding: 13px 16px;
+    color: var(--gris-medio);
+    vertical-align: top;
+  }
+  .inversion-table tbody td:last-child {
+    text-align: right;
+    font-weight: 600;
+    color: var(--gris-oscuro);
+    white-space: nowrap;
+  }
+  .inversion-table td .desc {
+    font-size: 11.5px;
+    color: var(--gris-suave);
+    margin-top: 2px;
+  }
+  .inversion-table tfoot tr {
+    background: var(--gris-oscuro);
+  }
+  .inversion-table tfoot td {
+    padding: 14px 16px;
+    color: #fff;
+    font-weight: 700;
+    font-size: 15px;
+  }
+  .inversion-table tfoot td:last-child {
+    text-align: right;
+    color: #86efac;
+    font-size: 17px;
+  }
+
+  /* ── PAGOS ── */
+  .pagos-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .pago-card {
+    border-radius: 12px;
+    padding: 22px;
+    position: relative;
+    overflow: hidden;
+  }
+  .pago-card.fase1 {
+    background: var(--verde-claro);
+    border: 1.5px solid var(--verde-borde);
+  }
+  .pago-card.fase2 {
+    background: var(--dorado-bg);
+    border: 1.5px solid #fde68a;
+  }
+  .pago-card .fase-num {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 6px;
+  }
+  .fase1 .fase-num { color: var(--verde); }
+  .fase2 .fase-num { color: var(--dorado); }
+  .pago-card h3 {
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    color: var(--gris-oscuro);
+  }
+  .pago-card .monto {
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -1px;
+    margin: 8px 0 6px;
+  }
+  .fase1 .monto { color: var(--verde); }
+  .fase2 .monto { color: var(--dorado); }
+  .pago-card .detalle {
+    font-size: 12px;
+    color: var(--gris-suave);
+    line-height: 1.5;
+  }
+
+  /* ── PRUEBA ── */
+  .prueba-box {
+    background: linear-gradient(135deg, #0f3d20, #166534);
+    border-radius: 12px;
+    padding: 28px 32px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    color: #fff;
+  }
+  .prueba-badge {
+    flex-shrink: 0;
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.15);
+    border: 2px solid rgba(255,255,255,.3);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+  .prueba-badge .num {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1;
+    color: #86efac;
+  }
+  .prueba-badge .dias {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: rgba(255,255,255,.7);
+    font-weight: 600;
+  }
+  .prueba-text h3 {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .prueba-text p {
+    font-size: 13px;
+    color: rgba(255,255,255,.75);
+    line-height: 1.6;
+  }
+  .prueba-text p strong { color: #86efac; }
+
+  /* ── ALIANZA ── */
+  .alianza-box {
+    background: var(--gris-claro);
+    border-radius: 12px;
+    padding: 24px 28px;
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+  }
+  .alianza-icon {
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    background: var(--verde-claro);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+  }
+  .alianza-text h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--gris-oscuro);
+    margin-bottom: 4px;
+  }
+  .alianza-text .cargo {
+    font-size: 12px;
+    color: var(--verde-medio);
+    font-weight: 600;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+  }
+  .alianza-text p {
+    font-size: 13px;
+    color: var(--gris-suave);
+    line-height: 1.6;
+  }
+
+  /* ── FIRMA ── */
+  .footer-firma {
+    margin-top: 48px;
+    padding-top: 32px;
+    border-top: 1px solid var(--borde);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+  }
+  .firma-block { }
+  .firma-block .linea {
+    height: 1px;
+    background: var(--gris-oscuro);
+    margin-bottom: 8px;
+    margin-top: 48px;
+  }
+  .firma-block .nombre {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--gris-oscuro);
+  }
+  .firma-block .rol {
+    font-size: 11.5px;
+    color: var(--gris-suave);
+  }
+
+  /* ── FOOTER ── */
+  .page-footer {
+    background: var(--gris-oscuro);
+    padding: 18px 56px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .page-footer .left {
+    font-size: 11.5px;
+    color: rgba(255,255,255,.5);
+  }
+  .page-footer .right {
+    font-size: 11.5px;
+    color: rgba(255,255,255,.5);
+  }
+  .page-footer strong { color: rgba(255,255,255,.8); }
+
+  /* ── PRINT ── */
+  @media print {
+    body { background: #fff; }
+    .page { box-shadow: none; margin: 0; border-radius: 0; }
+    .header::after, .header::before { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ENCABEZADO -->
+  <div class="header">
+    <div class="header-top">
+      <div class="brand">
+        <div class="brand-name">SG-SST Colombia</div>
+        <div class="brand-sub">Sistema de Gestión SST · Plataforma Digital</div>
+      </div>
+      <div class="doc-meta">
+        <div class="badge">Propuesta Comercial</div>
+        <div class="fecha">Julio 30 de 2026 &nbsp;·&nbsp; Ref. PC-2026-001</div>
+      </div>
+    </div>
+    <div class="header-title">
+      <h1>Presentada a</h1>
+      <h2>TRANSPORTES<br><span>HOSPITALARIOS S.A.S.</span></h2>
+    </div>
+  </div>
+
+  <div class="body">
+
+    <!-- PRESENTACIÓN -->
+    <div class="section">
+      <div class="section-title">Presentación</div>
+      <div class="intro-box">
+        Nos complace presentar a <strong>TRANSPORTES HOSPITALARIOS S.A.S.</strong> esta propuesta de valor integral para la gestión y cumplimiento del <strong>Sistema de Gestión de Seguridad y Salud en el Trabajo (SG-SST)</strong>, que combina tecnología de punta con acompañamiento profesional especializado, diseñada específicamente para empresas del sector de transporte con obligaciones normativas ante el Ministerio del Trabajo de Colombia.
+      </div>
+    </div>
+
+    <!-- SERVICIOS -->
+    <div class="section">
+      <div class="section-title">Lo que incluye el paquete</div>
+      <div class="services-grid">
+        <div class="service-card">
+          <div class="icon">💻</div>
+          <h3>Plataforma SG-SST Digital</h3>
+          <p>Acceso completo a la plataforma SST Colombia con gestión de Resolución 0312, PESV, documentación, acciones de mejora y más. Licencia por trabajador activo.</p>
+        </div>
+        <div class="service-card">
+          <div class="icon">🧑‍💼</div>
+          <h3>Gestión y Administración</h3>
+          <p>Una asistente dedicada gestiona y opera el software en nombre de la empresa, garantizando el correcto diligenciamiento y actualización permanente del SG-SST.</p>
+        </div>
+        <div class="service-card">
+          <div class="icon">🔍</div>
+          <h3>Auditoría Profesional Presencial</h3>
+          <p>El Profesional SST <strong>Hernán Valencia</strong> realizará <strong>2 visitas mensuales</strong> de 3 a 4 horas cada una para auditoría, seguimiento y asesoría directa en las instalaciones.</p>
+        </div>
+        <div class="service-card">
+          <div class="icon">📋</div>
+          <h3>Cumplimiento Normativo</h3>
+          <p>Seguimiento continuo a los estándares mínimos de la Resolución 0312 de 2019 y al Plan Estratégico de Seguridad Vial (PESV), asegurando cumplimiento ante entes de control.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- BENEFICIOS INCLUIDOS -->
+    <div class="section">
+      <div class="section-title">Beneficios adicionales sin costo extra</div>
+      <div class="benefits-row">
+        <div class="benefit">
+          <div class="b-icon">👥</div>
+          <div class="b-label">Portal de<br>Empleados</div>
+        </div>
+        <div class="benefit">
+          <div class="b-icon">🕐</div>
+          <div class="b-label">Soporte<br>24 Horas</div>
+        </div>
+        <div class="benefit">
+          <div class="b-icon">🤖</div>
+          <div class="b-label">Asistente<br>Virtual IA</div>
+        </div>
+        <div class="benefit">
+          <div class="b-icon">📰</div>
+          <div class="b-label">Actualizaciones<br>Normativas</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INVERSIÓN -->
+    <div class="section">
+      <div class="section-title">Inversión mensual</div>
+      <table class="inversion-table">
+        <thead>
+          <tr>
+            <th style="width:44%">Concepto</th>
+            <th>Detalle</th>
+            <th>Valor</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <strong>Licencia plataforma SG-SST</strong>
+              <div class="desc">Pagada directamente al proveedor del software</div>
+            </td>
+            <td>20 trabajadores × $10.000</td>
+            <td>$200.000</td>
+          </tr>
+          <tr>
+            <td>
+              <strong>Gestión y administración del software</strong>
+              <div class="desc">Asistente dedicada para operación y diligenciamiento</div>
+            </td>
+            <td>Servicio mensual</td>
+            <td>$250.000</td>
+          </tr>
+          <tr>
+            <td>
+              <strong>Asesoría y auditoría profesional SST</strong>
+              <div class="desc">Hernán Valencia · 2 visitas/mes · 3–4 horas c/u</div>
+            </td>
+            <td>Tarifa de alianza negociada</td>
+            <td>$450.000</td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="2">Inversión total mensual (IVA no incluido)</td>
+            <td>$900.000</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <!-- CONDICIONES DE PAGO -->
+    <div class="section">
+      <div class="section-title">Condiciones de pago</div>
+      <div class="pagos-grid">
+        <div class="pago-card fase1">
+          <div class="fase-num">Fase 1 · Proveedor software</div>
+          <h3>Licencia Plataforma SG-SST</h3>
+          <div class="monto">$200.000</div>
+          <div class="detalle">
+            Pago directo al proveedor del software.<br>
+            Cubre la licencia de <strong>20 trabajadores</strong> durante el mes vigente.
+          </div>
+        </div>
+        <div class="pago-card fase2">
+          <div class="fase-num">Fase 2 · Profesional SST</div>
+          <h3>Servicios Profesionales SST</h3>
+          <div class="monto">$700.000</div>
+          <div class="detalle">
+            Pago al Profesional SST por gestión mensual + <strong>2 auditorías presenciales</strong> de 3–4 horas cada una.
+          </div>
+        </div>
+      </div>
+      <p style="font-size:12px;color:#6b7280;margin-top:12px;text-align:center;">
+        ⚠️ Ambos pagos se realizan por <strong>anticipado</strong> al inicio de cada período mensual, una vez concluido el período de prueba.
+      </p>
+    </div>
+
+    <!-- PERÍODO DE PRUEBA -->
+    <div class="section">
+      <div class="section-title">Período de prueba</div>
+      <div class="prueba-box">
+        <div class="prueba-badge">
+          <div class="num">7</div>
+          <div class="dias">Días</div>
+        </div>
+        <div class="prueba-text">
+          <h3>Prueba gratuita por 7 días</h3>
+          <p>
+            TRANSPORTES HOSPITALARIOS S.A.S. tendrá acceso <strong>completo y sin costo</strong> a todos los módulos de la plataforma y a los servicios durante los primeros 7 días calendario. Al finalizar este período y confirmar la continuidad, se activarán los pagos mensuales descritos anteriormente. <strong>Sin compromiso durante la prueba.</strong>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ALIANZA PROFESIONAL -->
+    <div class="section">
+      <div class="section-title">Nuestro profesional aliado</div>
+      <div class="alianza-box">
+        <div class="alianza-icon">👨‍⚕️</div>
+        <div class="alianza-text">
+          <h3>Hernán Valencia</h3>
+          <div class="cargo">Profesional en Seguridad y Salud en el Trabajo</div>
+          <p>
+            Especialista con amplia experiencia en el sector transporte y cumplimiento normativo colombiano. Responsable del acompañamiento mensual, la auditoría presencial en sus instalaciones y la asesoría directa para el mantenimiento del SG-SST y PESV de la empresa.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- FIRMA -->
+    <div class="footer-firma">
+      <div class="firma-block">
+        <div class="linea"></div>
+        <div class="nombre">Hernán Valencia</div>
+        <div class="rol">Profesional SST · Representante comercial</div>
+      </div>
+      <div class="firma-block">
+        <div class="linea"></div>
+        <div class="nombre">Representante Legal</div>
+        <div class="rol">TRANSPORTES HOSPITALARIOS S.A.S.</div>
+      </div>
+    </div>
+
+  </div><!-- /body -->
+
+  <!-- FOOTER -->
+  <div class="page-footer">
+    <div class="left">
+      <strong>SG-SST Colombia</strong> · Sistema de Gestión SST &nbsp;|&nbsp; soporte@sst-colombia.com
+    </div>
+    <div class="right">
+      Propuesta válida por <strong>30 días</strong> · Ref. PC-2026-001
+    </div>
+  </div>
+
+</div><!-- /page -->
+</body>
+</html>
