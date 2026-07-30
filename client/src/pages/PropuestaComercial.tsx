@@ -33,7 +33,7 @@ const DEFAULTS: PropuestaData = {
   web: "sst.sagisas.co",
   email: "legal@sst-colombia.com",
   whatsapp: "+57 300 522 0679",
-  tagline: "Ciclo PHVA completo con los 61 estándares mínimos de la Res. 0312/2019, PESV Supertransporte (Res. 40595/2022 — 24 pasos P-H-V-A), exámenes médicos ocupacionales, capacitaciones y cronograma anual, COPASST y Comité de Convivencia, brigadas de emergencia, accidentalidad e incidentes, matriz de peligros e inspecciones, plan anual de trabajo automatizado, control de mantenimiento vehicular, objetivos e indicadores SST, y Licenciado SST con firma digital. Todo esto más Portal del Empleado GRATIS, Asistente Virtual IA, soporte 24 horas y actualizaciones normativas automáticas — sin costo adicional.",
+  tagline: "Ciclo PHVA completo con los 61 estándares mínimos de la Res. 0312/2019, PESV Supertransporte (Res. 40595/2022 — 24 pasos P-H-V-A), exámenes médicos ocupacionales, capacitaciones y cronograma anual, COPASST y Comité de Convivencia, brigadas de emergencia, accidentalidad e incidentes, matriz de peligros e inspecciones, matriz de riesgo automática según código CIIU, plan anual de trabajo automatizado, control de mantenimiento vehicular, objetivos e indicadores SST, y Licenciado SST con firma digital. Todo esto más Portal del Empleado GRATIS, Asistente Virtual IA, soporte 24 horas y actualizaciones normativas automáticas — sin costo adicional.",
   empresa: "",
   nit: "",
   ciudad: "Medellín, Antioquia",
