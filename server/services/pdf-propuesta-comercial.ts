@@ -693,7 +693,7 @@ export async function generatePropuestaComercialPdf(params: PropuestaParams = {}
   const tarifaGestion    = parseInt(params.tarifaGestion    || '0', 10);
   const tarifaAuditoria  = parseInt(params.tarifaAuditoria  || '0', 10);
   const visitasMes       = parseInt(params.visitasMes       || '2', 10);
-  const horasPorVisita   = params.horasPorVisita             || '3 a 4';
+  const horasPorVisita   = params.horasPorVisita             || '3';
   const nombreProfesional = params.nombreProfesional         || '';
   const diasPrueba       = parseInt(params.diasPrueba        || '7', 10);
 

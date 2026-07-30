@@ -45,7 +45,7 @@ const DEFAULTS: PropuestaData = {
   tarifaGestion: "250000",
   tarifaAuditoria: "450000",
   visitasMes: "2",
-  horasPorVisita: "3 a 4",
+  horasPorVisita: "3",
   diasPrueba: "7",
 };
 
