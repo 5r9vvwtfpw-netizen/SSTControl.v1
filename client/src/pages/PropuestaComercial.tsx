@@ -18,6 +18,15 @@ interface PropuestaData {
   ciudad: string;
   nombreProveedor: string;
   nitProveedor: string;
+  // Paquete personalizado
+  numTrabajadores: string;
+  precioPorTrabajador: string;
+  nombreProfesional: string;
+  tarifaGestion: string;
+  tarifaAuditoria: string;
+  visitasMes: string;
+  horasPorVisita: string;
+  diasPrueba: string;
 }
 
 const DEFAULTS: PropuestaData = {
@@ -30,6 +39,14 @@ const DEFAULTS: PropuestaData = {
   ciudad: "Bogotá D.C., Colombia",
   nombreProveedor: "SADGI S.A.S.",
   nitProveedor: "902.036.337-4",
+  numTrabajadores: "20",
+  precioPorTrabajador: "10000",
+  nombreProfesional: "Hernán Valencia",
+  tarifaGestion: "250000",
+  tarifaAuditoria: "450000",
+  visitasMes: "2",
+  horasPorVisita: "3 a 4",
+  diasPrueba: "7",
 };
 
 export default function PropuestaComercial() {
@@ -179,18 +196,18 @@ export default function PropuestaComercial() {
         </CardContent>
       </Card>
 
-      {/* Empresa destinataria (opcional) */}
+      {/* Empresa destinataria */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Empresa Destinataria (opcional)</CardTitle>
-          <CardDescription>Si lo completas, aparece personalizado en el PDF</CardDescription>
+          <CardTitle className="text-base">Empresa Destinataria</CardTitle>
+          <CardDescription>Aparece personalizado en el PDF de propuesta</CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
             <Label htmlFor="empresa">Nombre de la Empresa</Label>
             <Input
               id="empresa"
-              placeholder="Ej: Transportes Rápidos S.A.S."
+              placeholder="Ej: Transportes Hospitalarios S.A.S."
               value={data.empresa}
               onChange={handleChange("empresa")}
               data-testid="input-empresa"
@@ -204,6 +221,92 @@ export default function PropuestaComercial() {
               value={data.nit}
               onChange={handleChange("nit")}
               data-testid="input-nit-empresa"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Paquete personalizado */}
+      <Card className="border-green-200 bg-green-50/30">
+        <CardHeader>
+          <CardTitle className="text-base text-green-800">Paquete Personalizado</CardTitle>
+          <CardDescription>Genera una propuesta con el detalle exacto de la inversión mensual</CardDescription>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="numTrabajadores">N° de Trabajadores</Label>
+            <Input
+              id="numTrabajadores"
+              type="number"
+              min="1"
+              value={data.numTrabajadores}
+              onChange={handleChange("numTrabajadores")}
+              data-testid="input-num-trabajadores"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="precioPorTrabajador">Precio por Trabajador (COP)</Label>
+            <Input
+              id="precioPorTrabajador"
+              type="number"
+              min="0"
+              value={data.precioPorTrabajador}
+              onChange={handleChange("precioPorTrabajador")}
+              data-testid="input-precio-trabajador"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="diasPrueba">Días de Prueba</Label>
+            <Input
+              id="diasPrueba"
+              type="number"
+              min="0"
+              value={data.diasPrueba}
+              onChange={handleChange("diasPrueba")}
+              data-testid="input-dias-prueba"
+            />
+          </div>
+          <div className="space-y-1.5 sm:col-span-3">
+            <Label htmlFor="nombreProfesional">Nombre del Profesional Aliado</Label>
+            <Input
+              id="nombreProfesional"
+              placeholder="Ej: Hernán Valencia"
+              value={data.nombreProfesional}
+              onChange={handleChange("nombreProfesional")}
+              data-testid="input-nombre-profesional"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="tarifaGestion">Tarifa Gestión/Administración (COP)</Label>
+            <Input
+              id="tarifaGestion"
+              type="number"
+              min="0"
+              value={data.tarifaGestion}
+              onChange={handleChange("tarifaGestion")}
+              data-testid="input-tarifa-gestion"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="tarifaAuditoria">Tarifa Auditoría Presencial (COP)</Label>
+            <Input
+              id="tarifaAuditoria"
+              type="number"
+              min="0"
+              value={data.tarifaAuditoria}
+              onChange={handleChange("tarifaAuditoria")}
+              data-testid="input-tarifa-auditoria"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="visitasMes">Visitas al Mes</Label>
+            <Input
+              id="visitasMes"
+              type="number"
+              min="1"
+              value={data.visitasMes}
+              onChange={handleChange("visitasMes")}
+              data-testid="input-visitas-mes"
             />
           </div>
         </CardContent>

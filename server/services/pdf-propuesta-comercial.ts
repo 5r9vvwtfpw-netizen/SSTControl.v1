@@ -32,6 +32,14 @@ export interface PropuestaParams {
   nitProveedor?: string;
   contactName?: string;
   precioPorTrabajador?: string;
+  // Paquete personalizado
+  numTrabajadores?: string;
+  nombreProfesional?: string;
+  tarifaGestion?: string;
+  tarifaAuditoria?: string;
+  visitasMes?: string;
+  horasPorVisita?: string;
+  diasPrueba?: string;
 }
 
 export async function generatePropuestaComercialPdf(params: PropuestaParams = {}): Promise<Buffer> {
@@ -678,6 +686,189 @@ export async function generatePropuestaComercialPdf(params: PropuestaParams = {}
   doc.rect(0, P.h - 28, P.w, 28).fill(C.GREEN_DARK);
   doc.fontSize(7.5).font('Helvetica').fillColor(C.GOLD)
      .text(`${nombreProveedor} · NIT ${nitProveedor} · ${ciudad}`, 0, P.h - 17, { width: P.w, align: 'center' });
+
+  // ── PÁGINA 6: PROPUESTA PERSONALIZADA (solo si hay empresa destinataria) ─────
+  const numTrabajadores  = parseInt(params.numTrabajadores  || '0', 10);
+  const precioUnit       = parseInt(params.precioPorTrabajador || '0', 10) || 10000;
+  const tarifaGestion    = parseInt(params.tarifaGestion    || '0', 10);
+  const tarifaAuditoria  = parseInt(params.tarifaAuditoria  || '0', 10);
+  const visitasMes       = parseInt(params.visitasMes       || '2', 10);
+  const horasPorVisita   = params.horasPorVisita             || '3 a 4';
+  const nombreProfesional = params.nombreProfesional         || '';
+  const diasPrueba       = parseInt(params.diasPrueba        || '7', 10);
+
+  const tienePersonalizada = empresa && (numTrabajadores > 0 || tarifaGestion > 0 || tarifaAuditoria > 0);
+
+  if (tienePersonalizada) {
+    doc.addPage({ size: 'LETTER', margin: 0 });
+    const Q = { w: doc.page.width, h: doc.page.height, m: 44 };
+
+    const fmt = (n: number) =>
+      '$' + n.toLocaleString('es-CO', { maximumFractionDigits: 0 });
+
+    const licencia         = numTrabajadores * precioUnit;
+    const totalProfesional = tarifaGestion + tarifaAuditoria;
+    const totalMensual     = licencia + totalProfesional;
+
+    // ── Hero verde ────────────────────────────────────────────────────────────
+    const heroH = 148;
+    doc.rect(0, 0, Q.w, heroH).fill(C.GREEN_DARK);
+    doc.rect(0, heroH - 4, Q.w, 4).fill(C.GOLD);
+
+    doc.fontSize(8).font('Helvetica').fillColor('#b8d4c0')
+       .text('PROPUESTA COMERCIAL · SG-SST AUTOMATIZADO', 0, 18, { width: Q.w, align: 'center' });
+
+    doc.fontSize(20).font('Helvetica-Bold').fillColor(C.WHITE)
+       .text('Presentada a:', 0, 36, { width: Q.w, align: 'center' });
+    doc.fontSize(26).font('Helvetica-Bold').fillColor(C.GOLD)
+       .text(empresa, Q.m, 60, { width: Q.w - Q.m * 2, align: 'center' });
+    if (nit) {
+      doc.fontSize(9).font('Helvetica').fillColor('#89a898')
+         .text(`NIT ${nit}`, 0, 96, { width: Q.w, align: 'center' });
+    }
+
+    const dateStr = new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' });
+    doc.fontSize(8).font('Helvetica').fillColor('#89a898')
+       .text(`Fecha: ${dateStr}`, 0, heroH - 26, { width: Q.w, align: 'center' });
+
+    // ── Resumen de inversión ──────────────────────────────────────────────────
+    let qy = heroH + 24;
+    doc.fontSize(11).font('Helvetica-Bold').fillColor(C.GREEN_DARK)
+       .text('RESUMEN DE INVERSIÓN MENSUAL', Q.m, qy);
+    doc.moveTo(Q.m, qy + 16).lineTo(Q.w - Q.m, qy + 16)
+       .strokeColor(C.GREEN_DARK).lineWidth(1.5).stroke();
+    qy += 26;
+
+    const tableRows: { concepto: string; detalle: string; valor: number; color?: string }[] = [];
+
+    if (licencia > 0) {
+      tableRows.push({
+        concepto: 'Licencia de Software SG-SST',
+        detalle:  `${numTrabajadores} trabajadores × ${fmt(precioUnit)}/trabajador`,
+        valor:    licencia,
+        color:    C.GREEN_DARK,
+      });
+    }
+    if (tarifaGestion > 0) {
+      tableRows.push({
+        concepto: 'Gestión y Administración SST',
+        detalle:  nombreProfesional ? `Prof. aliado: ${nombreProfesional}` : 'Gestión mensual',
+        valor:    tarifaGestion,
+        color:    C.GREEN_MID,
+      });
+    }
+    if (tarifaAuditoria > 0) {
+      tableRows.push({
+        concepto: 'Auditorías Presenciales',
+        detalle:  `${visitasMes} visita${visitasMes !== 1 ? 's' : ''}/mes · ${horasPorVisita} h c/u${nombreProfesional ? ' · ' + nombreProfesional : ''}`,
+        valor:    tarifaAuditoria,
+        color:    C.GOLD,
+      });
+    }
+
+    const rowH = 40;
+    const colConceptoW = 192;
+    const colDetalleW  = Q.w - Q.m * 2 - colConceptoW - 100;
+    const colValorW    = 100;
+    const colConceptoX = Q.m;
+    const colDetalleX  = Q.m + colConceptoW;
+    const colValorX    = Q.w - Q.m - colValorW;
+
+    // Cabecera tabla
+    doc.rect(Q.m, qy, Q.w - Q.m * 2, 22).fill(C.GREEN_DARK);
+    doc.fontSize(8).font('Helvetica-Bold').fillColor(C.WHITE)
+       .text('Concepto', colConceptoX + 6, qy + 7, { width: colConceptoW });
+    doc.text('Detalle', colDetalleX + 6, qy + 7, { width: colDetalleW });
+    doc.text('Valor Mensual', colValorX, qy + 7, { width: colValorW, align: 'right' });
+    qy += 22;
+
+    for (let i = 0; i < tableRows.length; i++) {
+      const r = tableRows[i];
+      doc.rect(Q.m, qy, Q.w - Q.m * 2, rowH).fill(i % 2 === 0 ? '#f8fdf9' : C.WHITE);
+      doc.rect(Q.m, qy, 5, rowH).fill(r.color || C.GREEN_DARK);
+      doc.fontSize(9).font('Helvetica-Bold').fillColor(C.BLACK)
+         .text(r.concepto, colConceptoX + 12, qy + 7, { width: colConceptoW - 14 });
+      doc.fontSize(8).font('Helvetica').fillColor(C.GRAY_TEXT)
+         .text(r.detalle, colDetalleX + 6, qy + 12, { width: colDetalleW - 8 });
+      doc.fontSize(12).font('Helvetica-Bold').fillColor(r.color || C.GREEN_DARK)
+         .text(fmt(r.valor), colValorX, qy + 10, { width: colValorW, align: 'right' });
+      doc.moveTo(Q.m, qy + rowH).lineTo(Q.w - Q.m, qy + rowH)
+         .strokeColor('#e0e0e0').lineWidth(0.5).stroke();
+      qy += rowH;
+    }
+
+    // Fila TOTAL
+    doc.rect(Q.m, qy, Q.w - Q.m * 2, 36).fill(C.GREEN_DARK);
+    doc.fontSize(11).font('Helvetica-Bold').fillColor(C.WHITE)
+       .text('TOTAL MENSUAL', colConceptoX + 12, qy + 11, { width: colConceptoW + colDetalleW });
+    doc.fontSize(18).font('Helvetica-Bold').fillColor(C.GOLD)
+       .text(fmt(totalMensual) + ' COP', colValorX - 40, qy + 8, { width: colValorW + 40, align: 'right' });
+    qy += 36;
+
+    // ── Desglose de quién paga qué ────────────────────────────────────────────
+    if (licencia > 0 && totalProfesional > 0) {
+      qy += 18;
+      const halfCW = (Q.w - Q.m * 2 - 12) / 2;
+      const phaseCards = [
+        {
+          title: `FASE 1 — ${fmt(licencia)} COP`,
+          sub:   'Pago a SADGI S.A.S.',
+          items: [`Licencia software: ${numTrabajadores} trabajadores`, 'Portal empleados incluido', 'Soporte técnico 24/7'],
+          color: C.GREEN_DARK,
+        },
+        {
+          title: `FASE 2 — ${fmt(totalProfesional)} COP`,
+          sub:   nombreProfesional ? `Pago a ${nombreProfesional}` : 'Pago al profesional SST',
+          items: [
+            tarifaGestion  > 0 ? `Gestión mensual: ${fmt(tarifaGestion)}`    : null,
+            tarifaAuditoria > 0 ? `Auditorías (${visitasMes}/mes): ${fmt(tarifaAuditoria)}` : null,
+          ].filter(Boolean) as string[],
+          color: C.GREEN_MID,
+        },
+      ];
+
+      doc.fontSize(10).font('Helvetica-Bold').fillColor(C.GREEN_DARK)
+         .text('ESTRUCTURA DE PAGO', Q.m, qy);
+      doc.moveTo(Q.m, qy + 14).lineTo(Q.w - Q.m, qy + 14)
+         .strokeColor(C.GREEN_DARK).lineWidth(1).stroke();
+      qy += 22;
+
+      for (let pi = 0; pi < phaseCards.length; pi++) {
+        const card = phaseCards[pi];
+        const cardX = Q.m + pi * (halfCW + 12);
+        const cardH2 = 80;
+        doc.rect(cardX, qy, halfCW, cardH2).fill('#f0f7f2');
+        doc.rect(cardX, qy, halfCW, 3).fill(card.color);
+        doc.fontSize(10).font('Helvetica-Bold').fillColor(card.color)
+           .text(card.title, cardX + 10, qy + 12, { width: halfCW - 20 });
+        doc.fontSize(8).font('Helvetica').fillColor(C.GRAY_SOFT)
+           .text(card.sub, cardX + 10, qy + 28, { width: halfCW - 20 });
+        let iy = qy + 42;
+        for (const item of card.items) {
+          doc.circle(cardX + 14, iy + 4, 2.5).fill(card.color);
+          doc.fontSize(8).font('Helvetica').fillColor(C.GRAY_TEXT)
+             .text(item, cardX + 22, iy, { width: halfCW - 30 });
+          iy += 14;
+        }
+      }
+      qy += 90;
+    }
+
+    // ── Prueba gratuita ───────────────────────────────────────────────────────
+    if (diasPrueba > 0) {
+      doc.rect(Q.m, qy, Q.w - Q.m * 2, 38).fill('#f0f7f2');
+      doc.rect(Q.m, qy, Q.w - Q.m * 2, 3).fill(C.GREEN_ACCENT);
+      doc.fontSize(10).font('Helvetica-Bold').fillColor(C.GREEN_DARK)
+         .text(`✓  ${diasPrueba} días de prueba gratuita — sin tarjeta, sin compromiso, acceso completo`, Q.m + 16, qy + 13, { width: Q.w - Q.m * 2 - 32 });
+      qy += 50;
+    }
+
+    // ── Footer ────────────────────────────────────────────────────────────────
+    doc.rect(0, Q.h - 28, Q.w, 28).fill(C.GREEN_DARK);
+    doc.rect(0, Q.h - 28, Q.w, 3).fill(C.GOLD);
+    doc.fontSize(7.5).font('Helvetica').fillColor(C.GOLD)
+       .text(`${nombreProveedor} · NIT ${nitProveedor} · ${web} · ${whatsapp}`, 0, Q.h - 17, { width: Q.w, align: 'center' });
+  }
 
   doc.flushPages();
   doc.end();
