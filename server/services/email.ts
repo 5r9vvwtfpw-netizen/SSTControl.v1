@@ -6,11 +6,27 @@ const APP_URL = process.env.VITE_APP_URL || 'http://localhost:5000';
 
 export const resend = new Resend(RESEND_API_KEY);
 
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
+
 /**
  * Email Service - Transactional emails using Resend
  * Bloque 4 - Tarea 16: Email Templates
+ *
+ * IMPORTANTE: todos los envíos pasan por sendEmail() que bloquea el envío
+ * en ambiente de desarrollo para evitar contaminar correos oficiales.
  */
 export class EmailService {
+  /**
+   * Wrapper central para todos los envíos.
+   * En desarrollo imprime el intento en consola pero NO envía el email real.
+   */
+  private async sendEmail(params: Parameters<typeof resend.emails.send>[0]): Promise<void> {
+    if (!IS_PRODUCTION) {
+      console.log(`[EMAIL-DEV] Envío bloqueado en desarrollo. Para: ${Array.isArray(params.to) ? params.to.join(', ') : params.to} | Asunto: ${params.subject}`);
+      return;
+    }
+    await this.sendEmail(params);
+  }
   /**
    * Send invoice payment confirmation email
    */
@@ -110,7 +126,7 @@ export class EmailService {
     }] : [];
 
     try {
-      await resend.emails.send({
+      await this.sendEmail({
         from: FROM_EMAIL,
         to,
         subject: `Factura ${invoiceNumber} - Pago Confirmado`,
@@ -210,7 +226,7 @@ export class EmailService {
     `;
 
     try {
-      await resend.emails.send({
+      await this.sendEmail({
         from: FROM_EMAIL,
         to,
         subject: `Confirmación de Pago - Plan ${planName}`,
@@ -297,7 +313,7 @@ export class EmailService {
     `;
 
     try {
-      await resend.emails.send({
+      await this.sendEmail({
         from: FROM_EMAIL,
         to,
         subject: `Cambio de Plan Confirmado - ${newPlanName}`,
@@ -372,7 +388,7 @@ export class EmailService {
     `;
 
     try {
-      await resend.emails.send({
+      await this.sendEmail({
         from: FROM_EMAIL,
         to,
         subject: `Pago No Procesado - ${planName}`,
@@ -507,7 +523,7 @@ export class EmailService {
     `;
 
     try {
-      await resend.emails.send({
+      await this.sendEmail({
         from: FROM_EMAIL,
         to,
         subject: `Acceso al Portal SST - ${companyName}`,
@@ -623,7 +639,7 @@ export class EmailService {
     `;
 
     try {
-      await resend.emails.send({
+      await this.sendEmail({
         from: FROM_EMAIL,
         to,
         subject: `🏥 Recordatorio: Examen Médico ${urgencyText} - ${workerName}`,
@@ -732,7 +748,7 @@ export class EmailService {
     `;
 
     try {
-      await resend.emails.send({
+      await this.sendEmail({
         from: FROM_EMAIL,
         to,
         subject: `Credenciales de Acceso - Portal de Soporte SST Colombia`,
@@ -843,7 +859,7 @@ export class EmailService {
     `;
 
     try {
-      await resend.emails.send({
+      await this.sendEmail({
         from: FROM_EMAIL,
         to,
         subject: `[${ticketNumber}] Nuevo Ticket: ${subject} - ${priorityLabel}`,
@@ -923,7 +939,7 @@ export class EmailService {
 </html>`;
 
     try {
-      await resend.emails.send({
+      await this.sendEmail({
         from: FROM_EMAIL,
         to: ADMIN_EMAIL,
         subject: `Nueva empresa registrada: ${companyName}`,
@@ -1006,7 +1022,7 @@ export class EmailService {
 </html>`;
 
     try {
-      await resend.emails.send({
+      await this.sendEmail({
         from: FROM_EMAIL,
         to: ADMIN_EMAIL,
         subject: `Pago confirmado: ${companyName}${planName ? ` — Plan ${planName}` : ''}`,
@@ -1054,7 +1070,7 @@ export class EmailService {
 </html>`;
 
     try {
-      await resend.emails.send({
+      await this.sendEmail({
         from: FROM_EMAIL,
         to: contactEmail,
         subject: `¡Bienvenido a SST Colombia!`,
