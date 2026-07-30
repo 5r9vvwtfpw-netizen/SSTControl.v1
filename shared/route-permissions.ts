@@ -33,6 +33,8 @@ export const routePermissions: Record<string, Permission[]> = {
   "/documentos-legales": ["users:edit"], // Solo superadmin y admin (documentos legales PDF)
   "/admin-portales": ["billing:global_view"], // Solo superadmin (administración de portales LSO y empleados)
   "/admin-login-activity": ["billing:global_view"], // Solo superadmin (actividad de login)
+  "/propuesta-comercial": ["billing:global_view"], // Solo superadmin (generador de propuestas comerciales PDF)
+  "/admin-promociones": ["billing:global_view"], // Solo superadmin (gestión de promociones)
   "/sedes": ["companies:view"], // Admin y superadmin (gestión de sedes)
   "/admin-videos-ayuda": ["billing:global_view"], // Solo superadmin (gestión de videos de ayuda)
   "/videos-ayuda": [], // Accesible para todos los usuarios autenticados (biblioteca de videos)
