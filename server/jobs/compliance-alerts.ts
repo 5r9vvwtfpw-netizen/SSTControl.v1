@@ -11,6 +11,7 @@
 import cron from 'node-cron';
 import { storage } from '../storage';
 import { sendNotificationEmail } from './notifications';
+import { generarPdfFlotaBuffer } from '../services/pesv-fleet-pdf';
 import logger from '../lib/logger';
 
 const TIPOS = {
@@ -368,6 +369,94 @@ export async function alertarVencimientosPesv(): Promise<number> {
         mensaje: `Se han detectado documentos de vehículos o conductores que requieren atención inmediata en el PESV de ${company.name}.${lineasVencidos}${lineasProximos}\n\nPor favor ingrese al módulo PESV → Vehículos / Conductores para renovar los documentos.`,
       });
       enviadas++;
+
+      // ── Alertas a roles adicionales: Técnico Mecánico y Supervisor ───────────
+      const [tecnicos, supervisores] = await Promise.all([
+        storage.getUsersByRole(['tecnico_mecanico'], company.id),
+        storage.getUsersByRole(['supervisor'], company.id),
+      ]);
+
+      const rolesExtra = [
+        ...tecnicos.map(u => ({ ...u, _rol: 'tecnico' as const })),
+        ...supervisores.map(u => ({ ...u, _rol: 'supervisor' as const })),
+      ].filter(u => u.email);
+
+      if (rolesExtra.length > 0) {
+        // Generar PDF de flota una sola vez por empresa
+        const pdfBuffer = await generarPdfFlotaBuffer(company.id).catch(() => null);
+        const pdfFilename = `flota-pesv-${company.name.replace(/\s+/g, '-').toLowerCase()}.pdf`;
+
+        // Mapa vehicleId → placa para mensajes legibles
+        const placaMap = new Map(vehiculos.map(v => [v.id, v.plate]));
+
+        // Mantenimientos pendientes (para técnico)
+        const mantenimientos = await storage.getVehicleMaintenances(company.id);
+        const mantPendientes = mantenimientos.filter(m => {
+          if (!m.nextMaintenanceDate) return false;
+          const d = new Date(m.nextMaintenanceDate);
+          return !isNaN(d.getTime()) && d <= limite;
+        });
+
+        // Inspecciones preoperacionales recientes con resultado no-apto (para supervisor)
+        const inspeccionesAll = await storage.getVehicleInspections(company.id);
+        const hace7Dias = new Date(hoy);
+        hace7Dias.setDate(hace7Dias.getDate() - 7);
+        const inspeccionesNoAptas = inspeccionesAll.filter(i => {
+          const d = new Date(i.inspectionDate);
+          return !isNaN(d.getTime()) && d >= hace7Dias && i.result === 'no-apto';
+        });
+
+        // Vencimientos solo de vehículos (SOAT, RTM, Seguro) para técnico
+        const vencidosVeh = vencidos.filter(v =>
+          v.includes('SOAT') || v.includes('Revisión Técnica') || v.includes('Seguro')
+        );
+        const proximosVeh = proximos.filter(v =>
+          v.includes('SOAT') || v.includes('Revisión Técnica') || v.includes('Seguro')
+        );
+
+        for (const usuario of rolesExtra) {
+          try {
+            let mensajeRol = '';
+
+            if (usuario._rol === 'tecnico') {
+              const lVenc = vencidosVeh.length > 0
+                ? `\n\n🔴 DOCUMENTOS VENCIDOS (${vencidosVeh.length}):\n• ${vencidosVeh.join('\n• ')}`
+                : '';
+              const lProx = proximosVeh.length > 0
+                ? `\n\n🟡 PRÓXIMOS A VENCER — dentro de ${DIAS_AVISO} días (${proximosVeh.length}):\n• ${proximosVeh.join('\n• ')}`
+                : '';
+              const lMant = mantPendientes.length > 0
+                ? `\n\n🔧 MANTENIMIENTOS PENDIENTES O POR PROGRAMAR (${mantPendientes.length}):\n• ${mantPendientes.map(m => `Placa ${placaMap.get(m.vehicleId) ?? m.vehicleId} — próximo mant. ${m.nextMaintenanceDate}`).join('\n• ')}`
+                : '';
+              if (!lVenc && !lProx && !lMant) continue;
+              mensajeRol = `Alerta vehicular PESV para ${company.name}.${lVenc}${lProx}${lMant}\n\nRevise el módulo H05 - Mantenimiento y H04 - Vehículos.`;
+            } else {
+              const lVenc = vencidos.length > 0
+                ? `\n\n🔴 DOCUMENTOS VENCIDOS (${vencidos.length}):\n• ${vencidos.join('\n• ')}`
+                : '';
+              const lProx = proximos.length > 0
+                ? `\n\n🟡 PRÓXIMOS A VENCER — dentro de ${DIAS_AVISO} días (${proximos.length}):\n• ${proximos.join('\n• ')}`
+                : '';
+              const lInsp = inspeccionesNoAptas.length > 0
+                ? `\n\n🚫 INSPECCIONES PREOPERACIONALES NO APTAS — últimos 7 días (${inspeccionesNoAptas.length}):\n• ${inspeccionesNoAptas.map(i => `${i.inspectionDate} — Placa ${placaMap.get(i.vehicleId) ?? i.vehicleId}${i.observations ? ': ' + i.observations : ''}`).join('\n• ')}`
+                : '';
+              mensajeRol = `Alerta PESV para ${company.name}.${lVenc}${lProx}${lInsp}\n\nRevise el módulo PESV → Vehículos / Conductores e Inspecciones preoperacionales.`;
+            }
+
+            await sendNotificationEmail({
+              to: usuario.email!,
+              titulo: `⚠️ Alerta PESV: Documentos y novedades vehiculares`,
+              mensaje: mensajeRol,
+              tipo: 'alerta',
+              companyName: company.name,
+              pdfBuffer: pdfBuffer ?? undefined,
+              pdfFilename,
+            });
+          } catch (errRol: any) {
+            logger.error({ userId: usuario.id, error: errRol.message }, '[ComplianceAlerts] Error enviando alerta a rol adicional');
+          }
+        }
+      }
     } catch (err: any) {
       logger.error({ companyId: company.id, error: err.message }, '[ComplianceAlerts] Error alertas vencimientos PESV');
     }

@@ -12,8 +12,10 @@ export async function sendNotificationEmail(params: {
   mensaje: string;
   tipo: string;
   companyName?: string;
+  pdfBuffer?: Buffer;
+  pdfFilename?: string;
 }): Promise<{ success: boolean; error?: string }> {
-  const { to, titulo, mensaje, tipo, companyName } = params;
+  const { to, titulo, mensaje, tipo, companyName, pdfBuffer, pdfFilename } = params;
 
   const tipoLabel = {
     'recordatorio': 'Recordatorio',
@@ -89,11 +91,16 @@ export async function sendNotificationEmail(params: {
   `;
 
   try {
+    const attachments = pdfBuffer
+      ? [{ filename: pdfFilename || 'informe-flota.pdf', content: pdfBuffer.toString('base64') }]
+      : undefined;
+
     await resend.emails.send({
       from: FROM_EMAIL,
       to,
       subject: `[SST Colombia] ${titulo}`,
       html: emailHtml,
+      attachments,
     });
 
     return { success: true };
