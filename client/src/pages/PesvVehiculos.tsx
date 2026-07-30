@@ -129,6 +129,15 @@ export default function PesvVehiculos() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!formData.soatExpiry) {
+      toast({ title: "Campo requerido", description: "Ingrese la fecha de vencimiento del SOAT.", variant: "destructive" });
+      return;
+    }
+    if (!formData.technicalReviewExpiry) {
+      toast({ title: "Campo requerido", description: "Ingrese la fecha de vencimiento de la Tecnicomecánica.", variant: "destructive" });
+      return;
+    }
     
     const capacityValue = formData.capacity === '' ? undefined : Number(formData.capacity);
     const mileageValue = formData.mileage === '' ? undefined : Number(formData.mileage);
@@ -488,23 +497,25 @@ export default function PesvVehiculos() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="soatExpiry">Vencimiento SOAT</Label>
+                    <Label htmlFor="soatExpiry">Vencimiento SOAT <span className="text-red-500">*</span></Label>
                     <Input
                       id="soatExpiry"
                       type="date"
                       value={formData.soatExpiry}
                       onChange={(e) => setFormData({ ...formData, soatExpiry: e.target.value })}
                       data-testid="input-soat-expiry"
+                      required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="technicalReviewExpiry">Vencimiento Tecnicomecánica</Label>
+                    <Label htmlFor="technicalReviewExpiry">Vencimiento Tecnicomecánica <span className="text-red-500">*</span></Label>
                     <Input
                       id="technicalReviewExpiry"
                       type="date"
                       value={formData.technicalReviewExpiry}
                       onChange={(e) => setFormData({ ...formData, technicalReviewExpiry: e.target.value })}
                       data-testid="input-technical-review-expiry"
+                      required
                     />
                   </div>
                   <div className="space-y-2">
