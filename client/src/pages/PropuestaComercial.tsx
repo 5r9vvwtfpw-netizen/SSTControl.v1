@@ -33,7 +33,7 @@ const DEFAULTS: PropuestaData = {
   web: "sst.sagisas.co",
   email: "legal@sst-colombia.com",
   whatsapp: "+57 300 522 0679",
-  tagline: "Plataforma completa SG-SST con Resolución 0312/2019, PESV Supertransporte (Res. 40595/2022), gestión de accidentalidad, capacitaciones, inspecciones, COPASST y más. Incluye Portal del Empleado, Soporte 24 horas, Asistente Virtual IA y Actualizaciones Normativas automáticas — todo sin costo adicional. Sin papeles, sin carpetas, con trazabilidad total y generación de informes PDF en menos de 5 minutos.",
+  tagline: "Ciclo PHVA completo con los 62 estándares mínimos de la Res. 0312/2019, PESV Supertransporte (Res. 40595/2022 — 24 pasos P-H-V-A), exámenes médicos ocupacionales, capacitaciones y cronograma anual, COPASST y Comité de Convivencia, brigadas de emergencia, accidentalidad e incidentes, matriz de peligros e inspecciones, plan anual de trabajo automatizado, control de mantenimiento vehicular, objetivos e indicadores SST, y Licenciado SST con firma digital. Todo esto más Portal del Empleado GRATIS, Asistente Virtual IA, soporte 24 horas y actualizaciones normativas automáticas — sin costo adicional.",
   empresa: "",
   nit: "",
   ciudad: "Medellín, Antioquia",
