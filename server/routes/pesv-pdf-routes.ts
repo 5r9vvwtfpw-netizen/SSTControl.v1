@@ -927,24 +927,22 @@ export function registerPesvPdfRoutes(app: Express) {
       ]);
       y = addSimpleTable(doc, ['Placa', 'Tipo', 'Marca', 'Modelo', 'Año', 'Estado'], rows, { y });
 
-      // Tabla 2: vencimientos de documentos (SOAT y Revisión Técnico-Mecánica)
+      // Tabla 2: vencimientos de documentos (Seguro, SOAT y Revisión Técnico-Mecánica)
       y = addSectionBar(doc, 'VENCIMIENTOS DE DOCUMENTOS', y + 12);
-      const rowsVenc = vehiculos.map(v => {
-        const soatLabel = expiryLabel(v.soatExpiry);
-        const rtmLabel = expiryLabel(v.technicalReviewExpiry);
-        return [
-          v.plate,
-          fmtExpiry(v.soatExpiry),
-          soatLabel,
-          fmtExpiry(v.technicalReviewExpiry),
-          rtmLabel,
-        ];
-      });
+      const rowsVenc = vehiculos.map(v => [
+        v.plate,
+        fmtExpiry(v.insuranceExpiry),
+        expiryLabel(v.insuranceExpiry),
+        fmtExpiry(v.soatExpiry),
+        expiryLabel(v.soatExpiry),
+        fmtExpiry(v.technicalReviewExpiry),
+        expiryLabel(v.technicalReviewExpiry),
+      ]);
       y = addSimpleTable(
         doc,
-        ['Placa', 'Venc. SOAT', 'Estado SOAT', 'Venc. Rev. Técnica', 'Estado RTM'],
+        ['Placa', 'Venc. Seguro', 'Est. Seguro', 'Venc. SOAT', 'Est. SOAT', 'Venc. Rev. Técnica', 'Est. RTM'],
         rowsVenc,
-        { y, columnWidths: [60, 90, 80, 110, 80] }
+        { y, columnWidths: [55, 72, 60, 72, 60, 90, 60] }
       );
 
       await addSignatureFooter(doc, signers, true);

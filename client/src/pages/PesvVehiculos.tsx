@@ -498,7 +498,6 @@ export default function PesvVehiculos() {
                       value={formData.insuranceExpiry}
                       onChange={(e) => setFormData({ ...formData, insuranceExpiry: e.target.value })}
                       data-testid="input-insurance-expiry"
-                      required
                     />
                   </div>
                   <div className="space-y-2">
@@ -509,7 +508,6 @@ export default function PesvVehiculos() {
                       value={formData.soatExpiry}
                       onChange={(e) => setFormData({ ...formData, soatExpiry: e.target.value })}
                       data-testid="input-soat-expiry"
-                      required
                     />
                   </div>
                   <div className="space-y-2">
@@ -520,7 +518,6 @@ export default function PesvVehiculos() {
                       value={formData.technicalReviewExpiry}
                       onChange={(e) => setFormData({ ...formData, technicalReviewExpiry: e.target.value })}
                       data-testid="input-technical-review-expiry"
-                      required
                     />
                   </div>
                   <div className="space-y-2">

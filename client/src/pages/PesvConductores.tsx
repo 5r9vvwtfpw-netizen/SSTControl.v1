@@ -518,7 +518,6 @@ export default function PesvConductores() {
                       type="date"
                       value={formData.licenseExpiry}
                       onChange={(e) => setFormData({ ...formData, licenseExpiry: e.target.value })}
-                      required
                       data-testid="input-license-expiry"
                     />
                   </div>
