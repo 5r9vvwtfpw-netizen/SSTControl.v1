@@ -904,10 +904,48 @@ export function registerPesvPdfRoutes(app: Express) {
         documentCode: 'PESV-VEH', logoBuffer
       });
 
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const fmtExpiry = (dateStr: string | null | undefined): string => {
+        if (!dateStr) return 'Sin registro';
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return 'Sin registro';
+        return formatDate(d);
+      };
+
+      const expiryLabel = (dateStr: string | null | undefined): string => {
+        if (!dateStr) return '—';
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return '—';
+        return d < today ? '⚠ Vencido' : '';
+      };
+
+      // Tabla 1: datos generales del vehículo
       const rows = vehiculos.map(v => [
-        v.plate, v.type, v.brand, v.model, String(v.year), v.status
+        v.plate, v.type, v.brand, v.model, String(v.year ?? ''), v.status ?? ''
       ]);
       y = addSimpleTable(doc, ['Placa', 'Tipo', 'Marca', 'Modelo', 'Año', 'Estado'], rows, { y });
+
+      // Tabla 2: vencimientos de documentos (SOAT y Revisión Técnico-Mecánica)
+      y = addSectionBar(doc, 'VENCIMIENTOS DE DOCUMENTOS', y + 12);
+      const rowsVenc = vehiculos.map(v => {
+        const soatLabel = expiryLabel(v.soatExpiry);
+        const rtmLabel = expiryLabel(v.technicalReviewExpiry);
+        return [
+          v.plate,
+          fmtExpiry(v.soatExpiry),
+          soatLabel,
+          fmtExpiry(v.technicalReviewExpiry),
+          rtmLabel,
+        ];
+      });
+      y = addSimpleTable(
+        doc,
+        ['Placa', 'Venc. SOAT', 'Estado SOAT', 'Venc. Rev. Técnica', 'Estado RTM'],
+        rowsVenc,
+        { y, columnWidths: [60, 90, 80, 110, 80] }
+      );
 
       await addSignatureFooter(doc, signers, true);
       doc.end();

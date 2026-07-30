@@ -18,6 +18,7 @@ const TIPOS = {
   EVALUACION_ANUAL: 'alerta-evaluacion-anual',
   ACCIONES_VENCIDAS: 'alerta-acciones-vencidas',
   SIN_EVALUACION: 'alerta-sin-evaluacion',
+  VENCIMIENTOS_PESV: 'alerta-vencimientos-pesv',
 } as const;
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -279,6 +280,95 @@ export async function alertarEmpresasSinEvaluacion(): Promise<number> {
   return enviadas;
 }
 
+// ─── Alerta 5: Vencimientos PESV (SOAT, Revisión Técnica, Licencias) ─────────
+
+export async function alertarVencimientosPesv(): Promise<number> {
+  const companies = await storage.getCompanies();
+  let enviadas = 0;
+  const DIAS_AVISO = 30;
+
+  for (const company of companies) {
+    try {
+      const yaNotificado = await yaEnvioNotificacion(company.id, TIPOS.VENCIMIENTOS_PESV, 7);
+      if (yaNotificado) continue;
+
+      const hoy = new Date();
+      hoy.setHours(0, 0, 0, 0);
+      const limite = new Date(hoy);
+      limite.setDate(limite.getDate() + DIAS_AVISO);
+
+      const vencidos: string[] = [];
+      const proximos: string[] = [];
+
+      // Verificar vehículos
+      const vehiculos = await storage.getVehicles(company.id);
+      for (const v of vehiculos) {
+        if (v.status === 'inactivo' || v.status === 'dado_de_baja') continue;
+
+        if (v.soatExpiry) {
+          const d = new Date(v.soatExpiry);
+          if (!isNaN(d.getTime())) {
+            if (d < hoy) vencidos.push(`SOAT vehículo ${v.plate} (venció ${d.toLocaleDateString('es-CO')})`);
+            else if (d <= limite) proximos.push(`SOAT vehículo ${v.plate} (vence ${d.toLocaleDateString('es-CO')})`);
+          }
+        }
+        if (v.technicalReviewExpiry) {
+          const d = new Date(v.technicalReviewExpiry);
+          if (!isNaN(d.getTime())) {
+            if (d < hoy) vencidos.push(`Revisión Técnica ${v.plate} (venció ${d.toLocaleDateString('es-CO')})`);
+            else if (d <= limite) proximos.push(`Revisión Técnica ${v.plate} (vence ${d.toLocaleDateString('es-CO')})`);
+          }
+        }
+      }
+
+      // Verificar conductores
+      const conductores = await storage.getDrivers(company.id);
+      for (const c of conductores) {
+        if (c.status === 'inactivo') continue;
+
+        if (c.licenseExpiry) {
+          const d = new Date(c.licenseExpiry);
+          if (!isNaN(d.getTime())) {
+            const nombre = c.name || c.identificationNumber || 'Conductor';
+            if (d < hoy) vencidos.push(`Licencia de conducción ${nombre} (venció ${d.toLocaleDateString('es-CO')})`);
+            else if (d <= limite) proximos.push(`Licencia de conducción ${nombre} (vence ${d.toLocaleDateString('es-CO')})`);
+          }
+        }
+        if (c.medicalExamExpiry) {
+          const d = new Date(c.medicalExamExpiry);
+          if (!isNaN(d.getTime())) {
+            const nombre = c.name || c.identificationNumber || 'Conductor';
+            if (d < hoy) vencidos.push(`Examen médico conductor ${nombre} (venció ${d.toLocaleDateString('es-CO')})`);
+            else if (d <= limite) proximos.push(`Examen médico conductor ${nombre} (vence ${d.toLocaleDateString('es-CO')})`);
+          }
+        }
+      }
+
+      if (vencidos.length === 0 && proximos.length === 0) continue;
+
+      const lineasVencidos = vencidos.length > 0
+        ? `\n\n🔴 DOCUMENTOS VENCIDOS (${vencidos.length}):\n• ${vencidos.join('\n• ')}`
+        : '';
+      const lineasProximos = proximos.length > 0
+        ? `\n\n🟡 PRÓXIMOS A VENCER — dentro de ${DIAS_AVISO} días (${proximos.length}):\n• ${proximos.join('\n• ')}`
+        : '';
+
+      await crearYEnviarAlerta({
+        companyId: company.id,
+        companyName: company.name,
+        tipo: TIPOS.VENCIMIENTOS_PESV,
+        titulo: `⚠️ Alerta PESV: Documentos vencidos o próximos a vencer`,
+        mensaje: `Se han detectado documentos de vehículos o conductores que requieren atención inmediata en el PESV de ${company.name}.${lineasVencidos}${lineasProximos}\n\nPor favor ingrese al módulo PESV → Vehículos / Conductores para renovar los documentos.`,
+      });
+      enviadas++;
+    } catch (err: any) {
+      logger.error({ companyId: company.id, error: err.message }, '[ComplianceAlerts] Error alertas vencimientos PESV');
+    }
+  }
+
+  return enviadas;
+}
+
 // ─── Runner combinado ─────────────────────────────────────────────────────────
 
 export async function runComplianceAlerts(tipos?: string[]) {
@@ -300,6 +390,9 @@ export async function runComplianceAlerts(tipos?: string[]) {
   if (correr('sin_evaluacion')) {
     resultados.sinEvaluacion = await alertarEmpresasSinEvaluacion();
   }
+  if (correr('vencimientos_pesv')) {
+    resultados.vencimientosPesv = await alertarVencimientosPesv();
+  }
 
   const total = Object.values(resultados).reduce((a, b) => a + b, 0);
   logger.info({ resultados, total }, '[ComplianceAlerts] Verificación completada');
@@ -309,6 +402,13 @@ export async function runComplianceAlerts(tipos?: string[]) {
 // ─── Scheduler ───────────────────────────────────────────────────────────────
 
 export function startComplianceAlertsCron() {
+  // Vencimientos PESV (SOAT, RTM, licencias) — todos los días a las 8:00 AM Colombia (13:00 UTC)
+  cron.schedule('0 13 * * *', () => {
+    alertarVencimientosPesv().catch(err =>
+      logger.error({ error: err.message }, '[ComplianceAlerts] Cron vencimientos PESV falló')
+    );
+  });
+
   // Acciones vencidas — todos los días a las 7:00 AM Colombia (12:00 UTC)
   cron.schedule('0 12 * * *', () => {
     alertarAccionesMejoraVencidas().catch(err =>
