@@ -37506,6 +37506,47 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
 
+  // GET /api/portal/notification-count - Conteo consolidado de notificaciones para el portal del trabajador
+  app.get("/api/portal/notification-count", requireAuth, async (req, res) => {
+    try {
+      const user = req.user!;
+      const companyId = user.companyId;
+
+      if (!companyId) {
+        return res.json({ messages: 0, capacitaciones: 0, examenes: 0, total: 0 });
+      }
+
+      // 1. Mensajes internos sin leer
+      const messages = await storage.getUnreadMessageCount(user.id, companyId);
+
+      // Resolver workerId (directo o por email)
+      let workerId = user.workerId;
+      if (!workerId && user.email) {
+        const worker = await storage.getWorkerByEmail(user.email, companyId);
+        if (worker) workerId = worker.id;
+      }
+
+      let capacitaciones = 0;
+      let examenes = 0;
+
+      if (workerId) {
+        // 2. Invitaciones a capacitaciones pendientes (programa nuevo)
+        const asistencias = await storage.getAsistentesByWorker(workerId);
+        capacitaciones = asistencias.filter(a => a.estado === 'invitado').length;
+
+        // 3. Exámenes médicos con notificación enviada pero sin confirmar lectura
+        const exams = await storage.getMedicalExamsByWorker(workerId, companyId);
+        examenes = exams.filter(e => e.notificationSentAt && !e.readConfirmedAt).length;
+      }
+
+      const total = messages + capacitaciones + examenes;
+      res.json({ messages, capacitaciones, examenes, total });
+    } catch (error: any) {
+      console.error('Error fetching portal notification count:', error);
+      res.status(500).json({ error: error.message || "Error al obtener conteo de notificaciones" });
+    }
+  });
+
   // ============================================================================
   // AUDIOMETRÍAS - Portal de Empleados
   // Resolución 8321/1983 - Programa de Conservación Auditiva

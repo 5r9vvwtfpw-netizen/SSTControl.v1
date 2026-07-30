@@ -29,26 +29,40 @@ const priorityLabels: Record<string, string> = {
   urgent: "Urgente",
 };
 
+type PortalNotificationCount = { messages: number; capacitaciones: number; examenes: number; total: number };
+
 export function NotificationBell() {
   const { user } = useAuth();
   const [location, setLocation] = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const isSupportRole = user?.role === 'soporte';
+  const isWorkerRole = user?.role === 'trabajador';
   const prevUnreadRef = useRef<number | null>(null);
   
-  // Get unread count
+  // Get unread count — workers use the consolidated portal endpoint
   const { data: unreadData } = useQuery<{ count: number }>({
     queryKey: ["/api/internal-messages/unread-count"],
     refetchInterval: 15000,
+    enabled: !isWorkerRole,
   });
 
+  const { data: portalCountData } = useQuery<PortalNotificationCount>({
+    queryKey: ["/api/portal/notification-count"],
+    refetchInterval: 15000,
+    enabled: isWorkerRole,
+  });
+
+  // Unified count: workers use consolidated total, others use message count
+  const unreadCount = isWorkerRole
+    ? (portalCountData?.total ?? 0)
+    : (unreadData?.count ?? 0);
+
   useEffect(() => {
-    const currentCount = unreadData?.count ?? 0;
-    if (prevUnreadRef.current !== null && currentCount > prevUnreadRef.current) {
+    if (prevUnreadRef.current !== null && unreadCount > prevUnreadRef.current) {
       playNotificationSound("ticket");
     }
-    prevUnreadRef.current = currentCount;
-  }, [unreadData?.count]);
+    prevUnreadRef.current = unreadCount;
+  }, [unreadCount]);
 
   // Get recent messages
   const { data: messages, isLoading } = useQuery<InternalMessage[]>({
@@ -76,6 +90,7 @@ export function NotificationBell() {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/internal-messages"] });
       queryClient.invalidateQueries({ queryKey: ["/api/internal-messages/unread-count"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/portal/notification-count"] });
     },
   });
 
@@ -97,11 +112,10 @@ export function NotificationBell() {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/internal-messages"] });
       queryClient.invalidateQueries({ queryKey: ["/api/internal-messages/unread-count"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/portal/notification-count"] });
     },
   });
 
-  const unreadCount = unreadData?.count ?? 0;
-  
   // Filter to show only received unread messages first, then recent messages
   const recentMessages = messages
     ?.filter(m => m.status !== 'archived')
