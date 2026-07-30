@@ -46,7 +46,7 @@ export async function generatePropuestaComercialPdf(params: PropuestaParams = {}
   const web            = params.web            || 'sst.sagisas.co';
   const email          = params.email          || 'legal@sst-colombia.com';
   const whatsapp       = params.whatsapp       || '+57 300 522 0679';
-  const tagline        = params.tagline        || 'Ciclo PHVA completo con los 62 estandares de la Res. 0312/2019, PESV Supertransporte (Res. 40595/2022 — 24 pasos), examenes medicos ocupacionales, capacitaciones y cronograma anual, COPASST y Comite de Convivencia, brigadas de emergencia, accidentalidad e incidentes, matriz de peligros, inspecciones, plan anual de trabajo automatizado, mantenimiento vehicular, objetivos e indicadores SST, y Licenciado SST con firma digital. Mas Portal del Empleado GRATIS, Asistente Virtual IA, soporte 24h y actualizaciones normativas automaticas — sin costo adicional.';
+  const tagline        = params.tagline        || 'Ciclo PHVA completo con los 61 estandares de la Res. 0312/2019, PESV Supertransporte (Res. 40595/2022 — 24 pasos), examenes medicos ocupacionales, capacitaciones y cronograma anual, COPASST y Comite de Convivencia, brigadas de emergencia, accidentalidad e incidentes, matriz de peligros, inspecciones, plan anual de trabajo automatizado, mantenimiento vehicular, objetivos e indicadores SST, y Licenciado SST con firma digital. Mas Portal del Empleado GRATIS, Asistente Virtual IA, soporte 24h y actualizaciones normativas automaticas — sin costo adicional.';
   const empresa        = params.empresa        || '';
   const nit            = params.nit            || '';
   const ciudad         = params.ciudad         || 'Medellín, Antioquia';
@@ -142,7 +142,7 @@ export async function generatePropuestaComercialPdf(params: PropuestaParams = {}
     {
       label: 'MIN',
       title: 'Informe Ministerio\nde Trabajo',
-      body: 'Autoevaluacion SG-SST segun Res. 0312/2019 con puntaje PHVA, valoracion critico/aceptable y detalle de los 62 estandares minimos. Generado en PDF listo para presentar.',
+      body: 'Autoevaluacion SG-SST segun Res. 0312/2019 con puntaje PHVA, valoracion critico/aceptable y detalle de los 61 estandares minimos. Generado en PDF listo para presentar.',
       color: C.GREEN_DARK,
     },
     {
@@ -308,7 +308,7 @@ export async function generatePropuestaComercialPdf(params: PropuestaParams = {}
   doc.roundedRect(P.m + 196, py + 13, 88, 24, 5).fill(C.GREEN_ACCENT);
   doc.fontSize(10).font('Helvetica-Bold').fillColor(C.WHITE).text('ACEPTABLE', P.m + 196, py + 19, { width: 88, align: 'center' });
   doc.fontSize(8.5).font('Helvetica').fillColor(C.GRAY_TEXT)
-     .text('Puntaje global segun Res. 0312/2019\n62 estandares minimos evaluados', P.m + 300, py + 12, { width: P.w - P.m - 308 });
+     .text('Puntaje global segun Res. 0312/2019\n61 estandares minimos evaluados', P.m + 300, py + 12, { width: P.w - P.m - 308 });
 
   py += 66;
   const p2ColXs = [P.m, P.m + 110, P.m + 175, P.m + 245, P.m + 315, P.m + 385];
@@ -381,7 +381,7 @@ export async function generatePropuestaComercialPdf(params: PropuestaParams = {}
 
   py += 10;
   doc.fontSize(7.5).font('Helvetica').fillColor('#888888')
-     .text('* Documento de muestra. El informe real incluye los 62 estandares minimos completos con valoracion critico/aceptable, trazabilidad al ciclo PHVA y firma digital del Licenciado SST.', P.m, py, { width: P.w - P.m * 2 });
+     .text('* Documento de muestra. El informe real incluye los 61 estandares minimos completos con valoracion critico/aceptable, trazabilidad al ciclo PHVA y firma digital del Licenciado SST.', P.m, py, { width: P.w - P.m * 2 });
   doc.rect(0, P.h - 28, P.w, 28).fill(C.GREEN_DARK);
   doc.fontSize(7.5).font('Helvetica').fillColor(C.GOLD)
      .text('MUESTRA · SG-SST Automatizado · https://sst.sagisas.co/', 0, P.h - 17, { width: P.w, align: 'center' });
@@ -516,7 +516,7 @@ export async function generatePropuestaComercialPdf(params: PropuestaParams = {}
   const rightX = P.m + halfW + 20;
 
   const leftBenef = [
-    'Acceso completo a todos los modulos SST (PHVA + 62 estandares Res. 0312/2019)',
+    'Acceso completo a todos los modulos SST (PHVA + 61 estandares Res. 0312/2019)',
     'Portal del empleado GRATIS e ilimitado para todos los trabajadores',
     'Actualizaciones normativas automaticas ante cambios de regulacion',
     'Soporte tecnico dedicado con chat en tiempo real',
