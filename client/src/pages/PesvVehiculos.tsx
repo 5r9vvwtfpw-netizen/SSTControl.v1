@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Pencil, Trash2, ArrowLeft, FileDown } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, ArrowLeft, FileDown, AlertTriangle, CheckCircle2, Clock } from "lucide-react";
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Vehicle, insertVehicleSchema } from "@shared/schema";
@@ -228,6 +228,32 @@ export default function PesvVehiculos() {
       otro: "Otro",
     };
     return labels[type] || type;
+  };
+
+  const getExpiryBadge = (dateStr: string | null | undefined) => {
+    if (!dateStr) return (
+      <span className="text-xs text-muted-foreground">Sin registro</span>
+    );
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return <span className="text-xs text-muted-foreground">Sin registro</span>;
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const diffDays = Math.ceil((d.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    const label = d.toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    if (diffDays < 0) return (
+      <span className="inline-flex items-center gap-1 text-xs font-medium text-red-700 bg-red-100 rounded px-1.5 py-0.5">
+        <AlertTriangle className="h-3 w-3" />{label}
+      </span>
+    );
+    if (diffDays <= 30) return (
+      <span className="inline-flex items-center gap-1 text-xs font-medium text-yellow-700 bg-yellow-100 rounded px-1.5 py-0.5">
+        <Clock className="h-3 w-3" />{label}
+      </span>
+    );
+    return (
+      <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-100 rounded px-1.5 py-0.5">
+        <CheckCircle2 className="h-3 w-3" />{label}
+      </span>
+    );
   };
 
   const getStatusLabel = (status: string) => {
@@ -545,6 +571,8 @@ export default function PesvVehiculos() {
               <TableHead data-testid="header-brand">Marca</TableHead>
               <TableHead data-testid="header-model">Modelo</TableHead>
               <TableHead data-testid="header-type">Tipo</TableHead>
+              <TableHead data-testid="header-soat">Venc. SOAT</TableHead>
+              <TableHead data-testid="header-rtm">Venc. Tecnicomecánica</TableHead>
               <TableHead data-testid="header-status">Estado</TableHead>
               {isAdmin && <TableHead data-testid="header-actions">Acciones</TableHead>}
             </TableRow>
@@ -552,13 +580,13 @@ export default function PesvVehiculos() {
           <TableBody>
             {vehiclesLoading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center" data-testid="text-loading">
+                <TableCell colSpan={8} className="text-center" data-testid="text-loading">
                   Cargando vehículos...
                 </TableCell>
               </TableRow>
             ) : filteredVehicles.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center" data-testid="text-no-vehicles">
+                <TableCell colSpan={8} className="text-center" data-testid="text-no-vehicles">
                   No se encontraron vehículos
                 </TableCell>
               </TableRow>
@@ -569,6 +597,8 @@ export default function PesvVehiculos() {
                   <TableCell data-testid={`text-brand-${vehicle.id}`}>{vehicle.brand}</TableCell>
                   <TableCell data-testid={`text-model-${vehicle.id}`}>{vehicle.model}</TableCell>
                   <TableCell data-testid={`text-type-${vehicle.id}`}>{getVehicleTypeLabel(vehicle.type)}</TableCell>
+                  <TableCell data-testid={`text-soat-${vehicle.id}`}>{getExpiryBadge(vehicle.soatExpiry)}</TableCell>
+                  <TableCell data-testid={`text-rtm-${vehicle.id}`}>{getExpiryBadge(vehicle.technicalReviewExpiry)}</TableCell>
                   <TableCell data-testid={`text-status-${vehicle.id}`}>{getStatusLabel(vehicle.status)}</TableCell>
                   {isAdmin && (
                     <TableCell>
