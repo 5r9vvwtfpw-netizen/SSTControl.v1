@@ -9,7 +9,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Shield, AlertCircle, CheckCircle2, Mail, XCircle, Sparkles, Eye, EyeOff, Building2, Briefcase, Users, MapPin, Phone, AlertTriangle, Truck, LinkIcon } from "lucide-react";
+import { Shield, AlertCircle, CheckCircle2, Mail, XCircle, Sparkles, Eye, EyeOff, Building2, Briefcase, Users, MapPin, Phone, AlertTriangle, Truck, LinkIcon, ExternalLink } from "lucide-react";
+
+const IS_PROD = import.meta.env.PROD;
+const PROD_URL = "https://sst.sagisas.co";
 import { Redirect, useLocation, Link } from "wouter";
 import sstLogoPath from "@assets/SST-Colombia-logo-3_1768408022586.png";
 import { CIIU_CODES, CIIU_SECTIONS } from "@/lib/ciiu-codes";
@@ -509,6 +512,27 @@ export default function AuthPage() {
 
               <TabsContent value="register">
                 <form onSubmit={handleRegister} className="space-y-3">
+
+                  {!IS_PROD && (
+                    <Alert className="border-red-500 bg-red-50 dark:bg-red-950" data-testid="alert-dev-env">
+                      <AlertTriangle className="h-4 w-4 text-red-600" />
+                      <AlertTitle className="text-red-800 dark:text-red-200 font-bold">
+                        ⚠️ Ambiente de DESARROLLO — No registrarse aquí
+                      </AlertTitle>
+                      <AlertDescription className="text-red-700 dark:text-red-300 text-sm">
+                        Este es el entorno de pruebas. Los datos <strong>no se guardan en producción</strong> y los correos no se enviarán correctamente.
+                        <br />
+                        <a
+                          href={PROD_URL}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-1 inline-flex items-center gap-1 font-semibold underline underline-offset-2 hover:opacity-80"
+                        >
+                          Ir a la aplicación real ({PROD_URL}) <ExternalLink className="h-3.5 w-3.5" />
+                        </a>
+                      </AlertDescription>
+                    </Alert>
+                  )}
 
                   {quoteError && (
                     <Alert className="border-orange-500 bg-orange-50 dark:bg-orange-950 py-2" data-testid="alert-quote-error">
