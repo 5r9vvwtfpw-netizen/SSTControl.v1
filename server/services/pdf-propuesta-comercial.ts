@@ -228,8 +228,8 @@ export async function generatePropuestaComercialPdf(params: PropuestaParams = {}
           title: `FASE 2 — ${fmt(totalProfesional)} COP`,
           sub:   nombreProfesional ? `Pago a ${nombreProfesional}` : 'Pago al profesional SST',
           items: [
-            tarifaAuditoria > 0 ? `Auditoría y Admin. (${visitasMes}/mes · ${horasPorVisita}h): ${fmt(tarifaAuditoria)}` : null,
-            tarifaGestion   > 0 ? `Gestión presencial: ${fmt(tarifaGestion)}`                         : null,
+            tarifaAuditoria > 0 ? `Auditoría y Administración: ${fmt(tarifaAuditoria)}` : null,
+            tarifaGestion   > 0 ? `Gestión Presencial (${visitasMes}/mes · ${horasPorVisita}h): ${fmt(tarifaGestion)}` : null,
           ].filter(Boolean) as string[],
           color: C.GREEN_MID,
         },
