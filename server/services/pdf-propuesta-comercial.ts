@@ -62,7 +62,7 @@ export async function generatePropuestaComercialPdf(params: PropuestaParams = {}
   const tarifaAuditoria   = parseInt(params.tarifaAuditoria   || '0', 10);
   const visitasMes        = parseInt(params.visitasMes        || '2', 10);
   const horasPorVisita    = params.horasPorVisita              || '3';
-  const nombreProfesional = params.nombreProfesional           || '';
+  const nombreProfesional = params.nombreProfesional           || ''; // sin default — se llena por caso
   const diasPrueba        = parseInt(params.diasPrueba         || '7', 10);
   const tienePersonalizada = !!(numTrabajadores > 0 || tarifaGestion > 0 || tarifaAuditoria > 0);
 

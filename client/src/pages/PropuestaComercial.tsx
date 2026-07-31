@@ -41,7 +41,7 @@ const DEFAULTS: PropuestaData = {
   nitProveedor: "902.036.337-4",
   numTrabajadores: "20",
   precioPorTrabajador: "10000",
-  nombreProfesional: "Hernán Valencia",
+  nombreProfesional: "",
   tarifaGestion: "250000",
   tarifaAuditoria: "450000",
   visitasMes: "2",
