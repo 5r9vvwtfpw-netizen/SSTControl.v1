@@ -1014,7 +1014,7 @@ export default function DetalleEvaluacionSst() {
 
       {/* Calendario del Ministerio de Trabajo */}
       <MinisterioFechasCard compact />
-      <ComplianceAlertPopup />
+      {/* <ComplianceAlertPopup /> — deshabilitado */}
 
       {/* Diálogo de selección de destinatario del reporte */}
       <Dialog open={destinatarioDialogOpen} onOpenChange={setDestinatarioDialogOpen}>
