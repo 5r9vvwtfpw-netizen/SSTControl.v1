@@ -76,6 +76,7 @@ const formSchema = z.object({
   fechaDesembolso: z.string().optional(),
   // Campos generales
   objetivoGeneral: z.string().optional(),
+  detalleObjetivo: z.string().optional(),
   // Campos de aprobación
   elaboradoPorId: z.string().optional(),
   autorizadoPorId: z.string().optional(),
@@ -200,6 +201,7 @@ export default function ResourceAllocation() {
       inversionEstimada: "",
       fechaDesembolso: "",
       objetivoGeneral: "",
+      detalleObjetivo: "",
       elaboradoPorId: "",
       autorizadoPorId: "",
       aprobadoPorId: "",
@@ -345,6 +347,7 @@ export default function ResourceAllocation() {
         inversionEstimada: "",
         fechaDesembolso: "",
         objetivoGeneral: "",
+        detalleObjetivo: "",
         elaboradoPorId: "",
         autorizadoPorId: "",
         aprobadoPorId: "",
@@ -385,6 +388,7 @@ export default function ResourceAllocation() {
         inversionEstimada: "",
         fechaDesembolso: "",
         objetivoGeneral: "",
+        detalleObjetivo: "",
       });
     },
     onError: (error: Error) => {
@@ -461,6 +465,7 @@ export default function ResourceAllocation() {
       inversionEstimada: allocation.inversionEstimada || "",
       fechaDesembolso: allocation.fechaDesembolso || "",
       objetivoGeneral: allocation.objetivoGeneral || "",
+      detalleObjetivo: allocation.detalleObjetivo || "",
       elaboradoPorId: allocation.elaboradoPorId || "",
       autorizadoPorId: allocation.autorizadoPorId || "",
       aprobadoPorId: allocation.aprobadoPorId || "",
@@ -618,6 +623,7 @@ export default function ResourceAllocation() {
     
     form.setValue('resourceType', resource.tipo as "humano" | "fisico" | "financiero");
     form.setValue('objetivoGeneral', resource.objetivo);
+    form.setValue('detalleObjetivo', resource.objetivo);
     
     toast({
       title: "Tipo de recurso aplicado",
@@ -666,6 +672,7 @@ export default function ResourceAllocation() {
                     inversionEstimada: "",
                     fechaDesembolso: "",
                     objetivoGeneral: "",
+                    detalleObjetivo: "",
                     elaboradoPorId: "",
                     autorizadoPorId: "",
                     aprobadoPorId: "",
@@ -1138,7 +1145,14 @@ export default function ResourceAllocation() {
                         render={({ field }) => (
                           <FormItem className="md:col-span-2">
                             <FormLabel>Concepto / Objetivo del Recurso *</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
+                            <Select
+                              onValueChange={(val) => {
+                                field.onChange(val);
+                                const current = form.getValues("detalleObjetivo");
+                                if (!current) form.setValue("detalleObjetivo", val);
+                              }}
+                              value={field.value}
+                            >
                               <FormControl>
                                 <SelectTrigger data-testid="select-objetivo-financiero">
                                   <SelectValue placeholder="Seleccione el concepto del recurso" />
@@ -1302,7 +1316,7 @@ export default function ResourceAllocation() {
                 <div className="border-t pt-4">
                   <FormField
                     control={form.control}
-                    name="objetivoGeneral"
+                    name="detalleObjetivo"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Objetivo General</FormLabel>
@@ -1315,6 +1329,9 @@ export default function ResourceAllocation() {
                             data-testid="input-objetivo-general"
                           />
                         </FormControl>
+                        <FormDescription className="text-xs">
+                          Puede personalizar este texto para especificar el propósito exacto del recurso
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -1341,6 +1358,7 @@ export default function ResourceAllocation() {
                         inversionEstimada: "",
                         fechaDesembolso: "",
                         objetivoGeneral: "",
+                    detalleObjetivo: "",
                         elaboradoPorId: "",
                         autorizadoPorId: "",
                         aprobadoPorId: "",
@@ -1477,7 +1495,7 @@ export default function ResourceAllocation() {
                       })()}
                     </TableCell>
                     <TableCell className="max-w-xs truncate">
-                      {allocation.objetivoGeneral || "-"}
+                      {allocation.detalleObjetivo || allocation.objetivoGeneral || "-"}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex gap-2 justify-end">

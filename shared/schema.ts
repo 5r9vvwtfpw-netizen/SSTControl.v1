@@ -1533,7 +1533,8 @@ export const resourceAllocations = pgTable("resource_allocations", {
   montoEjecutado: text("monto_ejecutado").default("0"), // Monto ejecutado en adquisiciones vinculadas
   
   // Campos generales
-  objetivoGeneral: text("objetivo_general"), // Objetivo general de la asignación
+  objetivoGeneral: text("objetivo_general"), // Categoría/concepto del recurso (select)
+  detalleObjetivo: text("detalle_objetivo"), // Descripción libre del objetivo
   
   // Campos de aprobación vinculados a trabajadores
   elaboradoPorId: varchar("elaborado_por_id").references(() => workers.id),

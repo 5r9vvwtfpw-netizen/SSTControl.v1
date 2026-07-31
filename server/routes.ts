@@ -13412,7 +13412,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           const contentWidth = pageWidth - 2 * margin - 20;
           items.slice(0, 5).forEach((item) => {
-            const description = item.nombreCompleto || item.nombreEquipo || item.objetivoGeneral || 'Sin descripción';
+            const description = item.nombreCompleto || item.nombreEquipo || (item as any).detalleObjetivo || item.objetivoGeneral || 'Sin descripción';
             const amount = formatCurrency(parseAmount(item.inversionEstimada));
             doc.fontSize(7).font('Helvetica').fillColor('#333333');
             const textHeight = doc.heightOfString(`   - ${description}: ${amount}`, { width: contentWidth });
@@ -13680,7 +13680,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Common fields for all resource types
       currentY += 5;
       doc.font('Helvetica-Bold').text('Objetivo: ', margin, currentY, { continued: true });
-      doc.font('Helvetica').text(allocation.objetivoGeneral || 'N/A', { width: contentWidth - 60 });
+      doc.font('Helvetica').text((allocation as any).detalleObjetivo || allocation.objetivoGeneral || 'N/A', { width: contentWidth - 60 });
       currentY = doc.y + 8;
       
       if (allocation.actividades) {
