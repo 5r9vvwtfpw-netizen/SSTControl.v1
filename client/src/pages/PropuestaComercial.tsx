@@ -124,6 +124,36 @@ export default function PropuestaComercial() {
         </div>
       </div>
 
+      {/* Empresa destinataria — PRIMERO para que siempre se llene */}
+      <Card className="border-green-400 ring-1 ring-green-300">
+        <CardHeader>
+          <CardTitle className="text-base text-green-800">📋 Empresa Destinataria</CardTitle>
+          <CardDescription>Aparece como título principal en el PDF — llena este campo primero</CardDescription>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="empresa">Nombre de la Empresa <span className="text-red-500">*</span></Label>
+            <Input
+              id="empresa"
+              placeholder="Ej: Transportes Hospitalarios S.A.S."
+              value={data.empresa}
+              onChange={handleChange("empresa")}
+              data-testid="input-empresa"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="nit">NIT</Label>
+            <Input
+              id="nit"
+              placeholder="Ej: 900.123.456-7"
+              value={data.nit}
+              onChange={handleChange("nit")}
+              data-testid="input-nit-empresa"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Datos del Proveedor */}
       <Card>
         <CardHeader>
@@ -193,36 +223,6 @@ export default function PropuestaComercial() {
               value={data.whatsapp}
               onChange={handleChange("whatsapp")}
               data-testid="input-whatsapp"
-            />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Empresa destinataria */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Empresa Destinataria</CardTitle>
-          <CardDescription>Aparece personalizado en el PDF de propuesta</CardDescription>
-        </CardHeader>
-        <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="empresa">Nombre de la Empresa</Label>
-            <Input
-              id="empresa"
-              placeholder="Ej: Transportes Hospitalarios S.A.S."
-              value={data.empresa}
-              onChange={handleChange("empresa")}
-              data-testid="input-empresa"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="nit">NIT</Label>
-            <Input
-              id="nit"
-              placeholder="Ej: 900.123.456-7"
-              value={data.nit}
-              onChange={handleChange("nit")}
-              data-testid="input-nit-empresa"
             />
           </div>
         </CardContent>

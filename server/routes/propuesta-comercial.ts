@@ -1,5 +1,6 @@
 import { Express } from "express";
 import { requireAuth, requireSuperadmin } from "../auth";
+import { generatePropuestaComercialPdf } from "../services/pdf-propuesta-comercial";
 
 export function registerPropuestaComercialRoutes(app: Express) {
   app.post(
@@ -8,9 +9,6 @@ export function registerPropuestaComercialRoutes(app: Express) {
     requireSuperadmin,
     async (req, res) => {
       try {
-        const { generatePropuestaComercialPdf } = await import(
-          "../services/pdf-propuesta-comercial"
-        );
         const pdfBuffer = await generatePropuestaComercialPdf(req.body);
         res.setHeader("Content-Type", "application/pdf");
         res.setHeader(
@@ -32,9 +30,6 @@ export function registerPropuestaComercialRoutes(app: Express) {
     requireSuperadmin,
     async (_req, res) => {
       try {
-        const { generatePropuestaComercialPdf } = await import(
-          "../services/pdf-propuesta-comercial"
-        );
         const pdfBuffer = await generatePropuestaComercialPdf({});
         res.setHeader("Content-Type", "application/pdf");
         res.setHeader(
