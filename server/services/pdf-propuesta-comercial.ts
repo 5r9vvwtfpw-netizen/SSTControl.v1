@@ -124,12 +124,14 @@ export async function generatePropuestaComercialPdf(params: PropuestaParams = {}
     const mensajePrincipal = params.mensajePrincipal ||
       `Esta cotizacion incluye un periodo de prueba gratuito de ${diasPrueba} dias y garantiza el cumplimiento normativo segun lo expuesto en la reunion virtual. La propuesta comprende dos componentes independientes: la plataforma SaaS (Sadgi SAS) y el servicio de auditoria y gestion por parte del profesional en SST. Los pagos de ambos servicios se realizaran de manera independiente. Operamos bajo un modelo de colaboracion sin exclusividad.`;
     const msgTextW = Q.w - Q.m * 2 - 22;
-    const msgTextH = doc.heightOfString(mensajePrincipal, { width: msgTextW, lineGap: 1.5, font: 'Helvetica', fontSize: 8 });
-    const msgH = msgTextH + 18; // padding top + bottom
+    // Fijar fuente/tamaño ANTES de calcular altura (PDFKit ignora font/fontSize en opciones)
+    doc.fontSize(8).font('Helvetica');
+    const msgTextH = doc.heightOfString(mensajePrincipal, { width: msgTextW, lineGap: 2 });
+    const msgH = msgTextH + 20; // padding arriba + abajo
     doc.rect(Q.m, qy, Q.w - Q.m * 2, msgH).fill('#f0f7f2');
     doc.rect(Q.m, qy, 4, msgH).fill(C.GOLD);
-    doc.fontSize(8).font('Helvetica').fillColor(C.GRAY_TEXT)
-       .text(mensajePrincipal, Q.m + 14, qy + 9, { width: msgTextW, lineGap: 1.5 });
+    doc.fillColor(C.GRAY_TEXT)
+       .text(mensajePrincipal, Q.m + 14, qy + 10, { width: msgTextW, lineGap: 2 });
     qy += msgH + 16;
 
     // Resumen de inversión
