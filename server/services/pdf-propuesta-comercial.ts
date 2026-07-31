@@ -25,6 +25,7 @@ export interface PropuestaParams {
   email?: string;
   whatsapp?: string;
   tagline?: string;
+  mensajePrincipal?: string;
   empresa?: string;
   nit?: string;
   ciudad?: string;
@@ -120,7 +121,8 @@ export async function generatePropuestaComercialPdf(params: PropuestaParams = {}
 
     // Mensaje principal
     let qy = heroH + 16;
-    const mensajePrincipal = `Esta cotizacion incluye un periodo de prueba gratuito de ${diasPrueba} dias y garantiza el cumplimiento normativo segun lo expuesto en la reunion virtual. La propuesta comprende dos componentes independientes: la plataforma SaaS (Sadgi SAS) y el servicio de auditoria y gestion por parte del profesional en SST. Los pagos de ambos servicios se realizaran de manera independiente. Operamos bajo un modelo de colaboracion sin exclusividad.`;
+    const mensajePrincipal = params.mensajePrincipal ||
+      `Esta cotizacion incluye un periodo de prueba gratuito de ${diasPrueba} dias y garantiza el cumplimiento normativo segun lo expuesto en la reunion virtual. La propuesta comprende dos componentes independientes: la plataforma SaaS (Sadgi SAS) y el servicio de auditoria y gestion por parte del profesional en SST. Los pagos de ambos servicios se realizaran de manera independiente. Operamos bajo un modelo de colaboracion sin exclusividad.`;
     const msgH = 46;
     doc.rect(Q.m, qy, Q.w - Q.m * 2, msgH).fill('#f0f7f2');
     doc.rect(Q.m, qy, 4, msgH).fill(C.GOLD);

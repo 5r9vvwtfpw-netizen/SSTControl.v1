@@ -13,6 +13,7 @@ interface PropuestaData {
   email: string;
   whatsapp: string;
   tagline: string;
+  mensajePrincipal: string;
   empresa: string;
   nit: string;
   ciudad: string;
@@ -34,6 +35,7 @@ const DEFAULTS: PropuestaData = {
   email: "legal@sst-colombia.com",
   whatsapp: "+57 300 522 0679",
   tagline: "Ciclo PHVA completo con los 61 estándares mínimos de la Res. 0312/2019, PESV Supertransporte (Res. 40595/2022 — 24 pasos P-H-V-A), exámenes médicos ocupacionales, capacitaciones y cronograma anual, COPASST y Comité de Convivencia, brigadas de emergencia, accidentalidad e incidentes, matriz de peligros e inspecciones, matriz de riesgo automática según código CIIU, plan anual de trabajo automatizado, control de mantenimiento vehicular, objetivos e indicadores SST, y Licenciado SST con firma digital. Todo esto más Portal del Empleado GRATIS, Asistente Virtual IA, soporte 24 horas y actualizaciones normativas automáticas — sin costo adicional.",
+  mensajePrincipal: "Esta cotización incluye un periodo de prueba gratuito de 7 días y garantiza el cumplimiento normativo según lo expuesto en la reunión virtual. La propuesta comprende dos componentes independientes: la plataforma SaaS (Sadgi SAS) y el servicio de auditoría y gestión por parte del profesional en SST. Los pagos de ambos servicios se realizarán de manera independiente. Operamos bajo un modelo de colaboración sin exclusividad.",
   empresa: "",
   nit: "",
   ciudad: "Medellín, Antioquia",
@@ -324,18 +326,18 @@ export default function PropuestaComercial() {
         </CardContent>
       </Card>
 
-      {/* Mensaje */}
+      {/* Mensaje Principal */}
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Mensaje Principal</CardTitle>
-          <CardDescription>Frase que aparece en la sección central del PDF</CardDescription>
+          <CardDescription>Aparece en la propuesta personalizada — edítalo según cada cliente</CardDescription>
         </CardHeader>
         <CardContent>
           <Textarea
-            value={data.tagline}
-            onChange={handleChange("tagline")}
-            rows={3}
-            data-testid="textarea-tagline"
+            value={data.mensajePrincipal}
+            onChange={handleChange("mensajePrincipal")}
+            rows={5}
+            data-testid="textarea-mensaje-principal"
           />
         </CardContent>
       </Card>
