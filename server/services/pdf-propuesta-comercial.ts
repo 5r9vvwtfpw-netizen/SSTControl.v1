@@ -146,20 +146,20 @@ export async function generatePropuestaComercialPdf(params: PropuestaParams = {}
         color:    C.GREEN_DARK,
       });
     }
-    if (tarifaGestion > 0) {
-      tableRows.push({
-        concepto: 'Gestión y Administración SST',
-        detalle:  nombreProfesional ? `Prof. aliado: ${nombreProfesional}` : 'Gestión mensual',
-        valor:    tarifaGestion,
-        color:    C.GREEN_MID,
-      });
-    }
     if (tarifaAuditoria > 0) {
       tableRows.push({
-        concepto: 'Auditorías Presenciales',
+        concepto: 'Auditoría y Administración',
         detalle:  `${visitasMes} visita${visitasMes !== 1 ? 's' : ''}/mes · ${horasPorVisita} h c/u${nombreProfesional ? ' · ' + nombreProfesional : ''}`,
         valor:    tarifaAuditoria,
         color:    C.GOLD,
+      });
+    }
+    if (tarifaGestion > 0) {
+      tableRows.push({
+        concepto: 'Gestión Presencial SST',
+        detalle:  nombreProfesional ? `Prof. aliado: ${nombreProfesional}` : 'Gestión mensual',
+        valor:    tarifaGestion,
+        color:    C.GREEN_MID,
       });
     }
 
@@ -216,8 +216,8 @@ export async function generatePropuestaComercialPdf(params: PropuestaParams = {}
           title: `FASE 2 — ${fmt(totalProfesional)} COP`,
           sub:   nombreProfesional ? `Pago a ${nombreProfesional}` : 'Pago al profesional SST',
           items: [
-            tarifaGestion   > 0 ? `Gestión mensual: ${fmt(tarifaGestion)}`                         : null,
-            tarifaAuditoria > 0 ? `Auditorías (${visitasMes}/mes · ${horasPorVisita}h): ${fmt(tarifaAuditoria)}` : null,
+            tarifaAuditoria > 0 ? `Auditoría y Admin. (${visitasMes}/mes · ${horasPorVisita}h): ${fmt(tarifaAuditoria)}` : null,
+            tarifaGestion   > 0 ? `Gestión presencial: ${fmt(tarifaGestion)}`                         : null,
           ].filter(Boolean) as string[],
           color: C.GREEN_MID,
         },

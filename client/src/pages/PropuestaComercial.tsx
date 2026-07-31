@@ -279,18 +279,7 @@ export default function PropuestaComercial() {
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="tarifaGestion">Tarifa Gestión/Administración (COP)</Label>
-            <Input
-              id="tarifaGestion"
-              type="number"
-              min="0"
-              value={data.tarifaGestion}
-              onChange={handleChange("tarifaGestion")}
-              data-testid="input-tarifa-gestion"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="tarifaAuditoria">Tarifa Auditoría Presencial (COP)</Label>
+            <Label htmlFor="tarifaAuditoria">Auditoría y Administración (COP)</Label>
             <Input
               id="tarifaAuditoria"
               type="number"
@@ -298,6 +287,17 @@ export default function PropuestaComercial() {
               value={data.tarifaAuditoria}
               onChange={handleChange("tarifaAuditoria")}
               data-testid="input-tarifa-auditoria"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="tarifaGestion">Gestión Presencial (COP)</Label>
+            <Input
+              id="tarifaGestion"
+              type="number"
+              min="0"
+              value={data.tarifaGestion}
+              onChange={handleChange("tarifaGestion")}
+              data-testid="input-tarifa-gestion"
             />
           </div>
           <div className="space-y-1.5">
