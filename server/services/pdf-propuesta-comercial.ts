@@ -161,7 +161,7 @@ export async function generatePropuestaComercialPdf(params: PropuestaParams = {}
     if (tarifaAuditoria > 0) {
       tableRows.push({
         concepto: 'Auditoría y Administración',
-        detalle:  `${visitasMes} visita${visitasMes !== 1 ? 's' : ''}/mes · ${horasPorVisita} h c/u${nombreProfesional ? ' · ' + nombreProfesional : ''}`,
+        detalle:  nombreProfesional ? `Gestión mensual · ${nombreProfesional}` : 'Gestión mensual',
         valor:    tarifaAuditoria,
         color:    C.GOLD,
       });
@@ -169,7 +169,7 @@ export async function generatePropuestaComercialPdf(params: PropuestaParams = {}
     if (tarifaGestion > 0) {
       tableRows.push({
         concepto: 'Gestión Presencial SST',
-        detalle:  nombreProfesional ? `Prof. aliado: ${nombreProfesional}` : 'Gestión mensual',
+        detalle:  `${visitasMes} visita${visitasMes !== 1 ? 's' : ''}/mes · ${horasPorVisita} h c/u${nombreProfesional ? ' · ' + nombreProfesional : ''}`,
         valor:    tarifaGestion,
         color:    C.GREEN_MID,
       });
