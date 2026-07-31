@@ -336,7 +336,7 @@ export default function PropuestaComercial() {
           <Textarea
             value={data.mensajePrincipal}
             onChange={handleChange("mensajePrincipal")}
-            rows={12}
+            rows={18}
             data-testid="textarea-mensaje-principal"
           />
         </CardContent>
