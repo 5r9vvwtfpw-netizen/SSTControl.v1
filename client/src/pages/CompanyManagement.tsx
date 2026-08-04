@@ -968,14 +968,14 @@ export default function CompanyManagement() {
                       Actividad {["Secundaria","Terciaria","Cuaternaria"][i]} (CIIU {i+2}) — opcional
                     </Label>
                     <Select
-                      value={formData[key] || ""}
-                      onValueChange={(value) => setFormData({ ...formData, [key]: value === "" ? "" : value })}
+                      value={formData[key] || "__none__"}
+                      onValueChange={(value) => setFormData({ ...formData, [key]: value === "__none__" ? "" : value })}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Sin actividad adicional" />
                       </SelectTrigger>
                       <SelectContent className="max-h-80">
-                        <SelectItem value="">— Sin actividad adicional —</SelectItem>
+                        <SelectItem value="__none__">— Sin actividad adicional —</SelectItem>
                         {Object.entries(CIIU_SECTIONS).map(([section, sectionName]) => (
                           <div key={section}>
                             <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted">
