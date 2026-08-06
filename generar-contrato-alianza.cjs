@@ -243,7 +243,7 @@ addPageHeader(doc);
 
 // ── CLÁUSULA SEXTA ────────────────────────────────────────────────────────────
 clauseTitle(doc, 'SEXTA', 'No Competencia');
-para(doc, `EL CONSULTOR se obliga a no participar, desarrollar, financiar, asesorar, ni prestar servicios directamente a plataformas tecnológicas de gestión SST que compitan directa o indirectamente con La Plataforma de EL PROVEEDOR, durante la vigencia de este contrato y por un período de CUATRO (4) AÑOS contados desde la fecha de su terminación, en el territorio de la Colombia.`);
+para(doc, `EL CONSULTOR se obliga a no participar, desarrollar, financiar, asesorar, ni prestar servicios directamente a plataformas tecnológicas de gestión SST que compitan directa o indirectamente con La Plataforma de EL PROVEEDOR, durante la vigencia de este contrato y por un período de CUATRO (4) AÑOS contados desde la fecha de su terminación, en el territorio colombiano.`);
 para(doc, `Para efectos de esta cláusula, se entiende como competidora toda plataforma, software, aplicación o sistema que tenga por objeto la gestión automatizada de Sistemas de Gestión de Seguridad y Salud en el Trabajo (SG-SST), conforme a la Resolución 0312/2019 del Ministerio de Trabajo, o normas que la modifiquen o sustituyan.`);
 para(doc, `Esta obligación de no competencia es razonable en su alcance territorial y temporal conforme al artículo 333 de la Constitución Política de Colombia y la jurisprudencia de la Corte Suprema de Justicia sobre libertad de empresa y competencia leal.`);
 
@@ -300,7 +300,7 @@ bullet(doc, '3. Jurisdicción Ordinaria', 'En caso de que la conciliación fraca
 
 // ── CLÁUSULA DÉCIMA TERCERA ──────────────────────────────────────────────────
 clauseTitle(doc, 'DÉCIMA TERCERA', 'Ley Aplicable');
-para(doc, `El presente contrato se regirá e interpretará conforme a las leyes de la Colombia, en particular: el Código de Comercio, el Código Civil, la Ley 23 de 1982 (Derechos de Autor), la Decisión Andina 351 de la Comunidad Andina, la Ley 1581 de 2012 (Protección de Datos Personales), la Ley 527 de 1999 (Comercio Electrónico), y las disposiciones de Propiedad Industrial contenidas en la Decisión Andina 486.`);
+para(doc, `El presente contrato se regirá e interpretará conforme a las leyes de Colombia, en particular: el Código de Comercio, el Código Civil, la Ley 23 de 1982 (Derechos de Autor), la Decisión Andina 351 de la Comunidad Andina, la Ley 1581 de 2012 (Protección de Datos Personales), la Ley 527 de 1999 (Comercio Electrónico), y las disposiciones de Propiedad Industrial contenidas en la Decisión Andina 486.`);
 
 // ── CLÁUSULA DÉCIMA CUARTA ───────────────────────────────────────────────────
 clauseTitle(doc, 'DÉCIMA CUARTA', 'Disposiciones Generales');
