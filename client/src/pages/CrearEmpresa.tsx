@@ -376,14 +376,14 @@ export default function CrearEmpresa() {
                             <Briefcase className="h-4 w-4" />
                             Actividad {["Secundaria","Terciaria","Cuaternaria"][i]} (CIIU {i+2}) — opcional
                           </FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value || ""}>
+                          <Select onValueChange={(v) => field.onChange(v === "__none__" ? "" : v)} value={field.value || "__none__"}>
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Sin actividad adicional" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent className="max-h-80">
-                              <SelectItem value="">— Sin actividad adicional —</SelectItem>
+                              <SelectItem value="__none__">— Sin actividad adicional —</SelectItem>
                               {Object.entries(CIIU_SECTIONS).map(([section, sectionName]) => (
                                 <div key={section}>
                                   <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted">

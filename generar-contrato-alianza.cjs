@@ -308,7 +308,7 @@ bullet(doc, 'Integralidad', 'Este contrato constituye el acuerdo completo entre 
 bullet(doc, 'Modificaciones', 'Cualquier modificación a este contrato deberá constar por escrito y ser suscrita por los representantes autorizados de ambas partes.');
 bullet(doc, 'Nulidad parcial', 'Si alguna cláusula de este contrato fuere declarada nula o inaplicable, las demás cláusulas permanecerán vigentes en su totalidad.');
 bullet(doc, 'Independencia', 'EL CONSULTOR actúa como contratista independiente. Nada en este contrato crea una relación laboral, sociedad, joint venture o agencia entre las partes.');
-bullet(doc, 'Notificaciones', 'Todas las comunicaciones deberán realizarse por escrito al correo electrónico o dirección postal indicados por las partes al momento de la suscripción, con acuse de recibo.');
+bullet(doc, 'Notificaciones', 'Todas las comunicaciones deberán realizarse por escrito. EL PROVEEDOR recibirá notificaciones al correo electrónico admin@sst-colombia.com. EL CONSULTOR recibirá notificaciones al correo electrónico indicado al momento de la suscripción. Toda comunicación se entenderá recibida dentro de las 24 horas siguientes a su envío, con acuse de recibo.');
 
 // ── FIRMAS ────────────────────────────────────────────────────────────────────
 checkPage(doc, 160);
