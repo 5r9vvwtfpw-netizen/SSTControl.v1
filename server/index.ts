@@ -36,6 +36,7 @@ import { startAccountingRetryJob, processAccountingRetries } from "./jobs/accoun
 import { scheduleWeeklyBackup } from "./jobs/weekly-backup";
 import { startSubscriptionIntegrityCheck } from "./cron/subscription-integrity";
 import { startManualSubscriptionExpiryJob } from "./cron/manual-subscription-expiry";
+import { registerSessionMonitorCron } from "./cron/session-monitor";
 import { getUncachableStripeClient, getStripeSecretKey } from "./stripeClient";
 import { storage } from "./storage";
 import { initializeLicense, requireValidLicense } from "./middleware/license";
@@ -1049,6 +1050,12 @@ app.use((req, res, next) => {
       startManualSubscriptionExpiryJob();
     } catch (error) {
       logger.error({ err: error }, "⚠️ Manual subscription expiry job initialization failed");
+    }
+
+    try {
+      registerSessionMonitorCron();
+    } catch (error) {
+      logger.error({ err: error }, "⚠️ Session monitor cron initialization failed");
     }
   } else {
     logger.info('⏭️ Skipping Stripe verification and cron jobs (Autoscale mode)');

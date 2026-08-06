@@ -160,6 +160,9 @@ export const users = pgTable("users", {
   lastLoginAt: timestamp("last_login_at"),
   loginCount: integer("login_count").default(0),
   lastLoginIp: text("last_login_ip"),
+  // authorized_ips: columna en DB pero fuera de Drizzle para evitar
+  // fallos en queries existentes antes de que corra la migración.
+  // Se accede vía SQL crudo en server/cron/session-monitor.ts
 });
 
 // Tabla de asignación de Licenciados a Empresas (relación muchos a muchos)
@@ -10987,3 +10990,27 @@ export const insertPesvEncuestaConductorSchema = createInsertSchema(pesvEncuesta
   .omit({ id: true, createdAt: true, companyId: true });
 export type InsertPesvEncuestaConductor = z.infer<typeof insertPesvEncuestaConductorSchema>;
 export type PesvEncuestaConductor = typeof pesvEncuestasConductor.$inferSelect;
+
+// ============================================================================
+// MONITOREO DE SESIONES — Registro de accesos para control de aliados
+// Detecta IPs no autorizadas, sesiones largas y uso simultáneo de credenciales
+// ============================================================================
+export const userSessions = pgTable("user_sessions_log", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  sessionId: text("session_id"), // ID de sesión de express-session
+  ipAddress: text("ip_address"),
+  userAgent: text("user_agent"),
+  loginAt: timestamp("login_at").notNull().default(sql`now()`),
+  lastActivityAt: timestamp("last_activity_at").default(sql`now()`),
+  logoutAt: timestamp("logout_at"),
+  durationMinutes: integer("duration_minutes"),
+  isActive: boolean("is_active").notNull().default(true),
+  isSuspicious: boolean("is_suspicious").notNull().default(false),
+  // Tipo de alerta: 'unauthorized_ip' | 'long_session' | 'simultaneous' | null
+  alertType: text("alert_type"),
+  alertNote: text("alert_note"),
+});
+
+export type UserSession = typeof userSessions.$inferSelect;
+export type InsertUserSession = typeof userSessions.$inferInsert;

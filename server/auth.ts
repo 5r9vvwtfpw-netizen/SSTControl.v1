@@ -16,6 +16,86 @@ import { z } from "zod";
 import { loginRateLimiter, passwordResetRateLimiter, registrationRateLimiter } from "./middleware/rate-limit";
 import logger from "./lib/logger";
 
+// ── Monitoreo de sesiones ─────────────────────────────────────────────────────
+const MAX_SESSION_HOURS = 8;
+
+async function recordLoginSession(userId: string, sessionId: string, ip: string, userAgent: string | null) {
+  try {
+    // 1. Cerrar sesiones activas previas del mismo usuario (detectar acceso simultáneo)
+    const activeSessions = await db
+      .select({ id: schema.userSessions.id, ipAddress: schema.userSessions.ipAddress })
+      .from(schema.userSessions)
+      .where(and(eq(schema.userSessions.userId, userId), eq(schema.userSessions.isActive, true)));
+
+    if (activeSessions.length > 0) {
+      // Marcar sesiones previas como cerradas y sospechosas (simultáneas)
+      await db.execute(sql`
+        UPDATE user_sessions_log
+        SET is_active = false,
+            logout_at = now(),
+            duration_minutes = EXTRACT(EPOCH FROM (now() - login_at)) / 60,
+            is_suspicious = true,
+            alert_type = 'simultaneous',
+            alert_note = ${'Nueva sesión detectada desde IP ' + ip + '. Sesión previa cerrada automáticamente.'}
+        WHERE user_id = ${userId} AND is_active = true
+      `);
+      logger.warn({ userId, ip, prevCount: activeSessions.length }, "[SESSION] Sesiones simultáneas detectadas");
+    }
+
+    // 2. Verificar si la IP está autorizada (raw SQL — columna fuera de Drizzle)
+    let authorizedIps: string[] = [];
+    try {
+      const ipResult = await db.execute(
+        sql`SELECT authorized_ips FROM users WHERE id = ${userId} LIMIT 1`
+      );
+      authorizedIps = (ipResult as any).rows?.[0]?.authorized_ips ?? [];
+    } catch {
+      // columna no existe aún (migración pendiente) — omitir check
+    }
+    const ipAuthorized = authorizedIps.length === 0 || authorizedIps.includes(ip);
+
+    // 3. Registrar nueva sesión
+    await db.execute(sql`
+      INSERT INTO user_sessions_log (user_id, session_id, ip_address, user_agent, login_at, last_activity_at, is_active, is_suspicious, alert_type, alert_note)
+      VALUES (
+        ${userId}, ${sessionId}, ${ip}, ${userAgent}, now(), now(), true,
+        ${!ipAuthorized},
+        ${!ipAuthorized ? 'unauthorized_ip' : null},
+        ${!ipAuthorized ? 'Acceso desde IP no registrada: ' + ip : null}
+      )
+    `);
+
+    if (!ipAuthorized) {
+      logger.warn({ userId, ip, authorizedIps }, "[SESSION] Acceso desde IP no autorizada");
+    }
+  } catch (err) {
+    logger.error({ err }, "[SESSION] Error registrando sesión");
+  }
+}
+
+async function closeLoginSession(sessionId: string) {
+  try {
+    await db.execute(sql`
+      UPDATE user_sessions_log
+      SET is_active = false,
+          logout_at = now(),
+          duration_minutes = EXTRACT(EPOCH FROM (now() - login_at)) / 60,
+          is_suspicious = CASE
+            WHEN EXTRACT(EPOCH FROM (now() - login_at)) / 3600 > ${MAX_SESSION_HOURS}
+            THEN true ELSE is_suspicious END,
+          alert_type = CASE
+            WHEN EXTRACT(EPOCH FROM (now() - login_at)) / 3600 > ${MAX_SESSION_HOURS} AND alert_type IS NULL
+            THEN 'long_session' ELSE alert_type END,
+          alert_note = CASE
+            WHEN EXTRACT(EPOCH FROM (now() - login_at)) / 3600 > ${MAX_SESSION_HOURS} AND alert_type IS NULL
+            THEN 'Sesión activa superó las 8 horas continuas' ELSE alert_note END
+      WHERE session_id = ${sessionId} AND is_active = true
+    `);
+  } catch (err) {
+    logger.error({ err }, "[SESSION] Error cerrando sesión");
+  }
+}
+
 const registrationSchema = z.object({
   username: z.string().min(3, "El usuario debe tener al menos 3 caracteres"),
   password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
@@ -386,6 +466,10 @@ export function setupAuth(app: Express) {
                 lastLoginIp: clientIp,
               })
               .where(eq(schema.users.id, user.id));
+
+            // ── Registro de sesión y alertas de seguridad ──────────────────
+            await recordLoginSession(user.id, req.sessionID, clientIp,
+              req.headers['user-agent'] || null);
           } catch (trackErr) {
             logger.error({ err: trackErr }, "Error tracking login");
           }
@@ -454,8 +538,10 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/logout", (req, res, next) => {
-    req.logout((err) => {
+    const sessionId = req.sessionID;
+    req.logout(async (err) => {
       if (err) return next(err);
+      await closeLoginSession(sessionId);
       res.sendStatus(200);
     });
   });

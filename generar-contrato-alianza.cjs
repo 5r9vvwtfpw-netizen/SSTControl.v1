@@ -304,14 +304,29 @@ para(doc, `Las partes acuerdan, conforme al artículo 1592 del Código Civil Col
 para(doc, `El pago de esta cláusula penal no extingue la obligación de reparar el daño adicional que EL PROVEEDOR pueda demostrar, ni la terminación de la alianza, ni el cese de las actividades que la originaron. La parte afectada podrá exigir el cumplimiento de la obligación o la cláusula penal, pero no ambas simultáneamente, salvo que la pena se haya estipulado por el simple retardo.`);
 
 // ── CLÁUSULA DÉCIMA ───────────────────────────────────────────────────────────
-clauseTitle(doc, 'DÉCIMA', 'Evidencia Digital y Prueba Electrónica');
-para(doc, `Las partes aceptan expresamente que los siguientes elementos tendrán pleno valor probatorio en caso de controversia relacionada con el incumplimiento de las obligaciones de esta alianza, conforme a la Ley 527 de 1999 (Comercio Electrónico) y el Código General del Proceso:`);
-bullet(doc, '', 'Los registros de acceso y sesiones en La Plataforma (logs de servidor), con indicación de usuario, fecha, hora e IP.');
-bullet(doc, '', 'Los correos electrónicos y mensajes intercambiados a través de canales digitales, con marcas de tiempo verificables.');
-bullet(doc, '', 'Las capturas de pantalla certificadas mediante firma digital o notaría.');
-bullet(doc, '', 'Los repositorios de código con marcas de tiempo (timestamps) de sistemas de control de versiones.');
-bullet(doc, '', 'Cualquier evidencia digital preservada mediante protocolo forense conforme al estándar ISO/IEC 27037.');
-para(doc, `EL PROVEEDOR podrá retener y conservar los registros de actividad de EL CONSULTOR en La Plataforma por un período mínimo de CINCO (5) AÑOS con fines probatorios, conforme al Decreto 1074 de 2015.`);
+clauseTitle(doc, 'DÉCIMA', 'Evidencia Digital, Monitoreo de Acceso y Registro de Sesiones');
+para(doc, `Con el fin de proteger la propiedad intelectual de EL PROVEEDOR y garantizar el uso adecuado de La Plataforma, las partes acuerdan las siguientes condiciones de acceso y monitoreo, conforme a la Ley 527 de 1999 y el Código General del Proceso:`);
+
+subTitle(doc, '1. Credenciales de Acceso');
+bullet(doc, '', 'EL PROVEEDOR asignará a EL CONSULTOR un máximo de DOS (2) credenciales de acceso nominales e intransferibles a La Plataforma. Dichas credenciales son de uso exclusivo de EL CONSULTOR y no podrán ser compartidas, cedidas ni utilizadas por terceros, desarrolladores, competidores o personas ajenas a la relación de alianza.');
+bullet(doc, '', 'Cada credencial corresponde a un único perfil de usuario. No se autoriza el uso simultáneo de una misma credencial desde múltiples dispositivos o ubicaciones.');
+
+subTitle(doc, '2. Registro y Monitoreo de Direcciones IP');
+bullet(doc, '', 'EL PROVEEDOR registrará automáticamente la dirección IP desde la cual se realiza cada ingreso a La Plataforma, junto con la fecha, hora, dispositivo y duración de la sesión.');
+bullet(doc, '', 'EL CONSULTOR deberá registrar ante EL PROVEEDOR las direcciones IP autorizadas para su acceso (domicilio y lugar de trabajo). El ingreso desde una dirección IP no registrada generará una alerta automática y podrá ser causal de suspensión preventiva de las credenciales.');
+bullet(doc, '', 'Si se detectan ingresos reiterados desde IPs no autorizadas, ubicaciones geográficas inusuales o múltiples sesiones simultáneas con las mismas credenciales, EL PROVEEDOR podrá suspender el acceso de manera inmediata y unilateral, sin perjuicio de las acciones legales a que haya lugar.');
+
+subTitle(doc, '3. Control de Duración de Sesiones');
+bullet(doc, '', 'Dado que el rol de EL CONSULTOR corresponde a la prestación de servicios de consultoría SST, se establece que una sesión activa continua no debería superar OCHO (8) HORAS diarias. Una duración de sesión que exceda dicho límite de forma habitual será registrada como actividad sospechosa y generará una alerta interna para EL PROVEEDOR.');
+bullet(doc, '', 'EL PROVEEDOR se reserva el derecho de cerrar sesiones automáticamente que superen el límite acordado, previo aviso por correo electrónico a EL CONSULTOR.');
+
+subTitle(doc, '4. Valor Probatorio de los Registros');
+para(doc, `Los siguientes elementos tendrán pleno valor probatorio en caso de controversia, conforme a la Ley 527 de 1999 y el Código General del Proceso:`);
+bullet(doc, '', 'Los registros de acceso (logs de servidor) con indicación de usuario, dirección IP, fecha, hora y duración de sesión.');
+bullet(doc, '', 'Las alertas generadas por el sistema ante accesos desde IPs no autorizadas o sesiones simultáneas.');
+bullet(doc, '', 'Los correos electrónicos e intercambios digitales con marcas de tiempo verificables.');
+bullet(doc, '', 'Cualquier evidencia digital preservada conforme al estándar ISO/IEC 27037.');
+para(doc, `EL PROVEEDOR conservará estos registros por un período mínimo de CINCO (5) AÑOS con fines probatorios, conforme al Decreto 1074 de 2015. La existencia de registros de acceso anómalos constituirá indicio grave de incumplimiento de la presente alianza y habilitará el cobro de la cláusula penal establecida en la Cláusula Novena.`);
 
 // ── CLÁUSULA DÉCIMA PRIMERA ──────────────────────────────────────────────────
 clauseTitle(doc, 'DÉCIMA PRIMERA', 'Vigencia y Terminación');
