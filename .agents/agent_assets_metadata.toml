@@ -198,3 +198,10 @@ uri = "file://contrato-alianza.pdf"
 type = "pdf"
 title = "Contrato de Alianza — sin datos de VERTEX"
 description = "Todas las menciones a VERTEX GROUP, NIT y representante legal reemplazadas por JUAN / C.C. 0000."
+
+[[outputs]]
+id = "t3qbMvJ9D3SyidmFKIQYM"
+uri = "file://alianza-sst.pdf"
+type = "pdf"
+title = "Alianza SST — Colombia"
+description = "Documento actualizado: 'contrato' reemplazado por 'alianza' en todo el texto."
