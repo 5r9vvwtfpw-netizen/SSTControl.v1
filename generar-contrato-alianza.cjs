@@ -203,7 +203,7 @@ const today = '15 de agosto de 2026';
 
 para(doc, `Consta por el presente documento el CONTRATO DE PRESTACIÓN DE SERVICIOS Y LICENCIAMIENTO DE SOFTWARE, que se celebra entre las partes identificadas a continuación, sujeto a las siguientes cláusulas. Ciudad y fecha: Medellín, Antioquia, ${today}.`);
 
-para(doc, `Las partes del presente contrato son: (i) SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S., sociedad colombiana identificada con NIT 902.036.337-4, inscrita en la Cámara de Comercio de Medellín para Antioquia, actuando a través de su Representante Legal LUZ ADRIANA DIAZ CALLE, identificada con C.C. No. 52.223.631 (en adelante "EL PROVEEDOR"); y (ii) VERTEX GROUP CORPORATION S.A.S., sociedad colombiana identificada con NIT 902.029.648-0, Matrícula Mercantil No. 83616912, inscrita en la Cámara de Comercio de Medellín para Antioquia, actuando a través de su Representante Legal MARA ALEJANDRA LOPEZ CORDOBA, identificada con C.C. No. 1.003.076.944 (en adelante "EL CONSULTOR").`);
+para(doc, `Las partes del presente contrato son: (i) SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S., sociedad Colombiana identificada con NIT 902.036.337-4, inscrita en la Cámara de Comercio de Medellín para Antioquia, actuando a través de su Representante Legal LUZ ADRIANA DIAZ CALLE, identificada con C.C. No. 52.223.631 (en adelante "EL PROVEEDOR"); y (ii) VERTEX GROUP CORPORATION S.A.S., sociedad Colombiana identificada con NIT 902.029.648-0, Matrícula Mercantil No. 83616912, inscrita en la Cámara de Comercio de Medellín para Antioquia, actuando a través de su Representante Legal MARA ALEJANDRA LOPEZ CORDOBA, identificada con C.C. No. 1.003.076.944 (en adelante "EL CONSULTOR").`);
 
 // ── CLÁUSULA PRIMERA ──────────────────────────────────────────────────────────
 clauseTitle(doc, 'PRIMERA', 'Objeto del Contrato');
@@ -227,7 +227,7 @@ bullet(doc, 'd)', 'Otorgar acceso a La Plataforma a terceros no autorizados expr
 
 // ── CLÁUSULA CUARTA ───────────────────────────────────────────────────────────
 clauseTitle(doc, 'CUARTA', 'Obligaciones de EL CONSULTOR');
-bullet(doc, '', 'Prestar los servicios de consultoría SST con idoneidad, diligencia y conforme a la normativa colombiana vigente.');
+bullet(doc, '', 'Prestar los servicios de consultoría SST con idoneidad, diligencia y conforme a la normativa Colombiana vigente.');
 bullet(doc, '', 'Mantener la Información Confidencial en reserva estricta durante la vigencia del contrato y por cinco (5) años adicionales contados desde su terminación.');
 bullet(doc, '', 'Informar a EL PROVEEDOR de cualquier solicitud de terceros sobre Información Confidencial dentro de las 24 horas siguientes.');
 bullet(doc, '', 'No subcontratar ni delegar las obligaciones derivadas de este contrato sin autorización escrita previa de EL PROVEEDOR.');
@@ -243,7 +243,7 @@ addPageHeader(doc);
 
 // ── CLÁUSULA SEXTA ────────────────────────────────────────────────────────────
 clauseTitle(doc, 'SEXTA', 'No Competencia');
-para(doc, `EL CONSULTOR se obliga a no participar, desarrollar, financiar, asesorar, ni prestar servicios directamente a plataformas tecnológicas de gestión SST que compitan directa o indirectamente con La Plataforma de EL PROVEEDOR, durante la vigencia de este contrato y por un período de CUATRO (4) AÑOS contados desde la fecha de su terminación, en el territorio colombiano.`);
+para(doc, `EL CONSULTOR se obliga a no participar, desarrollar, financiar, asesorar, ni prestar servicios directamente a plataformas tecnológicas de gestión SST que compitan directa o indirectamente con La Plataforma de EL PROVEEDOR, durante la vigencia de este contrato y por un período de CUATRO (4) AÑOS contados desde la fecha de su terminación, en el territorio Colombiano.`);
 para(doc, `Para efectos de esta cláusula, se entiende como competidora toda plataforma, software, aplicación o sistema que tenga por objeto la gestión automatizada de Sistemas de Gestión de Seguridad y Salud en el Trabajo (SG-SST), conforme a la Resolución 0312/2019 del Ministerio de Trabajo, o normas que la modifiquen o sustituyan.`);
 para(doc, `Esta obligación de no competencia es razonable en su alcance territorial y temporal conforme al artículo 333 de la Constitución Política de Colombia y la jurisprudencia de la Corte Suprema de Justicia sobre libertad de empresa y competencia leal.`);
 
@@ -265,7 +265,7 @@ para(doc, `Igualmente, EL CONSULTOR se abstiene de solicitar, inducir o contrata
 
 // ── CLÁUSULA NOVENA ───────────────────────────────────────────────────────────
 clauseTitle(doc, 'NOVENA', 'Cláusula Penal');
-para(doc, `Las partes acuerdan, conforme al artículo 1592 del Código Civil colombiano, una CLÁUSULA PENAL como estimación anticipada y definitiva de los perjuicios derivados del incumplimiento de las obligaciones de confidencialidad (Cláusula Séptima), no competencia (Cláusula Sexta), no solicitud (Cláusula Octava) o propiedad intelectual (Cláusula Quinta), por un valor equivalente a CIEN MILLONES DE PESOS ($100.000.000) MONEDA CORRIENTE.`);
+para(doc, `Las partes acuerdan, conforme al artículo 1592 del Código Civil Colombiano, una CLÁUSULA PENAL como estimación anticipada y definitiva de los perjuicios derivados del incumplimiento de las obligaciones de confidencialidad (Cláusula Séptima), no competencia (Cláusula Sexta), no solicitud (Cláusula Octava) o propiedad intelectual (Cláusula Quinta), por un valor equivalente a CIEN MILLONES DE PESOS ($100.000.000) MONEDA CORRIENTE.`);
 para(doc, `El pago de esta cláusula penal no extingue la obligación de reparar el daño adicional que EL PROVEEDOR pueda demostrar, ni la terminación del contrato, ni el cese de las actividades que la originaron. La parte afectada podrá exigir el cumplimiento de la obligación o la cláusula penal, pero no ambas simultáneamente, salvo que la pena se haya estipulado por el simple retardo.`);
 
 doc.addPage();
