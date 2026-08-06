@@ -119,9 +119,10 @@ function signatureBlock(doc) {
       doc.text('C.C. 52.223.631', x, y + 68, { width: col - 20, align: 'center' });
       doc.text('Representante Legal — NIT 902.036.337-4', x, y + 78, { width: col - 20, align: 'center' });
     } else {
-      doc.text('MARA ALEJANDRA LOPEZ CORDOBA', x, y + 58, { width: col - 20, align: 'center' });
-      doc.text('C.C. 1.003.076.944  —  NIT 902.029.648-0', x, y + 68, { width: col - 20, align: 'center' });
-      doc.text('Representante Legal — VERTEX GROUP CORPORATION S.A.S.', x, y + 78, { width: col - 20, align: 'center' });
+      doc.text('VERTEX GROUP CORPORATION S.A.S.', x, y + 52, { width: col - 20, align: 'center' });
+      doc.text('NIT 902.029.648-0', x, y + 63, { width: col - 20, align: 'center' });
+      doc.text('Representante Legal:', x, y + 74, { width: col - 20, align: 'center' });
+      doc.text('_____________________________', x, y + 83, { width: col - 20, align: 'center' });
     }
   });
 
@@ -202,7 +203,7 @@ const today = '15 de agosto de 2026';
 
 para(doc, `Consta por el presente documento el CONTRATO DE PRESTACIÓN DE SERVICIOS Y LICENCIAMIENTO DE SOFTWARE, que se celebra entre las partes identificadas a continuación, sujeto a las siguientes cláusulas. Ciudad y fecha: Medellín, Antioquia, ${today}.`);
 
-para(doc, `Las partes del presente contrato son: (i) SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S., sociedad colombiana identificada con NIT 902.036.337-4, inscrita en la Cámara de Comercio de Medellín para Antioquia, actuando a través de su Representante Legal LUZ ADRIANA DIAZ CALLE, identificada con C.C. No. 52.223.631 (en adelante "EL PROVEEDOR"); y (ii) VERTEX GROUP CORPORATION S.A.S., sociedad colombiana identificada con NIT 902.029.648-0, Matrícula Mercantil No. 83616912, inscrita en la Cámara de Comercio de Medellín para Antioquia, actuando a través de su Representante Legal MARA ALEJANDRA LOPEZ CORDOBA, identificada con C.C. No. 1.003.076.944 (en adelante "EL CONSULTOR").`);
+para(doc, `Las partes del presente contrato son: (i) SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S., sociedad colombiana identificada con NIT 902.036.337-4, inscrita en la Cámara de Comercio de Medellín para Antioquia, actuando a través de su Representante Legal LUZ ADRIANA DIAZ CALLE, identificada con C.C. No. 52.223.631 (en adelante "EL PROVEEDOR"); y (ii) VERTEX GROUP CORPORATION S.A.S., sociedad colombiana identificada con NIT 902.029.648-0, Matrícula Mercantil No. 83616912, inscrita en la Cámara de Comercio de Medellín para Antioquia, actuando a través de su Representante Legal (en adelante "EL CONSULTOR").`);
 
 // ── CLÁUSULA PRIMERA ──────────────────────────────────────────────────────────
 clauseTitle(doc, 'PRIMERA', 'Objeto del Contrato');
