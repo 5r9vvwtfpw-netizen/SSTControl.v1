@@ -54,7 +54,7 @@ function addPageFooter(doc, pageNum) {
   doc.save();
   doc.rect(MARGIN, ph - MARGIN - 12, pw - MARGIN * 2, 0.5).fill(C.GRAY_SOFT);
   doc.fontSize(7).font('Helvetica').fillColor(C.GRAY_SOFT)
-     .text(`Página ${pageNum}  |  BORRADOR PARA REVISIÓN LEGAL  |  © ${new Date().getFullYear()} SST Colombia`,
+     .text(`Página ${pageNum}  |  DOCUMENTO CONFIDENCIAL  |  © ${new Date().getFullYear()} SST Colombia`,
            MARGIN, ph - MARGIN, { width: pw - MARGIN * 2, align: 'center' });
   doc.restore();
 }
@@ -186,8 +186,6 @@ doc.font('Helvetica-Bold').text('VERTEX GROUP CORPORATION S.A.S.', { width: pw -
 doc.font('Helvetica').text('NIT 902.029.648-0  •  EL CONSULTOR', { width: pw - MARGIN * 2, align: 'center' });
 
 doc.moveDown(3);
-doc.fontSize(9).fillColor(C.GOLD)
-   .text('⚠ BORRADOR — Requiere revisión por abogado especializado en Propiedad Intelectual', { width: pw - MARGIN * 2, align: 'center' });
 doc.fillColor(C.WHITE).fontSize(8)
    .text(`Generado: ${new Date().toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' })}`, { width: pw - MARGIN * 2, align: 'center' });
 doc.text('Registro DNDA: 13-197-177  •  Ley 23 de 1982  •  Decisión Andina 351', { width: pw - MARGIN * 2, align: 'center' });
@@ -268,7 +266,6 @@ para(doc, `Igualmente, EL CONSULTOR se abstiene de solicitar, inducir o contrata
 clauseTitle(doc, 'NOVENA', 'Cláusula Penal');
 para(doc, `Las partes acuerdan, conforme al artículo 1592 del Código Civil colombiano, una CLÁUSULA PENAL como estimación anticipada y definitiva de los perjuicios derivados del incumplimiento de las obligaciones de confidencialidad (Cláusula Séptima), no competencia (Cláusula Sexta), no solicitud (Cláusula Octava) o propiedad intelectual (Cláusula Quinta), por un valor equivalente a CIEN MILLONES DE PESOS ($100.000.000) MONEDA CORRIENTE.`);
 para(doc, `El pago de esta cláusula penal no extingue la obligación de reparar el daño adicional que EL PROVEEDOR pueda demostrar, ni la terminación del contrato, ni el cese de las actividades que la originaron. La parte afectada podrá exigir el cumplimiento de la obligación o la cláusula penal, pero no ambas simultáneamente, salvo que la pena se haya estipulado por el simple retardo.`);
-para(doc, `[NOTA PARA ABOGADO: Ajuste el valor según evaluación de riesgo comercial y verifique que sea proporcional con la jurisprudencia vigente de la Corte Suprema de Justicia.]`, { italic: true });
 
 doc.addPage();
 addPageHeader(doc);
@@ -299,7 +296,6 @@ para(doc, `Toda controversia, diferencia, conflicto o reclamo que surja entre la
 bullet(doc, '1. Arreglo Directo', 'Las partes intentarán resolver el conflicto de manera amigable mediante negociación directa dentro de un término máximo e improrrogable de QUINCE (15) días hábiles contados desde la notificación escrita del conflicto.');
 bullet(doc, '2. Conciliación', 'Si transcurridos los quince (15) días hábiles no se ha llegado a un acuerdo, las partes acudirán a conciliación ante un Centro de Conciliación debidamente acreditado con sede en la ciudad de Medellín, Departamento de Antioquia, de conformidad con la Ley 640 de 2001. El término para la conciliación no podrá exceder de TREINTA (30) días hábiles.');
 bullet(doc, '3. Jurisdicción Ordinaria', 'En caso de que la conciliación fracase, las partes se someten expresamente a la jurisdicción y competencia de los Jueces Civiles del Circuito de la ciudad de Medellín, Departamento de Antioquia, República de Colombia, renunciando a cualquier otro fuero que por razón de su domicilio o de la naturaleza del asunto pudiera corresponderles.');
-para(doc, `[NOTA PARA ABOGADO: Evalúe si conviene incluir cláusula arbitral ante el Centro de Arbitraje y Conciliación de la Cámara de Comercio de Medellín, que puede ser más eficiente para asuntos de propiedad intelectual de alto valor.]`, { italic: true });
 
 // ── CLÁUSULA DÉCIMA TERCERA ──────────────────────────────────────────────────
 clauseTitle(doc, 'DÉCIMA TERCERA', 'Ley Aplicable');
