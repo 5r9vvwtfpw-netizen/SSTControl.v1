@@ -191,3 +191,10 @@ id = "8uM_XbF6eis6x9HhSwLT_"
 uri = "file://docs/cloud-books-issue-nit-9020363374.md"
 type = "text"
 title = "Reporte para Cloud Books - NIT 9020363374"
+
+[[outputs]]
+id = "hX5xWRFacP6Vcqxnl2Qlo"
+uri = "file://contrato-alianza.pdf"
+type = "pdf"
+title = "Contrato de Alianza y Licenciamiento de Software"
+description = "Borrador completo con 14 cláusulas: propiedad intelectual, no competencia, confidencialidad, cláusula penal, evidencia digital y más. Revíselo con un abogado antes de firmar."
