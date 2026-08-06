@@ -104,31 +104,64 @@ function subTitle(doc, text) {
 }
 
 function signatureBlock(doc) {
-  const pw = doc.page.width;
-  const y  = doc.y + 20;
+  checkPage(doc, 160);
+  const pw  = doc.page.width;
   const col = (pw - MARGIN * 2) / 2;
+  const y   = doc.y + 20;
+  const lh  = 14; // line height px
+  const w   = col - 30;
 
-  ['EL PROVEEDOR', 'EL CONSULTOR / ALIADO'].forEach((label, i) => {
-    const x = MARGIN + i * col;
-    doc.rect(x, y + 40, col - 20, 0.5).fill(C.BLACK);
-    doc.fontSize(9).font('Helvetica-Bold').fillColor(C.BLACK)
-       .text(label, x, y + 46, { width: col - 20, align: 'center' });
-    doc.fontSize(8).font('Helvetica').fillColor(C.GRAY_SOFT);
-    if (i === 0) {
-      doc.text('LUZ ADRIANA DIAZ CALLE', x, y + 58, { width: col - 20, align: 'center' });
-      doc.text('C.C. 52.223.631', x, y + 68, { width: col - 20, align: 'center' });
-      doc.text('Representante Legal — NIT 902.036.337-4', x, y + 78, { width: col - 20, align: 'center' });
-    } else {
-      doc.text('MARA ALEJANDRA LOPEZ CORDOBA', x, y + 52, { width: col - 20, align: 'center' });
-      doc.text('C.C. 1.003.076.944  —  NIT 902.029.648-0', x, y + 63, { width: col - 20, align: 'center' });
-      doc.text('Representante Legal', x, y + 74, { width: col - 20, align: 'center' });
-      doc.text('VERTEX GROUP CORPORATION S.A.S.', x, y + 83, { width: col - 20, align: 'center' });
-    }
-  });
+  // Barra verde superior "FIRMAS"
+  doc.rect(MARGIN, y, pw - MARGIN * 2, 20).fill(C.GREEN);
+  doc.fontSize(9).font('Helvetica-Bold').fillColor(C.WHITE)
+     .text('FIRMAS', MARGIN, y + 5, { width: pw - MARGIN * 2, align: 'center' });
 
-  doc.rect(MARGIN, y, pw - MARGIN * 2, 0.5).fill(C.GREEN);
-  doc.fontSize(8.5).font('Helvetica-Bold').fillColor(C.GREEN)
-     .text('FIRMAS', MARGIN, y + 6, { width: pw - MARGIN * 2, align: 'center' });
+  // Líneas de firma (donde firman físicamente)
+  const sigLineY = y + 70;
+  doc.rect(MARGIN + 10,       sigLineY, w, 0.5).fill(C.BLACK);
+  doc.rect(MARGIN + col + 10, sigLineY, w, 0.5).fill(C.BLACK);
+
+  // ── EL PROVEEDOR ──
+  const px = MARGIN + 10;
+  let py = sigLineY + 8;
+  doc.fontSize(9).font('Helvetica-Bold').fillColor(C.BLACK)
+     .text('EL PROVEEDOR', px, py, { width: w, align: 'center' });
+  py += lh + 2;
+  doc.fontSize(8).font('Helvetica-Bold').fillColor(C.BLACK)
+     .text('LUZ ADRIANA DIAZ CALLE', px, py, { width: w, align: 'center' });
+  py += lh;
+  doc.fontSize(8).font('Helvetica').fillColor(C.GRAY_SOFT)
+     .text('C.C. 52.223.631', px, py, { width: w, align: 'center' });
+  py += lh;
+  doc.text('Representante Legal', px, py, { width: w, align: 'center' });
+  py += lh;
+  doc.font('Helvetica-Bold').fillColor(C.BLACK)
+     .text('SISTEMA AUTOMATIZADO DE', px, py, { width: w, align: 'center' });
+  py += lh;
+  doc.text('GESTIÓN INTEGRAL S.A.S.', px, py, { width: w, align: 'center' });
+  py += lh;
+  doc.fontSize(7).font('Helvetica').fillColor(C.GRAY_SOFT)
+     .text('NIT 902.036.337-4', px, py, { width: w, align: 'center' });
+
+  // ── EL CONSULTOR ──
+  const cx = MARGIN + col + 10;
+  let cy = sigLineY + 8;
+  doc.fontSize(9).font('Helvetica-Bold').fillColor(C.BLACK)
+     .text('EL CONSULTOR / ALIADO', cx, cy, { width: w, align: 'center' });
+  cy += lh + 2;
+  doc.fontSize(8).font('Helvetica-Bold').fillColor(C.BLACK)
+     .text('MARA ALEJANDRA LOPEZ CORDOBA', cx, cy, { width: w, align: 'center' });
+  cy += lh;
+  doc.fontSize(8).font('Helvetica').fillColor(C.GRAY_SOFT)
+     .text('C.C. 1.003.076.944', cx, cy, { width: w, align: 'center' });
+  cy += lh;
+  doc.text('Representante Legal', cx, cy, { width: w, align: 'center' });
+  cy += lh;
+  doc.font('Helvetica-Bold').fillColor(C.BLACK)
+     .text('VERTEX GROUP CORPORATION S.A.S.', cx, cy, { width: w, align: 'center' });
+  cy += lh;
+  doc.fontSize(7).font('Helvetica').fillColor(C.GRAY_SOFT)
+     .text('NIT 902.029.648-0', cx, cy, { width: w, align: 'center' });
 }
 
 // ── GENERACIÓN DEL DOCUMENTO ──────────────────────────────────────────────────
