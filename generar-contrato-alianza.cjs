@@ -218,7 +218,7 @@ bullet(doc, 'Obra Derivada', 'Cualquier software, sistema, herramienta o product
 
 // ── CLÁUSULA TERCERA ──────────────────────────────────────────────────────────
 clauseTitle(doc, 'TERCERA', 'Licenciamiento de la Plataforma');
-para(doc, `En virtud del presente contrato, EL PROVEEDOR otorga a EL CONSULTOR una licencia de uso limitada, personal, revocable, no exclusiva y no transferible de La Plataforma, exclusivamente para prestar los servicios de consultoría SST a los clientes asignados por EL PROVEEDOR durante la vigencia de este contrato. Esta licencia no confiere ningún derecho de propiedad sobre La Plataforma ni sobre la Lógica de Negocio.`);
+para(doc, `En virtud del presente contrato, EL PROVEEDOR otorga a EL CONSULTOR una licencia de uso limitada, personal, revocable, no exclusiva y no transferible de La Plataforma, exclusivamente para prestar los servicios de consultoría SST a los clientes que EL CONSULTOR vincule a La Plataforma en el marco de esta alianza, durante la vigencia de este contrato. Esta licencia no confiere ningún derecho de propiedad sobre La Plataforma ni sobre la Lógica de Negocio.`);
 subTitle(doc, 'Está estrictamente prohibido a EL CONSULTOR:');
 bullet(doc, 'a)', 'Descompilar, realizar ingeniería inversa, desensamblar, extraer el código fuente, o intentar derivar la Lógica de Negocio o la estructura técnica de La Plataforma por cualquier medio.');
 bullet(doc, 'b)', 'Plagiar, reproducir, copiar, distribuir, comercializar, alquilar o imitar total o parcialmente la estructura, funcionalidades, Lógica de Negocio o interfaz gráfica de La Plataforma.');
