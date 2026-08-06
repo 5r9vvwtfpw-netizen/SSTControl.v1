@@ -231,9 +231,6 @@ doc.text('Registro DNDA: 13-197-177  •  Ley 23 de 1982  •  Decisión Andina 
 // PÁGINAS DE CONTENIDO
 // ════════════════════════════════════════════════════════════════════════════════
 
-doc.addPage();
-addPageHeader(doc);
-
 // ── Encabezado de sección ──────────────────────────────────────────────────────
 const today = '15 de agosto de 2026';
 
@@ -274,9 +271,6 @@ clauseTitle(doc, 'QUINTA', 'Propiedad Intelectual, Derechos de Autor y Protecci�
 para(doc, `Toda La Plataforma, su código fuente, código objeto, arquitectura de software, estructuras de datos, interfaces de usuario, documentación técnica, marcas, logos, desarrollos, actualizaciones y mejoras asociadas, así como la Lógica de Negocio descrita en la Cláusula Segunda, son propiedad exclusiva e inalienable de EL PROVEEDOR, encontrándose plenamente protegidos bajo el régimen de Derechos de Autor (Ley 23 de 1982 y Ley 1915 de 2018, Decisión Andina 351 de la Comunidad Andina) y Propiedad Industrial. Registro DNDA: 13-197-177.`);
 para(doc, `La violación de cualquiera de las prohibiciones establecidas en la Cláusula Tercera dará lugar a: (i) la terminación inmediata del contrato por justa causa; (ii) el cobro de la cláusula penal establecida en la Cláusula Novena; y (iii) la obligación de indemnizar la totalidad de los daños y perjuicios materiales y morales causados, sin que el pago de la cláusula penal extinga dicha obligación.`);
 
-doc.addPage();
-addPageHeader(doc);
-
 // ── CLÁUSULA SEXTA ────────────────────────────────────────────────────────────
 clauseTitle(doc, 'SEXTA', 'No Competencia');
 para(doc, `EL CONSULTOR se obliga a no participar, desarrollar, financiar, asesorar, ni prestar servicios directamente a plataformas tecnológicas de gestión SST que compitan directa o indirectamente con La Plataforma de EL PROVEEDOR, durante la vigencia de este contrato y por un período de CUATRO (4) AÑOS contados desde la fecha de su terminación, en el territorio Colombiano.`);
@@ -303,9 +297,6 @@ para(doc, `Igualmente, EL CONSULTOR se abstiene de solicitar, inducir o contrata
 clauseTitle(doc, 'NOVENA', 'Cláusula Penal');
 para(doc, `Las partes acuerdan, conforme al artículo 1592 del Código Civil Colombiano, una CLÁUSULA PENAL como estimación anticipada y definitiva de los perjuicios derivados del incumplimiento de las obligaciones de confidencialidad (Cláusula Séptima), no competencia (Cláusula Sexta), no solicitud (Cláusula Octava) o propiedad intelectual (Cláusula Quinta), por un valor equivalente a CIEN MILLONES DE PESOS ($100.000.000) MONEDA CORRIENTE.`);
 para(doc, `El pago de esta cláusula penal no extingue la obligación de reparar el daño adicional que EL PROVEEDOR pueda demostrar, ni la terminación del contrato, ni el cese de las actividades que la originaron. La parte afectada podrá exigir el cumplimiento de la obligación o la cláusula penal, pero no ambas simultáneamente, salvo que la pena se haya estipulado por el simple retardo.`);
-
-doc.addPage();
-addPageHeader(doc);
 
 // ── CLÁUSULA DÉCIMA ───────────────────────────────────────────────────────────
 clauseTitle(doc, 'DÉCIMA', 'Evidencia Digital y Prueba Electrónica');
