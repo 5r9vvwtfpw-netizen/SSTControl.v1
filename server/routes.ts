@@ -38,6 +38,7 @@ import { registerAdminPortalsRoutes } from "./routes/admin-portals";
 import { registerNgoWebhookRoutes } from "./routes/ngo-webhook";
 import { registerCompanySedesRoutes } from "./routes/company-sedes";
 import { registerPropuestaComercialRoutes } from "./routes/propuesta-comercial";
+import { registerAlianzaConsultoresRoutes } from "./routes/alianza-consultores";
 import lsoDirectoryJwtRoutes from "./routes/lso-directory-jwt";
 import { legalDocsPdfService } from "./services/legal-docs-pdf";
 import { verifyQuote, getQuoteSummary, type NormalizedQuoteData } from "../plugins/landing-page-integration";
@@ -49671,6 +49672,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   registerNgoWebhookRoutes(app);
   registerCompanySedesRoutes(app);
   registerPropuestaComercialRoutes(app);
+  registerAlianzaConsultoresRoutes(app);
 
 // DEPRECATED:   // LSO Directory External API routes
 // DEPRECATED:   registerLsoDirectoryExternalRoutes(app);

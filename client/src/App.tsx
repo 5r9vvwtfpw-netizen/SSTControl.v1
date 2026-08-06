@@ -181,6 +181,7 @@ import AvisoPrivacidad from "@/pages/AvisoPrivacidad";
 import PoliticaCookies from "@/pages/PoliticaCookies";
 import ContratoSaaS from "@/pages/ContratoSaaS";
 import DocumentosLegalesPdf from "@/pages/DocumentosLegalesPdf";
+import AlianzaConsultoresSST from "@/pages/AlianzaConsultoresSST";
 import RegistroAccesosProveedor from "@/pages/RegistroAccesosProveedor";
 import CrearEmpresa from "@/pages/CrearEmpresa";
 import CrearEmpresaCiiuFirst from "@/pages/CrearEmpresaCiiuFirst";
@@ -427,6 +428,7 @@ function Router() {
       <Route path="/aviso-privacidad" component={AvisoPrivacidad} />
       <Route path="/politica-cookies" component={PoliticaCookies} />
       <Route path="/contrato-saas" component={ContratoSaaS} />
+      <ProtectedRoute path="/alianza-consultores-sst" component={AlianzaConsultoresSST} />
       <ProtectedRoute path="/documentos-legales" component={DocumentosLegalesPdf} />
       <Route path="/demo" component={DemoLanding} />
       <Route path="/demo/verify" component={DemoVerify} />

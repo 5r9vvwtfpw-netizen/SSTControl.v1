@@ -81,6 +81,7 @@ const phvaMenus: Record<PHVASection, MenuGroup[]> = {
         { label: "Gestión de Tickets (Admin)", path: "/admin-tickets" },
         { label: "Usuarios de Soporte", path: "/admin-usuarios-soporte" },
         { label: "Profesionales Licenciados", path: "/profesionales-licenciados" },
+        { label: "Alianza Consultores SST", path: "/alianza-consultores-sst" },
         { label: "Documentos Legales", path: "/documentos-legales" },
         { label: "Videos de Ayuda", path: "/admin-videos-ayuda" },
       ],
