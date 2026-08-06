@@ -235,7 +235,7 @@ bullet(doc, '', 'Cumplir con la normativa de protección de datos personales (Le
 
 // ── CLÁUSULA QUINTA ───────────────────────────────────────────────────────────
 clauseTitle(doc, 'QUINTA', 'Propiedad Intelectual, Derechos de Autor y Protección Anti-Plagio');
-para(doc, `Toda La Plataforma, su código fuente, código objeto, arquitectura de software, estructuras de datos, interfaces de usuario, documentación técnica, marcas, logos, desarrollos, actualizaciones y mejoras asociadas, así como la Lógica de Negocio descrita en la Cláusula Segunda, son propiedad exclusiva e inalienable de EL PROVEEDOR, encontrándose plenamente protegidos bajo el régimen de Derechos de Autor (Ley 23 de 1982, Decisión Andina 351 de la Comunidad Andina) y Propiedad Industrial. Registro DNDA: 13-197-177.`);
+para(doc, `Toda La Plataforma, su código fuente, código objeto, arquitectura de software, estructuras de datos, interfaces de usuario, documentación técnica, marcas, logos, desarrollos, actualizaciones y mejoras asociadas, así como la Lógica de Negocio descrita en la Cláusula Segunda, son propiedad exclusiva e inalienable de EL PROVEEDOR, encontrándose plenamente protegidos bajo el régimen de Derechos de Autor (Ley 23 de 1982 y Ley 1915 de 2018, Decisión Andina 351 de la Comunidad Andina) y Propiedad Industrial. Registro DNDA: 13-197-177.`);
 para(doc, `La violación de cualquiera de las prohibiciones establecidas en la Cláusula Tercera dará lugar a: (i) la terminación inmediata del contrato por justa causa; (ii) el cobro de la cláusula penal establecida en la Cláusula Novena; y (iii) la obligación de indemnizar la totalidad de los daños y perjuicios materiales y morales causados, sin que el pago de la cláusula penal extinga dicha obligación.`);
 
 doc.addPage();
@@ -300,7 +300,7 @@ bullet(doc, '3. Jurisdicción Ordinaria', 'En caso de que la conciliación fraca
 
 // ── CLÁUSULA DÉCIMA TERCERA ──────────────────────────────────────────────────
 clauseTitle(doc, 'DÉCIMA TERCERA', 'Ley Aplicable');
-para(doc, `El presente contrato se regirá e interpretará conforme a las leyes de Colombia, en particular: el Código de Comercio, el Código Civil, la Ley 23 de 1982 (Derechos de Autor), la Decisión Andina 351 de la Comunidad Andina, la Ley 1581 de 2012 (Protección de Datos Personales), la Ley 527 de 1999 (Comercio Electrónico), y las disposiciones de Propiedad Industrial contenidas en la Decisión Andina 486.`);
+para(doc, `El presente contrato se regirá e interpretará conforme a las leyes de Colombia, en particular: el Código de Comercio, el Código Civil, la Ley 23 de 1982 y sus modificaciones, en especial la Ley 1915 de 2018 (Derechos de Autor), la Decisión Andina 351 de la Comunidad Andina, la Ley 1581 de 2012 (Protección de Datos Personales), la Ley 527 de 1999 (Comercio Electrónico), y las disposiciones de Propiedad Industrial contenidas en la Decisión Andina 486.`);
 
 // ── CLÁUSULA DÉCIMA CUARTA ───────────────────────────────────────────────────
 clauseTitle(doc, 'DÉCIMA CUARTA', 'Disposiciones Generales');
