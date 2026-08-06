@@ -29,41 +29,46 @@ const OUTPUT = path.join(__dirname, 'contrato-alianza.pdf');
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
+const CONTENT_TOP = MARGIN + 40;
+const YEAR = new Date().getFullYear();
+
+function stampFooter(doc, num) {
+  // Dibuja el pie sin mover doc.y — guarda y restaura manualmente
+  const savedY = doc.y;
+  const pw = doc.page.width;
+  const ph = doc.page.height;
+  doc.moveTo(MARGIN, ph - MARGIN - 14)
+     .lineTo(pw - MARGIN, ph - MARGIN - 14)
+     .strokeColor(C.GRAY_SOFT).lineWidth(0.5).stroke();
+  doc.fillColor(C.GRAY_SOFT).fontSize(7).font('Helvetica')
+     .text(`Página ${num}  |  DOCUMENTO CONFIDENCIAL  |  © ${YEAR} SST Colombia`,
+           MARGIN, ph - MARGIN - 9,
+           { width: pw - MARGIN * 2, align: 'center', lineBreak: false });
+  doc.y = savedY; // restaurar posición del cursor
+}
+
+function stampHeader(doc) {
+  pageNum++;
+  const pw = doc.page.width;
+  doc.rect(MARGIN, MARGIN, pw - MARGIN * 2, 3).fill(C.GREEN);
+  doc.fillColor(C.GRAY_SOFT).fontSize(7).font('Helvetica')
+     .text('SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S.  |  NIT 902.036.337-4  |  CONFIDENCIAL',
+           MARGIN, MARGIN + 8,
+           { width: pw - MARGIN * 2, align: 'center', lineBreak: false });
+  doc.moveTo(MARGIN, MARGIN + 22)
+     .lineTo(pw - MARGIN, MARGIN + 22)
+     .strokeColor(C.GRAY_SOFT).lineWidth(0.5).stroke();
+  stampFooter(doc, pageNum); // pie de página (sin mover cursor)
+  doc.y = CONTENT_TOP;       // cursor siempre arranca aquí
+}
+
 function checkPage(doc, needed = 60) {
-  if (doc.y + needed > doc.page.height - MARGIN - 40) {
+  if (doc.y + needed > doc.page.height - MARGIN - 30) {
     doc.addPage();
-    addPageHeader(doc);
+    stampHeader(doc);
     return true;
   }
   return false;
-}
-
-function addPageHeader(doc) {
-  pageNum++;
-  const pw = doc.page.width;
-  // Cabecera — posición absoluta, no afecta doc.y
-  doc.save();
-  doc.rect(MARGIN, MARGIN, pw - MARGIN * 2, 3).fill(C.GREEN);
-  doc.fontSize(7).font('Helvetica').fillColor(C.GRAY_SOFT)
-     .text('SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S.  |  NIT 902.036.337-4  |  CONFIDENCIAL',
-           MARGIN, MARGIN + 8, { width: pw - MARGIN * 2, align: 'center', lineBreak: false });
-  doc.rect(MARGIN, MARGIN + 20, pw - MARGIN * 2, 0.5).fill(C.GRAY_SOFT);
-  // Pie de página — posición absoluta
-  addPageFooter(doc, pageNum);
-  doc.restore();
-  // Posicionar cursor justo debajo del encabezado
-  doc.y = MARGIN + 38;
-}
-
-function addPageFooter(doc, num) {
-  const pw = doc.page.width;
-  const ph = doc.page.height;
-  doc.save();
-  doc.rect(MARGIN, ph - MARGIN - 12, pw - MARGIN * 2, 0.5).fill(C.GRAY_SOFT);
-  doc.fontSize(7).font('Helvetica').fillColor(C.GRAY_SOFT)
-     .text(`Página ${num}  |  DOCUMENTO CONFIDENCIAL  |  © ${new Date().getFullYear()} SST Colombia`,
-           MARGIN, ph - MARGIN, { width: pw - MARGIN * 2, align: 'center' });
-  doc.restore();
 }
 
 function clauseTitle(doc, num, title) {
@@ -237,7 +242,7 @@ doc.text('Registro DNDA: 13-197-177  •  Ley 23 de 1982  •  Decisión Andina 
 // ════════════════════════════════════════════════════════════════════════════════
 
 doc.addPage();
-addPageHeader(doc);
+stampHeader(doc);
 
 // ── Encabezado de sección ──────────────────────────────────────────────────────
 const today = '15 de agosto de 2026';
