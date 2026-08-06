@@ -221,8 +221,8 @@ doc.font('Helvetica').text('NIT 902.036.337-4  •  EL PROVEEDOR', { width: pw -
 doc.moveDown(0.5);
 doc.text('Y', { width: pw - MARGIN * 2, align: 'center' });
 doc.moveDown(0.5);
-doc.font('Helvetica-Bold').text('VERTEX GROUP CORPORATION S.A.S.', { width: pw - MARGIN * 2, align: 'center' });
-doc.font('Helvetica').text('NIT 902.029.648-0  •  EL CONSULTOR', { width: pw - MARGIN * 2, align: 'center' });
+doc.font('Helvetica-Bold').text('JUAN', { width: pw - MARGIN * 2, align: 'center' });
+doc.font('Helvetica').text('C.C. 0000  •  EL CONSULTOR', { width: pw - MARGIN * 2, align: 'center' });
 
 doc.moveDown(3);
 doc.fillColor(C.WHITE).fontSize(8)
