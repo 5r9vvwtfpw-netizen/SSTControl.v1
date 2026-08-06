@@ -39,22 +39,24 @@ function checkPage(doc, needed = 60) {
 }
 
 function addPageHeader(doc) {
+  pageNum++;
   const pw = doc.page.width;
   doc.rect(MARGIN, MARGIN, pw - MARGIN * 2, 3).fill(C.GREEN);
   doc.fontSize(7).font('Helvetica').fillColor(C.GRAY_SOFT)
      .text('SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S.  |  NIT 902.036.337-4  |  CONFIDENCIAL',
            MARGIN, MARGIN + 8, { width: pw - MARGIN * 2, align: 'center' });
   doc.rect(MARGIN, MARGIN + 20, pw - MARGIN * 2, 0.5).fill(C.GRAY_SOFT);
+  addPageFooter(doc, pageNum);
   doc.moveDown(3.5);
 }
 
-function addPageFooter(doc, pageNum) {
+function addPageFooter(doc, num) {
   const pw = doc.page.width;
   const ph = doc.page.height;
   doc.save();
   doc.rect(MARGIN, ph - MARGIN - 12, pw - MARGIN * 2, 0.5).fill(C.GRAY_SOFT);
   doc.fontSize(7).font('Helvetica').fillColor(C.GRAY_SOFT)
-     .text(`Página ${pageNum}  |  DOCUMENTO CONFIDENCIAL  |  © ${new Date().getFullYear()} SST Colombia`,
+     .text(`Página ${num}  |  DOCUMENTO CONFIDENCIAL  |  © ${new Date().getFullYear()} SST Colombia`,
            MARGIN, ph - MARGIN, { width: pw - MARGIN * 2, align: 'center' });
   doc.restore();
 }
@@ -166,10 +168,11 @@ function signatureBlock(doc) {
 
 // ── GENERACIÓN DEL DOCUMENTO ──────────────────────────────────────────────────
 
+let pageNum = 1;
+
 const doc = new PDFDocument({
   size: 'LETTER',
   margin: MARGIN,
-  bufferPages: true,
   info: {
     Title: 'Contrato de Alianza y Licenciamiento de Software — SST Colombia',
     Author: 'SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S.',
@@ -350,16 +353,6 @@ para(doc, `En señal de conformidad con todas y cada una de las cláusulas anter
 
 signatureBlock(doc);
 
-// ── Numeración de páginas ─────────────────────────────────────────────────────
-const range = doc.bufferedPageRange();
-for (let i = range.start; i < range.start + range.count; i++) {
-  doc.switchToPage(i);
-  if (i > range.start) { // No footer en portada
-    addPageFooter(doc, i);
-  }
-}
-
-doc.flushPages();
 doc.end();
 
 stream.on('finish', () => {
