@@ -11,7 +11,7 @@ import logger from '../lib/logger';
  * - Runs at startup and then daily at 2 AM UTC
  */
 
-const GRACE_PERIOD_DAYS = 3;
+const GRACE_PERIOD_DAYS = 0;
 
 /**
  * Core trial conversion logic (extracted for reusability)

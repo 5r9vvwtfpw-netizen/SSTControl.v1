@@ -10,7 +10,7 @@ import logger from "../lib/logger";
 // server/cron/manual-subscription-expiry.ts (ese cron es un respaldo por
 // lote; esta verificación en vivo es la que realmente aplica el bloqueo,
 // ya que en despliegues Autoscale el cron no está garantizado a ejecutarse).
-export const SUBSCRIPTION_GRACE_PERIOD_DAYS = 1;
+export const SUBSCRIPTION_GRACE_PERIOD_DAYS = 0;
 
 export interface SubscriptionStatus {
   isActive: boolean;
