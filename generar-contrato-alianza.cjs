@@ -159,21 +159,13 @@ function signatureBlock(doc) {
   const cx = MARGIN + col + 10;
   let cy = sigLineY + 8;
   doc.fontSize(9).font('Helvetica-Bold').fillColor(C.BLACK)
-     .text('EL CONSULTOR / ALIADO', cx, cy, { width: w, align: 'center' });
+     .text('EL CONSULTOR', cx, cy, { width: w, align: 'center' });
   cy += lh + 2;
   doc.fontSize(8).font('Helvetica-Bold').fillColor(C.BLACK)
-     .text('MARA ALEJANDRA LOPEZ CORDOBA', cx, cy, { width: w, align: 'center' });
+     .text('JUAN', cx, cy, { width: w, align: 'center' });
   cy += lh;
   doc.fontSize(8).font('Helvetica').fillColor(C.GRAY_SOFT)
-     .text('C.C. 1.003.076.944', cx, cy, { width: w, align: 'center' });
-  cy += lh;
-  doc.text('Representante Legal', cx, cy, { width: w, align: 'center' });
-  cy += lh;
-  doc.font('Helvetica-Bold').fillColor(C.BLACK)
-     .text('VERTEX GROUP CORPORATION S.A.S.', cx, cy, { width: w, align: 'center' });
-  cy += lh;
-  doc.fontSize(7).font('Helvetica').fillColor(C.GRAY_SOFT)
-     .text('NIT 902.029.648-0', cx, cy, { width: w, align: 'center' });
+     .text('C.C. 0000', cx, cy, { width: w, align: 'center' });
 }
 
 // ── GENERACIÓN DEL DOCUMENTO ──────────────────────────────────────────────────
