@@ -239,13 +239,13 @@ stampHeader(doc);
 // ── Encabezado de sección ──────────────────────────────────────────────────────
 const today = '15 de agosto de 2026';
 
-para(doc, `Consta por el presente documento el ALIANZA DE PRESTACIÓN DE SERVICIOS Y LICENCIAMIENTO DE SOFTWARE, que se celebra entre las partes identificadas a continuación, sujeto a las siguientes cláusulas. Ciudad y fecha: Medellín, Antioquia, ${today}.`);
+para(doc, `Consta por el presente documento la ALIANZA DE PRESTACIÓN DE SERVICIOS Y LICENCIAMIENTO DE SOFTWARE, que se celebra entre las partes identificadas a continuación, sujeta a las siguientes cláusulas. Ciudad y fecha: Medellín, Antioquia, ${today}.`);
 
-para(doc, `Las partes dla presente alianza son: (i) SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S., sociedad Colombiana identificada con NIT 902.036.337-4, inscrita en la Cámara de Comercio de Medellín para Antioquia, actuando a través de su Representante Legal LUZ ADRIANA DIAZ CALLE, identificada con C.C. No. 52.223.631 (en adelante "EL PROVEEDOR"); y (ii) JUAN, identificado con C.C. No. 0000 (en adelante "EL CONSULTOR").`);
+para(doc, `Las partes de la presente alianza son: (i) SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S., sociedad colombiana identificada con NIT 902.036.337-4, inscrita en la Cámara de Comercio de Medellín para Antioquia, que actúa a través de su Representante Legal LUZ ADRIANA DIAZ CALLE, identificada con C.C. No. 52.223.631 (en adelante "EL PROVEEDOR"); y (ii) JUAN, identificado con C.C. No. 0000 (en adelante "EL CONSULTOR"). El rol de EL PROVEEDOR se limita exclusivamente a suministrar la plataforma tecnológica como herramienta de trabajo. Los clientes atendidos son propios de EL CONSULTOR, quien actúa de manera autónoma e independiente en la prestación de sus servicios de consultoría en Seguridad y Salud en el Trabajo.`);
 
 // ── CLÁUSULA PRIMERA ──────────────────────────────────────────────────────────
 clauseTitle(doc, 'PRIMERA', 'Objeto de la Alianza');
-para(doc, `La presente alianza tiene por objeto establecer los términos y condiciones bajo los cuales EL CONSULTOR prestará servicios de consultoría en Seguridad y Salud en el Trabajo (SST) a los clientes de EL PROVEEDOR, utilizando la plataforma tecnológica denominada "SST Colombia" (en adelante "la Plataforma"), y los compromisos de confidencialidad, no competencia y protección de la propiedad intelectual que regulan dicha relación de alianza.`);
+para(doc, `La presente alianza tiene por objeto establecer los términos y condiciones bajo los cuales EL CONSULTOR prestará servicios de consultoría en Seguridad y Salud en el Trabajo (SST) a sus propios clientes, utilizando la plataforma tecnológica denominada "SST Colombia" de propiedad de EL PROVEEDOR (en adelante "la Plataforma"). EL PROVEEDOR no tiene ni tendrá relación comercial directa con los clientes de EL CONSULTOR; su aporte se limita al suministro, mantenimiento y licenciamiento de La Plataforma. La presente alianza regula además los compromisos de confidencialidad, no competencia y protección de la propiedad intelectual que rigen dicha relación.`);
 
 // ── CLÁUSULA SEGUNDA ─────────────────────────────────────────────────────────
 clauseTitle(doc, 'SEGUNDA', 'Definiciones');
@@ -256,7 +256,7 @@ bullet(doc, 'Obra Derivada', 'Cualquier software, sistema, herramienta o product
 
 // ── CLÁUSULA TERCERA ──────────────────────────────────────────────────────────
 clauseTitle(doc, 'TERCERA', 'Licenciamiento de la Plataforma');
-para(doc, `En virtud dla presente alianza, EL PROVEEDOR otorga a EL CONSULTOR una licencia de uso limitada, personal, revocable, no exclusiva y no transferible de La Plataforma, exclusivamente para prestar los servicios de consultoría SST a los clientes que EL CONSULTOR vincule a La Plataforma en el marco de esta alianza, durante la vigencia de esta alianza. Esta licencia no confiere ningún derecho de propiedad sobre La Plataforma ni sobre la Lógica de Negocio.`);
+para(doc, `En virtud de la presente alianza, EL PROVEEDOR otorga a EL CONSULTOR una licencia de uso limitada, personal, revocable, no exclusiva y no transferible de La Plataforma, exclusivamente para que EL CONSULTOR preste servicios de consultoría SST a sus propios clientes. Los clientes vinculados son y seguirán siendo clientes de EL CONSULTOR en todo momento. Esta licencia no confiere ningún derecho de propiedad sobre La Plataforma ni sobre la Lógica de Negocio.`);
 subTitle(doc, 'Está estrictamente prohibido a EL CONSULTOR:');
 bullet(doc, 'a)', 'Descompilar, realizar ingeniería inversa, desensamblar, extraer el código fuente, o intentar derivar la Lógica de Negocio o la estructura técnica de La Plataforma por cualquier medio.');
 bullet(doc, 'b)', 'Plagiar, reproducir, copiar, distribuir, comercializar, alquilar o imitar total o parcialmente la estructura, funcionalidades, Lógica de Negocio o interfaz gráfica de La Plataforma.');
@@ -284,7 +284,7 @@ para(doc, `Esta obligación de no competencia es razonable en su alcance territo
 
 // ── CLÁUSULA SÉPTIMA ──────────────────────────────────────────────────────────
 clauseTitle(doc, 'SÉPTIMA', 'Confidencialidad Reforzada');
-para(doc, `EL CONSULTOR se compromete a guardar absoluta reserva sobre toda la Información Confidencial a la que tenga acceso con ocasión dla presente alianza. Esta obligación de confidencialidad tiene una duración de CINCO (5) AÑOS contados desde la terminación de la alianza, independientemente de la causa de terminación.`);
+para(doc, `EL CONSULTOR se compromete a guardar absoluta reserva sobre toda la Información Confidencial a la que tenga acceso con ocasión de la presente alianza. Esta obligación de confidencialidad tendrá una duración de CINCO (5) AÑOS contados a partir de la terminación de la alianza, independientemente de la causa que la origine.`);
 subTitle(doc, 'La obligación de confidencialidad comprende expresamente:');
 bullet(doc, '', 'La Lógica de Negocio y metodologías de EL PROVEEDOR.');
 bullet(doc, '', 'La lista de clientes, tarifas, condiciones comerciales y estrategia de mercado.');
@@ -295,7 +295,7 @@ para(doc, `Quedan exceptuadas de esta obligación únicamente las informaciones 
 
 // ── CLÁUSULA OCTAVA ───────────────────────────────────────────────────────────
 clauseTitle(doc, 'OCTAVA', 'No Solicitud de Clientes ni Personal');
-para(doc, `Los clientes que EL CONSULTOR vincule a La Plataforma en el marco de esta alianza son y seguirán siendo clientes propios de EL CONSULTOR. Sin embargo, EL CONSULTOR se obliga a no contactar, asesorar, captar ni prestar servicios de consultoría SST directamente a los clientes que EL PROVEEDOR tuviera vinculados a La Plataforma con anterioridad al inicio de esta alianza (15 de agosto de 2026) y a los que EL CONSULTOR haya tenido acceso con ocasión de esta alianza, por un período de DOS (2) AÑOS posteriores a la terminación del mismo, salvo autorización escrita previa de EL PROVEEDOR.`);
+para(doc, `Todos los clientes que EL CONSULTOR vincule a La Plataforma son y seguirán siendo clientes exclusivos de EL CONSULTOR. EL PROVEEDOR no podrá contactar, captar ni prestar servicios directamente a dichos clientes durante la vigencia de la alianza ni con posterioridad a su terminación. No obstante, EL CONSULTOR se obliga a no contactar, asesorar ni prestar servicios de consultoría SST a los clientes que EL PROVEEDOR tuviera vinculados a La Plataforma con anterioridad al inicio de esta alianza (15 de agosto de 2026), por un período de DOS (2) AÑOS posteriores a la terminación de la misma, salvo autorización escrita previa de EL PROVEEDOR.`);
 para(doc, `Igualmente, EL CONSULTOR se abstiene de solicitar, inducir o contratar, directa o indirectamente, a los empleados, colaboradores o contratistas de EL PROVEEDOR durante la vigencia de la alianza y por DOS (2) AÑOS adicionales a su terminación.`);
 
 // ── CLÁUSULA NOVENA ───────────────────────────────────────────────────────────
@@ -325,7 +325,7 @@ para(doc, `La terminación de la alianza no extingue las obligaciones de confide
 
 // ── CLÁUSULA DÉCIMA SEGUNDA ──────────────────────────────────────────────────
 clauseTitle(doc, 'DÉCIMA SEGUNDA', 'Solución de Controversias y Jurisdicción');
-para(doc, `Toda controversia, diferencia, conflicto o reclamo que surja entre las partes con ocasión de la firma, ejecución, interpretación, terminación o incumplimiento dla presente alianza, y en especial las disputas relacionadas con la titularidad, licenciamiento, secreto industrial, uso indebido o alegaciones de copia/plagio de software, se sujetará al siguiente procedimiento:`);
+para(doc, `Toda controversia, diferencia, conflicto o reclamo que surja entre las partes con ocasión de la firma, ejecución, interpretación, terminación o incumplimiento de la presente alianza, y en especial las disputas relacionadas con la titularidad, licenciamiento, secreto industrial, uso indebido o alegaciones de copia o plagio de software, se sujetará al siguiente procedimiento:`);
 bullet(doc, '1. Arreglo Directo', 'Las partes intentarán resolver el conflicto de manera amigable mediante negociación directa dentro de un término máximo e improrrogable de QUINCE (15) días hábiles contados desde la notificación escrita del conflicto.');
 bullet(doc, '2. Conciliación', 'Si transcurridos los quince (15) días hábiles no se ha llegado a un acuerdo, las partes acudirán a conciliación ante un Centro de Conciliación debidamente acreditado con sede en la ciudad de Medellín, Departamento de Antioquia, de conformidad con la Ley 640 de 2001. El término para la conciliación no podrá exceder de TREINTA (30) días hábiles.');
 bullet(doc, '3. Jurisdicción Ordinaria', 'En caso de que la conciliación fracase, las partes se someten expresamente a la jurisdicción y competencia de los Jueces Civiles del Circuito de la ciudad de Medellín, Departamento de Antioquia, Colombia, renunciando a cualquier otro fuero que por razón de su domicilio o de la naturaleza del asunto pudiera corresponderles.');
