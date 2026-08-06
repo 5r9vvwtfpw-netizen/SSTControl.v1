@@ -119,9 +119,9 @@ function signatureBlock(doc) {
       doc.text('NIT 902.036.337-4', x, y + 68, { width: col - 20, align: 'center' });
       doc.text('Representante Legal', x, y + 78, { width: col - 20, align: 'center' });
     } else {
-      doc.text('[NOMBRE COMPLETO DEL ALIADO]', x, y + 58, { width: col - 20, align: 'center' });
-      doc.text('[NIT / C.C. ___________________]', x, y + 68, { width: col - 20, align: 'center' });
-      doc.text('[Cargo / Calidad]', x, y + 78, { width: col - 20, align: 'center' });
+      doc.text('MARA ALEJANDRA LOPEZ CORDOBA', x, y + 58, { width: col - 20, align: 'center' });
+      doc.text('C.C. 1.003.076.944  —  NIT 902.029.648-0', x, y + 68, { width: col - 20, align: 'center' });
+      doc.text('Gerente — VERTEX GROUP CORPORATION S.A.S.', x, y + 78, { width: col - 20, align: 'center' });
     }
   });
 
@@ -182,8 +182,8 @@ doc.font('Helvetica').text('NIT 902.036.337-4  •  EL PROVEEDOR', { width: pw -
 doc.moveDown(0.5);
 doc.text('Y', { width: pw - MARGIN * 2, align: 'center' });
 doc.moveDown(0.5);
-doc.font('Helvetica-Bold').text('[NOMBRE DEL ALIADO/CONSULTOR]', { width: pw - MARGIN * 2, align: 'center' });
-doc.font('Helvetica').text('[NIT / C.C.]  •  EL CONSULTOR', { width: pw - MARGIN * 2, align: 'center' });
+doc.font('Helvetica-Bold').text('VERTEX GROUP CORPORATION S.A.S.', { width: pw - MARGIN * 2, align: 'center' });
+doc.font('Helvetica').text('NIT 902.029.648-0  •  EL CONSULTOR', { width: pw - MARGIN * 2, align: 'center' });
 
 doc.moveDown(3);
 doc.fontSize(9).fillColor(C.GOLD)
@@ -200,11 +200,11 @@ doc.addPage();
 addPageHeader(doc);
 
 // ── Encabezado de sección ──────────────────────────────────────────────────────
-const today = new Date().toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
+const today = '15 de agosto de 2026';
 
-para(doc, `Consta por el presente documento el CONTRATO DE PRESTACIÓN DE SERVICIOS Y LICENCIAMIENTO DE SOFTWARE, que se celebra entre las partes identificadas a continuación, sujeto a las siguientes cláusulas. Ciudad y fecha: __________________, ${today}.`);
+para(doc, `Consta por el presente documento el CONTRATO DE PRESTACIÓN DE SERVICIOS Y LICENCIAMIENTO DE SOFTWARE, que se celebra entre las partes identificadas a continuación, sujeto a las siguientes cláusulas. Ciudad y fecha: Medellín, Antioquia, ${today}.`);
 
-para(doc, `Las partes del presente contrato son: (i) SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S., sociedad colombiana identificada con NIT 902.036.337-4, con domicilio en __________________, actuando a través de su Representante Legal (en adelante "EL PROVEEDOR"); y (ii) [NOMBRE DEL ALIADO], identificado con [C.C./NIT] No. _______________, con domicilio en __________________, (en adelante "EL CONSULTOR").`);
+para(doc, `Las partes del presente contrato son: (i) SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S., sociedad colombiana identificada con NIT 902.036.337-4, inscrita en la Cámara de Comercio de Medellín para Antioquia, actuando a través de su Representante Legal (en adelante "EL PROVEEDOR"); y (ii) VERTEX GROUP CORPORATION S.A.S., sociedad colombiana identificada con NIT 902.029.648-0, Matrícula Mercantil No. 83616912, inscrita en la Cámara de Comercio de Medellín para Antioquia, actuando a través de su Gerente MARA ALEJANDRA LOPEZ CORDOBA, identificada con C.C. No. 1.003.076.944 (en adelante "EL CONSULTOR").`);
 
 // ── CLÁUSULA PRIMERA ──────────────────────────────────────────────────────────
 clauseTitle(doc, 'PRIMERA', 'Objeto del Contrato');
@@ -285,7 +285,7 @@ para(doc, `EL PROVEEDOR podrá retener y conservar los registros de actividad de
 
 // ── CLÁUSULA DÉCIMA PRIMERA ──────────────────────────────────────────────────
 clauseTitle(doc, 'DÉCIMA PRIMERA', 'Vigencia y Terminación');
-para(doc, `El presente contrato tendrá una duración de UN (1) AÑO contado a partir de la fecha de suscripción, prorrogable automáticamente por períodos iguales salvo que cualquiera de las partes notifique por escrito su intención de no renovar con al menos TREINTA (30) días de antelación.`);
+para(doc, `El presente contrato tendrá vigencia a partir del 15 DE AGOSTO DE 2026 y una duración de UN (1) AÑO, prorrogable automáticamente por períodos iguales salvo que cualquiera de las partes notifique por escrito su intención de no renovar con al menos TREINTA (30) días de antelación.`);
 subTitle(doc, 'Son causales de terminación por justa causa:');
 bullet(doc, '', 'El incumplimiento grave de cualquier obligación establecida en este contrato.');
 bullet(doc, '', 'La violación de las prohibiciones de la Cláusula Tercera.');
@@ -316,7 +316,7 @@ bullet(doc, 'Notificaciones', 'Todas las comunicaciones deberán realizarse por 
 // ── FIRMAS ────────────────────────────────────────────────────────────────────
 checkPage(doc, 160);
 doc.moveDown(1);
-para(doc, `En señal de conformidad con todas y cada una de las cláusulas anteriores, las partes suscriben el presente contrato en la ciudad de __________________, el día _________ del mes de _________________ de ${new Date().getFullYear()}.`);
+para(doc, `En señal de conformidad con todas y cada una de las cláusulas anteriores, las partes suscriben el presente contrato en la ciudad de Medellín, Antioquia, el día 15 del mes de agosto de 2026.`);
 
 signatureBlock(doc);
 
