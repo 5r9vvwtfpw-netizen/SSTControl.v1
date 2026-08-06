@@ -260,7 +260,7 @@ para(doc, `Quedan exceptuadas de esta obligación únicamente las informaciones 
 
 // ── CLÁUSULA OCTAVA ───────────────────────────────────────────────────────────
 clauseTitle(doc, 'OCTAVA', 'No Solicitud de Clientes ni Personal');
-para(doc, `EL CONSULTOR se obliga a no contactar, asesorar, captar ni prestar servicios de consultoría SST directamente a los clientes empresariales de EL PROVEEDOR a los que haya tenido acceso durante la vigencia de este contrato, por un período de DOS (2) AÑOS posteriores a la terminación del mismo, salvo autorización escrita previa de EL PROVEEDOR.`);
+para(doc, `Los clientes que EL CONSULTOR vincule a La Plataforma en el marco de esta alianza son y seguirán siendo clientes propios de EL CONSULTOR. Sin embargo, EL CONSULTOR se obliga a no contactar, asesorar, captar ni prestar servicios de consultoría SST directamente a los clientes que EL PROVEEDOR tuviera vinculados a La Plataforma con anterioridad al inicio de esta alianza (15 de agosto de 2026) y a los que EL CONSULTOR haya tenido acceso con ocasión de este contrato, por un período de DOS (2) AÑOS posteriores a la terminación del mismo, salvo autorización escrita previa de EL PROVEEDOR.`);
 para(doc, `Igualmente, EL CONSULTOR se abstiene de solicitar, inducir o contratar, directa o indirectamente, a los empleados, colaboradores o contratistas de EL PROVEEDOR durante la vigencia del contrato y por DOS (2) AÑOS adicionales a su terminación.`);
 
 // ── CLÁUSULA NOVENA ───────────────────────────────────────────────────────────
