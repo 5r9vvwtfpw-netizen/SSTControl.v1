@@ -41,13 +41,18 @@ function checkPage(doc, needed = 60) {
 function addPageHeader(doc) {
   pageNum++;
   const pw = doc.page.width;
+  // Cabecera — posición absoluta, no afecta doc.y
+  doc.save();
   doc.rect(MARGIN, MARGIN, pw - MARGIN * 2, 3).fill(C.GREEN);
   doc.fontSize(7).font('Helvetica').fillColor(C.GRAY_SOFT)
      .text('SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S.  |  NIT 902.036.337-4  |  CONFIDENCIAL',
-           MARGIN, MARGIN + 8, { width: pw - MARGIN * 2, align: 'center' });
+           MARGIN, MARGIN + 8, { width: pw - MARGIN * 2, align: 'center', lineBreak: false });
   doc.rect(MARGIN, MARGIN + 20, pw - MARGIN * 2, 0.5).fill(C.GRAY_SOFT);
+  // Pie de página — posición absoluta
   addPageFooter(doc, pageNum);
-  doc.moveDown(3.5);
+  doc.restore();
+  // Posicionar cursor justo debajo del encabezado
+  doc.y = MARGIN + 38;
 }
 
 function addPageFooter(doc, num) {
@@ -230,6 +235,9 @@ doc.text('Registro DNDA: 13-197-177  •  Ley 23 de 1982  •  Decisión Andina 
 // ════════════════════════════════════════════════════════════════════════════════
 // PÁGINAS DE CONTENIDO
 // ════════════════════════════════════════════════════════════════════════════════
+
+doc.addPage();
+addPageHeader(doc);
 
 // ── Encabezado de sección ──────────────────────────────────────────────────────
 const today = '15 de agosto de 2026';
