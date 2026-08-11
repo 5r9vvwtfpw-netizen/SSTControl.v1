@@ -6,9 +6,17 @@
 import PDFDocument from "pdfkit";
 
 export interface AlianzaData {
+  tipoAliado?: "natural" | "juridica";
+  // Persona natural
   nombreConsultor?: string;
   ccConsultor?: string;
-  fechaAlianza?: string;  // "15 de agosto de 2026"
+  // Persona jurídica
+  razonSocial?: string;
+  nitEmpresa?: string;
+  repLegal?: string;
+  ccRepLegal?: string;
+  // Común
+  fechaAlianza?: string;
 }
 
 const MARGIN = 50;
@@ -26,11 +34,33 @@ const CONTENT_TOP = MARGIN + 40;
 const YEAR = new Date().getFullYear();
 
 export async function generateAlianzaConsultoresPdf(data: AlianzaData): Promise<Buffer> {
-  const {
-    nombreConsultor = "___________________________",
-    ccConsultor     = "___________________________",
-    fechaAlianza    = "15 de agosto de 2026",
-  } = data;
+  const tipo = data.tipoAliado ?? "natural";
+  const esJuridica = tipo === "juridica";
+
+  // Campos resueltos según tipo
+  const fechaAlianza = data.fechaAlianza || "15 de agosto de 2026";
+
+  // Línea 1 de portada / cuerpo: nombre o razón social
+  const alinadoNombre = esJuridica
+    ? (data.razonSocial || "___________________________")
+    : (data.nombreConsultor || "___________________________");
+
+  // Línea 2 de portada: identificación
+  const alinadoId = esJuridica
+    ? `NIT ${data.nitEmpresa || "_______________"}  •  EL CONSULTOR`
+    : `C.C. ${data.ccConsultor || "_______________"}  •  EL CONSULTOR`;
+
+  // Texto de identificación para el cuerpo del documento
+  const alinadoIdentificacion = esJuridica
+    ? `${data.razonSocial || "___________________________"}, sociedad colombiana identificada con NIT ${data.nitEmpresa || "_______________"}, actuando a través de su Representante Legal ${data.repLegal || "___________________________"}, identificado(a) con C.C. No. ${data.ccRepLegal || "_______________"}`
+    : `${data.nombreConsultor || "___________________________"}, identificado con C.C. No. ${data.ccConsultor || "_______________"}`;
+
+  // Bloque de firma del consultor
+  const firmaLinea1 = esJuridica ? (data.repLegal || "___________________________") : (data.nombreConsultor || "___________________________");
+  const firmaLinea2 = esJuridica ? `C.C. ${data.ccRepLegal || "_______________"}` : `C.C. ${data.ccConsultor || "_______________"}`;
+  const firmaLinea3 = esJuridica ? "Representante Legal" : null;
+  const firmaLinea4 = esJuridica ? (data.razonSocial || "___________________________") : null;
+  const firmaLinea5 = esJuridica ? `NIT ${data.nitEmpresa || "_______________"}` : null;
 
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
@@ -157,8 +187,8 @@ export async function generateAlianzaConsultoresPdf(data: AlianzaData): Promise<
     doc.moveDown(0.5);
     doc.text("Y", { width: pw - MARGIN * 2, align: "center" });
     doc.moveDown(0.5);
-    doc.font("Helvetica-Bold").text(nombreConsultor.toUpperCase(), { width: pw - MARGIN * 2, align: "center" });
-    doc.font("Helvetica").text(`C.C. ${ccConsultor}  •  EL CONSULTOR`, { width: pw - MARGIN * 2, align: "center" });
+    doc.font("Helvetica-Bold").text(alinadoNombre.toUpperCase(), { width: pw - MARGIN * 2, align: "center" });
+    doc.font("Helvetica").text(alinadoId, { width: pw - MARGIN * 2, align: "center" });
 
     doc.moveDown(3);
     doc.fillColor(C.WHITE).fontSize(8)
@@ -172,7 +202,7 @@ export async function generateAlianzaConsultoresPdf(data: AlianzaData): Promise<
     stampHeader();
 
     para(`Consta por el presente documento la ALIANZA DE PRESTACIÓN DE SERVICIOS Y LICENCIAMIENTO DE SOFTWARE, que se celebra entre las partes identificadas a continuación, sujeta a las siguientes cláusulas. Ciudad y fecha: Medellín, Antioquia, ${fechaAlianza}.`);
-    para(`Las partes de la presente alianza son: (i) SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S., sociedad colombiana identificada con NIT 902.036.337-4, inscrita en la Cámara de Comercio de Medellín para Antioquia, que actúa a través de su Representante Legal LUZ ADRIANA DIAZ CALLE, identificada con C.C. No. 52.223.631 (en adelante "EL PROVEEDOR"); y (ii) ${nombreConsultor.toUpperCase()}, identificado con C.C. No. ${ccConsultor} (en adelante "EL CONSULTOR"). El rol de EL PROVEEDOR se limita exclusivamente a suministrar la plataforma tecnológica como herramienta de trabajo. Los clientes atendidos son propios de EL CONSULTOR, quien actúa de manera autónoma e independiente en la prestación de sus servicios de consultoría en Seguridad y Salud en el Trabajo.`);
+    para(`Las partes de la presente alianza son: (i) SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S., sociedad colombiana identificada con NIT 902.036.337-4, inscrita en la Cámara de Comercio de Medellín para Antioquia, que actúa a través de su Representante Legal LUZ ADRIANA DIAZ CALLE, identificada con C.C. No. 52.223.631 (en adelante "EL PROVEEDOR"); y (ii) ${alinadoIdentificacion} (en adelante "EL CONSULTOR"). El rol de EL PROVEEDOR se limita exclusivamente a suministrar la plataforma tecnológica como herramienta de trabajo. Los clientes atendidos son propios de EL CONSULTOR, quien actúa de manera autónoma e independiente en la prestación de sus servicios de consultoría en Seguridad y Salud en el Trabajo.`);
 
     clauseTitle("PRIMERA", "Objeto de la Alianza");
     para(`La presente alianza tiene por objeto establecer los términos y condiciones bajo los cuales EL CONSULTOR prestará servicios de consultoría en Seguridad y Salud en el Trabajo (SST) a sus propios clientes, utilizando la plataforma tecnológica denominada "SST Colombia" de propiedad de EL PROVEEDOR (en adelante "la Plataforma"). EL PROVEEDOR no tiene ni tendrá relación comercial directa con los clientes de EL CONSULTOR; su aporte se limita al suministro, mantenimiento y licenciamiento de La Plataforma. La presente alianza regula además los compromisos de confidencialidad, no competencia y protección de la propiedad intelectual que rigen dicha relación.`);
@@ -311,10 +341,24 @@ export async function generateAlianzaConsultoresPdf(data: AlianzaData): Promise<
        .text("EL CONSULTOR", MARGIN + col + 10, cy, { width: w, align: "center" });
     cy += LH + 2;
     doc.fontSize(8).font("Helvetica-Bold").fillColor(C.BLACK)
-       .text(nombreConsultor.toUpperCase(), MARGIN + col + 10, cy, { width: w, align: "center" });
+       .text(firmaLinea1.toUpperCase(), MARGIN + col + 10, cy, { width: w, align: "center" });
     cy += LH;
     doc.fontSize(8).font("Helvetica").fillColor(C.GRAY_SOFT)
-       .text(`C.C. ${ccConsultor}`, MARGIN + col + 10, cy, { width: w, align: "center" });
+       .text(firmaLinea2, MARGIN + col + 10, cy, { width: w, align: "center" });
+    if (firmaLinea3) {
+      cy += LH;
+      doc.text(firmaLinea3, MARGIN + col + 10, cy, { width: w, align: "center" });
+    }
+    if (firmaLinea4) {
+      cy += LH;
+      doc.font("Helvetica-Bold").fillColor(C.BLACK)
+         .text(firmaLinea4.toUpperCase(), MARGIN + col + 10, cy, { width: w, align: "center" });
+    }
+    if (firmaLinea5) {
+      cy += LH;
+      doc.fontSize(7).font("Helvetica").fillColor(C.GRAY_SOFT)
+         .text(firmaLinea5, MARGIN + col + 10, cy, { width: w, align: "center" });
+    }
 
     doc.end();
   });

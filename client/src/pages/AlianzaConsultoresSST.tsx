@@ -6,37 +6,54 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Download, FileText, RefreshCw, Lock, ChevronDown, ChevronRight } from "lucide-react";
+import { Loader2, Download, FileText, RefreshCw, Lock, ChevronDown, ChevronRight, User, Building2 } from "lucide-react";
+
+type TipoAliado = "natural" | "juridica";
 
 interface AlianzaData {
+  tipoAliado: TipoAliado;
+  // Persona natural
   nombreConsultor: string;
   ccConsultor: string;
+  // Persona jurídica
+  razonSocial: string;
+  nitEmpresa: string;
+  repLegal: string;
+  ccRepLegal: string;
+  // Común
   fechaAlianza: string;
 }
 
+const today = new Date().toLocaleDateString("es-CO", {
+  day: "numeric", month: "long", year: "numeric"
+});
+
 const DEFAULTS: AlianzaData = {
+  tipoAliado: "natural",
   nombreConsultor: "",
   ccConsultor: "",
-  fechaAlianza: new Date().toLocaleDateString("es-CO", {
-    day: "numeric", month: "long", year: "numeric"
-  }),
+  razonSocial: "",
+  nitEmpresa: "",
+  repLegal: "",
+  ccRepLegal: "",
+  fechaAlianza: today,
 };
 
 const CLAUSULAS = [
-  { num: "PRIMERA",        titulo: "Objeto de la Alianza",                                  resumen: "Establece que EL CONSULTOR presta servicios SST a sus propios clientes usando la plataforma de EL PROVEEDOR. Los clientes son del consultor; el proveedor solo aporta el software." },
-  { num: "SEGUNDA",        titulo: "Definiciones",                                           resumen: "Define La Plataforma, Lógica de Negocio, Información Confidencial y Obra Derivada." },
-  { num: "TERCERA",        titulo: "Licenciamiento de la Plataforma",                       resumen: "Licencia de uso limitada, personal, revocable y no transferible. Prohíbe ingeniería inversa, plagio, desarrollo de competencia y acceso a terceros no autorizados." },
-  { num: "CUARTA",         titulo: "Obligaciones de EL CONSULTOR",                          resumen: "Prestar servicios con idoneidad, mantener confidencialidad 5 años, no subcontratar sin autorización, cumplir Ley 1581." },
-  { num: "QUINTA",         titulo: "Propiedad Intelectual y Anti-Plagio",                   resumen: "La plataforma es propiedad exclusiva e inalienable del proveedor. Violación activa cláusula penal e indemnización de daños." },
-  { num: "SEXTA",          titulo: "No Competencia",                                         resumen: "4 años de no competencia después de terminar la alianza en plataformas de gestión SST." },
-  { num: "SÉPTIMA",        titulo: "Confidencialidad Reforzada",                            resumen: "5 años de confidencialidad sobre metodologías, clientes, precios, arquitectura técnica y datos personales." },
-  { num: "OCTAVA",         titulo: "No Solicitud de Clientes ni Personal",                  resumen: "Los clientes del consultor le pertenecen. EL CONSULTOR no puede contactar clientes previos del proveedor por 2 años tras terminar." },
-  { num: "NOVENA",         titulo: "Cláusula Penal",                                         resumen: "Pena de $100.000.000 COP por incumplimiento de confidencialidad, no competencia, no solicitud o propiedad intelectual." },
-  { num: "DÉCIMA",         titulo: "Evidencia Digital y Monitoreo de Acceso",               resumen: "Máximo 2 credenciales. Registro de IPs, alertas por IP no autorizada, límite de 8 horas de sesión, retención de logs 5 años." },
-  { num: "DÉCIMA PRIMERA", titulo: "Vigencia y Terminación",                                resumen: "1 año prorrogable. Terminación por justa causa: incumplimiento grave, insolvencia, inhabilitación profesional." },
-  { num: "DÉCIMA SEGUNDA", titulo: "Solución de Controversias y Jurisdicción",              resumen: "Arreglo directo 15 días, conciliación 30 días, Jueces Civiles de Medellín como última instancia." },
-  { num: "DÉCIMA TERCERA", titulo: "Ley Aplicable",                                          resumen: "Leyes de Colombia: Código de Comercio, Ley 23/1982, Ley 1915/2018, Decisión Andina 351, Ley 1581/2012, Ley 527/1999." },
-  { num: "DÉCIMA CUARTA",  titulo: "Disposiciones Generales",                               resumen: "Integralidad, modificaciones escritas, nulidad parcial, independencia del consultor, notificaciones por correo." },
+  { num: "PRIMERA",        titulo: "Objeto de la Alianza",                     resumen: "Establece que EL CONSULTOR presta servicios SST a sus propios clientes usando la plataforma de EL PROVEEDOR. Los clientes son del consultor; el proveedor solo aporta el software." },
+  { num: "SEGUNDA",        titulo: "Definiciones",                              resumen: "Define La Plataforma, Lógica de Negocio, Información Confidencial y Obra Derivada." },
+  { num: "TERCERA",        titulo: "Licenciamiento de la Plataforma",          resumen: "Licencia de uso limitada, personal, revocable y no transferible. Prohíbe ingeniería inversa, plagio, desarrollo de competencia y acceso a terceros no autorizados." },
+  { num: "CUARTA",         titulo: "Obligaciones de EL CONSULTOR",             resumen: "Prestar servicios con idoneidad, mantener confidencialidad 5 años, no subcontratar sin autorización, cumplir Ley 1581." },
+  { num: "QUINTA",         titulo: "Propiedad Intelectual y Anti-Plagio",      resumen: "La plataforma es propiedad exclusiva e inalienable del proveedor. Violación activa cláusula penal e indemnización de daños." },
+  { num: "SEXTA",          titulo: "No Competencia",                            resumen: "4 años de no competencia después de terminar la alianza en plataformas de gestión SST." },
+  { num: "SÉPTIMA",        titulo: "Confidencialidad Reforzada",               resumen: "5 años de confidencialidad sobre metodologías, clientes, precios, arquitectura técnica y datos personales." },
+  { num: "OCTAVA",         titulo: "No Solicitud de Clientes ni Personal",     resumen: "Los clientes del consultor le pertenecen. EL CONSULTOR no puede contactar clientes previos del proveedor por 2 años tras terminar." },
+  { num: "NOVENA",         titulo: "Cláusula Penal",                            resumen: "Pena de $100.000.000 COP por incumplimiento de confidencialidad, no competencia, no solicitud o propiedad intelectual." },
+  { num: "DÉCIMA",         titulo: "Evidencia Digital y Monitoreo de Acceso",  resumen: "Máximo 2 credenciales. Registro de IPs, alertas por IP no autorizada, límite de 8 horas de sesión, retención de logs 5 años." },
+  { num: "DÉCIMA PRIMERA", titulo: "Vigencia y Terminación",                   resumen: "1 año prorrogable. Terminación por justa causa: incumplimiento grave, insolvencia, inhabilitación profesional." },
+  { num: "DÉCIMA SEGUNDA", titulo: "Solución de Controversias y Jurisdicción", resumen: "Arreglo directo 15 días, conciliación 30 días, Jueces Civiles de Medellín como última instancia." },
+  { num: "DÉCIMA TERCERA", titulo: "Ley Aplicable",                             resumen: "Leyes de Colombia: Código de Comercio, Ley 23/1982, Ley 1915/2018, Decisión Andina 351, Ley 1581/2012, Ley 527/1999." },
+  { num: "DÉCIMA CUARTA",  titulo: "Disposiciones Generales",                  resumen: "Integralidad, modificaciones escritas, nulidad parcial, independencia del consultor, notificaciones por correo." },
 ];
 
 export default function AlianzaConsultoresSST() {
@@ -58,13 +75,22 @@ export default function AlianzaConsultoresSST() {
     (e: React.ChangeEvent<HTMLInputElement>) =>
       setData((prev) => ({ ...prev, [field]: e.target.value }));
 
+  const setTipo = (tipo: TipoAliado) =>
+    setData((prev) => ({ ...prev, tipoAliado: tipo }));
+
   const handleReset = () => setData(DEFAULTS);
 
   const handleDownload = async () => {
-    if (!data.nombreConsultor.trim() || !data.ccConsultor.trim()) {
+    const esNatural = data.tipoAliado === "natural";
+    if (esNatural && (!data.nombreConsultor.trim() || !data.ccConsultor.trim())) {
       toast({ title: "Completa el nombre y la cédula del consultor", variant: "destructive" });
       return;
     }
+    if (!esNatural && (!data.razonSocial.trim() || !data.nitEmpresa.trim())) {
+      toast({ title: "Completa la razón social y el NIT de la empresa", variant: "destructive" });
+      return;
+    }
+
     setIsGenerating(true);
     try {
       const res = await fetch("/api/alianza-consultores/pdf", {
@@ -78,7 +104,10 @@ export default function AlianzaConsultoresSST() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `Alianza-SST-${data.nombreConsultor.replace(/\s+/g, "-")}.pdf`;
+      const nombre = data.tipoAliado === "natural"
+        ? data.nombreConsultor.replace(/\s+/g, "-")
+        : data.razonSocial.replace(/\s+/g, "-");
+      a.download = `Alianza-SST-${nombre}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
       toast({ title: "Alianza generada y descargada correctamente" });
@@ -88,6 +117,8 @@ export default function AlianzaConsultoresSST() {
       setIsGenerating(false);
     }
   };
+
+  const esNatural = data.tipoAliado === "natural";
 
   return (
     <div className="container mx-auto p-6 max-w-3xl space-y-6">
@@ -99,7 +130,7 @@ export default function AlianzaConsultoresSST() {
             Alianza Consultores SST
           </h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Ingresa los datos del consultor. Las 14 cláusulas son fijas — solo cambia el nombre, cédula y fecha.
+            Elige el tipo de aliado, completa sus datos y descarga el documento. Las 14 cláusulas son fijas.
           </p>
         </div>
         <div className="flex gap-2">
@@ -118,44 +149,139 @@ export default function AlianzaConsultoresSST() {
         </div>
       </div>
 
-      {/* Datos editables del consultor */}
+      {/* Selector de tipo */}
+      <div className="grid grid-cols-2 gap-3">
+        <button
+          onClick={() => setTipo("natural")}
+          className={`flex items-center gap-3 p-4 rounded-lg border-2 text-left transition-all ${
+            esNatural
+              ? "border-green-600 bg-green-50 text-green-800"
+              : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
+          }`}
+        >
+          <User className={`h-6 w-6 shrink-0 ${esNatural ? "text-green-600" : "text-gray-400"}`} />
+          <div>
+            <div className="font-semibold text-sm">Persona Natural</div>
+            <div className="text-xs opacity-70 mt-0.5">Consultor individual • Nombre + C.C.</div>
+          </div>
+        </button>
+        <button
+          onClick={() => setTipo("juridica")}
+          className={`flex items-center gap-3 p-4 rounded-lg border-2 text-left transition-all ${
+            !esNatural
+              ? "border-green-600 bg-green-50 text-green-800"
+              : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
+          }`}
+        >
+          <Building2 className={`h-6 w-6 shrink-0 ${!esNatural ? "text-green-600" : "text-gray-400"}`} />
+          <div>
+            <div className="font-semibold text-sm">Persona Jurídica</div>
+            <div className="text-xs opacity-70 mt-0.5">Empresa • Razón social + NIT</div>
+          </div>
+        </button>
+      </div>
+
+      {/* Datos editables */}
       <Card className="border-green-400 ring-1 ring-green-300">
         <CardHeader>
-          <CardTitle className="text-base text-green-800">✏️ Datos del Consultor Aliado</CardTitle>
-          <CardDescription>Estos datos aparecen en la portada, el cuerpo y el bloque de firmas del documento.</CardDescription>
+          <CardTitle className="text-base text-green-800">
+            {esNatural ? "✏️ Datos del Consultor (Persona Natural)" : "✏️ Datos de la Empresa Aliada (Persona Jurídica)"}
+          </CardTitle>
+          <CardDescription>
+            Estos datos aparecen en la portada, el cuerpo y el bloque de firmas del documento.
+          </CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-1.5 sm:col-span-2">
-            <Label htmlFor="nombreConsultor">
-              Nombre completo del consultor <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="nombreConsultor"
-              placeholder="Ej: Carlos Andrés Pérez Gómez"
-              value={data.nombreConsultor}
-              onChange={handleChange("nombreConsultor")}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="ccConsultor">
-              Cédula de ciudadanía <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="ccConsultor"
-              placeholder="Ej: 1.023.456.789"
-              value={data.ccConsultor}
-              onChange={handleChange("ccConsultor")}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="fechaAlianza">Fecha de suscripción</Label>
-            <Input
-              id="fechaAlianza"
-              placeholder="Ej: 15 de agosto de 2026"
-              value={data.fechaAlianza}
-              onChange={handleChange("fechaAlianza")}
-            />
-          </div>
+          {esNatural ? (
+            <>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label htmlFor="nombreConsultor">
+                  Nombre completo del consultor <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="nombreConsultor"
+                  placeholder="Ej: Carlos Andrés Pérez Gómez"
+                  value={data.nombreConsultor}
+                  onChange={handleChange("nombreConsultor")}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="ccConsultor">
+                  Cédula de ciudadanía <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="ccConsultor"
+                  placeholder="Ej: 1.023.456.789"
+                  value={data.ccConsultor}
+                  onChange={handleChange("ccConsultor")}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="fechaAlianza">Fecha de suscripción</Label>
+                <Input
+                  id="fechaAlianza"
+                  placeholder="Ej: 15 de agosto de 2026"
+                  value={data.fechaAlianza}
+                  onChange={handleChange("fechaAlianza")}
+                />
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label htmlFor="razonSocial">
+                  Razón social de la empresa <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="razonSocial"
+                  placeholder="Ej: CONSULTORES SST COLOMBIA S.A.S."
+                  value={data.razonSocial}
+                  onChange={handleChange("razonSocial")}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="nitEmpresa">
+                  NIT <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="nitEmpresa"
+                  placeholder="Ej: 901.234.567-8"
+                  value={data.nitEmpresa}
+                  onChange={handleChange("nitEmpresa")}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="fechaAlianza">Fecha de suscripción</Label>
+                <Input
+                  id="fechaAlianza"
+                  placeholder="Ej: 15 de agosto de 2026"
+                  value={data.fechaAlianza}
+                  onChange={handleChange("fechaAlianza")}
+                />
+              </div>
+              <div className="space-y-1.5 sm:col-span-2 border-t pt-3">
+                <p className="text-xs text-muted-foreground mb-2">Representante Legal (aparece en el bloque de firmas)</p>
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label htmlFor="repLegal">Nombre del Representante Legal</Label>
+                <Input
+                  id="repLegal"
+                  placeholder="Ej: María Fernanda López"
+                  value={data.repLegal}
+                  onChange={handleChange("repLegal")}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="ccRepLegal">C.C. del Representante Legal</Label>
+                <Input
+                  id="ccRepLegal"
+                  placeholder="Ej: 43.234.567"
+                  value={data.ccRepLegal}
+                  onChange={handleChange("ccRepLegal")}
+                />
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
 
