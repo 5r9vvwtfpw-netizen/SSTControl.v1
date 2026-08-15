@@ -31116,10 +31116,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           const mesIndex = mesesIds.indexOf(actividad.mes);
           if (mesIndex >= 0) {
-            const checkX = margin + actColWidth + mesIndex * mesColWidth + mesColWidth / 2 - 2;
-            const estadoColor = actividad.estado === 'completada' ? PDF_COLORS.GREEN_PRIMARY : 
+            const bulletCX = margin + actColWidth + mesIndex * mesColWidth + mesColWidth / 2;
+            const bulletCY = currentY + rowHeight / 2;
+            const estadoColor = actividad.estado === 'completada' ? PDF_COLORS.GREEN_PRIMARY :
                                actividad.estado === 'en-proceso' ? '#f59e0b' : '#3b82f6';
-            doc.fontSize(6).fillColor(estadoColor).text('\u25CF', checkX, currentY + 2);
+            // Usar primitiva de círculo — evita problema de codificación WinAnsi con \u25CF → '%'
+            doc.save().circle(bulletCX, bulletCY, 3).fill(estadoColor).restore();
           }
           
           currentY += rowHeight;
