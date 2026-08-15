@@ -7932,9 +7932,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const fmtDate = (d: string | Date | null | undefined) =>
         d ? new Date(d).toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—';
       const labelEstado: Record<string, string> = {
-        pendiente: 'Pendiente', en_progreso: 'En Progreso', cumplida: 'Cumplida',
-        completada: 'Completada', cancelada: 'Cancelada',
+        pendiente: 'Pendiente', en_progreso: 'En Progreso', 'en-proceso': 'En Progreso',
+        cumplida: 'Cumplida', completada: 'Completada', cancelada: 'Cancelada',
       };
+      const lblEficazSst = (v: number | null | undefined) =>
+        v === 1 ? 'Eficaz' : v === 0 ? 'No eficaz' : 'Sin verificar';
+      const lblEficazPesv = (v: number | null | undefined) =>
+        v === 1 ? 'Verificada' : 'Pendiente';
       const labelTipo: Record<string, string> = {
         arl: 'ARL', autoridad_competente: 'Autoridad', ministerio_trabajo: 'Min. Trabajo',
         inspector: 'Inspector', otro: 'Otro',
@@ -8085,16 +8089,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // ── Detalle SST ───────────────────────────────────────────────
       if (accionesSst.length > 0) {
-        const sw = [contentWidth * 0.34, contentWidth * 0.14, contentWidth * 0.12, contentWidth * 0.20, contentWidth * 0.20];
+        const sw = [contentWidth * 0.29, contentWidth * 0.12, contentWidth * 0.11, contentWidth * 0.16, contentWidth * 0.16, contentWidth * 0.16];
         addSimpleTable(
           doc,
-          ['Descripción', 'Tipo Acción', 'Prioridad', 'Fecha Compromiso', 'Estado'],
+          ['Descripción', 'Tipo Acción', 'Prioridad', 'F. Compromiso', 'Estado', 'Eficacia'],
           accionesSst.map(a => [
-            (a.descripcionAccion || '—').substring(0, 80),
+            (a.descripcionAccion || '—').substring(0, 70),
             (a.tipoAccion || '—').replace('_', ' '),
             labelPrioridad[a.prioridad || ''] || (a.prioridad || '—'),
             fmtDate(a.fechaCompromiso),
             labelEstado[a.estado || ''] || (a.estado || '—'),
+            lblEficazSst(a.eficaz),
           ]),
           { y: doc.y, columnWidths: sw }
         );
@@ -8127,6 +8132,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const pendPesv  = accionesPesv714.filter(a => a.estado === 'pendiente').length;
       const progrPesv = accionesPesv714.filter(a => a.estado === 'en_progreso').length;
       const compPesv  = accionesPesv714.filter(a => a.estado === 'completada').length;
+      const eficazPesv = accionesPesv714.filter(a => a.eficaciaVerificada === 1).length;
 
       y = addSectionBar(doc, '3. PLAN DE MEJORAMIENTO — PLAN ESTRATÉGICO DE SEGURIDAD VIAL (PESV)', doc.y);
       doc.y = y + 4;
@@ -8138,6 +8144,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ['Pendientes',                       pendPesv.toString()],
           ['En progreso',                      progrPesv.toString()],
           ['Completadas',                      compPesv.toString()],
+          ['Con eficacia verificada',          eficazPesv.toString()],
         ],
         { y: doc.y, columnWidths: [contentWidth * 0.70, contentWidth * 0.30] }
       );
@@ -8145,16 +8152,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // ── Detalle PESV ──────────────────────────────────────────────
       if (accionesPesv714.length > 0) {
-        const pw = [contentWidth * 0.34, contentWidth * 0.10, contentWidth * 0.12, contentWidth * 0.22, contentWidth * 0.22];
+        const pw = [contentWidth * 0.28, contentWidth * 0.09, contentWidth * 0.10, contentWidth * 0.17, contentWidth * 0.18, contentWidth * 0.18];
         addSimpleTable(
           doc,
-          ['Descripción', 'Paso', 'Prioridad', 'Fecha Límite', 'Estado'],
+          ['Descripción', 'Paso', 'Prioridad', 'Fecha Límite', 'Estado', 'Eficacia'],
           accionesPesv714.map(a => [
-            (a.descripcion || '—').substring(0, 80),
+            (a.descripcion || '—').substring(0, 70),
             (a.pasoId || '—'),
             labelPrioridad[a.prioridad || ''] || (a.prioridad || '—'),
             fmtDate(a.fechaLimite),
             labelEstado[a.estado || ''] || (a.estado || '—'),
+            lblEficazPesv(a.eficaciaVerificada),
           ]),
           { y: doc.y, columnWidths: pw }
         );
@@ -49108,6 +49116,10 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         pendiente: 'Pendiente', en_progreso: 'En Progreso', completada: 'Completada',
         cancelada: 'Cancelada', 'en-proceso': 'En Proceso', vencida: 'Vencida',
       };
+      const lblEfSst  = (v: number | null | undefined) =>
+        v === 1 ? 'Eficaz' : v === 0 ? 'No eficaz' : 'Sin verificar';
+      const lblEfPesv = (v: number | null | undefined) =>
+        v === 1 ? 'Verificada' : 'Pendiente';
 
       // ════════════════════════════════════════════════════════════════════
       // PÁGINA 1 — RESUMEN CONSOLIDADO
@@ -49237,16 +49249,17 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       y = addSectionBar(doc, '3. ACCIONES CORRECTIVAS Y PREVENTIVAS — EVALUACIÓN SG-SST', doc.y);
       doc.y = y + 4;
       if (accionesSst.length > 0) {
-        const sw = [contentWidth * 0.32, contentWidth * 0.12, contentWidth * 0.12, contentWidth * 0.12, contentWidth * 0.16, contentWidth * 0.16];
+        const sw = [contentWidth * 0.26, contentWidth * 0.11, contentWidth * 0.10, contentWidth * 0.11, contentWidth * 0.14, contentWidth * 0.14, contentWidth * 0.14];
         addSimpleTable(doc,
-          ['Descripción', 'Tipo', 'Prioridad', 'Responsable', 'Fecha Comp.', 'Estado'],
+          ['Descripción', 'Tipo', 'Prioridad', 'Responsable', 'F. Comp.', 'Estado', 'Eficacia'],
           accionesSst.map(a => [
-            (a.descripcionAccion || '—').substring(0, 75),
+            (a.descripcionAccion || '—').substring(0, 65),
             (a.tipoAccion || '—').replace('_', ' '),
             lblPrio[a.prioridad || ''] || (a.prioridad || '—'),
-            (a.responsable || '—').substring(0, 20),
+            (a.responsable || '—').substring(0, 18),
             fmtDate(a.fechaCompromiso),
             lblEst[a.estado || ''] || (a.estado || '—'),
+            lblEfSst(a.eficaz),
           ]),
           { y: doc.y, columnWidths: sw }
         );
@@ -49278,16 +49291,17 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       y = addSectionBar(doc, '4. ACCIONES DE MEJORA — PLAN ESTRATÉGICO DE SEGURIDAD VIAL (PESV)', doc.y);
       doc.y = y + 4;
       if (accionesPesv.length > 0) {
-        const pw = [contentWidth * 0.34, contentWidth * 0.12, contentWidth * 0.12, contentWidth * 0.12, contentWidth * 0.15, contentWidth * 0.15];
+        const pw = [contentWidth * 0.27, contentWidth * 0.09, contentWidth * 0.10, contentWidth * 0.11, contentWidth * 0.14, contentWidth * 0.14, contentWidth * 0.15];
         addSimpleTable(doc,
-          ['Descripción', 'Paso', 'Prioridad', 'Responsable', 'Fecha Límite', 'Estado'],
+          ['Descripción', 'Paso', 'Prioridad', 'Responsable', 'Fecha Límite', 'Estado', 'Eficacia'],
           accionesPesv.map(a => [
-            (a.descripcion || '—').substring(0, 80),
+            (a.descripcion || '—').substring(0, 70),
             (a.pasoId || '—'),
             lblPrio[a.prioridad || ''] || (a.prioridad || '—'),
-            (a.responsable || '—').substring(0, 20),
+            (a.responsable || '—').substring(0, 18),
             fmtDate(a.fechaLimite),
             lblEst[a.estado || ''] || (a.estado || '—'),
+            lblEfPesv(a.eficaciaVerificada),
           ]),
           { y: doc.y, columnWidths: pw }
         );
