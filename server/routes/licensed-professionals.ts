@@ -1917,6 +1917,54 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
     }
   });
 
+  // PATCH /api/portal-licenciado/matrices-iperc-empresa/:companyId/firmar — Sign ALL IPERC matrices for a company at once
+  app.patch("/api/portal-licenciado/matrices-iperc-empresa/:companyId/firmar", requirePermission("portal_licenciado:access"), async (req, res) => {
+    try {
+      const user = req.user!;
+      const { companyId } = req.params;
+
+      const [assignment] = await db.select()
+        .from(schema.licensedProfessionalAssignments)
+        .where(and(
+          eq(schema.licensedProfessionalAssignments.userId, user.id),
+          eq(schema.licensedProfessionalAssignments.companyId, companyId),
+          eq(schema.licensedProfessionalAssignments.isActive, true)
+        ));
+
+      const hasDirectAccess = user.companyId === companyId;
+      if (!assignment && !hasDirectAccess) {
+        return res.status(403).json({ message: "No tiene acceso a firmar matrices de esta empresa" });
+      }
+
+      const signatureUrl = user.sstSignatureUrl || assignment?.externalLsoSignatureUrl || null;
+      if (!signatureUrl) {
+        return res.status(400).json({ message: "Debe cargar su firma digital antes de poder firmar documentos. Vaya a 'Mi Licencia' para configurarla." });
+      }
+
+      const sigAccessible = await isSignatureAccessible(signatureUrl);
+      if (!sigAccessible) {
+        return res.status(400).json({ message: "Su imagen de firma no se encontró en el servidor. Por favor suba una nueva firma desde 'Mi Licencia'." });
+      }
+
+      const updated = await db.update(schema.matricesIperc)
+        .set({
+          lsoSignatureName: user.fullName || user.username,
+          lsoSignatureLicense: user.sstLicenseNumber || '',
+          lsoSignatureUrl: signatureUrl,
+          lsoSignedAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.matricesIperc.companyId, companyId))
+        .returning({ id: schema.matricesIperc.id });
+
+      console.log(`[LSO-FIRMA] ${updated.length} matrices IPERC firmadas en bloque — empresa ${companyId} — LSO ${user.username}`);
+      res.json({ message: `${updated.length} matrices firmadas exitosamente`, count: updated.length });
+    } catch (error: any) {
+      console.error('[PATCH /api/portal-licenciado/matrices-iperc-empresa/:companyId/firmar] Error:', error.message);
+      res.status(500).json({ message: "Error al firmar matrices", error: error.message });
+    }
+  });
+
   // PATCH /api/portal-licenciado/programa-capacitacion/:id/firmar - Sign training program
   app.patch("/api/portal-licenciado/programa-capacitacion/:id/firmar", requirePermission("portal_licenciado:access"), async (req, res) => {
     try {

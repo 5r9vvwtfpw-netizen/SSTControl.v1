@@ -211,21 +211,6 @@ interface AllDocuments {
     lsoSignedAt: string | null;
     createdAt: string;
   }>;
-  objetivosSst: Array<{
-    id: string;
-    companyId: string;
-    companyName: string;
-    companyNit: string;
-    nombre: string;
-    meta: string;
-    anio: number;
-    estado: string;
-    porcentajeAvance: number | null;
-    lsoSignatureName: string | null;
-    lsoSignatureUrl: string | null;
-    lsoSignedAt: string | null;
-    createdAt: string;
-  }>;
 }
 
 const SST_PROFESSION_LABELS: Record<string, string> = {
@@ -1295,7 +1280,6 @@ interface CompanyVault {
   matricesIperc: AllDocuments['matricesIperc'];
   designaciones: AllDocuments['designaciones'];
   programasCapacitacion: AllDocuments['programasCapacitacion'];
-  objetivosSst: AllDocuments['objetivosSst'];
 }
 
 function buildCompanyVaults(docs: AllDocuments): CompanyVault[] {
@@ -1307,7 +1291,7 @@ function buildCompanyVaults(docs: AllDocuments): CompanyVault[] {
         companyId, companyName, companyNit,
         totalDocs: 0, pendingDocs: 0, signedDocs: 0,
         investigaciones: [], evaluaciones: [], planesTrabajoAnual: [], matricesIperc: [], designaciones: [],
-        programasCapacitacion: [], objetivosSst: [],
+        programasCapacitacion: [],
       });
     }
     return vaultMap.get(companyId)!;
@@ -1350,12 +1334,7 @@ function buildCompanyVaults(docs: AllDocuments): CompanyVault[] {
     v.totalDocs++;
     if (prog.lsoSignatureName) v.signedDocs++; else v.pendingDocs++;
   }
-  for (const obj of (docs.objetivosSst || [])) {
-    const v = getOrCreate(obj.companyId, obj.companyName, obj.companyNit);
-    v.objetivosSst.push(obj);
-    v.totalDocs++;
-    if (obj.lsoSignatureName) v.signedDocs++; else v.pendingDocs++;
-  }
+
 
   return Array.from(vaultMap.values()).sort((a, b) => b.pendingDocs - a.pendingDocs);
 }
@@ -1849,77 +1828,6 @@ function CompanyVaultDetail({ vault, onBack, isSigning, signingId, onSign, onMes
         </Card>
       )}
 
-      {vault.objetivosSst.length > 0 && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <div>
-              <CardTitle className="text-base">Objetivos del SG-SST</CardTitle>
-              <CardDescription>Estándar 3.1.1 - Res. 0312/2019 - Objetivos del Sistema de Gestión</CardDescription>
-            </div>
-            <Badge variant="outline">{vault.objetivosSst.length}</Badge>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nombre</TableHead>
-                  <TableHead>Meta</TableHead>
-                  <TableHead>Año</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead>Firma LSO</TableHead>
-                  <TableHead>Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {vault.objetivosSst.map((obj) => (
-                  <TableRow key={obj.id} data-testid={`row-obj-${obj.id}`}>
-                    <TableCell className="font-medium">{obj.nombre}</TableCell>
-                    <TableCell className="max-w-[160px] truncate text-sm text-muted-foreground">{obj.meta}</TableCell>
-                    <TableCell>{obj.anio}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{obj.estado}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      {obj.lsoSignatureName ? (
-                        <Badge className="bg-green-600 text-white">
-                          <CheckCircle2 className="h-3 w-3 mr-1" />
-                          Firmada
-                        </Badge>
-                      ) : (
-                        <Badge variant="destructive">Pendiente</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        {obj.lsoSignatureName ? (
-                          <Badge className="bg-green-600 text-white">
-                            <CheckCircle2 className="h-3 w-3 mr-1" />
-                            {obj.lsoSignatureName}
-                          </Badge>
-                        ) : hasValidSignature ? (
-                          <Button
-                            size="sm"
-                            data-testid={`button-sign-obj-${obj.id}`}
-                            onClick={() => onSign('objetivo', obj.id, `Objetivo: ${obj.nombre}`)}
-                            disabled={isSigning}
-                          >
-                            <FileCheck className="h-4 w-4 mr-1" />
-                            Firmar
-                          </Button>
-                        ) : (
-                          <Badge variant="outline" className="text-muted-foreground">
-                            Requiere firma digital
-                          </Badge>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
 
       {vault.investigaciones.length > 0 && (
         <Card>
@@ -2234,58 +2142,59 @@ function CompanyVaultDetail({ vault, onBack, isSigning, signingId, onSign, onMes
         </Card>
       )}
 
-      {vault.matricesIperc.length > 0 && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-            <div>
-              <CardTitle className="text-base">Matrices de Peligros (IPERC)</CardTitle>
-              <CardDescription>GTC-45 / ISO 45001:2018 - Identificación de Peligros</CardDescription>
-            </div>
-            <Badge variant="outline">{vault.matricesIperc.length}</Badge>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nombre</TableHead>
-                  <TableHead>Área</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead>Firma LSO</TableHead>
-                  <TableHead>Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {vault.matricesIperc.map((mat) => (
-                  <TableRow key={mat.id} data-testid={`row-mat-${mat.id}`}>
-                    <TableCell>
-                      <div className="text-sm">{mat.nombre}</div>
-                      <div className="text-xs text-muted-foreground">v{mat.version} - {mat.metodologia}</div>
-                    </TableCell>
-                    <TableCell>{mat.area}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{mat.estado}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      {mat.lsoSignatureName ? (
-                        <Badge className="bg-green-600 text-white">
-                          <CheckCircle2 className="h-3 w-3 mr-1" />
-                          Firmada
-                        </Badge>
-                      ) : (
-                        <Badge variant="destructive">Pendiente</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          data-testid={`button-view-pdf-mat-${mat.id}`}
-                          onClick={() => window.open(`/api/matrices-iperc/${mat.id}/pdf`, '_blank')}
-                        >
-                          <Eye className="h-4 w-4 mr-1" />
-                          Ver PDF
-                        </Button>
+      {vault.matricesIperc.length > 0 && (() => {
+        const pendientesOSinImagen = vault.matricesIperc.filter(m => !m.lsoSignatureName || !m.lsoSignatureUrl).length;
+        return (
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+              <div>
+                <CardTitle className="text-base">Matrices de Peligros (IPERC)</CardTitle>
+                <CardDescription>GTC-45 / ISO 45001:2018 — Identificación de Peligros</CardDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline">{vault.matricesIperc.length}</Badge>
+                {hasValidSignature && (
+                  <Button
+                    size="sm"
+                    data-testid="button-sign-all-matrices"
+                    onClick={() => onSign('matrices-empresa', vault.companyId, `Todas las matrices IPERC — ${vault.companyName}`)}
+                    disabled={isSigning}
+                    variant={pendientesOSinImagen === 0 ? "outline" : "default"}
+                  >
+                    <FileCheck className="h-4 w-4 mr-1" />
+                    {pendientesOSinImagen > 0
+                      ? `Firmar todas (${pendientesOSinImagen} pendientes)`
+                      : 'Re-firmar todas'}
+                  </Button>
+                )}
+                {!hasValidSignature && (
+                  <Badge variant="outline" className="text-muted-foreground">Requiere firma digital</Badge>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nombre</TableHead>
+                    <TableHead>Área</TableHead>
+                    <TableHead>Estado</TableHead>
+                    <TableHead>Firma LSO</TableHead>
+                    <TableHead>Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {vault.matricesIperc.map((mat) => (
+                    <TableRow key={mat.id} data-testid={`row-mat-${mat.id}`}>
+                      <TableCell>
+                        <div className="text-sm">{mat.nombre}</div>
+                        <div className="text-xs text-muted-foreground">v{mat.version} - {mat.metodologia}</div>
+                      </TableCell>
+                      <TableCell>{mat.area}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{mat.estado}</Badge>
+                      </TableCell>
+                      <TableCell>
                         {mat.lsoSignatureName ? (
                           mat.lsoSignatureUrl ? (
                             <Badge className="bg-green-600 text-white">
@@ -2298,30 +2207,35 @@ function CompanyVaultDetail({ vault, onBack, isSigning, signingId, onSign, onMes
                               Firmado sin imagen
                             </Badge>
                           )
-                        ) : hasValidSignature ? (
-                          <Button 
-                            size="sm"
-                            data-testid={`button-sign-mat-${mat.id}`}
-                            onClick={() => onSign('matriz', mat.id, `${mat.nombre} - ${vault.companyName}`)}
-                            disabled={isSigning}
-                          >
-                            <FileCheck className="h-4 w-4 mr-1" />
-                            Firmar
-                          </Button>
                         ) : (
-                          <Badge variant="outline" className="text-muted-foreground">
-                            Requiere firma digital
-                          </Badge>
+                          <Badge variant="destructive">Pendiente</Badge>
                         )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          data-testid={`button-view-pdf-mat-${mat.id}`}
+                          onClick={() => window.open(`/api/matrices-iperc/${mat.id}/pdf`, '_blank')}
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          Ver PDF
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              {vault.matricesIperc.some(m => !m.lsoSignatureUrl && m.lsoSignatureName) && (
+                <p className="text-xs text-amber-600 mt-3 flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3 flex-shrink-0" />
+                  Algunas matrices tienen firma registrada pero sin imagen. Use "Re-firmar todas" para corregirlas.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        );
+      })()}
 
       {/* Diálogo de selección de destinatario del reporte */}
       <Dialog open={destinatarioOpen} onOpenChange={setDestinatarioOpen}>
@@ -2478,17 +2392,17 @@ function DocumentosTab() {
     },
   });
 
-  const signObjetivoMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const res = await apiRequest("PATCH", `/api/portal-licenciado/objetivo-sst/${id}/firmar`);
+  const signAllMatricesMutation = useMutation({
+    mutationFn: async (companyId: string) => {
+      const res = await apiRequest("PATCH", `/api/portal-licenciado/matrices-iperc-empresa/${companyId}/firmar`);
       return res.json();
     },
-    onSuccess: () => {
-      toast({ title: "Objetivo SST firmado exitosamente" });
+    onSuccess: (data) => {
+      toast({ title: `${data.count ?? 'Todas las'} matrices IPERC firmadas exitosamente` });
       queryClient.invalidateQueries({ queryKey: ["/api/portal-licenciado/documentos-todos"] });
     },
     onError: (err: Error) => {
-      toast({ title: "Error al firmar", description: err.message, variant: "destructive" });
+      toast({ title: "Error al firmar matrices", description: err.message, variant: "destructive" });
     },
   });
 
@@ -2536,13 +2450,13 @@ function DocumentosTab() {
     if (confirmSign.type === 'evaluacion') signEvaluacionMutation.mutate(confirmSign.id);
     else if (confirmSign.type === 'plan') signPlanMutation.mutate(confirmSign.id);
     else if (confirmSign.type === 'matriz') signMatrizMutation.mutate(confirmSign.id);
+    else if (confirmSign.type === 'matrices-empresa') signAllMatricesMutation.mutate(confirmSign.id);
     else if (confirmSign.type === 'designacion') signDesignacionMutation.mutate(confirmSign.id);
     else if (confirmSign.type === 'programa') signProgramaMutation.mutate(confirmSign.id);
-    else if (confirmSign.type === 'objetivo') signObjetivoMutation.mutate(confirmSign.id);
     setConfirmSign(null);
   };
 
-  const isSigning = signEvaluacionMutation.isPending || signPlanMutation.isPending || signMatrizMutation.isPending || signDesignacionMutation.isPending || signProgramaMutation.isPending || signObjetivoMutation.isPending;
+  const isSigning = signEvaluacionMutation.isPending || signPlanMutation.isPending || signMatrizMutation.isPending || signAllMatricesMutation.isPending || signDesignacionMutation.isPending || signProgramaMutation.isPending;
   const signingId = confirmSign?.id || null;
 
   if (isError) {
@@ -2573,7 +2487,7 @@ function DocumentosTab() {
     );
   }
 
-  const docs = allDocs || { investigaciones: [], evaluaciones: [], planesTrabajoAnual: [], matricesIperc: [], designaciones: [], programasCapacitacion: [], objetivosSst: [] };
+  const docs = allDocs || { investigaciones: [], evaluaciones: [], planesTrabajoAnual: [], matricesIperc: [], designaciones: [], programasCapacitacion: [] };
   const vaults = buildCompanyVaults(docs);
   const totalDocs = vaults.reduce((s, v) => s + v.totalDocs, 0);
   const totalPending = vaults.reduce((s, v) => s + v.pendingDocs, 0);
@@ -2829,11 +2743,6 @@ function DocumentosTab() {
                 {vault.programasCapacitacion.length > 0 && (
                   <span className="text-xs text-muted-foreground">
                     {vault.programasCapacitacion.length} programa{vault.programasCapacitacion.length !== 1 ? 's' : ''}
-                  </span>
-                )}
-                {vault.objetivosSst.length > 0 && (
-                  <span className="text-xs text-muted-foreground">
-                    {vault.objetivosSst.length} objetivo{vault.objetivosSst.length !== 1 ? 's' : ''}
                   </span>
                 )}
               </div>
