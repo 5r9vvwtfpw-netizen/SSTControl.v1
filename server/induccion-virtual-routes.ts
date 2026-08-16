@@ -612,6 +612,110 @@ export function registerInduccionVirtualRoutes(app: Express) {
   });
 
   // ============================================================================
+  // ENVÍO MASIVO - Todos los trabajadores sin sesión activa
+  // ============================================================================
+
+  app.post("/api/sesiones-induccion-virtual/enviar-masivo", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).send("No autorizado");
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(401).send("No autorizado");
+
+      const { tipoInduccion = "induccion" } = req.body;
+
+      // 1. Todos los trabajadores activos de la empresa
+      const allWorkers = await db.select()
+        .from(schema.workers)
+        .where(eq(schema.workers.companyId, companyId));
+
+      // 2. Sesiones ya activas (pendiente o en_progreso)
+      const sesionesActivas = await db.select({ workerId: schema.sesionesInduccionVirtual.workerId })
+        .from(schema.sesionesInduccionVirtual)
+        .where(and(
+          eq(schema.sesionesInduccionVirtual.companyId, companyId),
+          sql`${schema.sesionesInduccionVirtual.estado} IN ('pendiente', 'en_progreso')`
+        ));
+
+      const workerIdsConSesion = new Set(sesionesActivas.map(s => s.workerId));
+
+      // 3. Filtrar pendientes (sin sesión activa)
+      const pendientes = allWorkers.filter(w => !workerIdsConSesion.has(w.id));
+
+      if (pendientes.length === 0) {
+        return res.json({ enviados: 0, omitidos: allWorkers.length, mensaje: "Todos los trabajadores ya tienen una sesión activa." });
+      }
+
+      const [company] = await db.select().from(schema.companies).where(eq(schema.companies.id, companyId));
+      const baseUrl = process.env.REPLIT_DEPLOYMENT_URL || process.env.APP_URL || 'https://sst-colombia.com';
+
+      let enviados = 0;
+      const errores: string[] = [];
+
+      for (const worker of pendientes) {
+        try {
+          const token = generateToken();
+          const fechaExpiracion = new Date();
+          fechaExpiracion.setDate(fechaExpiracion.getDate() + 30); // 30 días para masivo
+
+          await db.insert(schema.sesionesInduccionVirtual).values({
+            companyId,
+            workerId: worker.id,
+            token,
+            tipoInduccion,
+            estado: "pendiente",
+            fechaExpiracion,
+            contenidosVistos: "[]",
+            progresoEvaluacion: "{}",
+          });
+
+          // Email solo si el trabajador tiene correo (opcional, no bloquea)
+          if (worker.email) {
+            const inductionUrl = `${baseUrl}/induccion-virtual/${token}`;
+            try {
+              await resend.emails.send({
+                from: 'SST Colombia <notificaciones@sst-colombia.com>',
+                to: worker.email,
+                subject: `Inducción Virtual SST - ${company?.name || 'Tu Empresa'}`,
+                html: `
+                  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <h2 style="color: #059669;">Inducción Virtual de SST</h2>
+                    <p>Estimado(a) <strong>${worker.name}</strong>,</p>
+                    <p>Se le ha asignado completar la inducción virtual de SST en <strong>${company?.name || 'la empresa'}</strong>.</p>
+                    <p>Puede acceder desde su <strong>Portal del Empleado</strong> o directamente con el siguiente enlace:</p>
+                    <p style="text-align: center;">
+                      <a href="${inductionUrl}" style="display: inline-block; padding: 12px 24px; background-color: #059669; color: white; text-decoration: none; border-radius: 6px; font-weight: bold;">
+                        Iniciar Inducción
+                      </a>
+                    </p>
+                    <p style="color: #6b7280; font-size: 12px;">Este enlace es válido por 30 días. También puede acceder desde su portal de empleados.</p>
+                  </div>
+                `,
+              });
+            } catch (emailErr) {
+              console.error(`Email error for worker ${worker.id}:`, emailErr);
+            }
+          }
+
+          enviados++;
+        } catch (workerErr: any) {
+          console.error(`Error creating session for worker ${worker.id}:`, workerErr);
+          errores.push(worker.id);
+        }
+      }
+
+      res.json({
+        enviados,
+        omitidos: allWorkers.length - pendientes.length,
+        errores: errores.length,
+        mensaje: `Se crearon ${enviados} sesión(es) de inducción. ${allWorkers.length - pendientes.length} trabajadores ya tenían sesión activa.`,
+      });
+    } catch (error: any) {
+      console.error("Error en envío masivo:", error);
+      res.status(500).send("Error al enviar inducciones masivas");
+    }
+  });
+
+  // ============================================================================
   // ENDPOINT PÚBLICO - Acceso del trabajador (sin login)
   // ============================================================================
 

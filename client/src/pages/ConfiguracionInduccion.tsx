@@ -84,7 +84,6 @@ export default function ConfiguracionInduccion() {
   const [uploadingFile, setUploadingFile] = useState(false);
   const [selectedFileName, setSelectedFileName] = useState("");
   const [preguntaForm, setPreguntaForm] = useState<PreguntaFormData>(defaultPregunta);
-  const [selectedWorker, setSelectedWorker] = useState("");
   const [tipoInduccion, setTipoInduccion] = useState<"induccion" | "reinduccion">("induccion");
 
   const { data: contenidos = [], isLoading: loadingContenidos } = useQuery<ContenidoInduccion[]>({
@@ -205,18 +204,19 @@ export default function ConfiguracionInduccion() {
     },
   });
 
-  const enviarInduccionMutation = useMutation({
-    mutationFn: async (data: { workerId: string; tipoInduccion: string }) => {
-      const res = await apiRequest("POST", "/api/sesiones-induccion-virtual/enviar", data);
+  const enviarMasivoMutation = useMutation({
+    mutationFn: async (data: { tipoInduccion: string }) => {
+      const res = await apiRequest("POST", "/api/sesiones-induccion-virtual/enviar-masivo", data);
       return res.json();
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/sesiones-induccion-virtual"] });
       setEnviarDialogOpen(false);
-      setSelectedWorker("");
       toast({
-        title: "Inducción enviada",
-        description: `Se ha enviado el enlace de inducción al trabajador. URL: ${data.inductionUrl}`,
+        title: `✅ ${data.enviados} induccion${data.enviados !== 1 ? 'es' : ''} asignada${data.enviados !== 1 ? 's' : ''}`,
+        description: data.omitidos > 0
+          ? `${data.omitidos} trabajador${data.omitidos !== 1 ? 'es' : ''} ya tenían sesión activa y se omitieron.`
+          : "Todos los trabajadores pendientes recibieron acceso en su portal.",
       });
     },
     onError: (error: Error) => {
@@ -423,51 +423,64 @@ export default function ConfiguracionInduccion() {
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Enviar Inducción Virtual</DialogTitle>
+              <DialogTitle>Enviar Inducción a Todos los Pendientes</DialogTitle>
               <DialogDescription>
-                Seleccione un trabajador para enviarle el enlace de inducción por email.
+                Se asignará la inducción a todos los trabajadores que aún no tienen una sesión activa. Podrán verla en su <strong>Portal del Empleado</strong>.
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label>Trabajador *</Label>
-                <Select value={selectedWorker} onValueChange={setSelectedWorker}>
-                  <SelectTrigger data-testid="select-trabajador-induccion">
-                    <SelectValue placeholder="Seleccione un trabajador" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {workers.filter(w => w.email).map((worker) => (
-                      <SelectItem key={worker.id} value={worker.id}>
-                        {worker.name} - {worker.email}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Tipo de Inducción</Label>
-                <Select value={tipoInduccion} onValueChange={(v) => setTipoInduccion(v as "induccion" | "reinduccion")}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="induccion">Inducción (nuevo ingreso)</SelectItem>
-                    <SelectItem value="reinduccion">Reinducción (anual)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+            {(() => {
+              const sesionesActivas = new Set(
+                sesiones.filter(s => s.estado === 'pendiente' || s.estado === 'en_progreso').map(s => s.workerId)
+              );
+              const pendientes = workers.filter(w => !sesionesActivas.has(w.id));
+              const yaAsignados = workers.length - pendientes.length;
+              return (
+                <div className="space-y-4 py-4">
+                  <div className="rounded-lg border bg-muted/40 p-4 space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Total trabajadores</span>
+                      <span className="font-medium">{workers.length}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Ya con sesión activa</span>
+                      <span className="font-medium text-amber-600">{yaAsignados}</span>
+                    </div>
+                    <div className="flex justify-between border-t pt-2">
+                      <span className="font-semibold">Recibirán acceso ahora</span>
+                      <span className="font-bold text-green-600">{pendientes.length}</span>
+                    </div>
+                  </div>
+                  {pendientes.length === 0 && (
+                    <p className="text-sm text-center text-muted-foreground">
+                      ✅ Todos los trabajadores ya tienen una sesión activa.
+                    </p>
+                  )}
+                  <div className="space-y-2">
+                    <Label>Tipo de Inducción</Label>
+                    <Select value={tipoInduccion} onValueChange={(v) => setTipoInduccion(v as "induccion" | "reinduccion")}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="induccion">Inducción (nuevo ingreso)</SelectItem>
+                        <SelectItem value="reinduccion">Reinducción (anual)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              );
+            })()}
             <DialogFooter>
               <Button variant="outline" onClick={() => setEnviarDialogOpen(false)}>
                 Cancelar
               </Button>
               <Button
-                onClick={() => enviarInduccionMutation.mutate({ workerId: selectedWorker, tipoInduccion })}
-                disabled={!selectedWorker || enviarInduccionMutation.isPending}
+                onClick={() => enviarMasivoMutation.mutate({ tipoInduccion })}
+                disabled={enviarMasivoMutation.isPending || workers.filter(w => !new Set(sesiones.filter(s => s.estado === 'pendiente' || s.estado === 'en_progreso').map(s => s.workerId)).has(w.id)).length === 0}
                 data-testid="button-confirmar-envio"
               >
                 <Send className="h-4 w-4 mr-2" />
-                Enviar
+                {enviarMasivoMutation.isPending ? "Enviando..." : "Enviar a todos los pendientes"}
               </Button>
             </DialogFooter>
           </DialogContent>
