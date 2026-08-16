@@ -85,6 +85,8 @@ export default function ConfiguracionInduccion() {
   const [selectedFileName, setSelectedFileName] = useState("");
   const [preguntaForm, setPreguntaForm] = useState<PreguntaFormData>(defaultPregunta);
   const [tipoInduccion, setTipoInduccion] = useState<"induccion" | "reinduccion">("induccion");
+  const [enviarIndividualOpen, setEnviarIndividualOpen] = useState(false);
+  const [selectedWorker, setSelectedWorker] = useState("");
 
   const { data: contenidos = [], isLoading: loadingContenidos } = useQuery<ContenidoInduccion[]>({
     queryKey: ["/api/contenidos-induccion"],
@@ -198,6 +200,22 @@ export default function ConfiguracionInduccion() {
       setDeleteDialogOpen(false);
       setItemToDelete(null);
       toast({ title: "Pregunta eliminada", description: "La pregunta se ha eliminado exitosamente" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const enviarIndividualMutation = useMutation({
+    mutationFn: async (data: { workerId: string; tipoInduccion: string }) => {
+      const res = await apiRequest("POST", "/api/sesiones-induccion-virtual/enviar", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/sesiones-induccion-virtual"] });
+      setEnviarIndividualOpen(false);
+      setSelectedWorker("");
+      toast({ title: "Inducción asignada", description: "El trabajador ya puede verla en su portal." });
     },
     onError: (error: Error) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -414,6 +432,73 @@ export default function ConfiguracionInduccion() {
             <Wand2 className="h-4 w-4 mr-2" />
             Cargar Plantilla ARL
           </Button>
+          {/* Individual */}
+          <Dialog open={enviarIndividualOpen} onOpenChange={(open) => { setEnviarIndividualOpen(open); if (!open) setSelectedWorker(""); }}>
+            <DialogTrigger asChild>
+              <Button variant="outline" data-testid="button-enviar-individual">
+                <Send className="h-4 w-4 mr-2" />
+                Enviar a trabajador
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Enviar Inducción a Trabajador</DialogTitle>
+                <DialogDescription>
+                  Seleccione un trabajador sin sesión activa. Podrá ver la inducción en su Portal del Empleado.
+                </DialogDescription>
+              </DialogHeader>
+              {(() => {
+                const conSesionActiva = new Set(
+                  sesiones.filter(s => s.estado === 'pendiente' || s.estado === 'en_progreso').map(s => s.workerId)
+                );
+                const disponibles = workers.filter(w => !conSesionActiva.has(w.id));
+                return (
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label>Trabajador *</Label>
+                      <Select value={selectedWorker} onValueChange={setSelectedWorker}>
+                        <SelectTrigger data-testid="select-trabajador-individual">
+                          <SelectValue placeholder={disponibles.length === 0 ? "Todos tienen sesión activa" : "Seleccione un trabajador"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {disponibles.map((w) => (
+                            <SelectItem key={w.id} value={w.id}>
+                              {w.name}{w.email ? ` — ${w.email}` : ""}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {disponibles.length === 0 && (
+                        <p className="text-xs text-muted-foreground">Todos los trabajadores ya tienen una sesión activa.</p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Tipo de Inducción</Label>
+                      <Select value={tipoInduccion} onValueChange={(v) => setTipoInduccion(v as "induccion" | "reinduccion")}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="induccion">Inducción (nuevo ingreso)</SelectItem>
+                          <SelectItem value="reinduccion">Reinducción (anual)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                );
+              })()}
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setEnviarIndividualOpen(false)}>Cancelar</Button>
+                <Button
+                  onClick={() => enviarIndividualMutation.mutate({ workerId: selectedWorker, tipoInduccion })}
+                  disabled={!selectedWorker || enviarIndividualMutation.isPending}
+                  data-testid="button-confirmar-individual"
+                >
+                  <Send className="h-4 w-4 mr-2" />
+                  {enviarIndividualMutation.isPending ? "Enviando..." : "Enviar"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
         <Dialog open={enviarDialogOpen} onOpenChange={setEnviarDialogOpen}>
           <DialogTrigger asChild>
             <Button data-testid="button-enviar-induccion">
