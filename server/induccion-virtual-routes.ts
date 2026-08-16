@@ -628,22 +628,8 @@ export function registerInduccionVirtualRoutes(app: Express) {
         .from(schema.workers)
         .where(eq(schema.workers.companyId, companyId));
 
-      // 2. Sesiones ya activas (pendiente o en_progreso)
-      const sesionesActivas = await db.select({ workerId: schema.sesionesInduccionVirtual.workerId })
-        .from(schema.sesionesInduccionVirtual)
-        .where(and(
-          eq(schema.sesionesInduccionVirtual.companyId, companyId),
-          sql`${schema.sesionesInduccionVirtual.estado} IN ('pendiente', 'en_progreso')`
-        ));
-
-      const workerIdsConSesion = new Set(sesionesActivas.map(s => s.workerId));
-
-      // 3. Filtrar pendientes (sin sesión activa)
-      const pendientes = allWorkers.filter(w => !workerIdsConSesion.has(w.id));
-
-      if (pendientes.length === 0) {
-        return res.json({ enviados: 0, omitidos: allWorkers.length, mensaje: "Todos los trabajadores ya tienen una sesión activa." });
-      }
+      // Enviar a TODOS los trabajadores sin importar si ya tienen sesión
+      const pendientes = allWorkers;
 
       const [company] = await db.select().from(schema.companies).where(eq(schema.companies.id, companyId));
       const baseUrl = process.env.REPLIT_DEPLOYMENT_URL || process.env.APP_URL || 'https://sst-colombia.com';

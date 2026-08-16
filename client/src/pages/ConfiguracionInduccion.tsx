@@ -447,30 +447,21 @@ export default function ConfiguracionInduccion() {
                   Seleccione un trabajador sin sesión activa. Podrá ver la inducción en su Portal del Empleado.
                 </DialogDescription>
               </DialogHeader>
-              {(() => {
-                const conSesionActiva = new Set(
-                  sesiones.filter(s => s.estado === 'pendiente' || s.estado === 'en_progreso').map(s => s.workerId)
-                );
-                const disponibles = workers.filter(w => !conSesionActiva.has(w.id));
-                return (
-                  <div className="space-y-4 py-4">
+              <div className="space-y-4 py-4">
                     <div className="space-y-2">
                       <Label>Trabajador *</Label>
                       <Select value={selectedWorker} onValueChange={setSelectedWorker}>
                         <SelectTrigger data-testid="select-trabajador-individual">
-                          <SelectValue placeholder={disponibles.length === 0 ? "Todos tienen sesión activa" : "Seleccione un trabajador"} />
+                          <SelectValue placeholder="Seleccione un trabajador" />
                         </SelectTrigger>
                         <SelectContent>
-                          {disponibles.map((w) => (
+                          {workers.map((w) => (
                             <SelectItem key={w.id} value={w.id}>
                               {w.name}{w.email ? ` — ${w.email}` : ""}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
-                      {disponibles.length === 0 && (
-                        <p className="text-xs text-muted-foreground">Todos los trabajadores ya tienen una sesión activa.</p>
-                      )}
                     </div>
                     <div className="space-y-2">
                       <Label>Tipo de Inducción</Label>
@@ -482,9 +473,7 @@ export default function ConfiguracionInduccion() {
                         </SelectContent>
                       </Select>
                     </div>
-                  </div>
-                );
-              })()}
+              </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setEnviarIndividualOpen(false)}>Cancelar</Button>
                 <Button
@@ -508,64 +497,38 @@ export default function ConfiguracionInduccion() {
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Enviar Inducción a Todos los Pendientes</DialogTitle>
+              <DialogTitle>Enviar Inducción a Todos</DialogTitle>
               <DialogDescription>
-                Se asignará la inducción a todos los trabajadores que aún no tienen una sesión activa. Podrán verla en su <strong>Portal del Empleado</strong>.
+                Se creará una sesión de inducción para <strong>todos los trabajadores</strong>. Podrán verla en su Portal del Empleado.
               </DialogDescription>
             </DialogHeader>
-            {(() => {
-              const sesionesActivas = new Set(
-                sesiones.filter(s => s.estado === 'pendiente' || s.estado === 'en_progreso').map(s => s.workerId)
-              );
-              const pendientes = workers.filter(w => !sesionesActivas.has(w.id));
-              const yaAsignados = workers.length - pendientes.length;
-              return (
-                <div className="space-y-4 py-4">
-                  <div className="rounded-lg border bg-muted/40 p-4 space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Total trabajadores</span>
-                      <span className="font-medium">{workers.length}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Ya con sesión activa</span>
-                      <span className="font-medium text-amber-600">{yaAsignados}</span>
-                    </div>
-                    <div className="flex justify-between border-t pt-2">
-                      <span className="font-semibold">Recibirán acceso ahora</span>
-                      <span className="font-bold text-green-600">{pendientes.length}</span>
-                    </div>
-                  </div>
-                  {pendientes.length === 0 && (
-                    <p className="text-sm text-center text-muted-foreground">
-                      ✅ Todos los trabajadores ya tienen una sesión activa.
-                    </p>
-                  )}
-                  <div className="space-y-2">
-                    <Label>Tipo de Inducción</Label>
-                    <Select value={tipoInduccion} onValueChange={(v) => setTipoInduccion(v as "induccion" | "reinduccion")}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="induccion">Inducción (nuevo ingreso)</SelectItem>
-                        <SelectItem value="reinduccion">Reinducción (anual)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              );
-            })()}
+            <div className="space-y-4 py-4">
+              <div className="rounded-lg border bg-muted/40 p-4 text-sm flex justify-between items-center">
+                <span className="text-muted-foreground">Total trabajadores que recibirán acceso</span>
+                <span className="font-bold text-green-600 text-lg">{workers.length}</span>
+              </div>
+              <div className="space-y-2">
+                <Label>Tipo de Inducción</Label>
+                <Select value={tipoInduccion} onValueChange={(v) => setTipoInduccion(v as "induccion" | "reinduccion")}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="induccion">Inducción (nuevo ingreso)</SelectItem>
+                    <SelectItem value="reinduccion">Reinducción (anual)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setEnviarDialogOpen(false)}>
                 Cancelar
               </Button>
               <Button
                 onClick={() => enviarMasivoMutation.mutate({ tipoInduccion })}
-                disabled={enviarMasivoMutation.isPending || workers.filter(w => !new Set(sesiones.filter(s => s.estado === 'pendiente' || s.estado === 'en_progreso').map(s => s.workerId)).has(w.id)).length === 0}
+                disabled={enviarMasivoMutation.isPending || workers.length === 0}
                 data-testid="button-confirmar-envio"
               >
                 <Send className="h-4 w-4 mr-2" />
-                {enviarMasivoMutation.isPending ? "Enviando..." : "Enviar a todos los pendientes"}
+                {enviarMasivoMutation.isPending ? "Enviando..." : `Enviar a todos (${workers.length})`}
               </Button>
             </DialogFooter>
           </DialogContent>
