@@ -7300,6 +7300,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/trainings/:trainingId/attendees/bulk", requirePermission("trainings:edit"), async (req, res) => {
+    try {
+      const userCompanyId = getEffectiveCompanyId(req);
+      const isAdmin = hasGlobalAccess(req.user!.role);
+      const { trainingId } = req.params;
+      const { workerIds, cargo } = req.body as { workerIds?: string[]; cargo?: string };
+
+      const training = await storage.getTrainingById(trainingId);
+      if (!training) return res.status(404).send("Capacitación no encontrada");
+      if (!isAdmin && training.companyId !== userCompanyId) return res.status(403).send("Sin permisos");
+
+      const effectiveCompanyId = isAdmin ? training.companyId : userCompanyId!;
+
+      // Fetch all company workers, optionally filtered by cargo
+      const allWorkers = await storage.getWorkers(effectiveCompanyId);
+      let targets = allWorkers;
+      if (cargo && cargo !== "__todos__") {
+        targets = allWorkers.filter(w => (w.position || "").toLowerCase() === cargo.toLowerCase());
+      }
+      if (workerIds && workerIds.length > 0) {
+        const idSet = new Set(workerIds);
+        targets = allWorkers.filter(w => idSet.has(w.id));
+      }
+
+      const existingAttendees = await storage.getTrainingAttendees(trainingId, effectiveCompanyId);
+      const existingIds = new Set(existingAttendees.map(a => a.workerId));
+
+      let agregados = 0;
+      let omitidos = 0;
+
+      for (const worker of targets) {
+        if (existingIds.has(worker.id)) { omitidos++; continue; }
+        await storage.addTrainingAttendee({ trainingId, workerId: worker.id, attended: 0 }, effectiveCompanyId);
+        agregados++;
+        // Notificación interna
+        try {
+          const workerUser = await storage.getUserByWorkerId(worker.id);
+          if (workerUser) {
+            const fechaStr = training.date
+              ? new Date(training.date).toLocaleDateString('es-CO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+              : 'Fecha por confirmar';
+            const msg = await storage.createInternalMessage({
+              companyId: effectiveCompanyId,
+              senderId: req.user!.id,
+              senderName: req.user!.fullName || req.user!.username,
+              senderRole: req.user!.role,
+              receiverId: workerUser.id,
+              receiverName: workerUser.fullName || workerUser.username,
+              receiverRole: workerUser.role,
+              subject: `Invitación a capacitación: ${training.topic || training.title || 'Capacitación programada'}`,
+              content: `Has sido invitado(a) a la capacitación "${training.topic || training.title || 'Capacitación programada'}" programada para el ${fechaStr}. Por favor confirma tu asistencia desde el Portal de Empleados.`,
+              priority: 'normal',
+              status: 'unread',
+              relatedEntity: 'training',
+              relatedEntityId: trainingId,
+            });
+            notifyNewMessage(workerUser.id, req.user!.id, msg.id);
+          }
+        } catch { /* notificación no crítica */ }
+      }
+
+      res.json({ agregados, omitidos, total: targets.length });
+    } catch (error: any) {
+      console.error('Error bulk-adding attendees:', error);
+      res.status(500).send(error.message);
+    }
+  });
+
   app.delete("/api/trainings/:trainingId/attendees/:workerId", requirePermission("trainings:edit"), async (req, res) => {
     try {
       const userCompanyId = getEffectiveCompanyId(req);

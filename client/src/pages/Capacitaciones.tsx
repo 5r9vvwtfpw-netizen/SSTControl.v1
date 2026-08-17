@@ -16,7 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Search, Filter, Bot, Users, UserPlus, Trash2, CalendarDays, Target, FileDown } from "lucide-react";
+import { Plus, Search, Filter, Bot, Users, UserPlus, Trash2, CalendarDays, Target, FileDown, UsersRound } from "lucide-react";
 import { Link } from "wouter";
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -934,6 +934,7 @@ interface AsistentesDialogProps {
 function AsistentesDialog({ isOpen, onClose, training, workers }: AsistentesDialogProps) {
   const { toast } = useToast();
   const [selectedWorkerId, setSelectedWorkerId] = useState("");
+  const [selectedCargo, setSelectedCargo] = useState("");
 
   const { data: attendees = [], isLoading } = useQuery<TrainingAttendee[]>({
     queryKey: ["/api/trainings", training.id, "attendees"],
@@ -994,8 +995,33 @@ function AsistentesDialog({ isOpen, onClose, training, workers }: AsistentesDial
     },
   });
 
+  const addBulkMutation = useMutation({
+    mutationFn: async (payload: { workerIds?: string[]; cargo?: string }) => {
+      return await apiRequest("POST", `/api/trainings/${training.id}/attendees/bulk`, payload);
+    },
+    onSuccess: async (res: any) => {
+      const data = await res.json().catch(() => ({}));
+      queryClient.invalidateQueries({ queryKey: ["/api/trainings", training.id, "attendees"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/trainings/attendees-counts"] });
+      toast({
+        title: "✅ Trabajadores agregados",
+        description: `${data.agregados ?? 0} agregados, ${data.omitidos ?? 0} ya estaban inscritos.`,
+        className: "bg-green-50 border-green-200",
+      });
+      setSelectedCargo("");
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
   const addedWorkerIds = new Set(attendees.map(a => a.workerId));
   const availableWorkers = workers.filter(w => !addedWorkerIds.has(w.id));
+
+  // Cargos únicos de trabajadores aún no inscritos
+  const cargosDisponibles = Array.from(
+    new Set(availableWorkers.map(w => w.position).filter(Boolean))
+  ).sort() as string[];
 
   const getWorkerName = (workerId: string) => {
     const worker = workers.find(w => w.id === workerId);
@@ -1032,6 +1058,7 @@ function AsistentesDialog({ isOpen, onClose, training, workers }: AsistentesDial
         </DialogHeader>
 
         <div className="space-y-4">
+          {/* ── Agregar uno por uno ───────────────────────── */}
           <div className="flex items-end gap-2">
             <div className="flex-1">
               <label className="text-sm font-medium mb-1.5 block">Agregar Trabajador</label>
@@ -1064,6 +1091,54 @@ function AsistentesDialog({ isOpen, onClose, training, workers }: AsistentesDial
               Agregar
             </Button>
           </div>
+
+          {/* ── Selección masiva ─────────────────────────── */}
+          {availableWorkers.length > 0 && (
+            <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Agregar en grupo</p>
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* Por cargo */}
+                <Select value={selectedCargo} onValueChange={setSelectedCargo}>
+                  <SelectTrigger className="w-52" data-testid="select-cargo-bulk">
+                    <SelectValue placeholder="Filtrar por cargo…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {cargosDisponibles.map(c => (
+                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!selectedCargo || addBulkMutation.isPending}
+                  onClick={() => addBulkMutation.mutate({ cargo: selectedCargo })}
+                  data-testid="button-agregar-por-cargo"
+                  className="gap-1"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  Agregar por cargo
+                  {selectedCargo && (
+                    <span className="ml-1 text-xs">
+                      ({availableWorkers.filter(w => (w.position || "").toLowerCase() === selectedCargo.toLowerCase()).length})
+                    </span>
+                  )}
+                </Button>
+                {/* Todos */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={addBulkMutation.isPending}
+                  onClick={() => addBulkMutation.mutate({ workerIds: availableWorkers.map(w => w.id) })}
+                  data-testid="button-agregar-todos"
+                  className="gap-1"
+                >
+                  <UsersRound className="h-4 w-4" />
+                  Agregar todos ({availableWorkers.length})
+                </Button>
+              </div>
+            </div>
+          )}
 
           <Separator />
 
