@@ -75,6 +75,7 @@ const phvaMenus: Record<PHVASection, MenuGroup[]> = {
         { label: "Panel de Facturación", path: "/dashboard-facturacion" },
         { label: "Propuesta Comercial", path: "/propuesta-comercial" },
         { label: "Alianza Consultores SST", path: "/alianza-consultores-sst" },
+        { label: "Confidencialidad Asistentes", path: "/confidencialidad-asistentes" },
         { label: "Promociones", path: "/admin-promociones" },
         { label: "Admin Portales", path: "/admin-portales" },
         { label: "Actividad Login", path: "/admin-login-activity" },
