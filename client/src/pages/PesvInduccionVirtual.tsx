@@ -9,12 +9,17 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { useCompanyContext } from "@/hooks/use-company-context";
-import { Separator } from "@/components/ui/separator";
-import { Plus, Pencil, Trash2, Video, FileText, BookOpen, Eye, Send, Users, CheckCircle2, XCircle, Car, Loader2, UserPlus, UsersRound, X as XIcon } from "lucide-react";
+import {
+  Plus, Pencil, Trash2, Video, FileText, BookOpen, GraduationCap, Eye, Send,
+  Users, CheckCircle2, XCircle, Car, Loader2, UserPlus, UsersRound, Wand2,
+  ChevronUp, ChevronDown, Upload, File, ClipboardList, AlertCircle, Download,
+} from "lucide-react";
+import { getPlantillaPesv } from "@/data/induccion-plantillas-pesv";
 import type { ContenidoInduccion, PreguntaInduccion, SesionInduccionVirtual, Worker } from "@shared/schema";
 
 const TIPO = "pesv";
@@ -50,92 +55,98 @@ const defaultPregunta: PreguntaFormData = {
   respuestaCorrecta: 0, explicacion: "", activa: 1,
 };
 
-// Preguntas PESV sugeridas para arrancar
-const PREGUNTAS_EJEMPLO: Partial<PreguntaFormData>[] = [
-  {
-    pregunta: "¿Qué norma colombiana regula el Plan Estratégico de Seguridad Vial (PESV)?",
-    opciones: ["Resolución 40595 de 2022", "Decreto 1072 de 2015", "Ley 769 de 2002", "Resolución 0312 de 2019"],
-    respuestaCorrecta: 0,
-    explicacion: "La Resolución 40595 de 2022 del Ministerio de Transporte establece los lineamientos del PESV.",
-  },
-  {
-    pregunta: "¿Cuál es la velocidad máxima permitida en zona residencial según el Código Nacional de Tránsito?",
-    opciones: ["60 km/h", "50 km/h", "30 km/h", "80 km/h"],
-    respuestaCorrecta: 2,
-    explicacion: "En zonas residenciales la velocidad máxima es 30 km/h según el Código Nacional de Tránsito.",
-  },
-  {
-    pregunta: "¿Qué debe hacer un trabajador si ocurre un accidente de tránsito en misión?",
-    opciones: [
-      "Notificar a la empresa y a las autoridades inmediatamente",
-      "Continuar el viaje y reportar al llegar",
-      "Solo notificar a la ARL",
-      "Esperar a que llegue la policía sin hacer nada",
-    ],
-    respuestaCorrecta: 0,
-    explicacion: "En caso de accidente en misión se debe notificar a la empresa y autoridades de inmediato.",
-  },
-  {
-    pregunta: "¿Cuál es el uso correcto del cinturón de seguridad?",
-    opciones: [
-      "Solo en carretera, no en ciudad",
-      "Siempre que el vehículo esté en movimiento",
-      "Solo en el asiento delantero",
-      "No es obligatorio si la velocidad es baja",
-    ],
-    respuestaCorrecta: 1,
-    explicacion: "El cinturón debe usarse siempre que el vehículo esté en movimiento, en todos los asientos.",
-  },
-  {
-    pregunta: "¿Qué factor aumenta el riesgo de accidente de tránsito en el trabajo?",
-    opciones: ["Fatiga y somnolencia", "Conocer bien la ruta", "Viajar en horas del día", "Usar GPS"],
-    respuestaCorrecta: 0,
-    explicacion: "La fatiga y somnolencia son factores críticos de riesgo vial en el contexto laboral.",
-  },
-];
+// ── Helpers ─────────────────────────────────────────────────────────────────
+
+function getIconForType(tipo: string) {
+  switch (tipo) {
+    case "video": return <Video className="h-4 w-4 text-red-500" />;
+    case "documento": return <FileText className="h-4 w-4 text-blue-500" />;
+    case "presentacion": return <BookOpen className="h-4 w-4 text-purple-500" />;
+    default: return <FileText className="h-4 w-4 text-gray-500" />;
+  }
+}
+
+function getEstadoBadge(estado: string) {
+  switch (estado) {
+    case "publicado": return <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">Publicado</Badge>;
+    case "borrador": return <Badge variant="outline">Borrador</Badge>;
+    case "archivado": return <Badge variant="secondary">Archivado</Badge>;
+    default: return <Badge variant="outline">{estado}</Badge>;
+  }
+}
+
+function getSesionEstadoBadge(estado: string) {
+  switch (estado) {
+    case "completada": return <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"><CheckCircle2 className="h-3 w-3 mr-1" />Completada</Badge>;
+    case "en_progreso": return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300">En Progreso</Badge>;
+    case "pendiente": return <Badge variant="outline">Pendiente</Badge>;
+    case "expirada": return <Badge variant="secondary">Expirada</Badge>;
+    default: return <Badge variant="outline">{estado}</Badge>;
+  }
+}
+
+// ── Component ────────────────────────────────────────────────────────────────
 
 export default function PesvInduccionVirtual() {
   const { toast } = useToast();
   const { selectedCompany } = useCompanyContext();
   const [activeTab, setActiveTab] = useState("contenidos");
+
+  // dialogs
   const [contenidoDialogOpen, setContenidoDialogOpen] = useState(false);
   const [preguntaDialogOpen, setPreguntaDialogOpen] = useState(false);
+  const [enviarIndividualOpen, setEnviarIndividualOpen] = useState(false);
   const [enviarDialogOpen, setEnviarDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [respuestasDialogOpen, setRespuestasDialogOpen] = useState(false);
+  const [plantillaDialogOpen, setPlantillaDialogOpen] = useState(false);
+
+  // editing state
   const [editingContenido, setEditingContenido] = useState<ContenidoInduccion | null>(null);
   const [editingPregunta, setEditingPregunta] = useState<PreguntaInduccion | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [deletingType, setDeletingType] = useState<"contenido" | "pregunta">("contenido");
-  const [selectedWorkerId, setSelectedWorkerId] = useState<string>("");
-  const [selectedCargo, setSelectedCargo] = useState<string>("");
+  const [itemToDelete, setItemToDelete] = useState<{ type: "contenido" | "pregunta"; id: string } | null>(null);
+  const [sesionSeleccionada, setSesionSeleccionada] = useState<SesionInduccionVirtual | null>(null);
+
+  // forms
   const [contenidoForm, setContenidoForm] = useState<ContenidoFormData>(defaultContenido);
   const [preguntaForm, setPreguntaForm] = useState<PreguntaFormData>(defaultPregunta);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [selectedFileName, setSelectedFileName] = useState("");
+  const [selectedWorker, setSelectedWorker] = useState("");
 
+  // ── Queries ─────────────────────────────────────────────────────────────
   const { data: contenidos = [], isLoading: loadingContenidos } = useQuery<ContenidoInduccion[]>({
     queryKey: [`/api/contenidos-induccion?tipo=${TIPO}`],
   });
-
   const { data: preguntas = [], isLoading: loadingPreguntas } = useQuery<PreguntaInduccion[]>({
     queryKey: [`/api/preguntas-induccion?tipo=${TIPO}`],
   });
-
   const { data: sesiones = [], isLoading: loadingSesiones } = useQuery<SesionInduccionVirtual[]>({
     queryKey: ["/api/sesiones-induccion-pesv"],
   });
-
   const { data: workers = [] } = useQuery<Worker[]>({
     queryKey: ["/api/workers"],
   });
 
-  // ── Contenidos ────────────────────────────────────────────────────────────
-  const saveContenidoMutation = useMutation({
+  // ── Mutations — Contenidos ───────────────────────────────────────────────
+  const createContenidoMutation = useMutation({
     mutationFn: async (data: ContenidoFormData) => {
-      const body = { ...data, tipoInduccion: TIPO };
-      if (editingContenido) {
-        const res = await apiRequest("PATCH", `/api/contenidos-induccion/${editingContenido.id}`, body);
-        return res.json();
-      }
-      const res = await apiRequest("POST", `/api/contenidos-induccion`, body);
+      const res = await apiRequest("POST", "/api/contenidos-induccion", { ...data, tipoInduccion: TIPO });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/contenidos-induccion?tipo=${TIPO}`] });
+      setContenidoDialogOpen(false);
+      setContenidoForm(defaultContenido);
+      setSelectedFileName("");
+      toast({ title: "Contenido creado", description: "El contenido PESV se ha creado exitosamente." });
+    },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  const updateContenidoMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<ContenidoFormData> }) => {
+      const res = await apiRequest("PATCH", `/api/contenidos-induccion/${id}`, data);
       return res.json();
     },
     onSuccess: () => {
@@ -143,20 +154,54 @@ export default function PesvInduccionVirtual() {
       setContenidoDialogOpen(false);
       setEditingContenido(null);
       setContenidoForm(defaultContenido);
-      toast({ title: editingContenido ? "Contenido actualizado" : "Contenido creado" });
+      setSelectedFileName("");
+      toast({ title: "Contenido actualizado" });
     },
-    onError: () => toast({ title: "Error al guardar contenido", variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
-  // ── Preguntas ─────────────────────────────────────────────────────────────
-  const savePreguntaMutation = useMutation({
+  const deleteContenidoMutation = useMutation({
+    mutationFn: async (id: string) => { await apiRequest("DELETE", `/api/contenidos-induccion/${id}`); },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/contenidos-induccion?tipo=${TIPO}`] });
+      setDeleteDialogOpen(false);
+      setItemToDelete(null);
+      toast({ title: "Contenido eliminado" });
+    },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  const reorderContenidoMutation = useMutation({
+    mutationFn: async ({ id, direction }: { id: string; direction: "up" | "down" }) => {
+      const res = await apiRequest("PATCH", `/api/contenidos-induccion/${id}/reorder`, { direction });
+      return res.json();
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [`/api/contenidos-induccion?tipo=${TIPO}`] }),
+    onError: (e: Error) => toast({ title: "Error al reordenar", description: e.message, variant: "destructive" }),
+  });
+
+  // ── Mutations — Preguntas ────────────────────────────────────────────────
+  const createPreguntaMutation = useMutation({
     mutationFn: async (data: PreguntaFormData) => {
-      const body = { ...data, opciones: JSON.stringify(data.opciones), tipoInduccion: TIPO };
-      if (editingPregunta) {
-        const res = await apiRequest("PATCH", `/api/preguntas-induccion/${editingPregunta.id}`, body);
-        return res.json();
-      }
-      const res = await apiRequest("POST", `/api/preguntas-induccion`, body);
+      const res = await apiRequest("POST", "/api/preguntas-induccion", {
+        ...data, opciones: JSON.stringify(data.opciones), tipoInduccion: TIPO,
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/preguntas-induccion?tipo=${TIPO}`] });
+      setPreguntaDialogOpen(false);
+      setPreguntaForm(defaultPregunta);
+      toast({ title: "Pregunta creada" });
+    },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  const updatePreguntaMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<PreguntaFormData> }) => {
+      const res = await apiRequest("PATCH", `/api/preguntas-induccion/${id}`, {
+        ...data, opciones: data.opciones ? JSON.stringify(data.opciones) : undefined,
+      });
       return res.json();
     },
     onSuccess: () => {
@@ -164,68 +209,91 @@ export default function PesvInduccionVirtual() {
       setPreguntaDialogOpen(false);
       setEditingPregunta(null);
       setPreguntaForm(defaultPregunta);
-      toast({ title: editingPregunta ? "Pregunta actualizada" : "Pregunta creada" });
+      toast({ title: "Pregunta actualizada" });
     },
-    onError: () => toast({ title: "Error al guardar pregunta", variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
-  const deleteMutation = useMutation({
+  const deletePreguntaMutation = useMutation({
+    mutationFn: async (id: string) => { await apiRequest("DELETE", `/api/preguntas-induccion/${id}`); },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/preguntas-induccion?tipo=${TIPO}`] });
+      setDeleteDialogOpen(false);
+      setItemToDelete(null);
+      toast({ title: "Pregunta eliminada" });
+    },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  const reorderPreguntaMutation = useMutation({
+    mutationFn: async ({ id, direction }: { id: string; direction: "up" | "down" }) => {
+      const res = await apiRequest("PATCH", `/api/preguntas-induccion/${id}/reorder`, { direction });
+      return res.json();
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [`/api/preguntas-induccion?tipo=${TIPO}`] }),
+    onError: (e: Error) => toast({ title: "Error al reordenar", description: e.message, variant: "destructive" }),
+  });
+
+  // ── Mutations — Sesiones ─────────────────────────────────────────────────
+  const enviarIndividualMutation = useMutation({
+    mutationFn: async (workerId: string) => {
+      const res = await apiRequest("POST", "/api/sesiones-induccion-pesv/enviar", { workerIds: [workerId] });
+      return res.json();
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/sesiones-induccion-pesv"] });
+      setEnviarIndividualOpen(false);
+      setSelectedWorker("");
+      toast({ title: "✅ Inducción asignada", description: data?.mensaje });
+    },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  const enviarMasivoMutation = useMutation({
     mutationFn: async () => {
-      if (deletingType === "contenido") {
-        await apiRequest("DELETE", `/api/contenidos-induccion/${deletingId}`);
-      } else {
-        await apiRequest("DELETE", `/api/preguntas-induccion/${deletingId}`);
+      const res = await apiRequest("POST", "/api/sesiones-induccion-pesv/enviar-masivo", {});
+      return res.json();
+    },
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/sesiones-induccion-pesv"] });
+      setEnviarDialogOpen(false);
+      toast({
+        title: "✅ Inducción enviada",
+        description: `La inducción PESV fue asignada a ${data.enviados} trabajador${data.enviados !== 1 ? "es" : ""}.`,
+      });
+    },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+  });
+
+  // ── Mutation — Plantilla PESV ────────────────────────────────────────────
+  const plantilla = getPlantillaPesv();
+
+  const cargarPlantillaMutation = useMutation({
+    mutationFn: async () => {
+      for (const c of plantilla.contenidos) {
+        await apiRequest("POST", "/api/contenidos-induccion", c);
+      }
+      for (const p of plantilla.preguntas) {
+        await apiRequest("POST", "/api/preguntas-induccion", {
+          ...p, opciones: JSON.stringify(p.opciones),
+        });
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/contenidos-induccion?tipo=${TIPO}`] });
       queryClient.invalidateQueries({ queryKey: [`/api/preguntas-induccion?tipo=${TIPO}`] });
-      setDeleteDialogOpen(false);
-      toast({ title: "Eliminado correctamente" });
-    },
-    onError: () => toast({ title: "Error al eliminar", variant: "destructive" }),
-  });
-
-  // Mutation unificada: acepta workerIds (array), cargo (string) o vacío (todos)
-  const enviarBulkMutation = useMutation({
-    mutationFn: async (payload: { workerIds?: string[]; cargo?: string }) => {
-      const res = await apiRequest("POST", `/api/sesiones-induccion-pesv/enviar`, payload);
-      return res.json();
-    },
-    onSuccess: (data: any) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/sesiones-induccion-pesv"] });
-      setSelectedWorkerId("");
-      setSelectedCargo("");
+      setPlantillaDialogOpen(false);
       toast({
-        title: "✅ Inducciones asignadas",
-        description: data?.mensaje,
-        className: "bg-green-50 border-green-200",
+        title: "Plantilla cargada exitosamente",
+        description: `Se crearon ${plantilla.contenidos.length} contenidos y ${plantilla.preguntas.length} preguntas PESV. Revise y publique los contenidos antes de enviar inducciones.`,
       });
+      setActiveTab("contenidos");
     },
-    onError: () => toast({ title: "Error al asignar inducción", variant: "destructive" }),
+    onError: (e: Error) => toast({ title: "Error al cargar plantilla", description: e.message, variant: "destructive" }),
   });
 
-  const cargarPreguntasEjemploMutation = useMutation({
-    mutationFn: async () => {
-      for (const pq of PREGUNTAS_EJEMPLO) {
-        await apiRequest("POST", `/api/preguntas-induccion`, {
-          pregunta: pq.pregunta,
-          opciones: JSON.stringify(pq.opciones),
-          respuestaCorrecta: pq.respuestaCorrecta,
-          explicacion: pq.explicacion,
-          activa: 1,
-          tipoInduccion: TIPO,
-        });
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/preguntas-induccion?tipo=${TIPO}`] });
-      toast({ title: "Preguntas PESV de ejemplo cargadas" });
-    },
-    onError: () => toast({ title: "Error al cargar preguntas", variant: "destructive" }),
-  });
-
-  const openEditContenido = (c: ContenidoInduccion) => {
+  // ── Handlers ────────────────────────────────────────────────────────────
+  const handleEditContenido = (c: ContenidoInduccion) => {
     setEditingContenido(c);
     setContenidoForm({
       titulo: c.titulo, descripcion: c.descripcion || "",
@@ -234,44 +302,170 @@ export default function PesvInduccionVirtual() {
       contenidoTexto: c.contenidoTexto || "",
       duracionMinutos: c.duracionMinutos, estado: c.estado as any, obligatorio: c.obligatorio,
     });
+    setSelectedFileName(c.urlDocumento ? "Archivo existente" : "");
     setContenidoDialogOpen(true);
   };
 
-  const openEditPregunta = (p: PreguntaInduccion) => {
+  const handleEditPregunta = (p: PreguntaInduccion) => {
     setEditingPregunta(p);
     setPreguntaForm({
-      pregunta: p.pregunta,
-      opciones: JSON.parse(p.opciones),
+      pregunta: p.pregunta, opciones: JSON.parse(p.opciones),
       respuestaCorrecta: p.respuestaCorrecta,
       explicacion: p.explicacion || "", activa: p.activa,
     });
     setPreguntaDialogOpen(true);
   };
 
-  const tipoIcon = (tipo: string) => {
-    if (tipo === "video") return <Video className="h-4 w-4" />;
-    if (tipo === "texto") return <BookOpen className="h-4 w-4" />;
-    return <FileText className="h-4 w-4" />;
+  const handleSubmitContenido = () => {
+    if (editingContenido) {
+      updateContenidoMutation.mutate({ id: editingContenido.id, data: contenidoForm });
+    } else {
+      createContenidoMutation.mutate(contenidoForm);
+    }
   };
 
+  const handleSubmitPregunta = () => {
+    if (editingPregunta) {
+      updatePreguntaMutation.mutate({ id: editingPregunta.id, data: preguntaForm });
+    } else {
+      createPreguntaMutation.mutate(preguntaForm);
+    }
+  };
+
+  const handleDelete = () => {
+    if (!itemToDelete) return;
+    if (itemToDelete.type === "contenido") deleteContenidoMutation.mutate(itemToDelete.id);
+    else deletePreguntaMutation.mutate(itemToDelete.id);
+  };
+
+  const handleFileUpload = async (file: globalThis.File) => {
+    setUploadingFile(true);
+    setSelectedFileName(file.name);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("category", "capacitaciones");
+      const res = await fetch("/api/upload", { method: "POST", body: formData, credentials: "include" });
+      if (!res.ok) throw new Error(await res.text() || "Error al subir archivo");
+      const data = await res.json();
+      setContenidoForm(prev => ({ ...prev, urlDocumento: data.url }));
+      toast({ title: "Archivo subido", description: `${file.name} subido correctamente` });
+    } catch (error: any) {
+      toast({ title: "Error al subir archivo", description: error.message, variant: "destructive" });
+      setSelectedFileName("");
+    } finally {
+      setUploadingFile(false);
+    }
+  };
+
+  // ── Derived data ────────────────────────────────────────────────────────
+  const sesionesConActiva = (sesiones as any[]).filter(s => s.estado === "pendiente" || s.estado === "en_progreso");
+  const activosIds = new Set(sesionesConActiva.map((s: any) => s.workerId));
+  const availableWorkers = (workers as any[]).filter(w => !activosIds.has(w.id));
+
+  // ── Render ───────────────────────────────────────────────────────────────
   return (
-    <div className="container mx-auto py-6 space-y-6 max-w-6xl">
+    <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-            <Car className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold">Inducción Virtual PESV</h1>
-            <p className="text-muted-foreground text-sm">
-              Contenidos y evaluación del Plan Estratégico de Seguridad Vial — Resolución 40595/2022
-            </p>
-          </div>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-primary mb-2">
+            Inducción Virtual PESV
+          </h1>
+          <p className="text-muted-foreground">
+            Configure contenidos, evaluaciones y gestione el envío de inducciones de seguridad vial — Resolución 40595/2022
+          </p>
         </div>
-        <Button onClick={() => { setEnviarDialogOpen(true); setSelectedWorkerId(""); setSelectedCargo(""); }}>
-          <Users className="h-4 w-4 mr-2" /> Gestionar asignaciones
-        </Button>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Plantilla */}
+          <Button variant="outline" onClick={() => setPlantillaDialogOpen(true)}>
+            <Wand2 className="h-4 w-4 mr-2" />
+            Cargar Plantilla PESV
+          </Button>
+
+          {/* Enviar individual */}
+          <Dialog open={enviarIndividualOpen} onOpenChange={open => { setEnviarIndividualOpen(open); if (!open) setSelectedWorker(""); }}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <Send className="h-4 w-4 mr-2" />
+                Enviar a trabajador
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Enviar Inducción PESV a Trabajador</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label>Trabajador *</Label>
+                  <Select value={selectedWorker} onValueChange={setSelectedWorker}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccione un trabajador" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableWorkers.map((w: any) => (
+                        <SelectItem key={w.id} value={w.id}>
+                          {w.name}{w.email ? ` — ${w.email}` : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {availableWorkers.length === 0 && (
+                    <p className="text-xs text-muted-foreground">Todos los trabajadores ya tienen sesión activa.</p>
+                  )}
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setEnviarIndividualOpen(false)}>Cancelar</Button>
+                <Button
+                  onClick={() => enviarIndividualMutation.mutate(selectedWorker)}
+                  disabled={!selectedWorker || enviarIndividualMutation.isPending}
+                >
+                  {enviarIndividualMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
+                  Enviar
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Enviar masivo */}
+          <Dialog open={enviarDialogOpen} onOpenChange={setEnviarDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Send className="h-4 w-4 mr-2" />
+                Enviar Inducción
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Enviar Inducción PESV a Todos</DialogTitle>
+                <DialogDescription>
+                  Se creará una sesión de inducción de seguridad vial para <strong>todos los trabajadores</strong>. Podrán verla en su Portal del Empleado.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="py-4">
+                <div className="rounded-lg border bg-muted/40 p-4 text-sm flex justify-between items-center">
+                  <span className="text-muted-foreground">Trabajadores que recibirán la inducción</span>
+                  <span className="font-bold text-green-600 text-lg">{availableWorkers.length}</span>
+                </div>
+                {availableWorkers.length === 0 && (
+                  <p className="text-sm text-muted-foreground mt-2 text-center">Todos los trabajadores ya tienen sesión PESV activa.</p>
+                )}
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setEnviarDialogOpen(false)}>Cancelar</Button>
+                <Button
+                  onClick={() => enviarMasivoMutation.mutate()}
+                  disabled={enviarMasivoMutation.isPending || availableWorkers.length === 0}
+                >
+                  {enviarMasivoMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
+                  Enviar a todos ({availableWorkers.length})
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Stats */}
@@ -279,15 +473,14 @@ export default function PesvInduccionVirtual() {
         {[
           { label: "Contenidos", value: contenidos.length, sub: `${contenidos.filter(c => c.estado === "publicado").length} publicados` },
           { label: "Preguntas", value: preguntas.length, sub: `${preguntas.filter(p => p.activa).length} activas` },
-          { label: "Sesiones enviadas", value: sesiones.length, sub: "" },
-          { label: "Completadas", value: sesiones.filter(s => s.estado === "completada").length,
-            sub: `${sesiones.filter(s => s.aprobado).length} aprobadas` },
+          { label: "Sesiones enviadas", value: sesiones.length, sub: `${sesionesConActiva.length} activas` },
+          { label: "Completadas", value: (sesiones as any[]).filter(s => s.estado === "completada").length, sub: `${(sesiones as any[]).filter(s => s.aprobado).length} aprobadas` },
         ].map(stat => (
           <Card key={stat.label}>
             <CardContent className="p-4">
               <div className="text-2xl font-bold">{stat.value}</div>
               <div className="text-sm font-medium">{stat.label}</div>
-              {stat.sub && <div className="text-xs text-muted-foreground">{stat.sub}</div>}
+              <div className="text-xs text-muted-foreground">{stat.sub}</div>
             </CardContent>
           </Card>
         ))}
@@ -295,21 +488,176 @@ export default function PesvInduccionVirtual() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="contenidos">Contenidos</TabsTrigger>
-          <TabsTrigger value="preguntas">Evaluación</TabsTrigger>
-          <TabsTrigger value="sesiones">Sesiones</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="contenidos" className="flex items-center gap-2">
+            <BookOpen className="h-4 w-4" />
+            Contenidos ({contenidos.length})
+          </TabsTrigger>
+          <TabsTrigger value="preguntas" className="flex items-center gap-2">
+            <GraduationCap className="h-4 w-4" />
+            Evaluación ({preguntas.length})
+          </TabsTrigger>
+          <TabsTrigger value="sesiones" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            Sesiones ({sesiones.length})
+          </TabsTrigger>
         </TabsList>
 
-        {/* ── CONTENIDOS ─────────────────────────────────────────────────── */}
-        <TabsContent value="contenidos" className="space-y-4">
-          <div className="flex justify-between items-center">
-            <p className="text-sm text-muted-foreground">
-              Agregue videos, documentos o textos sobre seguridad vial para que los trabajadores los estudien.
-            </p>
-            <Button onClick={() => { setEditingContenido(null); setContenidoForm(defaultContenido); setContenidoDialogOpen(true); }}>
-              <Plus className="h-4 w-4 mr-2" /> Agregar contenido
-            </Button>
+        {/* ── CONTENIDOS ────────────────────────────────────────────────── */}
+        <TabsContent value="contenidos" className="space-y-4 mt-4">
+          <div className="flex justify-end">
+            <Dialog open={contenidoDialogOpen} onOpenChange={open => {
+              setContenidoDialogOpen(open);
+              if (!open) { setEditingContenido(null); setContenidoForm(defaultContenido); setSelectedFileName(""); }
+            }}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nuevo Contenido
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>{editingContenido ? "Editar Contenido" : "Nuevo Contenido PESV"}</DialogTitle>
+                  <DialogDescription>Material educativo sobre el Plan Estratégico de Seguridad Vial.</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Título *</Label>
+                      <Input
+                        value={contenidoForm.titulo}
+                        onChange={e => setContenidoForm({ ...contenidoForm, titulo: e.target.value })}
+                        placeholder="Ej: Introducción al PESV"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Tipo de Contenido</Label>
+                      <Select
+                        value={contenidoForm.tipoContenido}
+                        onValueChange={v => setContenidoForm({ ...contenidoForm, tipoContenido: v as any })}
+                      >
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="video">Video</SelectItem>
+                          <SelectItem value="documento">Documento PDF</SelectItem>
+                          <SelectItem value="presentacion">Presentación</SelectItem>
+                          <SelectItem value="texto">Texto</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Descripción</Label>
+                    <Textarea
+                      value={contenidoForm.descripcion}
+                      onChange={e => setContenidoForm({ ...contenidoForm, descripcion: e.target.value })}
+                      placeholder="Descripción del contenido..."
+                    />
+                  </div>
+
+                  {contenidoForm.tipoContenido === "video" && (
+                    <div className="space-y-2">
+                      <Label>URL del Video (YouTube, Vimeo, etc.)</Label>
+                      <Input
+                        value={contenidoForm.urlVideo}
+                        onChange={e => setContenidoForm({ ...contenidoForm, urlVideo: e.target.value })}
+                        placeholder="https://www.youtube.com/watch?v=..."
+                      />
+                    </div>
+                  )}
+
+                  {(contenidoForm.tipoContenido === "documento" || contenidoForm.tipoContenido === "presentacion") && (
+                    <div className="space-y-2">
+                      <Label>Adjuntar Archivo {contenidoForm.tipoContenido === "documento" ? "(PDF)" : "(PDF, DOCX)"}</Label>
+                      {contenidoForm.urlDocumento ? (
+                        <div className="flex items-center gap-2 p-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-md">
+                          <File className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                          <span className="text-sm text-emerald-700 dark:text-emerald-300 flex-1 truncate">
+                            {selectedFileName || "Archivo adjunto"}
+                          </span>
+                          <Button
+                            type="button" variant="ghost" size="icon"
+                            onClick={() => { setContenidoForm(p => ({ ...p, urlDocumento: "" })); setSelectedFileName(""); }}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div
+                          className="border-2 border-dashed border-muted-foreground/25 rounded-md p-6 text-center cursor-pointer hover:bg-muted/30 transition-colors"
+                          onClick={() => document.getElementById("pesv-file-input")?.click()}
+                        >
+                          {uploadingFile ? (
+                            <div className="flex flex-col items-center gap-2">
+                              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                              <p className="text-sm text-muted-foreground">Subiendo archivo...</p>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col items-center gap-2">
+                              <Upload className="h-8 w-8 text-muted-foreground" />
+                              <p className="text-sm text-muted-foreground">Haga clic para seleccionar un archivo</p>
+                              <p className="text-xs text-muted-foreground">PDF, DOC, DOCX (máx. 10MB)</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      <input
+                        id="pesv-file-input" type="file" className="hidden"
+                        accept=".pdf,.doc,.docx"
+                        onChange={e => { const f = e.target.files?.[0]; if (f) handleFileUpload(f); e.target.value = ""; }}
+                      />
+                    </div>
+                  )}
+
+                  {contenidoForm.tipoContenido === "texto" && (
+                    <div className="space-y-2">
+                      <Label>Contenido de texto</Label>
+                      <Textarea
+                        value={contenidoForm.contenidoTexto}
+                        onChange={e => setContenidoForm({ ...contenidoForm, contenidoTexto: e.target.value })}
+                        rows={6}
+                        placeholder="Escriba el contenido educativo aquí..."
+                      />
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Duración (minutos)</Label>
+                      <Input
+                        type="number"
+                        value={contenidoForm.duracionMinutos || ""}
+                        onChange={e => setContenidoForm({ ...contenidoForm, duracionMinutos: e.target.value === "" ? ('' as any) : parseInt(e.target.value, 10) })}
+                        onBlur={e => { if (e.target.value === "") setContenidoForm(p => ({ ...p, duracionMinutos: 10 })); }}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Estado</Label>
+                      <Select
+                        value={contenidoForm.estado}
+                        onValueChange={v => setContenidoForm({ ...contenidoForm, estado: v as any })}
+                      >
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="borrador">Borrador</SelectItem>
+                          <SelectItem value="publicado">Publicado</SelectItem>
+                          <SelectItem value="archivado">Archivado</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setContenidoDialogOpen(false)}>Cancelar</Button>
+                  <Button onClick={handleSubmitContenido} disabled={!contenidoForm.titulo || createContenidoMutation.isPending || updateContenidoMutation.isPending}>
+                    {(createContenidoMutation.isPending || updateContenidoMutation.isPending) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                    {editingContenido ? "Actualizar" : "Crear"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
 
           {loadingContenidos ? (
@@ -317,67 +665,155 @@ export default function PesvInduccionVirtual() {
           ) : contenidos.length === 0 ? (
             <Card>
               <CardContent className="py-12 text-center">
-                <Car className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
-                <p className="font-medium">Sin contenidos PESV</p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Agregue videos sobre normativa vial, factores de riesgo, uso del cinturón, etc.
+                <Car className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Sin contenidos PESV</h3>
+                <p className="text-muted-foreground mb-4">
+                  Agregue videos, documentos o textos sobre seguridad vial, o use la plantilla predefinida.
                 </p>
+                <Button variant="outline" onClick={() => setPlantillaDialogOpen(true)}>
+                  <Wand2 className="h-4 w-4 mr-2" />
+                  Cargar Plantilla PESV
+                </Button>
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-3">
-              {contenidos.map((c) => (
+            <div className="grid gap-4">
+              {contenidos.map((c, index) => (
                 <Card key={c.id}>
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-start gap-3 flex-1 min-w-0">
-                        <div className="p-2 bg-muted rounded">{tipoIcon(c.tipoContenido)}</div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <p className="font-medium truncate">{c.titulo}</p>
-                            <Badge variant={c.estado === "publicado" ? "default" : "secondary"} className="text-xs">
-                              {c.estado}
-                            </Badge>
-                          </div>
-                          {c.descripcion && <p className="text-sm text-muted-foreground mt-0.5 line-clamp-2">{c.descripcion}</p>}
-                          <p className="text-xs text-muted-foreground mt-1">{c.duracionMinutos} min · {c.tipoContenido}</p>
+                  <CardHeader className="py-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="flex flex-col gap-0.5">
+                          <Button
+                            variant="ghost" size="icon" className="h-6 w-6"
+                            disabled={index === 0 || reorderContenidoMutation.isPending}
+                            onClick={() => reorderContenidoMutation.mutate({ id: c.id, direction: "up" })}
+                          >
+                            <ChevronUp className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost" size="icon" className="h-6 w-6"
+                            disabled={index === contenidos.length - 1 || reorderContenidoMutation.isPending}
+                            onClick={() => reorderContenidoMutation.mutate({ id: c.id, direction: "down" })}
+                          >
+                            <ChevronDown className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        {getIconForType(c.tipoContenido)}
+                        <div>
+                          <CardTitle className="text-base">{c.titulo}</CardTitle>
+                          {c.descripcion && <CardDescription className="text-sm">{c.descripcion}</CardDescription>}
                         </div>
                       </div>
-                      <div className="flex gap-1 shrink-0">
-                        <Button size="icon" variant="ghost" onClick={() => openEditContenido(c)}>
+                      <div className="flex items-center gap-2">
+                        {getEstadoBadge(c.estado)}
+                        <Badge variant="outline">{c.duracionMinutos} min</Badge>
+                        <Button variant="ghost" size="icon" onClick={() => handleEditContenido(c)}>
                           <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button size="icon" variant="ghost" className="text-destructive"
-                          onClick={() => { setDeletingId(c.id); setDeletingType("contenido"); setDeleteDialogOpen(true); }}>
-                          <Trash2 className="h-4 w-4" />
+                        <Button variant="ghost" size="icon" onClick={() => { setItemToDelete({ type: "contenido", id: c.id }); setDeleteDialogOpen(true); }}>
+                          <Trash2 className="h-4 w-4 text-red-500" />
                         </Button>
                       </div>
                     </div>
-                  </CardContent>
+                  </CardHeader>
                 </Card>
               ))}
             </div>
           )}
         </TabsContent>
 
-        {/* ── PREGUNTAS ──────────────────────────────────────────────────── */}
-        <TabsContent value="preguntas" className="space-y-4">
-          <div className="flex justify-between items-center flex-wrap gap-2">
-            <p className="text-sm text-muted-foreground">
-              Configure las preguntas de evaluación PESV (aprobación ≥ 80%).
-            </p>
-            <div className="flex gap-2">
-              {preguntas.length === 0 && (
-                <Button variant="outline" onClick={() => cargarPreguntasEjemploMutation.mutate()}
-                  disabled={cargarPreguntasEjemploMutation.isPending}>
-                  {cargarPreguntasEjemploMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                  Cargar preguntas de ejemplo
+        {/* ── PREGUNTAS ─────────────────────────────────────────────────── */}
+        <TabsContent value="preguntas" className="space-y-4 mt-4">
+          <div className="flex justify-end">
+            <Dialog open={preguntaDialogOpen} onOpenChange={open => {
+              setPreguntaDialogOpen(open);
+              if (!open) { setEditingPregunta(null); setPreguntaForm(defaultPregunta); }
+            }}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nueva Pregunta
                 </Button>
-              )}
-              <Button onClick={() => { setEditingPregunta(null); setPreguntaForm(defaultPregunta); setPreguntaDialogOpen(true); }}>
-                <Plus className="h-4 w-4 mr-2" /> Agregar pregunta
-              </Button>
-            </div>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>{editingPregunta ? "Editar Pregunta" : "Nueva Pregunta PESV"}</DialogTitle>
+                  <DialogDescription>Preguntas de evaluación sobre seguridad vial (aprobación ≥ 80%).</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label>Pregunta *</Label>
+                    <Textarea
+                      value={preguntaForm.pregunta}
+                      onChange={e => setPreguntaForm({ ...preguntaForm, pregunta: e.target.value })}
+                      placeholder="¿Cuál es la velocidad máxima en zona residencial?"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Opciones de Respuesta</Label>
+                    {preguntaForm.opciones.map((opcion, index) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <Input
+                          value={opcion}
+                          onChange={e => {
+                            const opts = [...preguntaForm.opciones];
+                            opts[index] = e.target.value;
+                            setPreguntaForm({ ...preguntaForm, opciones: opts });
+                          }}
+                          placeholder={`Opción ${index + 1}`}
+                        />
+                        {preguntaForm.respuestaCorrecta === index && (
+                          <Badge className="bg-green-100 text-green-800 whitespace-nowrap">Correcta</Badge>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Respuesta Correcta</Label>
+                    <Select
+                      value={preguntaForm.respuestaCorrecta.toString()}
+                      onValueChange={v => setPreguntaForm({ ...preguntaForm, respuestaCorrecta: parseInt(v) })}
+                    >
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {preguntaForm.opciones.map((_, index) => (
+                          <SelectItem key={index} value={index.toString()}>Opción {index + 1}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Explicación (opcional)</Label>
+                    <Textarea
+                      value={preguntaForm.explicacion}
+                      onChange={e => setPreguntaForm({ ...preguntaForm, explicacion: e.target.value })}
+                      placeholder="Explicación de por qué esta es la respuesta correcta..."
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Estado</Label>
+                    <Select
+                      value={preguntaForm.activa.toString()}
+                      onValueChange={v => setPreguntaForm({ ...preguntaForm, activa: parseInt(v) })}
+                    >
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">Activa</SelectItem>
+                        <SelectItem value="0">Inactiva</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setPreguntaDialogOpen(false)}>Cancelar</Button>
+                  <Button onClick={handleSubmitPregunta} disabled={!preguntaForm.pregunta || createPreguntaMutation.isPending || updatePreguntaMutation.isPending}>
+                    {(createPreguntaMutation.isPending || updatePreguntaMutation.isPending) && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                    {editingPregunta ? "Actualizar" : "Crear"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
 
           {loadingPreguntas ? (
@@ -385,103 +821,130 @@ export default function PesvInduccionVirtual() {
           ) : preguntas.length === 0 ? (
             <Card>
               <CardContent className="py-12 text-center">
-                <BookOpen className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
-                <p className="font-medium">Sin preguntas de evaluación</p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Use "Cargar preguntas de ejemplo" para comenzar con preguntas PESV predefinidas.
+                <GraduationCap className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Sin preguntas de evaluación</h3>
+                <p className="text-muted-foreground mb-4">
+                  Agregue preguntas sobre seguridad vial o use la plantilla predefinida.
                 </p>
+                <Button variant="outline" onClick={() => setPlantillaDialogOpen(true)}>
+                  <Wand2 className="h-4 w-4 mr-2" />
+                  Cargar Plantilla PESV
+                </Button>
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-3">
-              {preguntas.map((p, idx) => {
-                const opts = JSON.parse(p.opciones) as string[];
-                return (
-                  <Card key={p.id}>
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm">{idx + 1}. {p.pregunta}</p>
-                          <div className="mt-2 space-y-1">
-                            {opts.map((opt, i) => (
-                              <div key={i} className={`text-xs flex items-center gap-1.5 ${i === p.respuestaCorrecta ? "text-green-600 font-medium" : "text-muted-foreground"}`}>
-                                {i === p.respuestaCorrecta ? <CheckCircle2 className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
-                                {opt}
+            <div className="grid gap-4">
+              {preguntas.map((p, index) => (
+                <Card key={p.id}>
+                  <CardHeader className="py-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start gap-3 flex-1">
+                        <div className="flex flex-col gap-0.5">
+                          <Button
+                            variant="ghost" size="icon" className="h-6 w-6"
+                            disabled={index === 0 || reorderPreguntaMutation.isPending}
+                            onClick={() => reorderPreguntaMutation.mutate({ id: p.id, direction: "up" })}
+                          >
+                            <ChevronUp className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost" size="icon" className="h-6 w-6"
+                            disabled={index === preguntas.length - 1 || reorderPreguntaMutation.isPending}
+                            onClick={() => reorderPreguntaMutation.mutate({ id: p.id, direction: "down" })}
+                          >
+                            <ChevronDown className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <div className="flex-1">
+                          <CardTitle className="text-base mb-2">{index + 1}. {p.pregunta}</CardTitle>
+                          <div className="space-y-1">
+                            {(JSON.parse(p.opciones) as string[]).map((op, i) => (
+                              <div key={i} className="flex items-center gap-2 text-sm">
+                                {i === p.respuestaCorrecta
+                                  ? <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0" />
+                                  : <span className="h-4 w-4 flex-shrink-0" />
+                                }
+                                <span className={i === p.respuestaCorrecta ? "font-medium text-green-700 dark:text-green-400" : "text-muted-foreground"}>
+                                  {op}
+                                </span>
                               </div>
                             ))}
                           </div>
                         </div>
-                        <div className="flex gap-1 shrink-0">
-                          <Button size="icon" variant="ghost" onClick={() => openEditPregunta(p)}>
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button size="icon" variant="ghost" className="text-destructive"
-                            onClick={() => { setDeletingId(p.id); setDeletingType("pregunta"); setDeleteDialogOpen(true); }}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+                      <div className="flex items-center gap-2">
+                        <Badge variant={p.activa ? "default" : "secondary"}>{p.activa ? "Activa" : "Inactiva"}</Badge>
+                        <Button variant="ghost" size="icon" onClick={() => handleEditPregunta(p)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => { setItemToDelete({ type: "pregunta", id: p.id }); setDeleteDialogOpen(true); }}>
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardHeader>
+                </Card>
+              ))}
             </div>
           )}
         </TabsContent>
 
-        {/* ── SESIONES ───────────────────────────────────────────────────── */}
-        <TabsContent value="sesiones" className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Histórico de inducciones PESV asignadas a trabajadores.
-          </p>
+        {/* ── SESIONES ──────────────────────────────────────────────────── */}
+        <TabsContent value="sesiones" className="space-y-4 mt-4">
           {loadingSesiones ? (
             <div className="text-center py-8 text-muted-foreground">Cargando...</div>
           ) : sesiones.length === 0 ? (
             <Card>
               <CardContent className="py-12 text-center">
-                <Send className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
-                <p className="font-medium">Sin sesiones asignadas</p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Use "Asignar a todos" para enviar la inducción PESV a todos los trabajadores.
+                <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Sin sesiones</h3>
+                <p className="text-muted-foreground mb-4">
+                  No hay sesiones de inducción PESV enviadas aún.
                 </p>
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-3">
-              {sesiones.map((s: any) => {
-                const w = workers.find((wk: any) => wk.id === s.workerId);
+            <div className="grid gap-4">
+              {(sesiones as any[]).map(s => {
+                const w = (workers as any[]).find(wk => wk.id === s.workerId);
                 return (
                   <Card key={s.id}>
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between gap-3 flex-wrap">
-                        <div className="space-y-0.5">
-                          <p className="font-medium text-sm">{w?.name || s.workerId}</p>
-                          <p className="text-xs text-muted-foreground">
-                            Enviada: {new Date(s.fechaEnvio).toLocaleDateString('es-CO')} · 
-                            Expira: {new Date(s.fechaExpiracion).toLocaleDateString('es-CO')}
-                          </p>
+                    <CardHeader className="py-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <CardTitle className="text-base">{w?.name || "Trabajador"}</CardTitle>
+                          <CardDescription>
+                            Enviada: {new Date(s.fechaEnvio).toLocaleDateString("es-CO")}
+                            {s.fechaFinalizacion && (
+                              <> | Completada: {new Date(s.fechaFinalizacion).toLocaleDateString("es-CO")}</>
+                            )}
+                          </CardDescription>
                         </div>
                         <div className="flex items-center gap-2 flex-wrap">
-                          <Badge variant={
-                            s.estado === "completada" ? "default" :
-                            s.estado === "en_progreso" ? "secondary" :
-                            s.estado === "expirada" ? "destructive" : "outline"
-                          }>
-                            {s.estado}
-                          </Badge>
+                          {getSesionEstadoBadge(s.estado)}
                           {s.puntajeEvaluacion !== null && (
                             <Badge className={s.aprobado ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>
                               {s.puntajeEvaluacion}%
                             </Badge>
                           )}
+                          {s.estado === "completada" && (
+                            <Button
+                              size="sm" variant="outline"
+                              onClick={() => { setSesionSeleccionada(s); setRespuestasDialogOpen(true); }}
+                            >
+                              <ClipboardList className="h-4 w-4 mr-1" />
+                              Ver respuestas
+                            </Button>
+                          )}
                           <a href={`/induccion-virtual/${s.token}`} target="_blank" rel="noopener noreferrer">
                             <Button size="sm" variant="outline">
-                              <Eye className="h-3 w-3 mr-1" /> Ver
+                              <Eye className="h-4 w-4 mr-1" />
+                              Ver
                             </Button>
                           </a>
                         </div>
                       </div>
-                    </CardContent>
+                    </CardHeader>
                   </Card>
                 );
               })}
@@ -490,296 +953,205 @@ export default function PesvInduccionVirtual() {
         </TabsContent>
       </Tabs>
 
-      {/* ── Dialog Contenido ──────────────────────────────────────────────── */}
-      <Dialog open={contenidoDialogOpen} onOpenChange={setContenidoDialogOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>{editingContenido ? "Editar contenido" : "Nuevo contenido PESV"}</DialogTitle>
-            <DialogDescription>Material educativo sobre seguridad vial</DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label>Título *</Label>
-              <Input value={contenidoForm.titulo}
-                onChange={e => setContenidoForm(f => ({ ...f, titulo: e.target.value }))} />
-            </div>
-            <div>
-              <Label>Descripción</Label>
-              <Textarea value={contenidoForm.descripcion}
-                onChange={e => setContenidoForm(f => ({ ...f, descripcion: e.target.value }))} rows={2} />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Tipo</Label>
-                <Select value={contenidoForm.tipoContenido}
-                  onValueChange={v => setContenidoForm(f => ({ ...f, tipoContenido: v as any }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="video">Video</SelectItem>
-                    <SelectItem value="documento">Documento</SelectItem>
-                    <SelectItem value="texto">Texto</SelectItem>
-                    <SelectItem value="presentacion">Presentación</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Estado</Label>
-                <Select value={contenidoForm.estado}
-                  onValueChange={v => setContenidoForm(f => ({ ...f, estado: v as any }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="borrador">Borrador</SelectItem>
-                    <SelectItem value="publicado">Publicado</SelectItem>
-                    <SelectItem value="archivado">Archivado</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            {contenidoForm.tipoContenido === "video" && (
-              <div>
-                <Label>URL del video (YouTube / Vimeo)</Label>
-                <Input placeholder="https://youtube.com/watch?v=..." value={contenidoForm.urlVideo}
-                  onChange={e => setContenidoForm(f => ({ ...f, urlVideo: e.target.value }))} />
-              </div>
-            )}
-            {contenidoForm.tipoContenido === "documento" && (
-              <div>
-                <Label>URL del documento (PDF)</Label>
-                <Input placeholder="https://..." value={contenidoForm.urlDocumento}
-                  onChange={e => setContenidoForm(f => ({ ...f, urlDocumento: e.target.value }))} />
-              </div>
-            )}
-            {contenidoForm.tipoContenido === "texto" && (
-              <div>
-                <Label>Contenido de texto</Label>
-                <Textarea value={contenidoForm.contenidoTexto}
-                  onChange={e => setContenidoForm(f => ({ ...f, contenidoTexto: e.target.value }))} rows={4} />
-              </div>
-            )}
-            <div>
-              <Label>Duración estimada (minutos)</Label>
-              <Input type="number" min={1} value={contenidoForm.duracionMinutos}
-                onChange={e => setContenidoForm(f => ({ ...f, duracionMinutos: parseInt(e.target.value) || 10 }))} />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setContenidoDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={() => saveContenidoMutation.mutate(contenidoForm)}
-              disabled={!contenidoForm.titulo || saveContenidoMutation.isPending}>
-              {saveContenidoMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Guardar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* ── Dialog Pregunta ───────────────────────────────────────────────── */}
-      <Dialog open={preguntaDialogOpen} onOpenChange={setPreguntaDialogOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>{editingPregunta ? "Editar pregunta" : "Nueva pregunta PESV"}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label>Pregunta *</Label>
-              <Textarea value={preguntaForm.pregunta}
-                onChange={e => setPreguntaForm(f => ({ ...f, pregunta: e.target.value }))} rows={2} />
-            </div>
-            <div className="space-y-2">
-              <Label>Opciones de respuesta</Label>
-              {preguntaForm.opciones.map((op, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <input type="radio" name="correcta" checked={preguntaForm.respuestaCorrecta === i}
-                    onChange={() => setPreguntaForm(f => ({ ...f, respuestaCorrecta: i }))}
-                    className="mt-0.5" />
-                  <Input placeholder={`Opción ${i + 1}`} value={op}
-                    onChange={e => setPreguntaForm(f => {
-                      const opts = [...f.opciones]; opts[i] = e.target.value; return { ...f, opciones: opts };
-                    })} />
-                </div>
-              ))}
-              <p className="text-xs text-muted-foreground">Seleccione el radio de la respuesta correcta</p>
-            </div>
-            <div>
-              <Label>Explicación de la respuesta correcta</Label>
-              <Textarea value={preguntaForm.explicacion}
-                onChange={e => setPreguntaForm(f => ({ ...f, explicacion: e.target.value }))} rows={2} />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setPreguntaDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={() => savePreguntaMutation.mutate(preguntaForm)}
-              disabled={!preguntaForm.pregunta || savePreguntaMutation.isPending}>
-              {savePreguntaMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Guardar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* ── Dialog Gestionar Asignaciones (patrón SST Capacitaciones) ────── */}
-      <Dialog open={enviarDialogOpen} onOpenChange={open => { setEnviarDialogOpen(open); if (!open) { setSelectedWorkerId(""); setSelectedCargo(""); } }}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+      {/* ── Dialog Plantilla PESV ────────────────────────────────────────── */}
+      <Dialog open={plantillaDialogOpen} onOpenChange={setPlantillaDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Gestionar asignaciones — Inducción PESV
+              <Car className="h-5 w-5 text-primary" />
+              Cargar Plantilla de Inducción PESV
             </DialogTitle>
             <DialogDescription>
-              Asigne la inducción virtual de seguridad vial a uno o varios trabajadores.
+              Carga automática de contenidos y preguntas de evaluación de seguridad vial — Resolución 40595/2022.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="rounded-lg border bg-muted/40 p-4 text-sm flex justify-between items-center">
+              <div>
+                <p className="text-sm font-medium">Plantilla de Seguridad Vial</p>
+                <p className="text-xs text-muted-foreground">Resolución 40595/2022 — Ministerio de Transporte</p>
+              </div>
+              <div className="text-right text-sm text-muted-foreground">
+                <p><strong>{plantilla.contenidos.length}</strong> contenidos educativos</p>
+                <p><strong>{plantilla.preguntas.length}</strong> preguntas de evaluación</p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Contenidos que se crearán:</p>
+              <ScrollArea className="h-36 border rounded-md p-3">
+                <ul className="space-y-1">
+                  {plantilla.contenidos.map((c, i) => (
+                    <li key={i} className="text-sm flex items-center gap-2">
+                      {getIconForType(c.tipoContenido)}
+                      {c.titulo}
+                    </li>
+                  ))}
+                </ul>
+              </ScrollArea>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Preguntas de evaluación que se crearán:</p>
+              <ScrollArea className="h-36 border rounded-md p-3">
+                <ul className="space-y-1">
+                  {plantilla.preguntas.map((p, i) => (
+                    <li key={i} className="text-sm flex items-center gap-2">
+                      <GraduationCap className="h-3 w-3 text-primary flex-shrink-0" />
+                      {p.pregunta}
+                    </li>
+                  ))}
+                </ul>
+              </ScrollArea>
+            </div>
+
+            {(contenidos.length > 0 || preguntas.length > 0) && (
+              <Card className="bg-red-50 dark:bg-red-950/20 border-red-300 dark:border-red-700">
+                <CardContent className="pt-4">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-sm font-semibold text-red-700 dark:text-red-400 mb-1">Plantillas ya cargadas</p>
+                      <p className="text-sm text-red-600 dark:text-red-300">
+                        Ya tiene <strong>{contenidos.length}</strong> contenido(s) y <strong>{preguntas.length}</strong> pregunta(s).
+                        Cargar nuevamente crearía duplicados. Elimine primero los existentes si desea reiniciar.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            <Card className="bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800">
+              <CardContent className="pt-4">
+                <p className="text-sm text-amber-700 dark:text-amber-400">
+                  Los contenidos se crearán en estado <strong>Borrador</strong>. Agregue la URL del video o suba el documento y luego publíquelos antes de enviar inducciones.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPlantillaDialogOpen(false)}>Cancelar</Button>
+            <Button
+              onClick={() => cargarPlantillaMutation.mutate()}
+              disabled={cargarPlantillaMutation.isPending || contenidos.length > 0 || preguntas.length > 0}
+            >
+              {cargarPlantillaMutation.isPending ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Cargando...</>
+              ) : (contenidos.length > 0 || preguntas.length > 0) ? (
+                <><AlertCircle className="h-4 w-4 mr-2" />Ya hay plantillas cargadas</>
+              ) : (
+                <><Wand2 className="h-4 w-4 mr-2" />Cargar {plantilla.contenidos.length} contenidos y {plantilla.preguntas.length} preguntas</>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Dialog Ver Respuestas ────────────────────────────────────────── */}
+      <Dialog open={respuestasDialogOpen} onOpenChange={open => { setRespuestasDialogOpen(open); if (!open) setSesionSeleccionada(null); }}>
+        <DialogContent className="max-w-2xl max-h-[85vh]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ClipboardList className="h-5 w-5" />
+              Respuestas de Evaluación PESV
+            </DialogTitle>
+            <DialogDescription>
+              {sesionSeleccionada && (
+                <>
+                  Trabajador: {(workers as any[]).find(w => w.id === sesionSeleccionada.workerId)?.name || "Trabajador"} |{" "}
+                  Puntaje: {sesionSeleccionada.puntajeEvaluacion}%{" "}
+                  {sesionSeleccionada.aprobado
+                    ? <Badge className="bg-green-100 text-green-800 ml-1">Aprobado</Badge>
+                    : <Badge className="bg-red-100 text-red-800 ml-1">Reprobado</Badge>
+                  }
+                </>
+              )}
             </DialogDescription>
           </DialogHeader>
 
-          {(() => {
-            const ws = workers as any[];
-            // Workers que ya tienen sesión activa (pendiente o en_progreso)
-            const activosIds = new Set(
-              (sesiones as any[])
-                .filter(s => s.estado === "pendiente" || s.estado === "en_progreso")
-                .map(s => s.workerId)
-            );
-            const availableWorkers = ws.filter(w => !activosIds.has(w.id));
-            const cargosDisponibles = Array.from(
-              new Set(availableWorkers.map((w: any) => w.position).filter(Boolean))
-            ).sort() as string[];
-            const workersBySelectedCargo = selectedCargo
-              ? availableWorkers.filter((w: any) => (w.position || "").toLowerCase() === selectedCargo.toLowerCase())
-              : [];
+          <ScrollArea className="max-h-[60vh] pr-4">
+            <div className="space-y-4">
+              {sesionSeleccionada && (() => {
+                const respuestas = JSON.parse(sesionSeleccionada.progresoEvaluacion || "{}");
+                const preguntasActivas = preguntas.filter(p => p.activa === 1).sort((a, b) => a.orden - b.orden);
 
-            return (
-              <div className="space-y-4">
-                {/* ── Agregar uno por uno ────────────────────────────── */}
-                <div className="flex items-end gap-2">
-                  <div className="flex-1">
-                    <label className="text-sm font-medium mb-1.5 block">Agregar trabajador</label>
-                    <Select value={selectedWorkerId} onValueChange={setSelectedWorkerId}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccione un trabajador…" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {availableWorkers.length === 0 ? (
-                          <div className="p-2 text-sm text-muted-foreground text-center">
-                            Todos los trabajadores ya tienen sesión activa
+                const buscarRespuesta = (pregunta: PreguntaInduccion, index: number) => {
+                  if (respuestas[pregunta.id] !== undefined) return respuestas[pregunta.id];
+                  if (respuestas[index] !== undefined) return respuestas[index];
+                  if (respuestas[String(index)] !== undefined) return respuestas[String(index)];
+                  return undefined;
+                };
+
+                if (preguntasActivas.length === 0) {
+                  return (
+                    <div className="text-center py-8">
+                      <p className="text-muted-foreground">No hay preguntas configuradas actualmente.</p>
+                      <p className="text-sm text-muted-foreground mt-1">Puntaje obtenido: {sesionSeleccionada.puntajeEvaluacion}%</p>
+                    </div>
+                  );
+                }
+
+                return preguntasActivas.map((pregunta, index) => {
+                  const opciones = JSON.parse(pregunta.opciones) as string[];
+                  const respuestaUsuario = buscarRespuesta(pregunta, index);
+                  const tieneRespuesta = respuestaUsuario !== undefined && respuestaUsuario !== null;
+                  const esCorrecta = tieneRespuesta && respuestaUsuario === pregunta.respuestaCorrecta;
+
+                  return (
+                    <Card key={pregunta.id} className={
+                      !tieneRespuesta
+                        ? "border-gray-300 bg-gray-50/50 dark:bg-gray-950/20"
+                        : esCorrecta
+                        ? "border-green-300 bg-green-50/50 dark:bg-green-950/20"
+                        : "border-red-300 bg-red-50/50 dark:bg-red-950/20"
+                    }>
+                      <CardHeader className="py-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <CardTitle className="text-sm font-medium">{index + 1}. {pregunta.pregunta}</CardTitle>
+                          {!tieneRespuesta
+                            ? <Badge variant="outline" className="text-gray-500 flex-shrink-0">Sin respuesta</Badge>
+                            : esCorrecta
+                            ? <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
+                            : <XCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
+                          }
+                        </div>
+                      </CardHeader>
+                      <CardContent className="py-2 pt-0">
+                        <div className="space-y-1">
+                          {opciones.map((op, i) => {
+                            const esRespuestaUsuario = respuestaUsuario === i;
+                            const esRespuestaCorrecta = pregunta.respuestaCorrecta === i;
+                            return (
+                              <div key={i} className={`p-2 rounded text-sm ${
+                                esRespuestaCorrecta
+                                  ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 font-medium"
+                                  : esRespuestaUsuario && !esRespuestaCorrecta
+                                  ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 line-through"
+                                  : "text-muted-foreground"
+                              }`}>
+                                {String.fromCharCode(65 + i)}. {op}
+                                {esRespuestaCorrecta && <span className="ml-2">(Correcta)</span>}
+                                {esRespuestaUsuario && !esRespuestaCorrecta && <span className="ml-2">(Respuesta del trabajador)</span>}
+                              </div>
+                            );
+                          })}
+                        </div>
+                        {pregunta.explicacion && (
+                          <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-950/30 rounded text-sm text-blue-800 dark:text-blue-300">
+                            <strong>Explicación:</strong> {pregunta.explicacion}
                           </div>
-                        ) : (
-                          availableWorkers.map((w: any) => (
-                            <SelectItem key={w.id} value={w.id}>
-                              {w.name}{w.identificationNumber ? ` — ${w.identificationNumber}` : ""}
-                            </SelectItem>
-                          ))
                         )}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <Button
-                    onClick={() => {
-                      if (selectedWorkerId) {
-                        enviarBulkMutation.mutate({ workerIds: [selectedWorkerId] });
-                      }
-                    }}
-                    disabled={!selectedWorkerId || enviarBulkMutation.isPending}
-                    className="gap-1"
-                  >
-                    {enviarBulkMutation.isPending
-                      ? <Loader2 className="h-4 w-4 animate-spin" />
-                      : <UserPlus className="h-4 w-4" />}
-                    Agregar
-                  </Button>
-                </div>
-
-                {/* ── Agregar en grupo ───────────────────────────────── */}
-                {availableWorkers.length > 0 && (
-                  <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                      Agregar en grupo
-                    </p>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <Select value={selectedCargo} onValueChange={setSelectedCargo}>
-                        <SelectTrigger className="w-52">
-                          <SelectValue placeholder="Filtrar por cargo…" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {cargosDisponibles.map(c => (
-                            <SelectItem key={c} value={c}>{c}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={!selectedCargo || enviarBulkMutation.isPending}
-                        onClick={() => enviarBulkMutation.mutate({ cargo: selectedCargo })}
-                        className="gap-1"
-                      >
-                        <UserPlus className="h-4 w-4" />
-                        Agregar por cargo
-                        {selectedCargo && workersBySelectedCargo.length > 0 && (
-                          <span className="ml-1 text-xs">({workersBySelectedCargo.length})</span>
-                        )}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={enviarBulkMutation.isPending}
-                        onClick={() => enviarBulkMutation.mutate({ workerIds: availableWorkers.map((w: any) => w.id) })}
-                        className="gap-1"
-                      >
-                        {enviarBulkMutation.isPending
-                          ? <Loader2 className="h-4 w-4 animate-spin" />
-                          : <UsersRound className="h-4 w-4" />}
-                        Agregar todos ({availableWorkers.length})
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                <Separator />
-
-                {/* ── Lista de sesiones activas ─────────────────────── */}
-                <div>
-                  <h4 className="font-medium mb-2 text-sm">
-                    Trabajadores con sesión activa ({(sesiones as any[]).filter(s => s.estado === "pendiente" || s.estado === "en_progreso").length})
-                  </h4>
-                  {(sesiones as any[]).filter(s => s.estado === "pendiente" || s.estado === "en_progreso").length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-6 text-muted-foreground">
-                      <Users className="h-8 w-8 mb-2 opacity-40" />
-                      <p className="text-sm">No hay sesiones activas asignadas</p>
-                      <p className="text-xs">Use los controles de arriba para asignar la inducción PESV</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-                      {(sesiones as any[])
-                        .filter(s => s.estado === "pendiente" || s.estado === "en_progreso")
-                        .map(s => {
-                          const w = ws.find(wk => wk.id === s.workerId);
-                          return (
-                            <div key={s.id} className="flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm">
-                              <div>
-                                <p className="font-medium">{w?.name || s.workerId}</p>
-                                {w?.position && <p className="text-xs text-muted-foreground">{w.position}</p>}
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Badge variant={s.estado === "en_progreso" ? "default" : "outline"} className="text-xs">
-                                  {s.estado === "en_progreso" ? "En progreso" : "Pendiente"}
-                                </Badge>
-                                <a href={`/induccion-virtual/${s.token}`} target="_blank" rel="noopener noreferrer">
-                                  <Button size="icon" variant="ghost" className="h-7 w-7">
-                                    <Eye className="h-3.5 w-3.5" />
-                                  </Button>
-                                </a>
-                              </div>
-                            </div>
-                          );
-                        })}
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })()}
+                      </CardContent>
+                    </Card>
+                  );
+                });
+              })()}
+            </div>
+          </ScrollArea>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEnviarDialogOpen(false)}>Cerrar</Button>
+            <Button variant="outline" onClick={() => setRespuestasDialogOpen(false)}>Cerrar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -788,12 +1160,14 @@ export default function PesvInduccionVirtual() {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Eliminar {deletingType === "contenido" ? "contenido" : "pregunta"}?</AlertDialogTitle>
-            <AlertDialogDescription>Esta acción no se puede deshacer.</AlertDialogDescription>
+            <AlertDialogTitle>¿Está seguro?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. Se eliminará permanentemente {itemToDelete?.type === "contenido" ? "este contenido" : "esta pregunta"}.
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={() => deleteMutation.mutate()} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">
               Eliminar
             </AlertDialogAction>
           </AlertDialogFooter>
