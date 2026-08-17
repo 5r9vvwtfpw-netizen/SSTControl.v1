@@ -1,6 +1,6 @@
 import { Express, Request, Response } from "express";
 import { db } from "./db";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, and, desc, sql, inArray } from "drizzle-orm";
 import * as schema from "@shared/schema";
 import { randomBytes } from "crypto";
 import { resend } from "./services/email";
@@ -1199,55 +1199,51 @@ export function registerInduccionVirtualRoutes(app: Express) {
   // SESIONES PESV - Envío a trabajadores
   // ============================================================================
 
+  // Endpoint unificado: asigna sesiones PESV a uno, varios por cargo, o todos.
+  // Body: { workerIds?: string[] }  |  { cargo?: string }  |  {} (todos)
   app.post("/api/sesiones-induccion-pesv/enviar", async (req: Request, res: Response) => {
     try {
       if (!req.isAuthenticated()) return res.status(401).send("No autorizado");
       const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).send("No autorizado");
 
-      const { workerId } = req.body;
-      if (!workerId) return res.status(400).send("workerId es requerido");
+      const { workerIds, cargo } = req.body as { workerIds?: string[]; cargo?: string };
 
-      const [worker] = await db.select()
-        .from(schema.workers)
-        .where(and(eq(schema.workers.id, workerId), eq(schema.workers.companyId, companyId)));
-
-      if (!worker) return res.status(404).send("Trabajador no encontrado");
-
-      const token = generateToken();
-      const fechaExpiracion = new Date();
-      fechaExpiracion.setDate(fechaExpiracion.getDate() + 30);
-
-      const [sesion] = await db.insert(schema.sesionesInduccionVirtual)
-        .values({ companyId, workerId, token, tipoInduccion: "pesv", estado: "pendiente",
-                  fechaExpiracion, contenidosVistos: "[]", progresoEvaluacion: "{}" })
-        .returning();
-
-      res.status(201).json({ ...sesion, inductionUrl: `/induccion-virtual/${token}` });
-    } catch (error: any) {
-      console.error("Error creating PESV session:", error);
-      res.status(500).send("Error al crear sesión de inducción PESV");
-    }
-  });
-
-  app.post("/api/sesiones-induccion-pesv/enviar-masivo", async (req: Request, res: Response) => {
-    try {
-      if (!req.isAuthenticated()) return res.status(401).send("No autorizado");
-      const companyId = getEffectiveCompanyId(req);
-      if (!companyId) return res.status(401).send("No autorizado");
-
-      const allWorkers = await db.select().from(schema.workers)
+      // Obtener trabajadores objetivo
+      let targetWorkers = await db.select().from(schema.workers)
         .where(eq(schema.workers.companyId, companyId));
 
-      let enviados = 0;
-      const errores: string[] = [];
+      if (workerIds && workerIds.length > 0) {
+        targetWorkers = targetWorkers.filter(w => workerIds.includes(w.id));
+      } else if (cargo) {
+        targetWorkers = targetWorkers.filter(w =>
+          w.position && w.position.toLowerCase() === cargo.toLowerCase()
+        );
+      }
 
-      for (const worker of allWorkers) {
+      if (targetWorkers.length === 0) {
+        return res.status(404).json({ enviados: 0, omitidos: 0, mensaje: "No se encontraron trabajadores" });
+      }
+
+      // Obtener sesiones PESV activas (pendiente o en_progreso) para evitar duplicados
+      const sesionesActivas = await db.select({ workerId: schema.sesionesInduccionVirtual.workerId })
+        .from(schema.sesionesInduccionVirtual)
+        .where(and(
+          eq(schema.sesionesInduccionVirtual.companyId, companyId),
+          eq(schema.sesionesInduccionVirtual.tipoInduccion, "pesv"),
+          inArray(schema.sesionesInduccionVirtual.estado, ["pendiente", "en_progreso"])
+        ));
+      const activosSet = new Set(sesionesActivas.map(s => s.workerId));
+
+      let enviados = 0;
+      let omitidos = 0;
+
+      for (const worker of targetWorkers) {
+        if (activosSet.has(worker.id)) { omitidos++; continue; }
         try {
           const token = generateToken();
           const fechaExpiracion = new Date();
           fechaExpiracion.setDate(fechaExpiracion.getDate() + 30);
-
           await db.insert(schema.sesionesInduccionVirtual).values({
             companyId, workerId: worker.id, token, tipoInduccion: "pesv",
             estado: "pendiente", fechaExpiracion, contenidosVistos: "[]", progresoEvaluacion: "{}",
@@ -1255,17 +1251,56 @@ export function registerInduccionVirtualRoutes(app: Express) {
           enviados++;
         } catch (err: any) {
           console.error(`Error creating PESV session for worker ${worker.id}:`, err);
-          errores.push(worker.id);
+          omitidos++;
         }
       }
 
-      res.json({
+      res.status(201).json({
         enviados,
-        errores: errores.length,
-        mensaje: `Se crearon ${enviados} sesión(es) de inducción PESV.`,
+        omitidos,
+        mensaje: `${enviados} inducción(es) asignada(s)${omitidos > 0 ? `, ${omitidos} ya tenían sesión activa` : ""}.`,
       });
     } catch (error: any) {
-      console.error("Error en envío masivo PESV:", error);
+      console.error("Error creating PESV session:", error);
+      res.status(500).send("Error al crear sesión(es) de inducción PESV");
+    }
+  });
+
+  // Mantener alias /enviar-masivo por compatibilidad (delega al endpoint unificado)
+  app.post("/api/sesiones-induccion-pesv/enviar-masivo", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).send("No autorizado");
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(401).send("No autorizado");
+
+      const sesionesActivas = await db.select({ workerId: schema.sesionesInduccionVirtual.workerId })
+        .from(schema.sesionesInduccionVirtual)
+        .where(and(
+          eq(schema.sesionesInduccionVirtual.companyId, companyId),
+          eq(schema.sesionesInduccionVirtual.tipoInduccion, "pesv"),
+          inArray(schema.sesionesInduccionVirtual.estado, ["pendiente", "en_progreso"])
+        ));
+      const activosSet = new Set(sesionesActivas.map(s => s.workerId));
+
+      const allWorkers = await db.select().from(schema.workers)
+        .where(eq(schema.workers.companyId, companyId));
+
+      let enviados = 0; let omitidos = 0;
+      for (const worker of allWorkers) {
+        if (activosSet.has(worker.id)) { omitidos++; continue; }
+        try {
+          const token = generateToken();
+          const fechaExpiracion = new Date();
+          fechaExpiracion.setDate(fechaExpiracion.getDate() + 30);
+          await db.insert(schema.sesionesInduccionVirtual).values({
+            companyId, workerId: worker.id, token, tipoInduccion: "pesv",
+            estado: "pendiente", fechaExpiracion, contenidosVistos: "[]", progresoEvaluacion: "{}",
+          });
+          enviados++;
+        } catch { omitidos++; }
+      }
+      res.json({ enviados, omitidos, mensaje: `${enviados} inducción(es) asignada(s), ${omitidos} omitida(s).` });
+    } catch (error: any) {
       res.status(500).send("Error al enviar inducciones PESV masivas");
     }
   });

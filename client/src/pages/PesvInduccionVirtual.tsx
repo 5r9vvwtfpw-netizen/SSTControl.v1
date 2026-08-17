@@ -13,7 +13,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useCompanyContext } from "@/hooks/use-company-context";
-import { Plus, Pencil, Trash2, Video, FileText, BookOpen, Eye, Send, Users, CheckCircle2, XCircle, Car, Loader2 } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { Plus, Pencil, Trash2, Video, FileText, BookOpen, Eye, Send, Users, CheckCircle2, XCircle, Car, Loader2, UserPlus, UsersRound, X as XIcon } from "lucide-react";
 import type { ContenidoInduccion, PreguntaInduccion, SesionInduccionVirtual, Worker } from "@shared/schema";
 
 const TIPO = "pesv";
@@ -106,6 +107,7 @@ export default function PesvInduccionVirtual() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deletingType, setDeletingType] = useState<"contenido" | "pregunta">("contenido");
   const [selectedWorkerId, setSelectedWorkerId] = useState<string>("");
+  const [selectedCargo, setSelectedCargo] = useState<string>("");
   const [contenidoForm, setContenidoForm] = useState<ContenidoFormData>(defaultContenido);
   const [preguntaForm, setPreguntaForm] = useState<PreguntaFormData>(defaultPregunta);
 
@@ -184,30 +186,23 @@ export default function PesvInduccionVirtual() {
     onError: () => toast({ title: "Error al eliminar", variant: "destructive" }),
   });
 
-  const enviarIndividualMutation = useMutation({
-    mutationFn: async () => {
-      const res = await apiRequest("POST", `/api/sesiones-induccion-pesv/enviar`, { workerId: selectedWorkerId });
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/sesiones-induccion-pesv"] });
-      setEnviarDialogOpen(false);
-      setSelectedWorkerId("");
-      toast({ title: "Inducción PESV asignada correctamente" });
-    },
-    onError: () => toast({ title: "Error al asignar inducción", variant: "destructive" }),
-  });
-
-  const enviarMasivoMutation = useMutation({
-    mutationFn: async () => {
-      const res = await apiRequest("POST", `/api/sesiones-induccion-pesv/enviar-masivo`, {});
+  // Mutation unificada: acepta workerIds (array), cargo (string) o vacío (todos)
+  const enviarBulkMutation = useMutation({
+    mutationFn: async (payload: { workerIds?: string[]; cargo?: string }) => {
+      const res = await apiRequest("POST", `/api/sesiones-induccion-pesv/enviar`, payload);
       return res.json();
     },
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/sesiones-induccion-pesv"] });
-      toast({ title: "Envío masivo completado", description: data?.mensaje });
+      setSelectedWorkerId("");
+      setSelectedCargo("");
+      toast({
+        title: "✅ Inducciones asignadas",
+        description: data?.mensaje,
+        className: "bg-green-50 border-green-200",
+      });
     },
-    onError: () => toast({ title: "Error en envío masivo", variant: "destructive" }),
+    onError: () => toast({ title: "Error al asignar inducción", variant: "destructive" }),
   });
 
   const cargarPreguntasEjemploMutation = useMutation({
@@ -274,16 +269,9 @@ export default function PesvInduccionVirtual() {
             </p>
           </div>
         </div>
-        <div className="flex gap-2 flex-wrap">
-          <Button variant="outline" onClick={() => { setEnviarDialogOpen(true); setSelectedWorkerId(""); }}>
-            <Send className="h-4 w-4 mr-2" /> Asignar individual
-          </Button>
-          <Button variant="default" onClick={() => enviarMasivoMutation.mutate()}
-            disabled={enviarMasivoMutation.isPending}>
-            {enviarMasivoMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Users className="h-4 w-4 mr-2" />}
-            Asignar a todos
-          </Button>
-        </div>
+        <Button onClick={() => { setEnviarDialogOpen(true); setSelectedWorkerId(""); setSelectedCargo(""); }}>
+          <Users className="h-4 w-4 mr-2" /> Gestionar asignaciones
+        </Button>
       </div>
 
       {/* Stats */}
@@ -629,28 +617,169 @@ export default function PesvInduccionVirtual() {
         </DialogContent>
       </Dialog>
 
-      {/* ── Dialog Enviar Individual ──────────────────────────────────────── */}
-      <Dialog open={enviarDialogOpen} onOpenChange={setEnviarDialogOpen}>
-        <DialogContent>
+      {/* ── Dialog Gestionar Asignaciones (patrón SST Capacitaciones) ────── */}
+      <Dialog open={enviarDialogOpen} onOpenChange={open => { setEnviarDialogOpen(open); if (!open) { setSelectedWorkerId(""); setSelectedCargo(""); } }}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Asignar inducción PESV</DialogTitle>
-            <DialogDescription>Seleccione el trabajador al que desea asignarle la inducción virtual PESV.</DialogDescription>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Gestionar asignaciones — Inducción PESV
+            </DialogTitle>
+            <DialogDescription>
+              Asigne la inducción virtual de seguridad vial a uno o varios trabajadores.
+            </DialogDescription>
           </DialogHeader>
-          <Select value={selectedWorkerId} onValueChange={setSelectedWorkerId}>
-            <SelectTrigger><SelectValue placeholder="Seleccionar trabajador..." /></SelectTrigger>
-            <SelectContent>
-              {(workers as any[]).map((w: any) => (
-                <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+
+          {(() => {
+            const ws = workers as any[];
+            // Workers que ya tienen sesión activa (pendiente o en_progreso)
+            const activosIds = new Set(
+              (sesiones as any[])
+                .filter(s => s.estado === "pendiente" || s.estado === "en_progreso")
+                .map(s => s.workerId)
+            );
+            const availableWorkers = ws.filter(w => !activosIds.has(w.id));
+            const cargosDisponibles = Array.from(
+              new Set(availableWorkers.map((w: any) => w.position).filter(Boolean))
+            ).sort() as string[];
+            const workersBySelectedCargo = selectedCargo
+              ? availableWorkers.filter((w: any) => (w.position || "").toLowerCase() === selectedCargo.toLowerCase())
+              : [];
+
+            return (
+              <div className="space-y-4">
+                {/* ── Agregar uno por uno ────────────────────────────── */}
+                <div className="flex items-end gap-2">
+                  <div className="flex-1">
+                    <label className="text-sm font-medium mb-1.5 block">Agregar trabajador</label>
+                    <Select value={selectedWorkerId} onValueChange={setSelectedWorkerId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccione un trabajador…" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableWorkers.length === 0 ? (
+                          <div className="p-2 text-sm text-muted-foreground text-center">
+                            Todos los trabajadores ya tienen sesión activa
+                          </div>
+                        ) : (
+                          availableWorkers.map((w: any) => (
+                            <SelectItem key={w.id} value={w.id}>
+                              {w.name}{w.identificationNumber ? ` — ${w.identificationNumber}` : ""}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button
+                    onClick={() => {
+                      if (selectedWorkerId) {
+                        enviarBulkMutation.mutate({ workerIds: [selectedWorkerId] });
+                      }
+                    }}
+                    disabled={!selectedWorkerId || enviarBulkMutation.isPending}
+                    className="gap-1"
+                  >
+                    {enviarBulkMutation.isPending
+                      ? <Loader2 className="h-4 w-4 animate-spin" />
+                      : <UserPlus className="h-4 w-4" />}
+                    Agregar
+                  </Button>
+                </div>
+
+                {/* ── Agregar en grupo ───────────────────────────────── */}
+                {availableWorkers.length > 0 && (
+                  <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                      Agregar en grupo
+                    </p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Select value={selectedCargo} onValueChange={setSelectedCargo}>
+                        <SelectTrigger className="w-52">
+                          <SelectValue placeholder="Filtrar por cargo…" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {cargosDisponibles.map(c => (
+                            <SelectItem key={c} value={c}>{c}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={!selectedCargo || enviarBulkMutation.isPending}
+                        onClick={() => enviarBulkMutation.mutate({ cargo: selectedCargo })}
+                        className="gap-1"
+                      >
+                        <UserPlus className="h-4 w-4" />
+                        Agregar por cargo
+                        {selectedCargo && workersBySelectedCargo.length > 0 && (
+                          <span className="ml-1 text-xs">({workersBySelectedCargo.length})</span>
+                        )}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={enviarBulkMutation.isPending}
+                        onClick={() => enviarBulkMutation.mutate({ workerIds: availableWorkers.map((w: any) => w.id) })}
+                        className="gap-1"
+                      >
+                        {enviarBulkMutation.isPending
+                          ? <Loader2 className="h-4 w-4 animate-spin" />
+                          : <UsersRound className="h-4 w-4" />}
+                        Agregar todos ({availableWorkers.length})
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                <Separator />
+
+                {/* ── Lista de sesiones activas ─────────────────────── */}
+                <div>
+                  <h4 className="font-medium mb-2 text-sm">
+                    Trabajadores con sesión activa ({(sesiones as any[]).filter(s => s.estado === "pendiente" || s.estado === "en_progreso").length})
+                  </h4>
+                  {(sesiones as any[]).filter(s => s.estado === "pendiente" || s.estado === "en_progreso").length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-6 text-muted-foreground">
+                      <Users className="h-8 w-8 mb-2 opacity-40" />
+                      <p className="text-sm">No hay sesiones activas asignadas</p>
+                      <p className="text-xs">Use los controles de arriba para asignar la inducción PESV</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                      {(sesiones as any[])
+                        .filter(s => s.estado === "pendiente" || s.estado === "en_progreso")
+                        .map(s => {
+                          const w = ws.find(wk => wk.id === s.workerId);
+                          return (
+                            <div key={s.id} className="flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm">
+                              <div>
+                                <p className="font-medium">{w?.name || s.workerId}</p>
+                                {w?.position && <p className="text-xs text-muted-foreground">{w.position}</p>}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Badge variant={s.estado === "en_progreso" ? "default" : "outline"} className="text-xs">
+                                  {s.estado === "en_progreso" ? "En progreso" : "Pendiente"}
+                                </Badge>
+                                <a href={`/induccion-virtual/${s.token}`} target="_blank" rel="noopener noreferrer">
+                                  <Button size="icon" variant="ghost" className="h-7 w-7">
+                                    <Eye className="h-3.5 w-3.5" />
+                                  </Button>
+                                </a>
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+
           <DialogFooter>
-            <Button variant="outline" onClick={() => setEnviarDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={() => enviarIndividualMutation.mutate()}
-              disabled={!selectedWorkerId || enviarIndividualMutation.isPending}>
-              {enviarIndividualMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Asignar
-            </Button>
+            <Button variant="outline" onClick={() => setEnviarDialogOpen(false)}>Cerrar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
