@@ -14,7 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useToast } from "@/hooks/use-toast";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
-import { Plus, Pencil, Trash2, Video, FileText, BookOpen, GraduationCap, Settings, Eye, Send, Users, CheckCircle2, XCircle, ClipboardList, ChevronUp, ChevronDown, Wand2, Shield, Loader2, Upload, File, AlertCircle } from "lucide-react";
+import { Plus, Pencil, Trash2, Video, FileText, BookOpen, GraduationCap, Settings, Eye, Send, Users, CheckCircle2, XCircle, ClipboardList, ChevronUp, ChevronDown, Wand2, Shield, Loader2, Upload, File, AlertCircle, Download } from "lucide-react";
 import { Link } from "wouter";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AutomationAssistant, type PlantillaInfo } from "@/components/AutomationAssistant";
@@ -1170,18 +1170,31 @@ export default function ConfiguracionInduccion() {
                             </Badge>
                           )}
                           {sesion.estado === "completada" && (
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              onClick={() => {
-                                setSesionSeleccionada(sesion);
-                                setRespuestasDialogOpen(true);
-                              }}
-                              data-testid={`button-ver-respuestas-${sesion.id}`}
-                            >
-                              <ClipboardList className="h-4 w-4 mr-1" />
-                              Ver respuestas
-                            </Button>
+                            <>
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => {
+                                  setSesionSeleccionada(sesion);
+                                  setRespuestasDialogOpen(true);
+                                }}
+                                data-testid={`button-ver-respuestas-${sesion.id}`}
+                              >
+                                <ClipboardList className="h-4 w-4 mr-1" />
+                                Ver respuestas
+                              </Button>
+                              <a
+                                href={`/api/sesiones-induccion-virtual/${sesion.id}/pdf`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                data-testid={`button-descargar-pdf-${sesion.id}`}
+                              >
+                                <Button size="sm" variant="outline">
+                                  <Download className="h-4 w-4 mr-1" />
+                                  PDF
+                                </Button>
+                              </a>
+                            </>
                           )}
                         </div>
                       </div>

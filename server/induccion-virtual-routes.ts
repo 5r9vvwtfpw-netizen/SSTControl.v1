@@ -4,6 +4,7 @@ import { eq, and, desc, sql } from "drizzle-orm";
 import * as schema from "@shared/schema";
 import { randomBytes } from "crypto";
 import { resend } from "./services/email";
+import PDFDocument from "pdfkit";
 
 function generateToken(): string {
   return randomBytes(32).toString("hex");
@@ -918,6 +919,149 @@ export function registerInduccionVirtualRoutes(app: Express) {
     } catch (error: any) {
       console.error("Error completing induction:", error);
       res.status(500).send("Error al completar inducción");
+    }
+  });
+
+  // ============================================================================
+  // PDF CONSTANCIA DE INDUCCIÓN
+  // ============================================================================
+
+  app.get("/api/sesiones-induccion-virtual/:id/pdf", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).send("No autorizado");
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(401).send("No autorizado");
+
+      const { id } = req.params;
+
+      const [sesion] = await db.select()
+        .from(schema.sesionesInduccionVirtual)
+        .where(and(
+          eq(schema.sesionesInduccionVirtual.id, id),
+          eq(schema.sesionesInduccionVirtual.companyId, companyId)
+        ));
+
+      if (!sesion) return res.status(404).send("Sesión no encontrada");
+
+      const [worker] = await db.select()
+        .from(schema.workers)
+        .where(eq(schema.workers.id, sesion.workerId));
+
+      const [company] = await db.select()
+        .from(schema.companies)
+        .where(eq(schema.companies.id, companyId));
+
+      const preguntas = await db.select()
+        .from(schema.preguntasInduccion)
+        .where(eq(schema.preguntasInduccion.companyId, companyId))
+        .orderBy(schema.preguntasInduccion.orden);
+
+      const formatDate = (d: any) => d ? new Date(d).toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' }) : '-';
+
+      const doc = new PDFDocument({ size: 'LETTER', margin: 50 });
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="Constancia-Induccion-${worker?.name?.replace(/\s+/g, '-') || id.substring(0, 8)}.pdf"`);
+      doc.pipe(res);
+
+      // ── Encabezado ──────────────────────────────────────────────────────
+      const GREEN = '#1a6b3a';
+      const pageW = doc.page.width - 100; // margins 50 cada lado
+
+      doc.rect(50, 50, pageW, 60).fill(GREEN);
+      doc.fillColor('white').fontSize(18).font('Helvetica-Bold')
+        .text('CONSTANCIA DE INDUCCIÓN', 50, 65, { width: pageW, align: 'center' });
+      doc.fontSize(10).font('Helvetica')
+        .text('Seguridad y Salud en el Trabajo', 50, 88, { width: pageW, align: 'center' });
+
+      doc.moveDown(2);
+
+      // ── Datos de empresa ─────────────────────────────────────────────────
+      doc.fillColor('#333').fontSize(11).font('Helvetica-Bold')
+        .text(company?.name || 'Empresa', { align: 'center' });
+      if (company?.nit) {
+        doc.font('Helvetica').fontSize(9).fillColor('#666')
+          .text(`NIT: ${company.nit}`, { align: 'center' });
+      }
+      doc.moveDown(1.5);
+
+      // ── Línea separadora ─────────────────────────────────────────────────
+      doc.moveTo(50, doc.y).lineTo(50 + pageW, doc.y).strokeColor(GREEN).lineWidth(2).stroke();
+      doc.moveDown(1);
+
+      // ── Datos del trabajador y sesión ────────────────────────────────────
+      const rows = [
+        ['Trabajador:', worker?.name || '-'],
+        ['Cédula:', worker?.cedula || worker?.documentNumber || '-'],
+        ['Cargo:', worker?.position || worker?.cargo || '-'],
+        ['Tipo de inducción:', sesion.tipoInduccion === 'reinduccion' ? 'Reinducción' : 'Inducción'],
+        ['Fecha de envío:', formatDate(sesion.fechaEnvio)],
+        ['Fecha de finalización:', formatDate(sesion.fechaFinalizacion)],
+        ['Resultado de evaluación:', sesion.puntajeEvaluacion !== null ? `${sesion.puntajeEvaluacion}% — ${sesion.aprobado ? 'APROBADO ✓' : 'NO APROBADO'}` : 'Sin evaluación'],
+      ];
+
+      const colLabel = 180;
+      rows.forEach(([label, value]) => {
+        const y = doc.y;
+        doc.font('Helvetica-Bold').fontSize(10).fillColor('#444').text(label, 50, y, { width: colLabel, continued: false });
+        doc.font('Helvetica').fontSize(10).fillColor('#222').text(value, 50 + colLabel, y, { width: pageW - colLabel });
+        doc.moveDown(0.4);
+      });
+
+      doc.moveDown(1);
+      doc.moveTo(50, doc.y).lineTo(50 + pageW, doc.y).strokeColor('#ccc').lineWidth(1).stroke();
+      doc.moveDown(1);
+
+      // ── Respuestas de evaluación ─────────────────────────────────────────
+      if (sesion.progresoEvaluacion && preguntas.length > 0) {
+        let progreso: Record<string, string> = {};
+        try { progreso = JSON.parse(sesion.progresoEvaluacion as string); } catch {}
+
+        doc.font('Helvetica-Bold').fontSize(11).fillColor(GREEN)
+          .text('DETALLE DE EVALUACIÓN', 50, doc.y);
+        doc.moveDown(0.5);
+
+        preguntas.forEach((p, idx) => {
+          const respuesta = progreso[p.id] || '-';
+          // Check page space
+          if (doc.y > doc.page.height - 120) doc.addPage();
+
+          doc.font('Helvetica-Bold').fontSize(9).fillColor('#333')
+            .text(`${idx + 1}. ${p.pregunta}`, 50, doc.y, { width: pageW });
+          doc.font('Helvetica').fontSize(9).fillColor('#555')
+            .text(`Respuesta: ${respuesta}`, 60, doc.y, { width: pageW - 10 });
+          doc.moveDown(0.5);
+        });
+
+        doc.moveDown(0.5);
+        doc.moveTo(50, doc.y).lineTo(50 + pageW, doc.y).strokeColor('#ccc').lineWidth(1).stroke();
+        doc.moveDown(1);
+      }
+
+      // ── Texto legal ──────────────────────────────────────────────────────
+      if (doc.y > doc.page.height - 160) doc.addPage();
+
+      doc.font('Helvetica').fontSize(9).fillColor('#666')
+        .text(
+          'La presente constancia certifica que el trabajador mencionado completó satisfactoriamente el proceso de inducción virtual en Seguridad y Salud en el Trabajo, según lo establecido en el Decreto 1072 de 2015 y la Resolución 0312 de 2019.',
+          50, doc.y, { width: pageW, align: 'justify' }
+        );
+
+      doc.moveDown(2);
+
+      // ── Firma empresa ────────────────────────────────────────────────────
+      const sigY = doc.y;
+      doc.moveTo(50, sigY + 30).lineTo(230, sigY + 30).strokeColor('#333').lineWidth(1).stroke();
+      doc.font('Helvetica').fontSize(8).fillColor('#444')
+        .text('Firma Responsable SST', 50, sigY + 35, { width: 180, align: 'center' });
+
+      doc.moveTo(pageW - 130, sigY + 30).lineTo(50 + pageW, sigY + 30).strokeColor('#333').lineWidth(1).stroke();
+      doc.font('Helvetica').fontSize(8).fillColor('#444')
+        .text(`Generado: ${formatDate(new Date())}`, pageW - 130, sigY + 35, { width: 180, align: 'center' });
+
+      doc.end();
+    } catch (error: any) {
+      console.error("Error generando PDF inducción:", error);
+      if (!res.headersSent) res.status(500).send("Error al generar el PDF");
     }
   });
 
