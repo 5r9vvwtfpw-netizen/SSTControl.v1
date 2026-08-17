@@ -1048,15 +1048,33 @@ export function registerInduccionVirtualRoutes(app: Express) {
 
       doc.moveDown(2);
 
-      // ── Firma empresa ────────────────────────────────────────────────────
-      const sigY = doc.y;
-      doc.moveTo(50, sigY + 30).lineTo(230, sigY + 30).strokeColor('#333').lineWidth(1).stroke();
-      doc.font('Helvetica').fontSize(8).fillColor('#444')
-        .text('Firma Responsable SST', 50, sigY + 35, { width: 180, align: 'center' });
+      // ── Bloque de firmas ─────────────────────────────────────────────────
+      if (doc.y > doc.page.height - 200) doc.addPage();
 
-      doc.moveTo(pageW - 130, sigY + 30).lineTo(50 + pageW, sigY + 30).strokeColor('#333').lineWidth(1).stroke();
+      const sigY = doc.y;
+      const sigW = 180;
+      const sigH = 60;
+
+      // Columna izquierda — firma del trabajador
+      if (sesion.firmaDigital) {
+        try {
+          // firmaDigital es data:image/png;base64,<datos>
+          const base64Data = (sesion.firmaDigital as string).replace(/^data:image\/\w+;base64,/, '');
+          const sigBuf = Buffer.from(base64Data, 'base64');
+          doc.image(sigBuf, 50, sigY, { width: sigW, height: sigH, fit: [sigW, sigH] });
+        } catch {
+          // Si falla, dejamos solo la línea
+        }
+      }
+      doc.moveTo(50, sigY + sigH + 5).lineTo(50 + sigW, sigY + sigH + 5).strokeColor('#333').lineWidth(1).stroke();
       doc.font('Helvetica').fontSize(8).fillColor('#444')
-        .text(`Generado: ${formatDate(new Date())}`, pageW - 130, sigY + 35, { width: 180, align: 'center' });
+        .text(`Firma del Trabajador\n${worker?.name || ''}`, 50, sigY + sigH + 10, { width: sigW, align: 'center' });
+
+      // Columna derecha — firma responsable SST + fecha
+      const rightX = 50 + pageW - sigW;
+      doc.moveTo(rightX, sigY + sigH + 5).lineTo(rightX + sigW, sigY + sigH + 5).strokeColor('#333').lineWidth(1).stroke();
+      doc.font('Helvetica').fontSize(8).fillColor('#444')
+        .text(`Firma Responsable SST\nGenerado: ${formatDate(new Date())}`, rightX, sigY + sigH + 10, { width: sigW, align: 'center' });
 
       doc.end();
     } catch (error: any) {
