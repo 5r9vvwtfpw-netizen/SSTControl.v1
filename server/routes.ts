@@ -7128,7 +7128,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.pipe(res);
 
       const logoBuffer = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(effectiveCompanyId, false);
+      const signers = await getSignersForCompany(effectiveCompanyId, true);
 
       let y = await addStandardHeader({
         doc, company,
