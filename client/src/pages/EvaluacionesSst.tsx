@@ -691,7 +691,7 @@ export default function EvaluacionesSst() {
                       <FormLabel className="text-sm font-medium">Elaborado por</FormLabel>
                       <div className="mt-1.5 flex items-center gap-2 p-2 rounded-md bg-muted/50 border" data-testid="text-elaborado-por">
                         <Monitor className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">SADGI S.A.S. — Sistema Automatizado</span>
+                        <span className="text-sm">SST-Colombia — Sistema Automatizado</span>
                       </div>
                     </div>
 
