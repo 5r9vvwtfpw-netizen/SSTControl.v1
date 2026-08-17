@@ -443,9 +443,6 @@ export default function ConfiguracionInduccion() {
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Enviar Inducción a Trabajador</DialogTitle>
-                <DialogDescription>
-                  Seleccione un trabajador sin sesión activa. Podrá ver la inducción en su Portal del Empleado.
-                </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
                     <div className="space-y-2">
