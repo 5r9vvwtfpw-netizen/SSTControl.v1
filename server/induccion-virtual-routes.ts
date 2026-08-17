@@ -567,40 +567,8 @@ export function registerInduccionVirtualRoutes(app: Express) {
       const baseUrl = process.env.REPLIT_DEPLOYMENT_URL || process.env.APP_URL || 'https://sst-colombia.com';
       const inductionUrl = `${baseUrl}/induccion-virtual/${token}`;
 
-      try {
-        await resend.emails.send({
-          from: 'SST Colombia <notificaciones@sst-colombia.com>',
-          to: worker.email,
-          subject: `Inducción de Seguridad y Salud en el Trabajo - ${company?.name || 'Tu Empresa'}`,
-          html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-              <h2 style="color: #059669;">Inducción Virtual de SST</h2>
-              <p>Estimado(a) <strong>${worker.name}</strong>,</p>
-              <p>Se le ha asignado completar la inducción de Seguridad y Salud en el Trabajo de <strong>${company?.name || 'la empresa'}</strong>.</p>
-              <p>Por favor, haga clic en el siguiente enlace para comenzar:</p>
-              <p style="text-align: center;">
-                <a href="${inductionUrl}" 
-                   style="display: inline-block; padding: 12px 24px; background-color: #059669; color: white; text-decoration: none; border-radius: 6px; font-weight: bold;">
-                  Iniciar Inducción
-                </a>
-              </p>
-              <p><strong>Importante:</strong></p>
-              <ul>
-                <li>Este enlace es válido por 7 días</li>
-                <li>Puede completar la inducción a su ritmo, su progreso se guardará automáticamente</li>
-                <li>Al finalizar, deberá firmar digitalmente el acta de inducción</li>
-              </ul>
-              <p>Si tiene alguna pregunta, contacte al área de Seguridad y Salud en el Trabajo.</p>
-              <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
-              <p style="color: #6b7280; font-size: 12px;">
-                Este es un mensaje automático del sistema SST Colombia.
-              </p>
-            </div>
-          `,
-        });
-      } catch (emailError) {
-        console.error("Error sending induction email:", emailError);
-      }
+      // Correo de inducción deshabilitado: el trabajador accede desde su portal de empleados.
+      // Solo se envían credenciales de acceso al portal (flujo separado).
 
       res.status(201).json({
         ...sesion,
@@ -656,33 +624,7 @@ export function registerInduccionVirtualRoutes(app: Express) {
             progresoEvaluacion: "{}",
           });
 
-          // Email solo si el trabajador tiene correo (opcional, no bloquea)
-          if (worker.email) {
-            const inductionUrl = `${baseUrl}/induccion-virtual/${token}`;
-            try {
-              await resend.emails.send({
-                from: 'SST Colombia <notificaciones@sst-colombia.com>',
-                to: worker.email,
-                subject: `Inducción Virtual SST - ${company?.name || 'Tu Empresa'}`,
-                html: `
-                  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                    <h2 style="color: #059669;">Inducción Virtual de SST</h2>
-                    <p>Estimado(a) <strong>${worker.name}</strong>,</p>
-                    <p>Se le ha asignado completar la inducción virtual de SST en <strong>${company?.name || 'la empresa'}</strong>.</p>
-                    <p>Puede acceder desde su <strong>Portal del Empleado</strong> o directamente con el siguiente enlace:</p>
-                    <p style="text-align: center;">
-                      <a href="${inductionUrl}" style="display: inline-block; padding: 12px 24px; background-color: #059669; color: white; text-decoration: none; border-radius: 6px; font-weight: bold;">
-                        Iniciar Inducción
-                      </a>
-                    </p>
-                    <p style="color: #6b7280; font-size: 12px;">Este enlace es válido por 30 días. También puede acceder desde su portal de empleados.</p>
-                  </div>
-                `,
-              });
-            } catch (emailErr) {
-              console.error(`Email error for worker ${worker.id}:`, emailErr);
-            }
-          }
+          // Correo masivo de inducción deshabilitado: el trabajador accede desde su portal de empleados.
 
           enviados++;
         } catch (workerErr: any) {
