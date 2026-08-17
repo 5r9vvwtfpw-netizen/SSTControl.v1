@@ -436,6 +436,9 @@ export async function addSignatureFooter(
       if (sigUrl.startsWith('/uploads/') || sigUrl.startsWith('/objects/uploads/')) {
         const localPath = path.join(process.cwd(), 'public', sigUrl);
         if (fs.existsSync(localPath)) return fs.readFileSync(localPath);
+        // Archivo no está en disco local → intentar S3/object-storage
+        const fromS3 = await objectStorageService.getObjectBuffer(sigUrl);
+        if (fromS3) return fromS3;
       } else if (sigUrl.startsWith('http')) {
         const response = await fetch(sigUrl);
         if (response.ok) return Buffer.from(await response.arrayBuffer());
