@@ -286,6 +286,13 @@ export default function InduccionVirtualPublica() {
               Esta inducción ya fue completada exitosamente.
             </CardDescription>
           </CardHeader>
+          <CardContent className="text-center">
+            <a href="/portal-empleados">
+              <Button className="w-full">
+                Ir al Portal del Empleado
+              </Button>
+            </a>
+          </CardContent>
         </Card>
       </div>
     );
