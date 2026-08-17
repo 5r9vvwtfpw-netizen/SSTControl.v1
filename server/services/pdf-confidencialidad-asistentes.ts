@@ -174,10 +174,6 @@ export async function generateConfidencialidadAsistentePdf(
     doc.text(`C.C. ${ccAsistente}  •  ${cargoAsistente}`, { width: pw - MARGIN * 2, align: "center" });
 
     doc.moveDown(2);
-    doc.fontSize(8).fillColor(C.GRAY_SOFT)
-       .text(`Autorizado por el Consultor Aliado: ${nombreConsultor} — C.C./NIT ${idConsultor}`,
-             { width: pw - MARGIN * 2, align: "center" });
-
     doc.moveDown(1.5);
     doc.fillColor(C.WHITE).fontSize(8)
        .text(`Generado: ${fechaAcuerdo}`, { width: pw - MARGIN * 2, align: "center" });
