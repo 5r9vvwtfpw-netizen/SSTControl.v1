@@ -9,21 +9,10 @@ import { sql } from 'drizzle-orm';
  */
 export async function syncInduccionPesv() {
   try {
-    // 1. Agregar 'pesv' al enum (IF NOT EXISTS no disponible en ALTER TYPE,
-    //    usamos un bloque DO para ignorar si ya existe)
-    await db.execute(sql`
-      DO $$
-      BEGIN
-        IF NOT EXISTS (
-          SELECT 1 FROM pg_enum
-          WHERE enumlabel = 'pesv'
-            AND enumtypid = (SELECT oid FROM pg_type WHERE typname = 'induction_type')
-        ) THEN
-          ALTER TYPE induction_type ADD VALUE 'pesv';
-        END IF;
-      END;
-      $$;
-    `);
+    // 1. Agregar 'pesv' al enum.
+    // ALTER TYPE ADD VALUE no puede correr dentro de un bloque DO/transacción en PostgreSQL;
+    // se usa la sintaxis directa con IF NOT EXISTS (disponible desde PG 12).
+    await db.execute(sql`ALTER TYPE induction_type ADD VALUE IF NOT EXISTS 'pesv'`);
     console.log('[Migration] ✅ Valor "pesv" en enum induction_type listo');
 
     // 2. Columna tipo_induccion en contenidos_induccion
