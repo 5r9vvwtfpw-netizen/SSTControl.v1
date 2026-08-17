@@ -48,9 +48,14 @@ export function registerInduccionVirtualRoutes(app: Express) {
         return res.status(401).send("No autorizado");
       }
       
+      const tipoInduccion = (req.query.tipo as string) || "induccion";
+
       const contenidos = await db.select()
         .from(schema.contenidosInduccion)
-        .where(eq(schema.contenidosInduccion.companyId, companyId))
+        .where(and(
+          eq(schema.contenidosInduccion.companyId, companyId),
+          eq(schema.contenidosInduccion.tipoInduccion, tipoInduccion)
+        ))
         .orderBy(schema.contenidosInduccion.orden);
       
       res.json(contenidos);
@@ -71,11 +76,15 @@ export function registerInduccionVirtualRoutes(app: Express) {
       }
 
       const parsed = schema.insertContenidoInduccionSchema.parse(req.body);
-      
-      // Auto-assign orden: query max(orden) for this company and set orden = max + 1
+      const tipoInduccion = (req.body.tipoInduccion as string) || "induccion";
+
+      // Auto-assign orden: query max(orden) for this company and tipo
       const [maxResult] = await db.select({ maxOrden: sql<number>`COALESCE(MAX(${schema.contenidosInduccion.orden}), 0)` })
         .from(schema.contenidosInduccion)
-        .where(eq(schema.contenidosInduccion.companyId, companyId));
+        .where(and(
+          eq(schema.contenidosInduccion.companyId, companyId),
+          eq(schema.contenidosInduccion.tipoInduccion, tipoInduccion)
+        ));
       
       const nextOrden = (maxResult?.maxOrden || 0) + 1;
       
@@ -84,6 +93,7 @@ export function registerInduccionVirtualRoutes(app: Express) {
           ...parsed,
           orden: nextOrden,
           companyId: companyId,
+          tipoInduccion,
         })
         .returning();
       
@@ -168,9 +178,14 @@ export function registerInduccionVirtualRoutes(app: Express) {
         return res.status(401).send("No autorizado");
       }
       
+      const tipoInduccion = (req.query.tipo as string) || "induccion";
+
       const preguntas = await db.select()
         .from(schema.preguntasInduccion)
-        .where(eq(schema.preguntasInduccion.companyId, companyId))
+        .where(and(
+          eq(schema.preguntasInduccion.companyId, companyId),
+          eq(schema.preguntasInduccion.tipoInduccion, tipoInduccion)
+        ))
         .orderBy(schema.preguntasInduccion.orden);
       
       res.json(preguntas);
@@ -191,11 +206,15 @@ export function registerInduccionVirtualRoutes(app: Express) {
       }
 
       const parsed = schema.insertPreguntaInduccionSchema.parse(req.body);
-      
-      // Auto-assign orden: query max(orden) for this company and set orden = max + 1
+      const tipoInduccion = (req.body.tipoInduccion as string) || "induccion";
+
+      // Auto-assign orden: query max(orden) for this company and tipo
       const [maxResult] = await db.select({ maxOrden: sql<number>`COALESCE(MAX(${schema.preguntasInduccion.orden}), 0)` })
         .from(schema.preguntasInduccion)
-        .where(eq(schema.preguntasInduccion.companyId, companyId));
+        .where(and(
+          eq(schema.preguntasInduccion.companyId, companyId),
+          eq(schema.preguntasInduccion.tipoInduccion, tipoInduccion)
+        ));
       
       const nextOrden = (maxResult?.maxOrden || 0) + 1;
       
@@ -204,6 +223,7 @@ export function registerInduccionVirtualRoutes(app: Express) {
           ...parsed,
           orden: nextOrden,
           companyId: companyId,
+          tipoInduccion,
         })
         .returning();
       
@@ -693,7 +713,8 @@ export function registerInduccionVirtualRoutes(app: Express) {
         .from(schema.contenidosInduccion)
         .where(and(
           eq(schema.contenidosInduccion.companyId, sesion.companyId),
-          eq(schema.contenidosInduccion.estado, "publicado")
+          eq(schema.contenidosInduccion.estado, "publicado"),
+          eq(schema.contenidosInduccion.tipoInduccion, sesion.tipoInduccion)
         ))
         .orderBy(schema.contenidosInduccion.orden);
 
@@ -701,7 +722,8 @@ export function registerInduccionVirtualRoutes(app: Express) {
         .from(schema.preguntasInduccion)
         .where(and(
           eq(schema.preguntasInduccion.companyId, sesion.companyId),
-          eq(schema.preguntasInduccion.activa, 1)
+          eq(schema.preguntasInduccion.activa, 1),
+          eq(schema.preguntasInduccion.tipoInduccion, sesion.tipoInduccion)
         ))
         .orderBy(schema.preguntasInduccion.orden);
 
@@ -1122,7 +1144,8 @@ export function registerInduccionVirtualRoutes(app: Express) {
         .from(schema.sesionesInduccionVirtual)
         .where(and(
           eq(schema.sesionesInduccionVirtual.workerId, user.workerId),
-          eq(schema.sesionesInduccionVirtual.companyId, user.companyId)
+          eq(schema.sesionesInduccionVirtual.companyId, user.companyId),
+          sql`${schema.sesionesInduccionVirtual.tipoInduccion} IN ('induccion', 'reinduccion')`
         ))
         .orderBy(desc(schema.sesionesInduccionVirtual.fechaEnvio));
       
@@ -1130,6 +1153,142 @@ export function registerInduccionVirtualRoutes(app: Express) {
     } catch (error: any) {
       console.error("Error fetching worker virtual inductions:", error);
       res.status(500).json({ error: "Error al obtener inducciones virtuales" });
+    }
+  });
+
+  // ============================================================================
+  // PORTAL DEL EMPLEADO - Inducciones PESV pendientes
+  // ============================================================================
+
+  app.get("/api/portal/mis-inducciones-pesv", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated() || !(req.user as any)?.workerId) {
+        return res.status(200).json([]);
+      }
+      
+      const user = req.user as any;
+      
+      const sesiones = await db.select({
+        id: schema.sesionesInduccionVirtual.id,
+        token: schema.sesionesInduccionVirtual.token,
+        tipoInduccion: schema.sesionesInduccionVirtual.tipoInduccion,
+        estado: schema.sesionesInduccionVirtual.estado,
+        fechaEnvio: schema.sesionesInduccionVirtual.fechaEnvio,
+        fechaExpiracion: schema.sesionesInduccionVirtual.fechaExpiracion,
+        fechaInicio: schema.sesionesInduccionVirtual.fechaInicio,
+        fechaFinalizacion: schema.sesionesInduccionVirtual.fechaFinalizacion,
+        puntajeEvaluacion: schema.sesionesInduccionVirtual.puntajeEvaluacion,
+        aprobado: schema.sesionesInduccionVirtual.aprobado,
+      })
+        .from(schema.sesionesInduccionVirtual)
+        .where(and(
+          eq(schema.sesionesInduccionVirtual.workerId, user.workerId),
+          eq(schema.sesionesInduccionVirtual.companyId, user.companyId),
+          eq(schema.sesionesInduccionVirtual.tipoInduccion, "pesv")
+        ))
+        .orderBy(desc(schema.sesionesInduccionVirtual.fechaEnvio));
+      
+      res.json(sesiones);
+    } catch (error: any) {
+      console.error("Error fetching worker PESV inductions:", error);
+      res.status(500).json({ error: "Error al obtener inducciones PESV" });
+    }
+  });
+
+  // ============================================================================
+  // SESIONES PESV - Envío a trabajadores
+  // ============================================================================
+
+  app.post("/api/sesiones-induccion-pesv/enviar", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).send("No autorizado");
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(401).send("No autorizado");
+
+      const { workerId } = req.body;
+      if (!workerId) return res.status(400).send("workerId es requerido");
+
+      const [worker] = await db.select()
+        .from(schema.workers)
+        .where(and(eq(schema.workers.id, workerId), eq(schema.workers.companyId, companyId)));
+
+      if (!worker) return res.status(404).send("Trabajador no encontrado");
+
+      const token = generateToken();
+      const fechaExpiracion = new Date();
+      fechaExpiracion.setDate(fechaExpiracion.getDate() + 30);
+
+      const [sesion] = await db.insert(schema.sesionesInduccionVirtual)
+        .values({ companyId, workerId, token, tipoInduccion: "pesv", estado: "pendiente",
+                  fechaExpiracion, contenidosVistos: "[]", progresoEvaluacion: "{}" })
+        .returning();
+
+      res.status(201).json({ ...sesion, inductionUrl: `/induccion-virtual/${token}` });
+    } catch (error: any) {
+      console.error("Error creating PESV session:", error);
+      res.status(500).send("Error al crear sesión de inducción PESV");
+    }
+  });
+
+  app.post("/api/sesiones-induccion-pesv/enviar-masivo", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).send("No autorizado");
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(401).send("No autorizado");
+
+      const allWorkers = await db.select().from(schema.workers)
+        .where(eq(schema.workers.companyId, companyId));
+
+      let enviados = 0;
+      const errores: string[] = [];
+
+      for (const worker of allWorkers) {
+        try {
+          const token = generateToken();
+          const fechaExpiracion = new Date();
+          fechaExpiracion.setDate(fechaExpiracion.getDate() + 30);
+
+          await db.insert(schema.sesionesInduccionVirtual).values({
+            companyId, workerId: worker.id, token, tipoInduccion: "pesv",
+            estado: "pendiente", fechaExpiracion, contenidosVistos: "[]", progresoEvaluacion: "{}",
+          });
+          enviados++;
+        } catch (err: any) {
+          console.error(`Error creating PESV session for worker ${worker.id}:`, err);
+          errores.push(worker.id);
+        }
+      }
+
+      res.json({
+        enviados,
+        errores: errores.length,
+        mensaje: `Se crearon ${enviados} sesión(es) de inducción PESV.`,
+      });
+    } catch (error: any) {
+      console.error("Error en envío masivo PESV:", error);
+      res.status(500).send("Error al enviar inducciones PESV masivas");
+    }
+  });
+
+  // Lista sesiones PESV para administrador
+  app.get("/api/sesiones-induccion-pesv", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).send("No autorizado");
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(401).send("No autorizado");
+
+      const sesiones = await db.select()
+        .from(schema.sesionesInduccionVirtual)
+        .where(and(
+          eq(schema.sesionesInduccionVirtual.companyId, companyId),
+          eq(schema.sesionesInduccionVirtual.tipoInduccion, "pesv")
+        ))
+        .orderBy(desc(schema.sesionesInduccionVirtual.fechaEnvio));
+
+      res.json(sesiones);
+    } catch (error: any) {
+      console.error("Error fetching PESV sessions:", error);
+      res.status(500).send("Error al obtener sesiones PESV");
     }
   });
 }

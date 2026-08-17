@@ -969,6 +969,7 @@ const portalNavGroups = [
     items: [
       { id: "comite-pesv", label: "Comité de Seguridad Vial", icon: Shield },
       { id: "capacitaciones-pesv", label: "Capacitaciones PESV", icon: GraduationCap },
+      { id: "induccion-pesv", label: "Inducción PESV", icon: Monitor },
       { id: "encuesta-conductor", label: "Encuesta Diaria", icon: ClipboardList },
       { id: "inspeccion-vehiculo", label: "Inspección Vehículo", icon: Truck },
     ]
@@ -1220,6 +1221,7 @@ function WorkerPortal() {
         {activeSection === "mis-audiometrias" && <MisAudiometriasTab />}
         {activeSection === "comite-pesv" && <MiComitePesvTab />}
         {activeSection === "capacitaciones-pesv" && <MisCapacitacionesPesvTab />}
+        {activeSection === "induccion-pesv" && <InduccionPesvTab />}
         {activeSection === "encuesta-conductor" && <EncuestaConductorPortalTab />}
         {activeSection === "inspeccion-vehiculo" && <InspeccionVehiculoPortalTab />}
       </div>
@@ -2920,6 +2922,186 @@ function InduccionesVirtualesTab() {
                         </Badge>
                         <Badge variant="secondary">Expirada</Badge>
                       </div>
+                      <p className="text-sm text-muted-foreground">
+                        Expiró: {new Date(sesion.fechaExpiracion).toLocaleDateString('es-CO')}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+// ==================== TAB: INDUCCIÓN PESV ====================
+
+function InduccionPesvTab() {
+  type SesionPesv = {
+    id: string;
+    token: string;
+    tipoInduccion: string;
+    estado: string;
+    fechaEnvio: string;
+    fechaExpiracion: string;
+    fechaInicio: string | null;
+    fechaFinalizacion: string | null;
+    puntajeEvaluacion: number | null;
+    aprobado: number | null;
+  };
+
+  const { data: sesiones = [], isLoading } = useQuery<SesionPesv[]>({
+    queryKey: ["/api/portal/mis-inducciones-pesv"],
+  });
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="space-y-4">
+            <Skeleton className="h-8 w-64" />
+            <Skeleton className="h-24 w-full" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const pendientes = sesiones.filter(s => s.estado === "pendiente" || s.estado === "en_progreso");
+  const completadas = sesiones.filter(s => s.estado === "completada");
+  const expiradas = sesiones.filter(s => s.estado === "expirada");
+
+  if (sesiones.length === 0) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="text-center py-8">
+            <Car className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium mb-2">Sin inducciones PESV asignadas</h3>
+            <p className="text-muted-foreground text-sm">
+              No tiene inducciones del Plan Estratégico de Seguridad Vial asignadas actualmente.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Banner normativo */}
+      <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded-lg px-3 py-2">
+        <Car className="h-3.5 w-3.5 shrink-0" />
+        <span>Resolución 40595/2022 — Paso 10: Capacitación y formación en seguridad vial</span>
+      </div>
+
+      {pendientes.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-amber-500" />
+              Inducciones Pendientes
+            </CardTitle>
+            <CardDescription>Complete estas inducciones del Plan de Seguridad Vial</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {pendientes.map((sesion) => {
+                const diasRestantes = Math.max(0, Math.ceil((new Date(sesion.fechaExpiracion).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+                return (
+                  <Card key={sesion.id} className="border-amber-200 dark:border-amber-800">
+                    <CardContent className="p-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                              Inducción PESV
+                            </Badge>
+                            <Badge variant={sesion.estado === "en_progreso" ? "default" : "outline"}>
+                              {sesion.estado === "en_progreso" ? "En Progreso" : "Pendiente"}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            Asignada: {new Date(sesion.fechaEnvio).toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' })}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {diasRestantes > 0 ? `Expira en ${diasRestantes} día${diasRestantes > 1 ? 's' : ''}` : 'Expira hoy'}
+                          </p>
+                        </div>
+                        <a href={`/induccion-virtual/${sesion.token}`} target="_blank" rel="noopener noreferrer">
+                          <Button>
+                            <Play className="h-4 w-4 mr-2" />
+                            {sesion.estado === "en_progreso" ? "Continuar" : "Iniciar"}
+                          </Button>
+                        </a>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {completadas.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-green-500" />
+              Completadas
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {completadas.map((sesion) => (
+                <Card key={sesion.id} className="border">
+                  <CardContent className="p-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
+                            <CheckCircle className="h-3 w-3 mr-1" /> Completada
+                          </Badge>
+                          {sesion.puntajeEvaluacion !== null && (
+                            <Badge className={sesion.aprobado
+                              ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
+                              : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"}>
+                              {sesion.puntajeEvaluacion}% — {sesion.aprobado ? "Aprobado" : "No aprobado"}
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          Completada: {sesion.fechaFinalizacion ? new Date(sesion.fechaFinalizacion).toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' }) : '-'}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {expiradas.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5 text-muted-foreground" />
+              Expiradas
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {expiradas.map((sesion) => (
+                <Card key={sesion.id} className="border opacity-60">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <Badge variant="secondary">Expirada</Badge>
                       <p className="text-sm text-muted-foreground">
                         Expiró: {new Date(sesion.fechaExpiracion).toLocaleDateString('es-CO')}
                       </p>

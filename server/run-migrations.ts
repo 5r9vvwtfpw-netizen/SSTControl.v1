@@ -53,6 +53,7 @@ import { cleanupDuplicateImplementarAcciones } from './migrations/cleanup-duplic
 import { syncCiiuMultiColumns } from './migrations/sync-ciiu-multi-columns';
 import { syncResourceAllocationDetalleObjetivo } from './migrations/sync-resource-allocation-detalle-objetivo';
 import { createUserSessionsLog } from './migrations/create-user-sessions-log';
+import { syncInduccionPesv } from './migrations/sync-induccion-pesv';
 
 /**
  * Ejecuta migraciones de base de datos automáticamente
@@ -117,6 +118,7 @@ export async function runMigrations() {
     await syncCiiuMultiColumns();
     await syncResourceAllocationDetalleObjetivo();
     await createUserSessionsLog();
+    await syncInduccionPesv();
     console.log('✅ Migraciones completadas exitosamente');
   } catch (error: any) {
     console.error('⚠️ Error en migraciones:', error.message);

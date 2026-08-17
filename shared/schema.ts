@@ -42,7 +42,7 @@ export const userRoleEnum = pgEnum("user_role", [
 ]);
 
 // Tipo de inducción enum
-export const inductionTypeEnum = pgEnum("induction_type", ["induccion", "reinduccion"]);
+export const inductionTypeEnum = pgEnum("induction_type", ["induccion", "reinduccion", "pesv"]);
 
 // Tipo de profesión SST enum (Resolución 0312/2019, Decreto 1072/2015)
 export const sstProfessionTypeEnum = pgEnum("sst_profession_type", [
@@ -2482,6 +2482,9 @@ export const contenidosInduccion = pgTable("contenidos_induccion", {
   
   // Obligatorio ver para completar inducción
   obligatorio: integer("obligatorio").notNull().default(1), // 1 = sí, 0 = no
+
+  // Tipo de inducción al que pertenece este contenido
+  tipoInduccion: varchar("tipo_induccion").notNull().default("induccion"), // "induccion" | "reinduccion" | "pesv"
   
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
   updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
@@ -2515,6 +2518,9 @@ export const preguntasInduccion = pgTable("preguntas_induccion", {
   
   // Activa
   activa: integer("activa").notNull().default(1),
+
+  // Tipo de inducción al que pertenece esta pregunta
+  tipoInduccion: varchar("tipo_induccion").notNull().default("induccion"), // "induccion" | "reinduccion" | "pesv"
   
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
