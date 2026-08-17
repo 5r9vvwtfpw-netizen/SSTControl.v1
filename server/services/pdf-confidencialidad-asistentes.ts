@@ -205,13 +205,12 @@ export async function generateConfidencialidadAsistentePdf(
     clauseTitle("TERCERA", "Alcance del Acceso Autorizado");
     para("EL PROVEEDOR autoriza a EL ASISTENTE un acceso limitado, personal, intransferible y revocable a La Plataforma, exclusivamente para apoyar las funciones que el Consultor Aliado le asigne. Este acceso no constituye licencia de uso independiente ni confiere derecho alguno sobre La Plataforma.");
     subTitle("EL ASISTENTE solo podrá:");
-    bullet("", "Acceder a las empresas cliente y módulos que el Consultor Aliado autorice expresamente y por escrito.");
+    bullet("", "Acceder a las empresas cliente y módulos que el Consultor Aliado autorice expresamente.");
     bullet("", "Operar La Plataforma desde dispositivos y ubicaciones autorizadas y registradas.");
     bullet("", "Gestionar la información para el fin exclusivo de apoyar la labor consultiva del Consultor Aliado.");
     subTitle("Le está estrictamente prohibido:");
     bullet("a)", "Acceder a módulos, empresas o información para los que no haya sido autorizado expresamente.");
-    bullet("b)", "Usar las credenciales asignadas fuera del horario laboral sin autorización escrita previa del Consultor Aliado.");
-    bullet("c)", "Compartir, ceder o prestar sus credenciales de acceso a cualquier persona.");
+    bullet("b)", "Compartir, ceder o prestar sus credenciales de acceso a cualquier persona.");
 
     clauseTitle("CUARTA", "Confidencialidad Reforzada");
     para("EL ASISTENTE se compromete a guardar absoluta reserva sobre toda la Información Confidencial a la que tenga acceso con ocasión del presente acuerdo. Esta obligación tendrá una duración de CINCO (5) AÑOS contados a partir de la terminación del acuerdo, independientemente de la causa que la origine.");
