@@ -269,7 +269,7 @@ export async function generateConfidencialidadAsistentePdf(
     para("EL ASISTENTE acepta expresamente las siguientes condiciones de monitoreo, conforme a la Ley 527 de 1999 y el Código General del Proceso:");
     subTitle("1. Credenciales y Control de Acceso");
     bullet("", "EL ASISTENTE recibirá una (1) credencial de acceso nominal e intransferible. No se autoriza el uso simultáneo desde múltiples dispositivos o ubicaciones.");
-    bullet("", "EL PROVEEDOR registrará ante EL PROVEEDOR los dispositivos y direcciones IP autorizados para el acceso de EL ASISTENTE.");
+    bullet("", "EL ASISTENTE deberá registrar ante EL PROVEEDOR los dispositivos y direcciones IP desde los cuales accederá a La Plataforma.");
     subTitle("2. Registro de Sesiones y Alertas");
     bullet("", "EL PROVEEDOR registrará automáticamente la dirección IP, fecha, hora, dispositivo y duración de cada sesión de EL ASISTENTE.");
     bullet("", "El ingreso desde una dirección IP no registrada generará una alerta automática y podrá ser causal de suspensión preventiva inmediata de las credenciales.");
