@@ -8958,16 +8958,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const allStandards = await storage.getSstStandards(evaluation.standardType);
 
       // Fetch worker data for approval signatures if IDs are present
-      let elaboroName = evaluation.evaluator || 'Evaluador SST';
+      let elaboroName = 'SST-Colombia';
       let autorizoName = req.user?.username || 'Sistema';
       let aproboName = 'Gerencia';
-
-      if (evaluation.elaboradoPorId) {
-        const worker = await storage.getWorker(evaluation.elaboradoPorId, companyId);
-        if (worker && worker.companyId === companyId) {
-          elaboroName = `${designeeInfo.name} - ${worker.position}`;
-        }
-      }
 
       if (evaluation.autorizadoPorId) {
         const worker = await storage.getWorker(evaluation.autorizadoPorId, companyId);
@@ -13608,16 +13601,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Fetch worker data for approval signatures if IDs are present
-      let elaboroName = 'Responsable SST';
+      let elaboroName = 'SST-Colombia';
       let autorizoName = req.user?.username || 'Sistema';
       let aproboName = 'Gerencia';
-
-      if (allocation.elaboradoPorId) {
-        const worker = await storage.getWorker(allocation.elaboradoPorId, companyId);
-        if (worker && worker.companyId === companyId) {
-          elaboroName = `${worker.name || (worker.firstName + ' ' + worker.lastName)} - ${worker.position}`;
-        }
-      }
 
       if (allocation.autorizadoPorId) {
         const worker = await storage.getWorker(allocation.autorizadoPorId, companyId);
@@ -20781,7 +20767,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.text('APROBÓ', margin + colWidth * 2 + 5, tableY + 4, { width: colWidth - 10, align: 'center', lineBreak: false });
 
       doc.fontSize(7).font('Helvetica').fillColor(textMuted);
-      doc.text('Responsable SST', margin + 5, tableY + rowHeight + 4, { width: colWidth - 10, align: 'center', lineBreak: false });
+      doc.text('SST-Colombia', margin + 5, tableY + rowHeight + 4, { width: colWidth - 10, align: 'center', lineBreak: false });
       doc.text('Coordinador SST', margin + colWidth + 5, tableY + rowHeight + 4, { width: colWidth - 10, align: 'center', lineBreak: false });
       doc.text('Gerencia / Rep. Legal', margin + colWidth * 2 + 5, tableY + rowHeight + 4, { width: colWidth - 10, align: 'center', lineBreak: false });
 
@@ -24950,16 +24936,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Fetch worker data for approval signatures if IDs are present
-      let elaboroName = politica.representanteLegal;
+      let elaboroName = 'SST-Colombia';
       let autorizoName = politica.responsableSst;
       let aproboName = politica.representanteLegal;
-
-      if (politica.elaboradoPorId) {
-        const worker = await storage.getWorker(politica.elaboradoPorId, companyId);
-        if (worker && worker.companyId === companyId) {
-          elaboroName = `${worker.fullName} - ${worker.position}`;
-        }
-      }
 
       if (politica.autorizadoPorId) {
         const worker = await storage.getWorker(politica.autorizadoPorId, companyId);
@@ -28464,13 +28443,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
       }
 
-      // Override responsable SG-SST with the evaluation's responsable
-      if (evaluacion.responsableNombre) {
-        ministerioSigners.elaboro = {
-          name: evaluacion.responsableNombre,
-          role: 'Responsable del SG-SST',
-        };
-      }
+      // ELABORÓ siempre muestra la marca del sistema
+      ministerioSigners.elaboro = {
+        name: 'SST-Colombia',
+        role: 'Sistema de Gestión SST',
+      };
 
       if (evaluacion.lsoSignatureName) {
         let frozenSigUrl = evaluacion.lsoSignatureUrl || null;

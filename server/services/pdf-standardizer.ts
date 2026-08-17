@@ -193,18 +193,10 @@ export async function getSignersForCompany(companyId: string, requiresLSO: boole
   }
 
   return {
-    elaboro: (() => {
-      if (responsableSst) {
-        return {
-          name: responsableSst.fullName || responsableSst.username,
-          role: 'Responsable del SG-SST',
-        };
-      }
-      return {
-        name: 'SST Colombia',
-        role: 'Software Auditado de Gestión SST',
-      };
-    })(),
+    elaboro: {
+      name: 'SST-Colombia',
+      role: 'Sistema de Gestión SST',
+    },
     autorizo: {
       name: company?.legalRepName || 'Representante de la Dirección',
       role: 'Representante de la Dirección',
