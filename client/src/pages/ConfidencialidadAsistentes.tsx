@@ -231,9 +231,9 @@ export default function ConfidencialidadAsistentes() {
       {/* Datos del consultor */}
       <Card className="border-amber-300 ring-1 ring-amber-200">
         <CardHeader>
-          <CardTitle className="text-base text-amber-800">✏️ Datos del Consultor que Autoriza</CardTitle>
+          <CardTitle className="text-base text-amber-800">📋 Consultor Aliado (referencia)</CardTitle>
           <CardDescription>
-            El consultor que firma como responsable solidario del acuerdo.
+            Solo aparece como contexto en el cuerpo del documento. El contrato es entre SST-Colombia y EL ASISTENTE — el consultor <strong>no firma</strong>.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -286,6 +286,7 @@ export default function ConfidencialidadAsistentes() {
           <div><span className="font-semibold">Representante Legal:</span> LUZ ADRIANA DIAZ CALLE</div>
           <div><span className="font-semibold">C.C.:</span> 52.223.631</div>
           <div className="sm:col-span-2"><span className="font-semibold">Correo incidentes:</span> admin@sst-colombia.com</div>
+          <div className="sm:col-span-2 text-xs text-green-700 font-medium">✅ EL PROVEEDOR firma el acuerdo junto con EL ASISTENTE</div>
         </CardContent>
       </Card>
 
@@ -293,9 +294,8 @@ export default function ConfidencialidadAsistentes() {
       <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 flex gap-3">
         <ShieldCheck className="h-5 w-5 shrink-0 mt-0.5 text-red-600" />
         <div>
-          <span className="font-semibold">Cláusula Penal:</span> $50.000.000 COP por incidente comprobado.
-          El Consultor responde <span className="font-semibold">solidariamente</span> ante SST-Colombia
-          por cualquier incumplimiento del Asistente.
+          <span className="font-semibold">Firmas:</span> EL PROVEEDOR (SST-Colombia) y EL ASISTENTE. <br />
+          <span className="font-semibold">Cláusula Penal:</span> $50.000.000 COP por incidente comprobado. ·
           Confidencialidad: 5 años · No captación de clientes: 3 años.
         </div>
       </div>
