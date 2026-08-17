@@ -641,9 +641,11 @@ export default function InduccionVirtualPublica() {
                   El área de SST recibirá una notificación de su completación.
                 </p>
               </div>
-              <p className="text-sm text-muted-foreground">
-                Puede cerrar esta ventana.
-              </p>
+              <a href="/portal-empleados">
+                <Button className="w-full mt-2">
+                  Ir al Portal del Empleado
+                </Button>
+              </a>
             </CardContent>
           </Card>
         )}
