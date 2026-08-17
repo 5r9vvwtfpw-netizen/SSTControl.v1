@@ -1433,8 +1433,8 @@ export function registerInduccionVirtualRoutes(app: Express) {
       res.setHeader('Content-Disposition', `inline; filename="Constancia-Induccion-PESV-${worker?.name?.replace(/\s+/g, '-') || id.substring(0, 8)}.pdf"`);
       doc.pipe(res);
 
-      // ── Encabezado PESV (verde corporativo estándar) ────────────────────
-      const GREEN = '#1a6b3a';
+      // ── Encabezado PESV (verde corporativo estándar #1e7e34) ────────────
+      const GREEN = '#1e7e34';
       const pageW = doc.page.width - 100;
 
       doc.rect(50, 50, pageW, 60).fill(GREEN);
