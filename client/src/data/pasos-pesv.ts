@@ -33,7 +33,7 @@ export interface PasoPesvData {
   moduloPesvUrl?: string;
   moduloPesvNombre?: string;
   // ADD-ONLY: Módulos PESV secundarios (cuando un paso cubre más de un módulo)
-  modulosPesvSecundarios?: { nombre: string; url: string; }[];
+  modulosPesvSecundarios?: { nombre: string; url: string; absoluta?: boolean; }[];
   // ADD-ONLY: Navegación bidireccional a módulos SST
   modulosSstUrls?: ModuloSstUrl[];
   // ADD-ONLY: Smart Form Auto-Fill Data (Resolución 40595/2022)
@@ -351,6 +351,9 @@ export const PASOS_PESV: PasoPesvData[] = [
     modulosSstRelacionados: ['capacitaciones', 'induccion'],
     moduloPesvUrl: '/pesv/capacitaciones',
     moduloPesvNombre: 'Capacitaciones PESV',
+    modulosPesvSecundarios: [
+      { nombre: 'Inducción Virtual PESV', url: '/pesv/induccion-virtual', absoluta: true },
+    ],
     modoVerificacionSugerido: ['Revisión de plan de capacitación anual', 'Verificación de registros de asistencia', 'Revisión de evaluaciones de conocimiento'],
     hallazgoSugeridoNoCumple: 'No se evidencia programa de capacitación continua en seguridad vial con plan anual, registros de asistencia y evaluaciones según Art. 14 de la Resolución 40595/2022.',
     observacionesCumple: 'Se verifica programa de capacitación continua en seguridad vial con plan anual, registros de asistencia, evaluaciones de conocimiento y material didáctico conforme a la Resolución 40595/2022.',

@@ -768,7 +768,7 @@ function RespuestaDialog({ open, onClose, paso, evaluacionId, evaluacion, respue
                   </Button>
                 </Link>
                 {paso.modulosPesvSecundarios?.map((mod) => (
-                  <Link key={mod.url} href={`/pesv/evaluacion/${evaluacionId}${mod.url.replace('/pesv', '')}`}>
+                  <Link key={mod.url} href={mod.absoluta ? mod.url : `/pesv/evaluacion/${evaluacionId}${mod.url.replace('/pesv', '')}`}>
                     <Button
                       type="button"
                       className="w-full gap-2 bg-emerald-700 hover:bg-emerald-800 text-white font-semibold shadow-md"
