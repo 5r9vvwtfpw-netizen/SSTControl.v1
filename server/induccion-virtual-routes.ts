@@ -1433,11 +1433,11 @@ export function registerInduccionVirtualRoutes(app: Express) {
       res.setHeader('Content-Disposition', `inline; filename="Constancia-Induccion-PESV-${worker?.name?.replace(/\s+/g, '-') || id.substring(0, 8)}.pdf"`);
       doc.pipe(res);
 
-      // ── Encabezado PESV (azul oscuro) ───────────────────────────────────
-      const NAVY = '#1a3a6b';
+      // ── Encabezado PESV (verde corporativo estándar) ────────────────────
+      const GREEN = '#1a6b3a';
       const pageW = doc.page.width - 100;
 
-      doc.rect(50, 50, pageW, 60).fill(NAVY);
+      doc.rect(50, 50, pageW, 60).fill(GREEN);
       doc.fillColor('white').fontSize(18).font('Helvetica-Bold')
         .text('CONSTANCIA DE INDUCCIÓN PESV', 50, 60, { width: pageW, align: 'center' });
       doc.fontSize(10).font('Helvetica')
@@ -1454,7 +1454,7 @@ export function registerInduccionVirtualRoutes(app: Express) {
       }
       doc.moveDown(1.5);
 
-      doc.moveTo(50, doc.y).lineTo(50 + pageW, doc.y).strokeColor(NAVY).lineWidth(2).stroke();
+      doc.moveTo(50, doc.y).lineTo(50 + pageW, doc.y).strokeColor(GREEN).lineWidth(2).stroke();
       doc.moveDown(1);
 
       // ── Datos del trabajador y sesión ────────────────────────────────────
@@ -1485,7 +1485,7 @@ export function registerInduccionVirtualRoutes(app: Express) {
         let progreso: Record<string, string> = {};
         try { progreso = JSON.parse(sesion.progresoEvaluacion as string); } catch {}
 
-        doc.font('Helvetica-Bold').fontSize(11).fillColor(NAVY)
+        doc.font('Helvetica-Bold').fontSize(11).fillColor(GREEN)
           .text('DETALLE DE EVALUACIÓN', 50, doc.y);
         doc.moveDown(0.5);
 
