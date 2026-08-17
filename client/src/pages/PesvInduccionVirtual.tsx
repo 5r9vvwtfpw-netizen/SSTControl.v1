@@ -109,39 +109,35 @@ export default function PesvInduccionVirtual() {
   const [contenidoForm, setContenidoForm] = useState<ContenidoFormData>(defaultContenido);
   const [preguntaForm, setPreguntaForm] = useState<PreguntaFormData>(defaultPregunta);
 
-  const headers = selectedCompany?.id ? { "X-Company-Id": selectedCompany.id } : {};
-
   const { data: contenidos = [], isLoading: loadingContenidos } = useQuery<ContenidoInduccion[]>({
-    queryKey: ["/api/contenidos-induccion", TIPO, selectedCompany?.id],
-    queryFn: () => apiRequest("GET", `/api/contenidos-induccion?tipo=${TIPO}`, undefined, headers),
+    queryKey: [`/api/contenidos-induccion?tipo=${TIPO}`],
   });
 
   const { data: preguntas = [], isLoading: loadingPreguntas } = useQuery<PreguntaInduccion[]>({
-    queryKey: ["/api/preguntas-induccion", TIPO, selectedCompany?.id],
-    queryFn: () => apiRequest("GET", `/api/preguntas-induccion?tipo=${TIPO}`, undefined, headers),
+    queryKey: [`/api/preguntas-induccion?tipo=${TIPO}`],
   });
 
   const { data: sesiones = [], isLoading: loadingSesiones } = useQuery<SesionInduccionVirtual[]>({
-    queryKey: ["/api/sesiones-induccion-pesv", selectedCompany?.id],
-    queryFn: () => apiRequest("GET", `/api/sesiones-induccion-pesv`, undefined, headers),
+    queryKey: ["/api/sesiones-induccion-pesv"],
   });
 
   const { data: workers = [] } = useQuery<Worker[]>({
-    queryKey: ["/api/workers", selectedCompany?.id],
-    queryFn: () => apiRequest("GET", `/api/workers`, undefined, headers),
+    queryKey: ["/api/workers"],
   });
 
   // ── Contenidos ────────────────────────────────────────────────────────────
   const saveContenidoMutation = useMutation({
-    mutationFn: (data: ContenidoFormData) => {
+    mutationFn: async (data: ContenidoFormData) => {
       const body = { ...data, tipoInduccion: TIPO };
       if (editingContenido) {
-        return apiRequest("PATCH", `/api/contenidos-induccion/${editingContenido.id}`, body, headers);
+        const res = await apiRequest("PATCH", `/api/contenidos-induccion/${editingContenido.id}`, body);
+        return res.json();
       }
-      return apiRequest("POST", `/api/contenidos-induccion`, body, headers);
+      const res = await apiRequest("POST", `/api/contenidos-induccion`, body);
+      return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/contenidos-induccion"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/contenidos-induccion?tipo=${TIPO}`] });
       setContenidoDialogOpen(false);
       setEditingContenido(null);
       setContenidoForm(defaultContenido);
@@ -152,15 +148,17 @@ export default function PesvInduccionVirtual() {
 
   // ── Preguntas ─────────────────────────────────────────────────────────────
   const savePreguntaMutation = useMutation({
-    mutationFn: (data: PreguntaFormData) => {
+    mutationFn: async (data: PreguntaFormData) => {
       const body = { ...data, opciones: JSON.stringify(data.opciones), tipoInduccion: TIPO };
       if (editingPregunta) {
-        return apiRequest("PATCH", `/api/preguntas-induccion/${editingPregunta.id}`, body, headers);
+        const res = await apiRequest("PATCH", `/api/preguntas-induccion/${editingPregunta.id}`, body);
+        return res.json();
       }
-      return apiRequest("POST", `/api/preguntas-induccion`, body, headers);
+      const res = await apiRequest("POST", `/api/preguntas-induccion`, body);
+      return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/preguntas-induccion"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/preguntas-induccion?tipo=${TIPO}`] });
       setPreguntaDialogOpen(false);
       setEditingPregunta(null);
       setPreguntaForm(defaultPregunta);
@@ -170,15 +168,16 @@ export default function PesvInduccionVirtual() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
       if (deletingType === "contenido") {
-        return apiRequest("DELETE", `/api/contenidos-induccion/${deletingId}`, undefined, headers);
+        await apiRequest("DELETE", `/api/contenidos-induccion/${deletingId}`);
+      } else {
+        await apiRequest("DELETE", `/api/preguntas-induccion/${deletingId}`);
       }
-      return apiRequest("DELETE", `/api/preguntas-induccion/${deletingId}`, undefined, headers);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/contenidos-induccion"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/preguntas-induccion"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/contenidos-induccion?tipo=${TIPO}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/preguntas-induccion?tipo=${TIPO}`] });
       setDeleteDialogOpen(false);
       toast({ title: "Eliminado correctamente" });
     },
@@ -186,8 +185,10 @@ export default function PesvInduccionVirtual() {
   });
 
   const enviarIndividualMutation = useMutation({
-    mutationFn: () => apiRequest("POST", `/api/sesiones-induccion-pesv/enviar`,
-      { workerId: selectedWorkerId }, headers),
+    mutationFn: async () => {
+      const res = await apiRequest("POST", `/api/sesiones-induccion-pesv/enviar`, { workerId: selectedWorkerId });
+      return res.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/sesiones-induccion-pesv"] });
       setEnviarDialogOpen(false);
@@ -198,7 +199,10 @@ export default function PesvInduccionVirtual() {
   });
 
   const enviarMasivoMutation = useMutation({
-    mutationFn: () => apiRequest("POST", `/api/sesiones-induccion-pesv/enviar-masivo`, {}, headers),
+    mutationFn: async () => {
+      const res = await apiRequest("POST", `/api/sesiones-induccion-pesv/enviar-masivo`, {});
+      return res.json();
+    },
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/sesiones-induccion-pesv"] });
       toast({ title: "Envío masivo completado", description: data?.mensaje });
@@ -216,11 +220,11 @@ export default function PesvInduccionVirtual() {
           explicacion: pq.explicacion,
           activa: 1,
           tipoInduccion: TIPO,
-        }, headers);
+        });
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/preguntas-induccion"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/preguntas-induccion?tipo=${TIPO}`] });
       toast({ title: "Preguntas PESV de ejemplo cargadas" });
     },
     onError: () => toast({ title: "Error al cargar preguntas", variant: "destructive" }),
