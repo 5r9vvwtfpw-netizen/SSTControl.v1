@@ -68,6 +68,20 @@ interface TrainingAttendee {
   createdAt: string;
 }
 
+/** Auto-inserta ":" después de los primeros 2 dígitos mientras el usuario escribe */
+function formatTimeInput(raw: string): string {
+  const digits = raw.replace(/\D/g, "").slice(0, 4);
+  if (digits.length <= 2) return digits;
+  return `${digits.slice(0, 2)}:${digits.slice(2)}`;
+}
+
+/** Al perder foco normaliza valores incompletos: "10" → "10:00" */
+function normalizeTime(val: string): string {
+  if (!val) return "";
+  if (/^\d{1,2}$/.test(val.trim())) return `${val.trim().padStart(2, "0")}:00`;
+  return val;
+}
+
 export default function Capacitaciones() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -534,7 +548,8 @@ export default function Capacitaciones() {
                       placeholder="08:00"
                       maxLength={5}
                       value={formData.startTime}
-                      onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
+                      onChange={(e) => setFormData({ ...formData, startTime: formatTimeInput(e.target.value) })}
+                      onBlur={(e) => setFormData({ ...formData, startTime: normalizeTime(e.target.value) })}
                       data-testid="input-start-time"
                     />
                   </div>
@@ -546,7 +561,8 @@ export default function Capacitaciones() {
                       placeholder="17:00"
                       maxLength={5}
                       value={formData.endTime}
-                      onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
+                      onChange={(e) => setFormData({ ...formData, endTime: formatTimeInput(e.target.value) })}
+                      onBlur={(e) => setFormData({ ...formData, endTime: normalizeTime(e.target.value) })}
                       data-testid="input-end-time"
                     />
                   </div>
@@ -722,7 +738,8 @@ export default function Capacitaciones() {
                   placeholder="08:00"
                   maxLength={5}
                   value={editFormData.startTime}
-                  onChange={(e) => setEditFormData({ ...editFormData, startTime: e.target.value })}
+                  onChange={(e) => setEditFormData({ ...editFormData, startTime: formatTimeInput(e.target.value) })}
+                  onBlur={(e) => setEditFormData({ ...editFormData, startTime: normalizeTime(e.target.value) })}
                   data-testid="input-edit-start-time"
                 />
               </div>
@@ -734,7 +751,8 @@ export default function Capacitaciones() {
                   placeholder="17:00"
                   maxLength={5}
                   value={editFormData.endTime}
-                  onChange={(e) => setEditFormData({ ...editFormData, endTime: e.target.value })}
+                  onChange={(e) => setEditFormData({ ...editFormData, endTime: formatTimeInput(e.target.value) })}
+                  onBlur={(e) => setEditFormData({ ...editFormData, endTime: normalizeTime(e.target.value) })}
                   data-testid="input-edit-end-time"
                 />
               </div>
