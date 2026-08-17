@@ -5,6 +5,7 @@ import * as schema from "@shared/schema";
 import { randomBytes } from "crypto";
 import { resend } from "./services/email";
 import PDFDocument from "pdfkit";
+import { objectStorageService } from "./objectStorage";
 
 function generateToken(): string {
   return randomBytes(32).toString("hex");
@@ -956,6 +957,70 @@ export function registerInduccionVirtualRoutes(app: Express) {
         .where(eq(schema.preguntasInduccion.companyId, companyId))
         .orderBy(schema.preguntasInduccion.orden);
 
+      // ── Firma del LSO (misma lógica de prioridad que pdf-standardizer) ──
+      let lsoName = 'Responsable SST';
+      let lsoSignatureUrl: string | null = null;
+
+      // 1. Prioridad: responsible_designations con LSO externo formal
+      const [formalDesignation] = await db.select()
+        .from(schema.responsibleDesignations)
+        .where(and(
+          eq(schema.responsibleDesignations.companyId, companyId),
+          eq(schema.responsibleDesignations.isExternalLso, true)
+        ))
+        .limit(1);
+
+      if (formalDesignation?.externalLsoName && formalDesignation?.licenciaSstNumero) {
+        lsoName = formalDesignation.externalLsoName;
+        lsoSignatureUrl = formalDesignation.lsoSignatureUrl || null;
+      }
+
+      // 2. Fallback: licensed_professional_assignments activo
+      if (!lsoSignatureUrl) {
+        const [assignment] = await db.select()
+          .from(schema.licensedProfessionalAssignments)
+          .where(and(
+            eq(schema.licensedProfessionalAssignments.companyId, companyId),
+            eq(schema.licensedProfessionalAssignments.isActive, true)
+          ))
+          .limit(1);
+
+        if (assignment) {
+          if (assignment.externalLsoId && assignment.externalLsoName) {
+            lsoName = assignment.externalLsoName;
+            lsoSignatureUrl = assignment.externalLsoSignatureUrl || null;
+          } else if (assignment.userId) {
+            const [lsoUser] = await db.select()
+              .from(schema.users)
+              .where(eq(schema.users.id, assignment.userId))
+              .limit(1);
+            if (lsoUser) {
+              lsoName = lsoUser.fullName || lsoUser.username;
+              lsoSignatureUrl = lsoUser.sstSignatureUrl || null;
+            }
+          }
+        }
+      }
+
+      // Cargar buffer de firma del LSO
+      const loadSigBuffer = async (url: string | null): Promise<Buffer | null> => {
+        if (!url) return null;
+        try {
+          if (url.startsWith('/replit-objstore-')) {
+            const { objectStorageClient } = await import('./replit_integrations/object_storage');
+            const parts = url.split('/').filter(Boolean);
+            const [data] = await objectStorageClient.bucket(parts[0]).file(parts.slice(1).join('/')).download();
+            return data as Buffer;
+          }
+          if (url.startsWith('/objects/')) {
+            return await objectStorageService.getObjectBuffer(objectStorageService.normalizeObjectEntityPath(url));
+          }
+          return null;
+        } catch { return null; }
+      };
+
+      const lsoSigBuffer = await loadSigBuffer(lsoSignatureUrl);
+
       const formatDate = (d: any) => d ? new Date(d).toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' }) : '-';
 
       const doc = new PDFDocument({ size: 'LETTER', margin: 50 });
@@ -1070,11 +1135,16 @@ export function registerInduccionVirtualRoutes(app: Express) {
       doc.font('Helvetica').fontSize(8).fillColor('#444')
         .text(`Firma del Trabajador\n${worker?.name || ''}`, 50, sigY + sigH + 10, { width: sigW, align: 'center' });
 
-      // Columna derecha — firma responsable SST + fecha
+      // Columna derecha — firma del LSO/Responsable SST
       const rightX = 50 + pageW - sigW;
+      if (lsoSigBuffer) {
+        try {
+          doc.image(lsoSigBuffer, rightX, sigY, { width: sigW, height: sigH, fit: [sigW, sigH] });
+        } catch { /* si falla, solo la línea */ }
+      }
       doc.moveTo(rightX, sigY + sigH + 5).lineTo(rightX + sigW, sigY + sigH + 5).strokeColor('#333').lineWidth(1).stroke();
       doc.font('Helvetica').fontSize(8).fillColor('#444')
-        .text(`Firma Responsable SST\nGenerado: ${formatDate(new Date())}`, rightX, sigY + sigH + 10, { width: sigW, align: 'center' });
+        .text(`${lsoName}\nResponsable SST · Generado: ${formatDate(new Date())}`, rightX, sigY + sigH + 10, { width: sigW, align: 'center' });
 
       doc.end();
     } catch (error: any) {
