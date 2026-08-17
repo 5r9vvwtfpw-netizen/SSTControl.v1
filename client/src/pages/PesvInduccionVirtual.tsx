@@ -936,10 +936,10 @@ export default function PesvInduccionVirtual() {
                               Ver respuestas
                             </Button>
                           )}
-                          <a href={`/induccion-virtual/${s.token}`} target="_blank" rel="noopener noreferrer">
+                          <a href={`/api/sesiones-induccion-pesv/${s.id}/pdf`} target="_blank" rel="noopener noreferrer">
                             <Button size="sm" variant="outline">
                               <Eye className="h-4 w-4 mr-1" />
-                              Ver
+                              Ver PDF
                             </Button>
                           </a>
                         </div>

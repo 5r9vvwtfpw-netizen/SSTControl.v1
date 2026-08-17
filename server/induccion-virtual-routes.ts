@@ -1326,4 +1326,230 @@ export function registerInduccionVirtualRoutes(app: Express) {
       res.status(500).send("Error al obtener sesiones PESV");
     }
   });
+
+  // ============================================================================
+  // SESIONES PESV - Generar PDF de constancia
+  // ============================================================================
+
+  app.get("/api/sesiones-induccion-pesv/:id/pdf", async (req: Request, res: Response) => {
+    try {
+      if (!req.isAuthenticated()) return res.status(401).send("No autorizado");
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(401).send("No autorizado");
+
+      const { id } = req.params;
+
+      const [sesion] = await db.select()
+        .from(schema.sesionesInduccionVirtual)
+        .where(and(
+          eq(schema.sesionesInduccionVirtual.id, id),
+          eq(schema.sesionesInduccionVirtual.companyId, companyId),
+          eq(schema.sesionesInduccionVirtual.tipoInduccion, "pesv")
+        ));
+
+      if (!sesion) return res.status(404).send("Sesión no encontrada");
+
+      const [worker] = await db.select()
+        .from(schema.workers)
+        .where(eq(schema.workers.id, sesion.workerId));
+
+      const [company] = await db.select()
+        .from(schema.companies)
+        .where(eq(schema.companies.id, companyId));
+
+      const preguntas = await db.select()
+        .from(schema.preguntasInduccion)
+        .where(and(
+          eq(schema.preguntasInduccion.companyId, companyId),
+          eq(schema.preguntasInduccion.tipoInduccion, "pesv")
+        ))
+        .orderBy(schema.preguntasInduccion.orden);
+
+      // ── Firma del responsable PESV (misma lógica de prioridad que SST) ──
+      let lsoName = 'Responsable PESV';
+      let lsoSignatureUrl: string | null = null;
+
+      const [formalDesignation] = await db.select()
+        .from(schema.responsibleDesignations)
+        .where(and(
+          eq(schema.responsibleDesignations.companyId, companyId),
+          eq(schema.responsibleDesignations.isExternalLso, true)
+        ))
+        .limit(1);
+
+      if (formalDesignation?.externalLsoName && formalDesignation?.licenciaSstNumero) {
+        lsoName = formalDesignation.externalLsoName;
+        lsoSignatureUrl = formalDesignation.lsoSignatureUrl || null;
+      }
+
+      if (!lsoSignatureUrl) {
+        const [assignment] = await db.select()
+          .from(schema.licensedProfessionalAssignments)
+          .where(and(
+            eq(schema.licensedProfessionalAssignments.companyId, companyId),
+            eq(schema.licensedProfessionalAssignments.isActive, true)
+          ))
+          .limit(1);
+
+        if (assignment) {
+          if (assignment.externalLsoId && assignment.externalLsoName) {
+            lsoName = assignment.externalLsoName;
+            lsoSignatureUrl = assignment.externalLsoSignatureUrl || null;
+          } else if (assignment.userId) {
+            const [lsoUser] = await db.select()
+              .from(schema.users)
+              .where(eq(schema.users.id, assignment.userId))
+              .limit(1);
+            if (lsoUser) {
+              lsoName = lsoUser.fullName || lsoUser.username;
+              lsoSignatureUrl = lsoUser.sstSignatureUrl || null;
+            }
+          }
+        }
+      }
+
+      const loadSigBuffer = async (url: string | null): Promise<Buffer | null> => {
+        if (!url) return null;
+        try {
+          if (url.startsWith('/replit-objstore-')) {
+            const { objectStorageClient } = await import('./replit_integrations/object_storage');
+            const parts = url.split('/').filter(Boolean);
+            const [data] = await objectStorageClient.bucket(parts[0]).file(parts.slice(1).join('/')).download();
+            return data as Buffer;
+          }
+          if (url.startsWith('/objects/')) {
+            return await objectStorageService.getObjectBuffer(objectStorageService.normalizeObjectEntityPath(url));
+          }
+          return null;
+        } catch { return null; }
+      };
+
+      const lsoSigBuffer = await loadSigBuffer(lsoSignatureUrl);
+
+      const formatDate = (d: any) => d ? new Date(d).toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' }) : '-';
+
+      const doc = new PDFDocument({ size: 'LETTER', margin: 50 });
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `inline; filename="Constancia-Induccion-PESV-${worker?.name?.replace(/\s+/g, '-') || id.substring(0, 8)}.pdf"`);
+      doc.pipe(res);
+
+      // ── Encabezado PESV (azul oscuro) ───────────────────────────────────
+      const NAVY = '#1a3a6b';
+      const pageW = doc.page.width - 100;
+
+      doc.rect(50, 50, pageW, 60).fill(NAVY);
+      doc.fillColor('white').fontSize(18).font('Helvetica-Bold')
+        .text('CONSTANCIA DE INDUCCIÓN PESV', 50, 60, { width: pageW, align: 'center' });
+      doc.fontSize(10).font('Helvetica')
+        .text('Plan Estratégico de Seguridad Vial — Resolución 40595/2022', 50, 84, { width: pageW, align: 'center' });
+
+      doc.moveDown(2);
+
+      // ── Datos de empresa ─────────────────────────────────────────────────
+      doc.fillColor('#333').fontSize(11).font('Helvetica-Bold')
+        .text(company?.name || 'Empresa', { align: 'center' });
+      if (company?.nit) {
+        doc.font('Helvetica').fontSize(9).fillColor('#666')
+          .text(`NIT: ${company.nit}`, { align: 'center' });
+      }
+      doc.moveDown(1.5);
+
+      doc.moveTo(50, doc.y).lineTo(50 + pageW, doc.y).strokeColor(NAVY).lineWidth(2).stroke();
+      doc.moveDown(1);
+
+      // ── Datos del trabajador y sesión ────────────────────────────────────
+      const rows = [
+        ['Trabajador:', worker?.name || '-'],
+        ['Cédula:', worker?.cedula || worker?.documentNumber || '-'],
+        ['Cargo:', worker?.position || worker?.cargo || '-'],
+        ['Tipo de inducción:', 'Inducción PESV'],
+        ['Fecha de envío:', formatDate(sesion.fechaEnvio)],
+        ['Fecha de finalización:', formatDate(sesion.fechaFinalizacion)],
+        ['Resultado de evaluación:', sesion.puntajeEvaluacion !== null ? `${sesion.puntajeEvaluacion}% — ${sesion.aprobado ? 'APROBADO ✓' : 'NO APROBADO'}` : 'Sin evaluación'],
+      ];
+
+      const colLabel = 180;
+      rows.forEach(([label, value]) => {
+        const y = doc.y;
+        doc.font('Helvetica-Bold').fontSize(10).fillColor('#444').text(label, 50, y, { width: colLabel, continued: false });
+        doc.font('Helvetica').fontSize(10).fillColor('#222').text(value, 50 + colLabel, y, { width: pageW - colLabel });
+        doc.moveDown(0.4);
+      });
+
+      doc.moveDown(1);
+      doc.moveTo(50, doc.y).lineTo(50 + pageW, doc.y).strokeColor('#ccc').lineWidth(1).stroke();
+      doc.moveDown(1);
+
+      // ── Respuestas de evaluación ─────────────────────────────────────────
+      if (sesion.progresoEvaluacion && preguntas.length > 0) {
+        let progreso: Record<string, string> = {};
+        try { progreso = JSON.parse(sesion.progresoEvaluacion as string); } catch {}
+
+        doc.font('Helvetica-Bold').fontSize(11).fillColor(NAVY)
+          .text('DETALLE DE EVALUACIÓN', 50, doc.y);
+        doc.moveDown(0.5);
+
+        preguntas.forEach((p, idx) => {
+          const respuesta = progreso[p.id] || '-';
+          if (doc.y > doc.page.height - 120) doc.addPage();
+
+          doc.font('Helvetica-Bold').fontSize(9).fillColor('#333')
+            .text(`${idx + 1}. ${p.pregunta}`, 50, doc.y, { width: pageW });
+          doc.font('Helvetica').fontSize(9).fillColor('#555')
+            .text(`Respuesta: ${respuesta}`, 60, doc.y, { width: pageW - 10 });
+          doc.moveDown(0.5);
+        });
+
+        doc.moveDown(0.5);
+        doc.moveTo(50, doc.y).lineTo(50 + pageW, doc.y).strokeColor('#ccc').lineWidth(1).stroke();
+        doc.moveDown(1);
+      }
+
+      // ── Texto legal ──────────────────────────────────────────────────────
+      if (doc.y > doc.page.height - 160) doc.addPage();
+
+      doc.font('Helvetica').fontSize(9).fillColor('#666')
+        .text(
+          'La presente constancia certifica que el trabajador mencionado completó el proceso de inducción virtual en materia de Seguridad Vial, conforme a lo establecido en la Resolución 40595 de 2022 del Ministerio de Transporte y el artículo 12 de la Ley 1503 de 2011.',
+          50, doc.y, { width: pageW, align: 'justify' }
+        );
+
+      doc.moveDown(2);
+
+      // ── Bloque de firmas ─────────────────────────────────────────────────
+      if (doc.y > doc.page.height - 200) doc.addPage();
+
+      const sigY = doc.y;
+      const sigW = 180;
+      const sigH = 60;
+
+      // Columna izquierda — firma del trabajador
+      if (sesion.firmaDigital) {
+        try {
+          const base64Data = (sesion.firmaDigital as string).replace(/^data:image\/\w+;base64,/, '');
+          const sigBuf = Buffer.from(base64Data, 'base64');
+          doc.image(sigBuf, 50, sigY, { width: sigW, height: sigH, fit: [sigW, sigH] });
+        } catch {}
+      }
+      doc.moveTo(50, sigY + sigH + 5).lineTo(50 + sigW, sigY + sigH + 5).strokeColor('#333').lineWidth(1).stroke();
+      doc.font('Helvetica').fontSize(8).fillColor('#444')
+        .text(`Firma del Trabajador\n${worker?.name || ''}`, 50, sigY + sigH + 10, { width: sigW, align: 'center' });
+
+      // Columna derecha — firma del responsable PESV
+      const rightX = 50 + pageW - sigW;
+      if (lsoSigBuffer) {
+        try {
+          doc.image(lsoSigBuffer, rightX, sigY, { width: sigW, height: sigH, fit: [sigW, sigH] });
+        } catch {}
+      }
+      doc.moveTo(rightX, sigY + sigH + 5).lineTo(rightX + sigW, sigY + sigH + 5).strokeColor('#333').lineWidth(1).stroke();
+      doc.font('Helvetica').fontSize(8).fillColor('#444')
+        .text(`${lsoName}\nResponsable PESV · Generado: ${formatDate(new Date())}`, rightX, sigY + sigH + 10, { width: sigW, align: 'center' });
+
+      doc.end();
+    } catch (error: any) {
+      console.error("Error generando PDF inducción PESV:", error);
+      if (!res.headersSent) res.status(500).send("Error al generar el PDF");
+    }
+  });
 }
