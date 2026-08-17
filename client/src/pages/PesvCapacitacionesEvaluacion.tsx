@@ -13,7 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, GraduationCap, Search, Sparkles, RefreshCw, Users, UserPlus, Trash2, Bot } from "lucide-react";
+import { Plus, GraduationCap, Search, Sparkles, RefreshCw, Users, UserPlus, UsersRound, Trash2, Bot } from "lucide-react";
 import { EvaluacionPesvContextHeader } from "@/components/EvaluacionPesvContextHeader";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -140,6 +140,12 @@ interface PesvAsistentesDialogProps {
 function PesvAsistentesDialog({ isOpen, onClose, training, workers, evaluacionId }: PesvAsistentesDialogProps) {
   const { toast } = useToast();
   const [selectedWorkerId, setSelectedWorkerId] = useState("");
+  const [selectedCargo, setSelectedCargo] = useState("");
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ["/api/road-safety-trainings", training.id, "worker-attendees"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/evaluaciones-pesv", evaluacionId, "capacitaciones", "worker-counts"] });
+  };
 
   const { data: attendees = [], isLoading } = useQuery<any[]>({
     queryKey: ["/api/road-safety-trainings", training.id, "worker-attendees"],
@@ -152,15 +158,34 @@ function PesvAsistentesDialog({ isOpen, onClose, training, workers, evaluacionId
   });
 
   const addMutation = useMutation({
-    mutationFn: async (workerId: string) => {
-      const res = await apiRequest("POST", `/api/road-safety-trainings/${training.id}/invite-workers`, { workerIds: [workerId] });
+    mutationFn: async (workerIds: string[]) => {
+      const res = await apiRequest("POST", `/api/road-safety-trainings/${training.id}/invite-workers`, { workerIds });
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/road-safety-trainings", training.id, "worker-attendees"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/evaluaciones-pesv", evaluacionId, "capacitaciones", "worker-counts"] });
+      invalidate();
       toast({ title: "Trabajador agregado", description: "El trabajador ha sido agregado a la capacitación", className: "bg-green-50 border-green-200" });
       setSelectedWorkerId("");
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const addBulkMutation = useMutation({
+    mutationFn: async (workerIds: string[]) => {
+      const res = await apiRequest("POST", `/api/road-safety-trainings/${training.id}/invite-workers`, { workerIds });
+      return res.json();
+    },
+    onSuccess: (data: any) => {
+      invalidate();
+      const added = data?.invitations?.length ?? 0;
+      toast({
+        title: "✅ Trabajadores agregados",
+        description: added > 0 ? `${added} trabajador(es) agregado(s) a la capacitación.` : "Todos ya estaban inscritos.",
+        className: "bg-green-50 border-green-200",
+      });
+      setSelectedCargo("");
     },
     onError: (error: Error) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -172,8 +197,7 @@ function PesvAsistentesDialog({ isOpen, onClose, training, workers, evaluacionId
       return await apiRequest("DELETE", `/api/road-safety-trainings/${training.id}/worker-attendees/${workerId}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/road-safety-trainings", training.id, "worker-attendees"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/evaluaciones-pesv", evaluacionId, "capacitaciones", "worker-counts"] });
+      invalidate();
       toast({ title: "Asistente eliminado", description: "El trabajador ha sido removido de la capacitación", className: "bg-yellow-50 border-yellow-200" });
     },
     onError: (error: Error) => {
@@ -183,6 +207,9 @@ function PesvAsistentesDialog({ isOpen, onClose, training, workers, evaluacionId
 
   const addedWorkerIds = new Set(attendees.map((a: any) => a.workerId));
   const availableWorkers = workers.filter(w => w.status === "activo" && !addedWorkerIds.has(w.id));
+  const cargosDisponibles = Array.from(
+    new Set(availableWorkers.map(w => w.position).filter(Boolean))
+  ).sort() as string[];
 
   const getWorkerPosition = (workerId: string) => {
     const w = workers.find(w => w.id === workerId);
@@ -205,6 +232,7 @@ function PesvAsistentesDialog({ isOpen, onClose, training, workers, evaluacionId
         </DialogHeader>
 
         <div className="space-y-4">
+          {/* ── Agregar uno por uno ───────────────────────── */}
           <div className="flex items-end gap-2">
             <div className="flex-1">
               <label className="text-sm font-medium mb-1.5 block">Agregar Trabajador</label>
@@ -228,7 +256,7 @@ function PesvAsistentesDialog({ isOpen, onClose, training, workers, evaluacionId
               </Select>
             </div>
             <Button
-              onClick={() => selectedWorkerId && addMutation.mutate(selectedWorkerId)}
+              onClick={() => selectedWorkerId && addMutation.mutate([selectedWorkerId])}
               disabled={!selectedWorkerId || addMutation.isPending}
               className="gap-1"
               data-testid="button-add-attendee"
@@ -237,6 +265,57 @@ function PesvAsistentesDialog({ isOpen, onClose, training, workers, evaluacionId
               Agregar
             </Button>
           </div>
+
+          {/* ── Agregar en grupo ─────────────────────────── */}
+          {availableWorkers.length > 0 && (
+            <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Agregar en grupo</p>
+              <div className="flex items-center gap-2 flex-wrap">
+                <Select value={selectedCargo} onValueChange={setSelectedCargo}>
+                  <SelectTrigger className="w-52" data-testid="select-cargo-bulk">
+                    <SelectValue placeholder="Filtrar por cargo…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {cargosDisponibles.map(c => (
+                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!selectedCargo || addBulkMutation.isPending}
+                  onClick={() => {
+                    const ids = availableWorkers
+                      .filter(w => (w.position || "").toLowerCase() === selectedCargo.toLowerCase())
+                      .map(w => w.id);
+                    if (ids.length > 0) addBulkMutation.mutate(ids);
+                  }}
+                  data-testid="button-agregar-por-cargo"
+                  className="gap-1"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  Agregar por cargo
+                  {selectedCargo && (
+                    <span className="ml-1 text-xs">
+                      ({availableWorkers.filter(w => (w.position || "").toLowerCase() === selectedCargo.toLowerCase()).length})
+                    </span>
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={addBulkMutation.isPending}
+                  onClick={() => addBulkMutation.mutate(availableWorkers.map(w => w.id))}
+                  data-testid="button-agregar-todos"
+                  className="gap-1"
+                >
+                  <UsersRound className="h-4 w-4" />
+                  Agregar todos ({availableWorkers.length})
+                </Button>
+              </div>
+            </div>
+          )}
 
           <Separator />
 
