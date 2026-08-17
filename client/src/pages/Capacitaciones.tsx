@@ -530,7 +530,9 @@ export default function Capacitaciones() {
                     <Label htmlFor="startTime">Hora de Inicio (opcional)</Label>
                     <Input
                       id="startTime"
-                      type="time"
+                      type="text"
+                      placeholder="08:00"
+                      maxLength={5}
                       value={formData.startTime}
                       onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
                       data-testid="input-start-time"
@@ -540,7 +542,9 @@ export default function Capacitaciones() {
                     <Label htmlFor="endTime">Hora de Fin (opcional)</Label>
                     <Input
                       id="endTime"
-                      type="time"
+                      type="text"
+                      placeholder="17:00"
+                      maxLength={5}
                       value={formData.endTime}
                       onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
                       data-testid="input-end-time"
@@ -714,7 +718,9 @@ export default function Capacitaciones() {
                 <Label htmlFor="edit-startTime">Hora de Inicio (opcional)</Label>
                 <Input
                   id="edit-startTime"
-                  type="time"
+                  type="text"
+                  placeholder="08:00"
+                  maxLength={5}
                   value={editFormData.startTime}
                   onChange={(e) => setEditFormData({ ...editFormData, startTime: e.target.value })}
                   data-testid="input-edit-start-time"
@@ -724,7 +730,9 @@ export default function Capacitaciones() {
                 <Label htmlFor="edit-endTime">Hora de Fin (opcional)</Label>
                 <Input
                   id="edit-endTime"
-                  type="time"
+                  type="text"
+                  placeholder="17:00"
+                  maxLength={5}
                   value={editFormData.endTime}
                   onChange={(e) => setEditFormData({ ...editFormData, endTime: e.target.value })}
                   data-testid="input-edit-end-time"
