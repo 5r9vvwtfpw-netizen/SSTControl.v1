@@ -231,10 +231,8 @@ export default function ConfiguracionInduccion() {
       queryClient.invalidateQueries({ queryKey: ["/api/sesiones-induccion-virtual"] });
       setEnviarDialogOpen(false);
       toast({
-        title: `✅ ${data.enviados} induccion${data.enviados !== 1 ? 'es' : ''} asignada${data.enviados !== 1 ? 's' : ''}`,
-        description: data.omitidos > 0
-          ? `${data.omitidos} trabajador${data.omitidos !== 1 ? 'es' : ''} ya tenían sesión activa y se omitieron.`
-          : "Todos los trabajadores pendientes recibieron acceso en su portal.",
+        title: "✅ Inducción enviada",
+        description: `La inducción fue enviada al portal de ${data.enviados} trabajador${data.enviados !== 1 ? 'es' : ''}.`,
       });
     },
     onError: (error: Error) => {
