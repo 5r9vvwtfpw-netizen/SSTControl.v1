@@ -6902,7 +6902,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const [worker] = await db.select().from(schema.workers).where(eq(schema.workers.id, absence.workerId)).limit(1);
 
-      const doc = new PDFDocument({ size: 'LETTER', margin: 50 });
+       const doc = new PDFDocument({ size: PDF_CONFIG.PAGE_SIZE, margin: PDF_CONFIG.MARGIN });
       const subscription = await storage.getSubscriptionByCompany(absence.companyId);
       const trialStatus = getTrialStatus(subscription?.status || 'trial', subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, trialStatus.requiresWatermark);
@@ -6912,38 +6912,109 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.pipe(res);
 
       const logoBuffer = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(absence.companyId, false);
+       const signers = await getSignersForCompany(absence.companyId, true);
 
       let y = await addStandardHeader({
         doc, company, documentTitle: "REGISTRO DE AUSENTISMO LABORAL",
         documentCode: getDocumentCode('absenteeism_statistics'), logoBuffer,
       });
 
-      y = addLabeledField(doc, "Trabajador", worker?.name || "—", { y });
-      y = addLabeledField(doc, "Cédula", worker?.identificationNumber || "—", { y });
-      y = addLabeledField(doc, "Cargo", worker?.position || "—", { y });
-      y = addLabeledField(doc, "Tipo de Ausencia", absence.absenceType, { y });
-      y = addLabeledField(doc, "Fecha Inicio", formatDate(absence.startDate), { y });
-      y = addLabeledField(doc, "Fecha Fin", absence.endDate ? formatDate(absence.endDate) : "—", { y });
-      y = addLabeledField(doc, "Días Perdidos", String(absence.daysLost || 0), { y });
-      y = addLabeledField(doc, "Estado", absence.status, { y });
-      if (absence.diagnosis) y = addLabeledField(doc, "Diagnóstico", absence.diagnosis, { y });
-      if (absence.cie10Code) y = addLabeledField(doc, "Código CIE-10", absence.cie10Code, { y });
-      if (absence.prognosis) y = addLabeledField(doc, "Pronóstico", absence.prognosis, { y });
-      if (absence.restrictions) y = addLabeledField(doc, "Restricciones Médicas", absence.restrictions, { y });
-      if (absence.incapacityNumber) y = addLabeledField(doc, "No. Incapacidad", absence.incapacityNumber, { y });
-      if (absence.issuerEntity) y = addLabeledField(doc, "Entidad Emisora", absence.issuerEntity, { y });
-      if (absence.issueDate) y = addLabeledField(doc, "Fecha de Emisión", formatDate(absence.issueDate), { y });
-      y = addLabeledField(doc, "Seguimiento EPS", absence.epsFollowup ? "Sí" : "No", { y });
-      y = addLabeledField(doc, "Seguimiento ARL", absence.arlFollowup ? "Sí" : "No", { y });
-      if (absence.hasExtension) {
-        y = addLabeledField(doc, "Prórroga", `${absence.extensionCount || 0} prórroga(s), ${absence.extensionDays || 0} días adicionales`, { y });
-      }
-      if (absence.reintegrationDate) y = addLabeledField(doc, "Fecha de Reintegro", formatDate(absence.reintegrationDate), { y });
-      if (absence.reintegrationRestrictions) y = addLabeledField(doc, "Restricciones de Reintegro", absence.reintegrationRestrictions, { y });
-      if (absence.observations) y = addLabeledField(doc, "Observaciones", absence.observations, { y });
+       const absenceTypeLabels: Record<string, string> = {
+         incapacidad_at: 'Incapacidad por accidente de trabajo',
+         incapacidad_el: 'Incapacidad por enfermedad laboral',
+         incapacidad_comun: 'Incapacidad por enfermedad común',
+         licencia_maternidad: 'Licencia de maternidad',
+         licencia_paternidad: 'Licencia de paternidad',
+         licencia_luto: 'Licencia por luto',
+         permiso_personal: 'Permiso personal',
+         calamidad_domestica: 'Calamidad doméstica',
+         suspension: 'Suspensión disciplinaria',
+         otro: 'Otro tipo de ausencia',
+       };
+       const absenceStatusLabels: Record<string, string> = {
+         activa: 'Activa',
+         finalizada: 'Finalizada',
+         prorroga: 'En prórroga',
+         reubicacion: 'En proceso de reubicación',
+       };
+       const fieldColumnWidths = [165, doc.page.width - PDF_CONFIG.MARGIN * 2 - 165];
 
-      await addSignatureFooter(doc, signers, false);
+       y = addParagraph(
+         doc,
+         'Registro individual para el control, seguimiento y análisis del ausentismo laboral, conforme al Estándar 3.2.3 de la Resolución 0312 de 2019.',
+         { y }
+       );
+
+       y = addSectionBar(doc, '1. INFORMACIÓN DEL TRABAJADOR', y);
+       y = addSimpleTable(
+         doc,
+         ['CAMPO', 'INFORMACIÓN'],
+         [
+           ['Trabajador', worker?.name || 'No registrado'],
+           ['Documento de identidad', worker?.identificationNumber || 'No registrado'],
+           ['Cargo', worker?.position || 'No registrado'],
+         ],
+         { y, columnWidths: fieldColumnWidths }
+       );
+
+       y = addSectionBar(doc, '2. DETALLE DE LA AUSENCIA', y);
+       y = addSimpleTable(
+         doc,
+         ['CAMPO', 'INFORMACIÓN'],
+         [
+           ['Tipo de ausencia', absenceTypeLabels[absence.absenceType] || absence.absenceType],
+           ['Estado', absenceStatusLabels[absence.status] || absence.status],
+           ['Fecha de inicio', formatDate(absence.startDate)],
+           ['Fecha de finalización', absence.endDate ? formatDate(absence.endDate) : 'En curso'],
+           ['Días perdidos', String(absence.daysLost || 0)],
+         ],
+         { y, columnWidths: fieldColumnWidths }
+       );
+
+       const medicalRows: string[][] = [];
+       if (absence.diagnosis) medicalRows.push(['Diagnóstico', absence.diagnosis]);
+       if (absence.cie10Code) medicalRows.push(['Código CIE-10', absence.cie10Code]);
+       if (absence.prognosis) medicalRows.push(['Pronóstico', absence.prognosis]);
+       if (absence.restrictions) medicalRows.push(['Restricciones médicas', absence.restrictions]);
+       if (absence.incapacityNumber) medicalRows.push(['Número de incapacidad', absence.incapacityNumber]);
+       if (absence.issuerEntity) medicalRows.push(['Entidad emisora', absence.issuerEntity]);
+       if (absence.issueDate) medicalRows.push(['Fecha de emisión', formatDate(absence.issueDate)]);
+
+       if (medicalRows.length > 0) {
+         y = addSectionBar(doc, '3. INFORMACIÓN MÉDICA Y DOCUMENTAL', y);
+         y = addSimpleTable(
+           doc,
+           ['CAMPO', 'INFORMACIÓN'],
+           medicalRows,
+           { y, columnWidths: fieldColumnWidths }
+         );
+       }
+
+       const followUpRows: string[][] = [
+         ['Seguimiento EPS', absence.epsFollowup ? 'Sí, seguimiento activo' : 'No'],
+         ['Seguimiento ARL', absence.arlFollowup ? 'Sí, seguimiento activo' : 'No'],
+       ];
+       if (absence.lastFollowupDate) followUpRows.push(['Último seguimiento', formatDate(absence.lastFollowupDate)]);
+       if (absence.hasExtension) {
+         followUpRows.push([
+           'Prórroga',
+           `${absence.extensionCount || 0} prórroga(s) y ${absence.extensionDays || 0} día(s) adicionales`,
+         ]);
+       }
+       if (absence.reintegrationDate) followUpRows.push(['Fecha de reintegro', formatDate(absence.reintegrationDate)]);
+       if (absence.reintegrationRestrictions) followUpRows.push(['Restricciones de reintegro', absence.reintegrationRestrictions]);
+       if (absence.requiresRelocation) followUpRows.push(['Requiere reubicación', absence.newPosition ? `Sí. Nuevo cargo: ${absence.newPosition}` : 'Sí']);
+       if (absence.observations) followUpRows.push(['Observaciones', absence.observations]);
+
+       y = addSectionBar(doc, '4. SEGUIMIENTO Y REINTEGRO', y);
+       y = addSimpleTable(
+         doc,
+         ['CAMPO', 'INFORMACIÓN'],
+         followUpRows,
+         { y, columnWidths: fieldColumnWidths }
+       );
+
+       await addSignatureFooter(doc, signers, true);
       doc.end();
     } catch (error) {
       handlePdfError(error, res, "absence-individual");
