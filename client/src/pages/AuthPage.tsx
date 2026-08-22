@@ -399,7 +399,7 @@ export default function AuthPage() {
                 <CheckCircle2 className="h-4 w-4 text-green-600" />
                 <AlertTitle className="text-green-800 dark:text-green-200">Correo verificado</AlertTitle>
                 <AlertDescription className="text-green-700 dark:text-green-300">
-                  Tu cuenta ha sido verificada exitosamente. Ya puedes iniciar sesión.
+                  Tu cuenta ha sido verificada exitosamente. Inicia sesión para completar los datos de tu empresa; solo entonces quedará creada y visible en el panel administrativo.
                 </AlertDescription>
               </Alert>
             )}
@@ -418,7 +418,7 @@ export default function AuthPage() {
                 <AlertTitle className="text-blue-800 dark:text-blue-200">Revisa tu correo</AlertTitle>
                 <AlertDescription className="text-blue-700 dark:text-blue-300">
                   Hemos enviado un enlace de verificación a tu correo electrónico. 
-                  Por favor verifica tu cuenta para poder iniciar sesión.
+                  Verifica tu cuenta e inicia sesión para completar los datos obligatorios de tu empresa. La empresa se crea al finalizar ese último paso y quedará visible en el panel administrativo.
                   <div className="mt-2 p-2 bg-amber-50 dark:bg-amber-950 rounded text-amber-800 dark:text-amber-200 text-sm">
                     <strong>¿No encuentras el correo?</strong> Revisa las carpetas de <strong>Spam</strong>, <strong>Promociones</strong> o <strong>Actualizaciones</strong> de tu bandeja de entrada.
                   </div>
