@@ -283,6 +283,7 @@ import {
   sendSupportAccessRequestEmail,
   sendLsoPortalAccessEmail,
   sendLsoRemovalNotificationEmail,
+  buildLsoPortalLoginUrl,
   type CambioSstEmailData,
   type AprobacionCambioEmailData
 } from "./email";
@@ -12839,7 +12840,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                           username: cedula,
                           temporaryPassword: tempPassword,
                           companyName: company?.name || 'Empresa',
-                          loginUrl: `${baseUrl}/portal-licenciado`,
+                          loginUrl: buildLsoPortalLoginUrl(baseUrl),
                           companyEmail: company?.contactEmail || undefined,
                         });
                         console.log('[AUTO-CREATE LSO] Credentials email sent to:', lsoEmail);

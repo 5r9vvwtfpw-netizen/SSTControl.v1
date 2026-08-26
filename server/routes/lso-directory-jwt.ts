@@ -14,7 +14,7 @@ import { db } from "../db";
 import * as schema from "@shared/schema";
 import { eq, and } from "drizzle-orm";
 import { hashPassword } from "../auth";
-import { sendLsoPortalAccessEmail, sendLsoRemovalNotificationEmail, sendLsoNewAssignmentEmail } from "../email";
+import { sendLsoPortalAccessEmail, sendLsoRemovalNotificationEmail, sendLsoNewAssignmentEmail, buildLsoPortalLoginUrl } from "../email";
 import { randomBytes } from "crypto";
 import { storage } from "../storage";
 import { notifyNewMessage } from "../websocket";
@@ -247,7 +247,7 @@ router.post("/assign", requireAuth, async (req: Request, res: Response) => {
           lsoName: existingLsoUser.fullName || lso.fullName || 'Profesional LSO',
           companyName: company.name || 'Empresa',
           companyNit: company.nit || undefined,
-          loginUrl: `${baseUrl}/portal-licenciado`,
+          loginUrl: buildLsoPortalLoginUrl(baseUrl),
           companyEmail: company.contactEmail || undefined,
         });
         logger.info({ email: lso.email }, "[LSO-AUTO] Notificación de nueva asignación enviada (sin credenciales)");
@@ -308,7 +308,7 @@ router.post("/assign", requireAuth, async (req: Request, res: Response) => {
             username,
             temporaryPassword,
             companyName: company.name || 'Empresa',
-            loginUrl: `${baseUrl}/portal-licenciado`,
+            loginUrl: buildLsoPortalLoginUrl(baseUrl),
             companyEmail: company.contactEmail || undefined,
           });
           logger.info({ email: lso.email }, "[LSO-AUTO] Credenciales enviadas por email");

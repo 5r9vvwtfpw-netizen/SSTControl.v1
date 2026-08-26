@@ -1892,6 +1892,17 @@ export interface LsoPortalAccessEmailData {
   companyEmail?: string;
 }
 
+/**
+ * Única fuente de verdad para la URL del portal LSO.
+ * Cualquier flujo que le envíe a un LSO un enlace de acceso/login (credenciales
+ * nuevas, notificación de asignación, recuperación de contraseña, etc.) debe
+ * usar esta función en lugar de construir el path a mano, para evitar que un
+ * flujo quede apuntando a /auth mientras otro apunta a /portal-licenciado.
+ */
+export function buildLsoPortalLoginUrl(baseUrl: string): string {
+  return `${baseUrl.replace(/\/$/, "")}/portal-licenciado`;
+}
+
 function getLsoPortalAccessEmailHTML(data: LsoPortalAccessEmailData): string {
   return `
 <!DOCTYPE html>
