@@ -12839,7 +12839,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                           username: cedula,
                           temporaryPassword: tempPassword,
                           companyName: company?.name || 'Empresa',
-                          loginUrl: `${baseUrl}/auth`,
+                          loginUrl: `${baseUrl}/portal-licenciado`,
                           companyEmail: company?.contactEmail || undefined,
                         });
                         console.log('[AUTO-CREATE LSO] Credentials email sent to:', lsoEmail);
