@@ -2330,6 +2330,93 @@ export async function sendTrialExpiringEmail(params: {
 }
 
 /**
+ * Email: Suscripción de pago vence en 2 días
+ */
+export async function sendSubscriptionExpiringEmail(params: {
+  to: string;
+  companyName: string;
+  periodEndDate: Date;
+}): Promise<{ success: boolean; error?: string }> {
+  const { to, companyName, periodEndDate } = params;
+  const fechaVencimiento = formatDateCO(periodEndDate);
+
+  const html = `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Su suscripción vence pronto</title>
+</head>
+<body style="margin:0;padding:0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background-color:#f3f4f6;">
+  <table role="presentation" style="width:100%;border-collapse:collapse;">
+    <tr>
+      <td align="center" style="padding:40px 0;">
+        <table role="presentation" style="width:600px;max-width:100%;background:#ffffff;border-radius:8px;box-shadow:0 4px 6px rgba(0,0,0,0.1);">
+          <tr>
+            <td style="background:linear-gradient(135deg,#166534 0%,#15803d 100%);padding:30px;text-align:center;border-radius:8px 8px 0 0;">
+              <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:600;">SST Colombia</h1>
+              <p style="margin:8px 0 0 0;color:#dcfce7;font-size:14px;">Sistema de Salud y Seguridad en el Trabajo</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background-color:#f59e0b;padding:12px 30px;text-align:center;">
+              <p style="margin:0;color:#ffffff;font-size:16px;font-weight:600;">⏰ SU SUSCRIPCIÓN VENCE EN 2 DÍAS</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:40px 30px;">
+              <h2 style="margin:0 0 20px 0;color:#166534;font-size:20px;">Estimado administrador de <strong>${companyName}</strong>,</h2>
+              <p style="color:#374151;font-size:16px;line-height:1.6;">
+                Le informamos que su suscripción a <strong>SST Colombia</strong> vencerá el:
+              </p>
+              <div style="background:#fef3c7;border:2px solid #f59e0b;border-radius:8px;padding:20px;margin:24px 0;text-align:center;">
+                <p style="margin:0;color:#92400e;font-size:18px;font-weight:700;">${fechaVencimiento}</p>
+              </div>
+              <p style="color:#374151;font-size:16px;line-height:1.6;">
+                Para evitar interrupciones en el acceso al sistema y a la información de su empresa, le recomendamos realizar el pago de renovación antes de esa fecha.
+              </p>
+              <center style="margin:30px 0;">
+                <a href="${process.env.VITE_APP_URL || 'https://sst-colombia.com'}/planes-suscripcion"
+                   style="display:inline-block;background:#166534;color:white;padding:14px 36px;text-decoration:none;border-radius:6px;font-size:16px;font-weight:600;">
+                  Renovar Suscripción
+                </a>
+              </center>
+              <p style="color:#6b7280;font-size:14px;line-height:1.6;">
+                Si ya realizó el pago o tiene preguntas, escríbanos a
+                <a href="mailto:soporte@sst-colombia.com" style="color:#166534;">soporte@sst-colombia.com</a>.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#f9fafb;padding:24px 30px;border-radius:0 0 8px 8px;border-top:1px solid #e5e7eb;text-align:center;">
+              <p style="margin:0;color:#6b7280;font-size:12px;">SST Colombia · Sistema Integral de Gestión SST · soporte@sst-colombia.com</p>
+              <p style="margin:6px 0 0 0;color:#9ca3af;font-size:11px;">Este es un correo automático, por favor no responder directamente.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+  try {
+    const result = await resend.emails.send({
+      from: `${FROM_NAME} <${FROM_EMAIL}>`,
+      to,
+      cc: [ADMIN_CC],
+      subject: `⏰ Su suscripción en SST Colombia vence el ${fechaVencimiento}`,
+      html,
+    });
+    if (result.error) return { success: false, error: result.error.message };
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+/**
  * Email: Trial venció sin pago → estado past_due
  */
 export async function sendTrialPastDueEmail(params: {

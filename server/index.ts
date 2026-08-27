@@ -27,6 +27,7 @@ import { db } from "./db";
 import { requestLoggerMiddleware } from "./lib/request-logger-middleware";
 import { startTrialConversionJob } from "./jobs/trial-conversion";
 import { startTrialExpiryWarningJob } from "./jobs/trial-expiry-warning";
+import { startSubscriptionExpiryWarningJob } from "./jobs/subscription-expiry-warning";
 import { startMonthlyBillingJob } from "./jobs/monthly-billing";
 import { startMedicalExamRemindersCron } from "./jobs/medical-exam-reminders";
 import { startIndicadoresSchedulerCron } from "./jobs/indicadores-scheduler";
@@ -996,6 +997,13 @@ app.use((req, res, next) => {
       logger.error({ err: error }, "⚠️ Trial expiry warning job initialization failed");
     }
     
+    // Initialize subscription expiry warning cron job (2 días antes del vencimiento, todas las suscripciones activas)
+    try {
+      startSubscriptionExpiryWarningJob();
+    } catch (error) {
+      logger.error({ err: error }, "⚠️ Subscription expiry warning job initialization failed");
+    }
+
     // Initialize monthly billing cron job (Bloque 4 - Tarea 17)
     try {
       startMonthlyBillingJob();

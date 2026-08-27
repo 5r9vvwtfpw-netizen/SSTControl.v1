@@ -5800,6 +5800,12 @@ export const subscriptions = pgTable("subscriptions", {
   contractTermsVersion: text("contract_terms_version"), // Versión del contrato aceptado (e.g., "1.0")
   contractData: jsonb("contract_data"), // { acceptedTerms, acceptedDataTreatment, acceptedAutoRenewal, planName, ipAddress }
   
+  // Aviso de vencimiento próximo (2 días antes) - guarda el currentPeriodEnd
+  // para el que ya se envió el aviso, así no se duplica en cada reinicio del
+  // servidor ni en el día siguiente; se vuelve a habilitar solo cuando el
+  // período se renueva y currentPeriodEnd cambia.
+  lastExpiryWarningPeriodEnd: timestamp("last_expiry_warning_period_end"),
+  
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
   updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
 });

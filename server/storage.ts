@@ -1509,6 +1509,8 @@ export interface IStorage {
   createTrialSubscription(companyId: string, planId: string, trialDays: number): Promise<Subscription>;
   getExpiredTrials(): Promise<Subscription[]>;
   getTrialsExpiringSoon(hoursAhead: number): Promise<Subscription[]>;
+  getSubscriptionsExpiringSoon(daysAhead: number): Promise<Subscription[]>;
+  markSubscriptionExpiryWarningSent(id: string, periodEnd: Date): Promise<void>;
   hasDefaultPaymentSource(companyId: string): Promise<boolean>;
   transitionSubscriptionStatus(id: string, newStatus: 'active' | 'past_due' | 'suspended' | 'canceled' | 'expired', metadata?: { suspendedAt?: Date; canceledAt?: Date }): Promise<Subscription | undefined>;
   getActiveOrTrialSubscriptionByCompany(companyId: string): Promise<Subscription | undefined>;
@@ -12592,6 +12594,31 @@ export class DbStorage implements IStorage {
           lt(schema.subscriptions.trialEnd, cutoff)
         )
       );
+  }
+
+  async getSubscriptionsExpiringSoon(daysAhead: number): Promise<Subscription[]> {
+    const now = new Date();
+    // Ventana de 24h centrada en "daysAhead días desde ahora" para no depender
+    // de la hora exacta a la que corre el cron.
+    const windowStart = new Date(now.getTime() + (daysAhead - 0.5) * 24 * 60 * 60 * 1000);
+    const windowEnd = new Date(now.getTime() + (daysAhead + 0.5) * 24 * 60 * 60 * 1000);
+    return await db
+      .select()
+      .from(schema.subscriptions)
+      .where(
+        and(
+          eq(schema.subscriptions.status, 'active'),
+          gt(schema.subscriptions.currentPeriodEnd, windowStart),
+          lt(schema.subscriptions.currentPeriodEnd, windowEnd)
+        )
+      );
+  }
+
+  async markSubscriptionExpiryWarningSent(id: string, periodEnd: Date): Promise<void> {
+    await db
+      .update(schema.subscriptions)
+      .set({ lastExpiryWarningPeriodEnd: periodEnd })
+      .where(eq(schema.subscriptions.id, id));
   }
 
   async hasDefaultPaymentSource(companyId: string): Promise<boolean> {
