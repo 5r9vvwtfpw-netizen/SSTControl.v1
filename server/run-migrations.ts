@@ -54,6 +54,7 @@ import { syncCiiuMultiColumns } from './migrations/sync-ciiu-multi-columns';
 import { syncResourceAllocationDetalleObjetivo } from './migrations/sync-resource-allocation-detalle-objetivo';
 import { createUserSessionsLog } from './migrations/create-user-sessions-log';
 import { syncInduccionPesv } from './migrations/sync-induccion-pesv';
+import { syncSubscriptionExpiryWarningColumn } from './migrations/sync-subscription-expiry-warning-column';
 
 /**
  * Ejecuta migraciones de base de datos automáticamente
@@ -64,6 +65,7 @@ export async function runMigrations() {
   
   try {
     await syncWorkersPurchasedColumn();
+    await syncSubscriptionExpiryWarningColumn();
     await syncAccidentTypeEnum();
     await syncAccidentInvestigationsTable();
     await syncInvestigationFindings();
