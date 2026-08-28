@@ -19,6 +19,21 @@ import logger from "./lib/logger";
 // ── Monitoreo de sesiones ─────────────────────────────────────────────────────
 const MAX_SESSION_HOURS = 8;
 
+function normalizeClientIp(value: string | string[] | undefined): string {
+  const raw = Array.isArray(value) ? value[0] : value;
+  const firstIp = (raw || "unknown").split(",")[0].trim();
+  return firstIp.startsWith("::ffff:") ? firstIp.slice(7) : firstIp;
+}
+
+function getClientIp(req: Request): string {
+  return normalizeClientIp(
+    req.ip ||
+    req.headers["x-forwarded-for"] ||
+    req.connection?.remoteAddress ||
+    "unknown",
+  );
+}
+
 async function recordLoginSession(userId: string, sessionId: string, ip: string, userAgent: string | null) {
   try {
     // 1. Cerrar sesiones activas previas del mismo usuario (detectar acceso simultáneo)
@@ -464,7 +479,7 @@ export function setupAuth(app: Express) {
           }
           
           try {
-            const clientIp = req.ip || req.headers['x-forwarded-for'] as string || req.connection?.remoteAddress || 'unknown';
+            const clientIp = getClientIp(req);
             await db.update(schema.users)
               .set({
                 lastLoginAt: new Date(),
@@ -524,7 +539,7 @@ export function setupAuth(app: Express) {
           }
           
           try {
-            const clientIp = req.ip || req.headers['x-forwarded-for'] as string || req.connection?.remoteAddress || 'unknown';
+            const clientIp = getClientIp(req);
             await db.update(schema.users)
               .set({
                 lastLoginAt: new Date(),
@@ -532,6 +547,9 @@ export function setupAuth(app: Express) {
                 lastLoginIp: clientIp,
               })
               .where(eq(schema.users.id, user.id));
+
+            await recordLoginSession(user.id, req.sessionID, clientIp,
+              req.headers["user-agent"] || null);
           } catch (trackErr) {
             logger.error({ err: trackErr }, "Error tracking support login");
           }

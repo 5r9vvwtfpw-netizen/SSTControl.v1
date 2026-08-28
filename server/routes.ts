@@ -51,6 +51,7 @@ import { z } from "zod";
 import multer from "multer";
 import { ObjectStorageService, ObjectNotFoundError, objectStorageService } from "./objectStorage";
 import { randomUUID } from "crypto";
+import { isIP } from "net";
 import path from "path";
 import fs from "fs";
 import { 
@@ -8709,6 +8710,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       .from(schema.users)
       .orderBy(desc(schema.users.lastLoginAt));
 
+      const authorizedIpResult = await db.execute(sql`
+        SELECT id, COALESCE(authorized_ips, '{}') AS authorized_ips
+        FROM users
+      `);
+      const authorizedIpsByUser = new Map(
+        ((authorizedIpResult as any).rows ?? []).map((row: any) => [
+          row.id,
+          row.authorized_ips ?? [],
+        ]),
+      );
+      const sessionStatsResult = await db.execute(sql`
+        SELECT
+          user_id,
+          COUNT(*)::int AS session_count,
+          COUNT(*) FILTER (WHERE is_suspicious = true)::int AS suspicious_count,
+          COUNT(*) FILTER (WHERE is_active = true)::int AS active_session_count
+        FROM user_sessions_log
+        GROUP BY user_id
+      `);
+      const sessionStatsByUser = new Map(
+        ((sessionStatsResult as any).rows ?? []).map((row: any) => [
+          row.user_id,
+          {
+            sessionCount: Number(row.session_count) || 0,
+            suspiciousCount: Number(row.suspicious_count) || 0,
+            activeSessionCount: Number(row.active_session_count) || 0,
+          },
+        ]),
+      );
+
       const usersWithCompany = await Promise.all(
         allUsers.map(async (u) => {
           let companyName = null;
@@ -8716,7 +8747,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const company = await storage.getCompany(u.companyId);
             companyName = company?.name || null;
           }
-          return { ...u, companyName };
+          return {
+            ...u,
+            companyName,
+            authorizedIps: authorizedIpsByUser.get(u.id) ?? [],
+            ...(sessionStatsByUser.get(u.id) ?? {
+              sessionCount: 0,
+              suspiciousCount: 0,
+              activeSessionCount: 0,
+            }),
+          };
         })
       );
 
@@ -8724,6 +8764,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error('Error fetching login activity:', error);
       res.status(500).send("Error al obtener actividad de login");
+    }
+  });
+
+  app.get("/api/admin/login-activity/:userId/sessions", requireRole(["superadmin"]), async (req, res) => {
+    try {
+      const user = await storage.getUser(req.params.userId);
+      if (!user) {
+        return res.status(404).json({ error: "Usuario no encontrado" });
+      }
+
+      const limit = Math.min(Math.max(Number(req.query.limit) || 100, 1), 500);
+      const sessions = await db
+        .select({
+          id: schema.userSessions.id,
+          ipAddress: schema.userSessions.ipAddress,
+          userAgent: schema.userSessions.userAgent,
+          loginAt: schema.userSessions.loginAt,
+          lastActivityAt: schema.userSessions.lastActivityAt,
+          logoutAt: schema.userSessions.logoutAt,
+          durationMinutes: sql<number>`COALESCE(
+            ${schema.userSessions.durationMinutes},
+            FLOOR(EXTRACT(EPOCH FROM (now() - ${schema.userSessions.loginAt})) / 60)
+          )::int`,
+          isActive: schema.userSessions.isActive,
+          isSuspicious: schema.userSessions.isSuspicious,
+          alertType: schema.userSessions.alertType,
+          alertNote: schema.userSessions.alertNote,
+        })
+        .from(schema.userSessions)
+        .where(eq(schema.userSessions.userId, req.params.userId))
+        .orderBy(desc(schema.userSessions.loginAt))
+        .limit(limit);
+
+      res.json({
+        user: {
+          id: user.id,
+          username: user.username,
+          fullName: user.fullName,
+          role: user.role,
+        },
+        sessions,
+      });
+    } catch (error: any) {
+      console.error("Error fetching user login sessions:", error);
+      res.status(500).json({ error: "Error al obtener el historial de sesiones" });
+    }
+  });
+
+  app.patch("/api/admin/login-activity/:userId/authorized-ips", requireRole(["superadmin"]), async (req, res) => {
+    try {
+      const bodySchema = z.object({
+        authorizedIps: z.array(z.string().trim().min(1)).max(20),
+      });
+      const { authorizedIps } = bodySchema.parse(req.body);
+      const normalizedIps = Array.from(new Set(
+        authorizedIps.map((ip) => ip.startsWith("::ffff:") ? ip.slice(7) : ip),
+      ));
+      const invalidIp = normalizedIps.find((ip) => isIP(ip) === 0);
+      if (invalidIp) {
+        return res.status(400).json({ error: `La dirección IP "${invalidIp}" no es válida` });
+      }
+
+      const user = await storage.getUser(req.params.userId);
+      if (!user) {
+        return res.status(404).json({ error: "Usuario no encontrado" });
+      }
+
+      const authorizedIpsSql = sql.join(
+        normalizedIps.map((ip) => sql`${ip}`),
+        sql`, `,
+      );
+      await db.execute(sql`
+        UPDATE users
+        SET authorized_ips = ARRAY[${authorizedIpsSql}]::text[]
+        WHERE id = ${req.params.userId}
+      `);
+
+      res.json({
+        userId: req.params.userId,
+        authorizedIps: normalizedIps,
+        monitoringEnabled: normalizedIps.length > 0,
+      });
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: "La lista de IP autorizadas no es válida" });
+      }
+      console.error("Error updating authorized IPs:", error);
+      res.status(500).json({ error: "Error al actualizar las IP autorizadas" });
     }
   });
 

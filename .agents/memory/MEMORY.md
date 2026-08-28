@@ -12,3 +12,4 @@
 - [Effective companyId resolution pattern](effective-company-id-pattern.md) — superadmin/lso/lso_externo have no own companyId; any route reading req.user.companyId directly blocks them from viewing companies. Use a resolver honoring X-Company-Id header/query.
 - [PESV PDF routes duplicate getEffectiveCompanyId](pesv-pdf-routes-company-id.md) — pesv-pdf-routes.ts has its own local getEffectiveCompanyId that only read query params, not X-Company-Id header; must stay in sync with the one in routes.ts.
 - [LSO portal loginUrl duplicated](lso-portal-loginurl-duplication.md) — two separate code paths build the LSO's credentials-email login link independently; one pointed to /auth instead of /portal-licenciado and drifted out of sync.
+- [IP access-control policy](ip-access-control-policy.md) — una IP nueva se registra y alerta, pero el primer acceso no se bloquea automáticamente; lista vacía significa sin restricción.
