@@ -5,15 +5,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Shield, CheckCircle2, XCircle, Eye, EyeOff } from "lucide-react";
+import { Shield, CheckCircle2, XCircle, Eye, EyeOff, Mail } from "lucide-react";
 import { Redirect, Link } from "wouter";
 import CaptchaSST from "@/components/CaptchaSST";
 
 export default function LoginEmpresa() {
-  const { user, loginMutation } = useAuth();
+  const { user, loginMutation, verifyLoginCodeMutation } = useAuth();
   const [loginData, setLoginData] = useState({ username: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [captchaVerified, setCaptchaVerified] = useState(false);
+  const [pendingLoginVerification, setPendingLoginVerification] = useState<{
+    challengeId: string;
+    maskedEmail: string;
+  } | null>(null);
+  const [loginVerificationCode, setLoginVerificationCode] = useState("");
 
   const searchParams = new URLSearchParams(window.location.search);
   const verified = searchParams.get("verified");
@@ -38,7 +43,26 @@ export default function LoginEmpresa() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    loginMutation.mutate(loginData);
+    loginMutation.mutate(loginData, {
+      onSuccess: (data) => {
+        if ("requiresVerification" in data) {
+          setPendingLoginVerification({
+            challengeId: data.challengeId,
+            maskedEmail: data.maskedEmail,
+          });
+          setLoginVerificationCode("");
+        }
+      },
+    });
+  };
+
+  const handleVerifyLoginCode = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pendingLoginVerification) return;
+    verifyLoginCodeMutation.mutate({
+      challengeId: pendingLoginVerification.challengeId,
+      code: loginVerificationCode,
+    });
   };
 
   return (
@@ -73,72 +97,121 @@ export default function LoginEmpresa() {
               </Alert>
             )}
 
-            {loginMutation.isError && (
+            {(loginMutation.isError || verifyLoginCodeMutation.isError) && (
               <Alert variant="destructive">
                 <XCircle className="h-4 w-4" />
                 <AlertTitle>Error de inicio de sesión</AlertTitle>
                 <AlertDescription>
-                  Usuario o contraseña incorrectos. Por favor intenta de nuevo.
+                  {verifyLoginCodeMutation.isError
+                    ? verifyLoginCodeMutation.error.message
+                    : loginMutation.error?.message || "Usuario o contraseña incorrectos. Por favor intenta de nuevo."}
                 </AlertDescription>
               </Alert>
             )}
 
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="login-username">Usuario</Label>
-                <Input
-                  id="login-username"
-                  placeholder="Ingrese su usuario"
-                  value={loginData.username}
-                  onChange={(e) => setLoginData({ ...loginData, username: e.target.value })}
-                  required
-                  data-testid="input-login-username"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="login-password">Contraseña</Label>
-                <div className="relative">
+            {pendingLoginVerification ? (
+              <form onSubmit={handleVerifyLoginCode} className="space-y-4" data-testid="form-login-verification">
+                <Alert className="border-green-500 bg-green-50 dark:bg-green-950">
+                  <Mail className="h-4 w-4 text-green-700" />
+                  <AlertTitle>Verificación de seguridad</AlertTitle>
+                  <AlertDescription>
+                    Enviamos un código de 6 dígitos a {pendingLoginVerification.maskedEmail}. Vence en 10 minutos.
+                  </AlertDescription>
+                </Alert>
+                <div className="space-y-2">
+                  <Label htmlFor="login-verification-code">Código de seguridad</Label>
                   <Input
-                    id="login-password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Ingrese su contraseña"
-                    value={loginData.password}
-                    onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
+                    id="login-verification-code"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    maxLength={6}
+                    value={loginVerificationCode}
+                    onChange={(e) => setLoginVerificationCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    placeholder="000000"
+                    className="text-center text-2xl tracking-[0.4em]"
                     required
-                    className="pr-10"
-                    data-testid="input-login-password"
+                    data-testid="input-login-verification-code"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    data-testid="button-toggle-password"
-                    aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
                 </div>
-              </div>
-              <CaptchaSST onVerified={() => setCaptchaVerified(true)} />
-              <Button 
-                type="submit" 
-                className="w-full" 
-                disabled={!captchaVerified || loginMutation.isPending}
-                style={!captchaVerified ? { backgroundColor: "#9E9E9E", cursor: "not-allowed" } : undefined}
-                data-testid="button-login"
-              >
-                {loginMutation.isPending ? "Iniciando sesión..." : "Iniciar Sesión"}
-              </Button>
-              <div className="text-center pt-2">
-                <Link 
-                  href="/recuperar-contrasena" 
-                  className="text-sm text-muted-foreground hover:text-primary hover:underline"
-                  data-testid="link-forgot-password"
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={loginVerificationCode.length !== 6 || verifyLoginCodeMutation.isPending}
+                  data-testid="button-verify-login-code"
                 >
-                  ¿Olvidaste tu contraseña?
-                </Link>
-              </div>
-            </form>
+                  {verifyLoginCodeMutation.isPending ? "Verificando..." : "Verificar e ingresar"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full"
+                  onClick={() => {
+                    setPendingLoginVerification(null);
+                    setLoginVerificationCode("");
+                  }}
+                  data-testid="button-back-to-login"
+                >
+                  Volver a iniciar sesión
+                </Button>
+              </form>
+            ) : (
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="login-username">Usuario</Label>
+                  <Input
+                    id="login-username"
+                    placeholder="Ingrese su usuario"
+                    value={loginData.username}
+                    onChange={(e) => setLoginData({ ...loginData, username: e.target.value })}
+                    required
+                    data-testid="input-login-username"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="login-password">Contraseña</Label>
+                  <div className="relative">
+                    <Input
+                      id="login-password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Ingrese su contraseña"
+                      value={loginData.password}
+                      onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
+                      required
+                      className="pr-10"
+                      data-testid="input-login-password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      data-testid="button-toggle-password"
+                      aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+                <CaptchaSST onVerified={() => setCaptchaVerified(true)} />
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={!captchaVerified || loginMutation.isPending}
+                  style={!captchaVerified ? { backgroundColor: "#9E9E9E", cursor: "not-allowed" } : undefined}
+                  data-testid="button-login"
+                >
+                  {loginMutation.isPending ? "Iniciando sesión..." : "Iniciar Sesión"}
+                </Button>
+                <div className="text-center pt-2">
+                  <Link
+                    href="/recuperar-contrasena"
+                    className="text-sm text-muted-foreground hover:text-primary hover:underline"
+                    data-testid="link-forgot-password"
+                  >
+                    ¿Olvidaste tu contraseña?
+                  </Link>
+                </div>
+              </form>
+            )}
           </CardContent>
         </Card>
       </div>
