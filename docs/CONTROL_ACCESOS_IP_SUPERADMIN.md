@@ -4,6 +4,28 @@
 
 Esta función se administra desde **Actividad Login** y solo está disponible para usuarios con rol `superadmin`.
 
+## Verificación de dos pasos por correo
+
+En cada inicio de sesión, todos los roles deben validar un código temporal enviado al correo de su cuenta, con dos excepciones:
+
+- **Super Administrador:** acceso directo después de validar contraseña y controles de IP.
+- **Trabajador:** acceso directo al portal de empleados después de validar contraseña y controles de IP.
+
+La verificación sí es obligatoria para Super Usuario, Gerente General, Responsable SST, Profesional/Licenciado SST, Soporte Técnico, coordinadores, jefes, supervisores, Vigía SST, Auditor Interno, Técnico Mecánico y cualquier otro rol distinto de las dos excepciones.
+
+El código:
+
+- Tiene 6 dígitos.
+- Vence en 10 minutos.
+- Solo puede utilizarse una vez.
+- Admite como máximo 5 intentos.
+- Se almacena protegido con HMAC; nunca se guarda ni registra en texto plano.
+- No crea una sesión autenticada hasta ser validado.
+
+Si una cuenta obligada a usar verificación no tiene correo registrado, el acceso se detiene y debe solicitar al Super Admin que actualice su correo.
+
+El control está incluido tanto en el login principal como en el portal de soporte.
+
 ## Información mostrada
 
 La pantalla principal presenta:

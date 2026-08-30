@@ -14,12 +14,21 @@ type AuthContextType = {
   user: SelectUser | null;
   isLoading: boolean;
   error: Error | null;
-  loginMutation: UseMutationResult<SelectUser, Error, LoginData>;
+  loginMutation: UseMutationResult<LoginResult, Error, LoginData>;
+  verifyLoginCodeMutation: UseMutationResult<SelectUser, Error, VerifyLoginCodeData>;
   logoutMutation: UseMutationResult<void, Error, void>;
   registerMutation: UseMutationResult<SelectUser, Error, RegisterData>;
 };
 
 type LoginData = Pick<InsertUser, "username" | "password">;
+export type LoginVerificationRequired = {
+  requiresVerification: true;
+  challengeId: string;
+  maskedEmail: string;
+  expiresAt: string;
+};
+type LoginResult = SelectUser | LoginVerificationRequired;
+type VerifyLoginCodeData = { challengeId: string; code: string };
 type RegisterData = {
   username: string;
   password: string;
@@ -85,7 +94,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [user?.sstLicenseExpiresAt, user?.sstLicenseStatus]);
 
-  const loginMutation = useMutation({
+  const finishLogin = (user: SelectUser) => {
+    queryClient.setQueryData(["/api/user"], user);
+    let destination: string;
+    if (user.role === "trabajador") {
+      destination = "/portal-empleados";
+    } else if (user.role === "superusuario" && !user.companyId) {
+      destination = "/crear-empresa";
+    } else {
+      destination = "/dashboard";
+    }
+    window.location.href = destination;
+  };
+
+  const loginMutation = useMutation<LoginResult, Error, LoginData>({
     mutationFn: async (credentials: LoginData) => {
       const res = await fetch("/api/login", {
         method: "POST",
@@ -103,19 +125,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       return data;
     },
-    onSuccess: (user: SelectUser) => {
-      queryClient.setQueryData(["/api/user"], user);
-      let destination: string;
-      
-      if (user.role === "trabajador") {
-        destination = "/portal-empleados";
-      } else if (user.role === "superusuario" && !user.companyId) {
-        destination = "/crear-empresa";
-      } else {
-        destination = "/dashboard";
-      }
-      
-      window.location.href = destination;
+    onSuccess: (result) => {
+      if ("requiresVerification" in result) return;
+      finishLogin(result);
     },
     onError: (error: Error & { code?: string; canResend?: boolean; email?: string }) => {
       if ((error as any).code === "EMAIL_NOT_VERIFIED") {
@@ -132,6 +144,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           variant: "destructive",
         });
       }
+    },
+  });
+
+  const verifyLoginCodeMutation = useMutation<SelectUser, Error, VerifyLoginCodeData>({
+    mutationFn: async (data) => {
+      const res = await fetch("/api/login/verify-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+        credentials: "include",
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error || "No se pudo verificar el código");
+      return body;
+    },
+    onSuccess: finishLogin,
+    onError: (error) => {
+      toast({
+        title: "Código no válido",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
@@ -205,9 +239,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isLoading,
     error,
     loginMutation,
+    verifyLoginCodeMutation,
     logoutMutation,
     registerMutation,
-  }), [user, isLoading, error, loginMutation, logoutMutation, registerMutation]);
+  }), [user, isLoading, error, loginMutation, verifyLoginCodeMutation, logoutMutation, registerMutation]);
 
   return (
     <AuthContext.Provider value={contextValue}>

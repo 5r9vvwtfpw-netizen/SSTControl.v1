@@ -55,6 +55,7 @@ import { syncResourceAllocationDetalleObjetivo } from './migrations/sync-resourc
 import { createUserSessionsLog } from './migrations/create-user-sessions-log';
 import { syncInduccionPesv } from './migrations/sync-induccion-pesv';
 import { syncSubscriptionExpiryWarningColumn } from './migrations/sync-subscription-expiry-warning-column';
+import { createLoginVerificationChallenges } from './migrations/create-login-verification-challenges';
 
 /**
  * Ejecuta migraciones de base de datos automáticamente
@@ -121,6 +122,7 @@ export async function runMigrations() {
     await syncResourceAllocationDetalleObjetivo();
     await createUserSessionsLog();
     await syncInduccionPesv();
+    await createLoginVerificationChallenges();
     console.log('✅ Migraciones completadas exitosamente');
   } catch (error: any) {
     console.error('⚠️ Error en migraciones:', error.message);

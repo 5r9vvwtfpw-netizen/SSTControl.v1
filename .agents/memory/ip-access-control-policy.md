@@ -11,4 +11,6 @@ Con monitoreo activo, se permiten y alertan los primeros tres accesos no autoriz
 
 La atribución combina cuenta, sesión, IP, navegador, identificador persistente del navegador y geolocalización aproximada. No debe presentarse como identificación física concluyente.
 
+La verificación de dos pasos por correo se exige en cada login a todos los roles excepto `superadmin` y `trabajador`; aplica también al portal de soporte.
+
 **How to apply:** Mantener la lista vacía como modo sin restricción. Enviar correo a superadmins por cada alerta en producción; las fallas de correo o GeoIP no deben interrumpir accesos legítimos.

@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import CaptchaSST from "@/components/CaptchaSST";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Headset, XCircle, Shield, Eye, EyeOff } from "lucide-react";
+import { Headset, XCircle, Shield, Eye, EyeOff, Mail } from "lucide-react";
 import { Redirect, Link } from "wouter";
 import type { User } from "@shared/schema";
 
@@ -18,6 +18,8 @@ export default function LoginSoporte() {
   const [loginError, setLoginError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [captchaVerified, setCaptchaVerified] = useState(false);
+  const [pendingVerification, setPendingVerification] = useState<{ challengeId: string; maskedEmail: string } | null>(null);
+  const [verificationCode, setVerificationCode] = useState("");
 
   // Dedicated support login mutation - uses /api/support-login endpoint
   const supportLoginMutation = useMutation({
@@ -29,13 +31,37 @@ export default function LoginSoporte() {
       }
       return await res.json();
     },
-    onSuccess: (userData: User) => {
+    onSuccess: (userData: User | { requiresVerification: true; challengeId: string; maskedEmail: string }) => {
+      if ("requiresVerification" in userData) {
+        setPendingVerification({ challengeId: userData.challengeId, maskedEmail: userData.maskedEmail });
+        setVerificationCode("");
+        return;
+      }
       queryClient.setQueryData(["/api/user"], userData);
       setLoginError(null);
     },
     onError: (error: Error) => {
       setLoginError(error.message);
     },
+  });
+
+  const verifyCodeMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch("/api/login/verify-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ challengeId: pendingVerification!.challengeId, code: verificationCode }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Código incorrecto");
+      return data as User;
+    },
+    onSuccess: (userData) => {
+      queryClient.setQueryData(["/api/user"], userData);
+      setLoginError(null);
+    },
+    onError: (error: Error) => setLoginError(error.message),
   });
 
   if (user) {
@@ -76,6 +102,59 @@ export default function LoginSoporte() {
               </Alert>
             )}
 
+            {pendingVerification ? (
+              <form
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  verifyCodeMutation.mutate();
+                }}
+                className="space-y-4"
+                data-testid="form-soporte-verification"
+              >
+                <Alert className="border-blue-500 bg-blue-50 dark:bg-blue-950">
+                  <Mail className="h-4 w-4 text-blue-700" />
+                  <AlertTitle>Verificación de seguridad</AlertTitle>
+                  <AlertDescription>
+                    Enviamos un código de 6 dígitos a {pendingVerification.maskedEmail}. Vence en 10 minutos.
+                  </AlertDescription>
+                </Alert>
+                <div className="space-y-2">
+                  <Label htmlFor="soporte-verification-code">Código de seguridad</Label>
+                  <Input
+                    id="soporte-verification-code"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    maxLength={6}
+                    value={verificationCode}
+                    onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    className="text-center text-2xl tracking-[0.4em]"
+                    placeholder="000000"
+                    required
+                    data-testid="input-soporte-verification-code"
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  className="w-full bg-blue-600 hover:bg-blue-700"
+                  disabled={verificationCode.length !== 6 || verifyCodeMutation.isPending}
+                  data-testid="button-soporte-verify-code"
+                >
+                  {verifyCodeMutation.isPending ? "Verificando..." : "Verificar e ingresar"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full"
+                  onClick={() => {
+                    setPendingVerification(null);
+                    setVerificationCode("");
+                    setLoginError(null);
+                  }}
+                >
+                  Volver
+                </Button>
+              </form>
+            ) : (
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="login-username">Usuario</Label>
@@ -132,6 +211,7 @@ export default function LoginSoporte() {
                 </Link>
               </div>
             </form>
+            )}
           </CardContent>
         </Card>
       </div>

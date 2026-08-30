@@ -2653,3 +2653,43 @@ export async function sendSecurityAccessAlertEmail(params: {
     return { success: false, error: error?.message || "Error enviando alerta de seguridad" };
   }
 }
+
+export async function sendLoginVerificationCodeEmail(params: {
+  to: string;
+  code: string;
+  expiresAt: Date;
+}): Promise<{ success: boolean; error?: string }> {
+  try {
+    const result = await resend.emails.send({
+      from: `${FROM_NAME} <${FROM_EMAIL}>`,
+      to: params.to,
+      subject: `${params.code} es tu código de seguridad — SST Colombia`,
+      html: `
+        <!DOCTYPE html>
+        <html lang="es">
+          <body style="margin:0;padding:24px;background:#f3f4f6;font-family:Segoe UI,Arial,sans-serif;color:#1f2937;">
+            <div style="max-width:560px;margin:auto;background:white;border-radius:10px;overflow:hidden;border:1px solid #e5e7eb;">
+              <div style="padding:22px 28px;background:#166534;color:white;">
+                <h1 style="margin:0;font-size:21px;">Verificación de inicio de sesión</h1>
+              </div>
+              <div style="padding:28px;text-align:center;">
+                <p style="margin-top:0;">Usa este código para completar tu ingreso a SST Colombia:</p>
+                <div style="margin:24px auto;padding:18px;background:#f0fdf4;border:2px solid #16a34a;border-radius:8px;font-size:34px;font-weight:700;letter-spacing:8px;color:#166534;">
+                  ${params.code}
+                </div>
+                <p>El código vence en 10 minutos y solo puede utilizarse una vez.</p>
+                <p style="font-size:13px;color:#6b7280;margin-bottom:0;">
+                  Si no intentaste iniciar sesión, no compartas este código y cambia tu contraseña.
+                </p>
+              </div>
+            </div>
+          </body>
+        </html>
+      `,
+    });
+    if (result.error) return { success: false, error: result.error.message };
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error?.message || "Error enviando código de seguridad" };
+  }
+}

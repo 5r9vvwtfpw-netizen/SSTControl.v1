@@ -46,7 +46,7 @@ const colombianCities = [
 ];
 
 export default function AuthPage() {
-  const { user, loginMutation, registerMutation } = useAuth();
+  const { user, loginMutation, verifyLoginCodeMutation, registerMutation } = useAuth();
   const [location] = useLocation();
   const [activeTab, setActiveTab] = useState<string>("login");
   const [loginData, setLoginData] = useState({ username: "", password: "" });
@@ -72,6 +72,11 @@ export default function AuthPage() {
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
   const [captchaVerified, setCaptchaVerified] = useState(false);
+  const [pendingLoginVerification, setPendingLoginVerification] = useState<{
+    challengeId: string;
+    maskedEmail: string;
+  } | null>(null);
+  const [loginVerificationCode, setLoginVerificationCode] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [quotePreFilled, setQuotePreFilled] = useState<{
     companyName?: boolean;
@@ -300,6 +305,15 @@ export default function AuthPage() {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     loginMutation.mutate(loginData, {
+      onSuccess: (data: any) => {
+        if (data.requiresVerification) {
+          setPendingLoginVerification({
+            challengeId: data.challengeId,
+            maskedEmail: data.maskedEmail,
+          });
+          setLoginVerificationCode("");
+        }
+      },
       onError: (error: any) => {
         if (error.code === "EMAIL_NOT_VERIFIED" && error.email) {
           setRegistrationEmail(error.email);
@@ -307,6 +321,15 @@ export default function AuthPage() {
           setResendResult(null);
         }
       }
+    });
+  };
+
+  const handleVerifyLoginCode = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pendingLoginVerification) return;
+    verifyLoginCodeMutation.mutate({
+      challengeId: pendingLoginVerification.challengeId,
+      code: loginVerificationCode,
     });
   };
 
@@ -452,6 +475,51 @@ export default function AuthPage() {
               </TabsList>
               
               <TabsContent value="login">
+                {pendingLoginVerification ? (
+                  <form onSubmit={handleVerifyLoginCode} className="space-y-4" data-testid="form-login-verification">
+                    <Alert className="border-green-500 bg-green-50 dark:bg-green-950">
+                      <Mail className="h-4 w-4 text-green-700" />
+                      <AlertTitle>Verificación de seguridad</AlertTitle>
+                      <AlertDescription>
+                        Enviamos un código de 6 dígitos a {pendingLoginVerification.maskedEmail}. Vence en 10 minutos.
+                      </AlertDescription>
+                    </Alert>
+                    <div className="space-y-2">
+                      <Label htmlFor="login-verification-code">Código de seguridad</Label>
+                      <Input
+                        id="login-verification-code"
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        maxLength={6}
+                        value={loginVerificationCode}
+                        onChange={(e) => setLoginVerificationCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                        placeholder="000000"
+                        className="text-center text-2xl tracking-[0.4em]"
+                        required
+                        data-testid="input-login-verification-code"
+                      />
+                    </div>
+                    <Button
+                      type="submit"
+                      className="w-full"
+                      disabled={loginVerificationCode.length !== 6 || verifyLoginCodeMutation.isPending}
+                      data-testid="button-verify-login-code"
+                    >
+                      {verifyLoginCodeMutation.isPending ? "Verificando..." : "Verificar e ingresar"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="w-full"
+                      onClick={() => {
+                        setPendingLoginVerification(null);
+                        setLoginVerificationCode("");
+                      }}
+                    >
+                      Volver a iniciar sesión
+                    </Button>
+                  </form>
+                ) : (
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="login-username">Usuario</Label>
@@ -508,6 +576,7 @@ export default function AuthPage() {
                     </Link>
                   </div>
                 </form>
+                )}
               </TabsContent>
 
               <TabsContent value="register">

@@ -11036,3 +11036,16 @@ export const userSessions = pgTable("user_sessions_log", {
 
 export type UserSession = typeof userSessions.$inferSelect;
 export type InsertUserSession = typeof userSessions.$inferInsert;
+
+export const loginVerificationChallenges = pgTable("login_verification_challenges", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  channel: text("channel").notNull().default("main"), // main | support
+  codeHash: text("code_hash").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  attempts: integer("attempts").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  usedAt: timestamp("used_at"),
+});
+
+export type LoginVerificationChallenge = typeof loginVerificationChallenges.$inferSelect;

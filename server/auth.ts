@@ -2,12 +2,12 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import { Express, Request, Response, NextFunction } from "express";
 import session from "express-session";
-import { scrypt, randomBytes, timingSafeEqual } from "crypto";
+import { scrypt, randomBytes, randomInt, createHmac, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser, UserRole } from "@shared/schema";
 import { hasPermission, Permission } from "@shared/permissions";
-import { sendVerificationEmail, sendPasswordResetEmail } from "./email";
+import { sendVerificationEmail, sendPasswordResetEmail, sendLoginVerificationCodeEmail } from "./email";
 import { db } from "./db";
 import * as schema from "@shared/schema";
 import { users } from "@shared/schema";
@@ -21,6 +21,8 @@ import { enrichSessionLocation, processSecurityAlert } from "./services/security
 const MAX_SESSION_HOURS = 8;
 const UNAUTHORIZED_IP_ALLOWED_ATTEMPTS = 3;
 const UNAUTHORIZED_IP_WINDOW_HOURS = 24;
+const LOGIN_CODE_MINUTES = 10;
+const LOGIN_CODE_MAX_ATTEMPTS = 5;
 
 function normalizeClientIp(value: string | string[] | undefined): string {
   const raw = Array.isArray(value) ? value[0] : value;
@@ -234,6 +236,92 @@ async function closeLoginSession(sessionId: string) {
   } catch (err) {
     logger.error({ err }, "[SESSION] Error cerrando sesión");
   }
+}
+
+function requiresTwoFactor(role: string): boolean {
+  // Todos los roles tienen MFA salvo Super Admin y Trabajador.
+  return role !== "superadmin" && role !== "trabajador";
+}
+
+function hashLoginCode(code: string): string {
+  return createHmac("sha256", process.env.SESSION_SECRET || "sst-login-code").update(code).digest("hex");
+}
+
+async function createLoginVerificationChallenge(user: SelectUser, channel: "main" | "support") {
+  if (!user.email) {
+    return { error: "Esta cuenta necesita un correo electrónico para completar la verificación de dos pasos." };
+  }
+
+  const configuredTestCode = process.env.NODE_ENV !== "production"
+    ? process.env.MFA_TEST_CODE
+    : undefined;
+  const code = configuredTestCode && /^\d{6}$/.test(configuredTestCode)
+    ? configuredTestCode
+    : randomInt(100000, 1000000).toString();
+  const expiresAt = new Date(Date.now() + LOGIN_CODE_MINUTES * 60 * 1000);
+  const result = await db.execute(sql`
+    UPDATE login_verification_challenges
+    SET used_at = now()
+    WHERE user_id = ${user.id} AND channel = ${channel} AND used_at IS NULL
+  `);
+  void result;
+  const insertResult = await db.execute(sql`
+    INSERT INTO login_verification_challenges (user_id, channel, code_hash, expires_at)
+    VALUES (${user.id}, ${channel}, ${hashLoginCode(code)}, ${expiresAt})
+    RETURNING id
+  `);
+  const challengeId = (insertResult as any).rows?.[0]?.id;
+  if (!challengeId) return { error: "No se pudo crear la verificación de seguridad." };
+
+  if (configuredTestCode) {
+    logger.info({ userId: user.id }, "[MFA] Envío de código suprimido por modo de prueba");
+  } else {
+    const emailResult = await sendLoginVerificationCodeEmail({
+      to: user.email,
+      code,
+      expiresAt,
+    });
+    if (!emailResult.success) {
+      logger.error({ error: emailResult.error, userId: user.id }, "[MFA] No se pudo enviar el código");
+      return { error: "No se pudo enviar el código de seguridad. Intenta nuevamente." };
+    }
+  }
+  return {
+    challengeId,
+    maskedEmail: user.email.replace(/^(.{2}).*(@.*)$/, "$1••••$2"),
+    expiresAt: expiresAt.toISOString(),
+  };
+}
+
+async function establishAuthenticatedSession(req: Request, res: Response, user: SelectUser) {
+  const clientIp = getClientIp(req);
+  const deviceId = getOrCreateDeviceId(req, res);
+  req.session.regenerate((err) => {
+    if (err) {
+      logger.error({ err }, "Session regeneration error");
+      return res.status(500).json({ error: "Error al crear la sesión segura" });
+    }
+    req.logIn(user, async (loginErr) => {
+      if (loginErr) {
+        logger.error({ err: loginErr }, "Session login error");
+        return res.status(500).json({ error: "Error al crear la sesión" });
+      }
+      try {
+        await db.update(schema.users)
+          .set({
+            lastLoginAt: new Date(),
+            loginCount: sql`COALESCE(login_count, 0) + 1`,
+            lastLoginIp: clientIp,
+          })
+          .where(eq(schema.users.id, user.id));
+        await recordLoginSession(user.id, req.sessionID, clientIp, req.headers["user-agent"] || null, deviceId);
+      } catch (trackErr) {
+        logger.error({ err: trackErr }, "Error tracking login");
+      }
+      logger.info({ role: user.role }, "Login successful");
+      return res.status(200).json(stripPassword(user));
+    });
+  });
 }
 
 const registrationSchema = z.object({
@@ -607,44 +695,24 @@ export function setupAuth(app: Express) {
       } catch (securityError) {
         logger.error({ securityError, userId: user.id }, "IP security evaluation failed; continuing login");
       }
-      
-      req.session.regenerate((err) => {
-        if (err) {
-          logger.error({ err }, "Session regeneration error");
-          return res.status(500).json({ error: "Error al crear la sesión segura" });
-        }
-        
-        req.logIn(user, async (err) => {
-          if (err) {
-            logger.error({ err }, "Session login error");
-            return res.status(500).json({ error: "Error al crear la sesión" });
-          }
-          
-          try {
-            await db.update(schema.users)
-              .set({
-                lastLoginAt: new Date(),
-                loginCount: sql`COALESCE(login_count, 0) + 1`,
-                lastLoginIp: clientIp,
-              })
-              .where(eq(schema.users.id, user.id));
 
-            // ── Registro de sesión y alertas de seguridad ──────────────────
-            await recordLoginSession(user.id, req.sessionID, clientIp,
-              req.headers['user-agent'] || null, deviceId);
-          } catch (trackErr) {
-            logger.error({ err: trackErr }, "Error tracking login");
-          }
-          
-          logger.info({ role: user.role }, "Login successful");
-          return res.status(200).json(stripPassword(user));
+      if (requiresTwoFactor(user.role)) {
+        const challenge = await createLoginVerificationChallenge(user, "main");
+        if ("error" in challenge) {
+          return res.status(400).json({ error: challenge.error, code: "MFA_EMAIL_REQUIRED" });
+        }
+        return res.status(202).json({
+          requiresVerification: true,
+          ...challenge,
         });
-      });
+      }
+
+      return establishAuthenticatedSession(req, res, user);
     })(req, res, next);
   });
 
   // Dedicated support login endpoint - only allows soporte and superadmin roles
-  app.post("/api/support-login", (req, res, next) => {
+  app.post("/api/support-login", loginRateLimiter, (req, res, next) => {
     passport.authenticate("local", async (err: any, user: SelectUser | false, info: any) => {
       if (err) {
         logger.error({ err }, "Support login error");
@@ -683,39 +751,98 @@ export function setupAuth(app: Express) {
       } catch (securityError) {
         logger.error({ securityError, userId: user.id }, "Support IP security evaluation failed; continuing login");
       }
-      
-      req.session.regenerate((err) => {
-        if (err) {
-          logger.error({ err }, "Support session regeneration error");
-          return res.status(500).json({ error: "Error al crear la sesión segura" });
-        }
-        
-        req.logIn(user, async (err) => {
-          if (err) {
-            logger.error({ err }, "Support session login error");
-            return res.status(500).json({ error: "Error al crear la sesión" });
-          }
-          
-          try {
-            await db.update(schema.users)
-              .set({
-                lastLoginAt: new Date(),
-                loginCount: sql`COALESCE(login_count, 0) + 1`,
-                lastLoginIp: clientIp,
-              })
-              .where(eq(schema.users.id, user.id));
 
-            await recordLoginSession(user.id, req.sessionID, clientIp,
-              req.headers["user-agent"] || null, deviceId);
-          } catch (trackErr) {
-            logger.error({ err: trackErr }, "Error tracking support login");
-          }
-          
-          logger.info({ role: user.role }, "Support login successful");
-          return res.status(200).json(stripPassword(user));
+      if (requiresTwoFactor(user.role)) {
+        const challenge = await createLoginVerificationChallenge(user, "support");
+        if ("error" in challenge) {
+          return res.status(400).json({ error: challenge.error, code: "MFA_EMAIL_REQUIRED" });
+        }
+        return res.status(202).json({
+          requiresVerification: true,
+          ...challenge,
         });
-      });
+      }
+
+      return establishAuthenticatedSession(req, res, user);
     })(req, res, next);
+  });
+
+  app.post("/api/login/verify-code", loginRateLimiter, async (req, res) => {
+    const validation = z.object({
+      challengeId: z.string().uuid(),
+      code: z.string().regex(/^\d{6}$/),
+    }).safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: "Ingresa el código de seguridad de 6 dígitos." });
+    }
+
+    try {
+      const result = await db.execute(sql`
+        SELECT c.id, c.user_id, c.code_hash, c.expires_at, c.attempts, c.used_at, c.channel
+        FROM login_verification_challenges c
+        WHERE c.id = ${validation.data.challengeId}
+        LIMIT 1
+      `);
+      const challenge: any = (result as any).rows?.[0];
+      if (!challenge || challenge.used_at) {
+        return res.status(400).json({ error: "Este código ya no es válido. Inicia sesión nuevamente." });
+      }
+      if (new Date(challenge.expires_at).getTime() < Date.now()) {
+        return res.status(400).json({ error: "El código expiró. Inicia sesión nuevamente para recibir otro." });
+      }
+      if (Number(challenge.attempts) >= LOGIN_CODE_MAX_ATTEMPTS) {
+        return res.status(429).json({ error: "Se superó el número máximo de intentos. Inicia sesión nuevamente." });
+      }
+
+      const suppliedHash = hashLoginCode(validation.data.code);
+      const validCode = timingSafeEqual(
+        Buffer.from(suppliedHash, "hex"),
+        Buffer.from(challenge.code_hash, "hex"),
+      );
+      if (!validCode) {
+        await db.execute(sql`
+          UPDATE login_verification_challenges
+          SET attempts = attempts + 1
+          WHERE id = ${challenge.id}
+        `);
+        return res.status(401).json({ error: "Código incorrecto.", attemptsRemaining: LOGIN_CODE_MAX_ATTEMPTS - Number(challenge.attempts) - 1 });
+      }
+
+      const user = await storage.getUser(challenge.user_id);
+      if (!user || !requiresTwoFactor(user.role)) {
+        return res.status(400).json({ error: "La verificación ya no corresponde a una cuenta válida." });
+      }
+      if (challenge.channel === "support" && user.role !== "soporte") {
+        return res.status(403).json({ error: "Esta verificación no corresponde al portal de soporte." });
+      }
+
+      const consumed = await db.execute(sql`
+        UPDATE login_verification_challenges
+        SET used_at = now()
+        WHERE id = ${challenge.id} AND used_at IS NULL
+        RETURNING id
+      `);
+      if (!((consumed as any).rows ?? []).length) {
+        return res.status(400).json({ error: "Este código ya fue utilizado. Inicia sesión nuevamente." });
+      }
+
+      const clientIp = getClientIp(req);
+      const deviceId = getOrCreateDeviceId(req, res);
+      const ipAccess = await evaluateIpAccess(user.id, clientIp);
+      if (ipAccess.blocked) {
+        await recordBlockedIpAttempt(user.id, clientIp, req.headers["user-agent"] || null, deviceId);
+        return res.status(403).json({
+          error: "Acceso bloqueado temporalmente por ingresos reiterados desde una IP no autorizada. Contacte al superadministrador.",
+          code: "IP_TEMPORARILY_BLOCKED",
+          blockedUntil: ipAccess.blockedUntil?.toISOString() || null,
+        });
+      }
+
+      return establishAuthenticatedSession(req, res, user);
+    } catch (error) {
+      logger.error({ error }, "[MFA] Error verificando código de login");
+      return res.status(500).json({ error: "No se pudo verificar el código de seguridad." });
+    }
   });
 
   app.post("/api/logout", (req, res, next) => {
