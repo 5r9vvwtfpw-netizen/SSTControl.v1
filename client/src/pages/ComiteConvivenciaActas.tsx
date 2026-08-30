@@ -485,7 +485,12 @@ export default function ComiteConvivenciaActas() {
         body: formData,
       });
       if (!res.ok) {
-        const errorText = await res.text();
+        const contentType = res.headers.get("content-type") || "";
+        if (contentType.includes("application/json")) {
+          const errorData = await res.json().catch(() => null);
+          throw new Error(errorData?.error || "Error al subir archivo");
+        }
+        const errorText = await res.text().catch(() => "");
         throw new Error(errorText || "Error al subir archivo");
       }
       return await res.json();

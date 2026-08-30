@@ -344,6 +344,8 @@ const upload = multer({
       'image/jpeg',
       'image/jpg',
       'image/png',
+      'image/gif',
+      'image/webp',
       'application/pdf',
       'application/msword', // .doc
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
@@ -351,7 +353,7 @@ const upload = multer({
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
     ];
     
-    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.pdf', '.doc', '.docx', '.xls', '.xlsx'];
+    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.pdf', '.doc', '.docx', '.xls', '.xlsx'];
     const extname = path.extname(file.originalname).toLowerCase();
     
     if (allowedMimeTypes.includes(file.mimetype) && allowedExtensions.includes(extname)) {
@@ -44148,7 +44150,18 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   // POST /api/support-tickets/:id/attachments - Upload attachments to a ticket
-  app.post("/api/support-tickets/:id/attachments", requireAuth, upload.array('attachments', 5), async (req, res) => {
+  app.post("/api/support-tickets/:id/attachments", requireAuth, (req, res, next) => {
+    upload.array('attachments', 5)(req, res, (err: any) => {
+      if (!err) return next();
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ error: "Cada archivo debe pesar máximo 10MB" });
+      }
+      if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+        return res.status(400).json({ error: "Solo se permiten máximo 5 archivos" });
+      }
+      return res.status(400).json({ error: err.message || "No fue posible procesar los archivos" });
+    });
+  }, async (req, res) => {
     const files = req.files as Express.Multer.File[] | undefined;
     
     // Helper function to cleanup uploaded files
@@ -44225,7 +44238,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     } catch (error: any) {
       console.error('Error uploading ticket attachments:', error);
       cleanupFiles();
-      res.status(500).send(error.message);
+      res.status(500).json({ error: error.message || "Error al subir los archivos" });
     }
   });
 
@@ -46582,6 +46595,10 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         archivoAdjuntoUrl: fileUrl,
         archivoAdjuntoNombre: req.file.originalname
       });
+
+      if (!updatedActa) {
+        return res.status(404).json({ error: "Acta no encontrada al guardar el archivo" });
+      }
       
       res.json({
         archivoAdjuntoUrl: fileUrl,
@@ -46589,7 +46606,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         message: "Archivo subido exitosamente"
       });
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      console.error("Error uploading convivencia acta attachment:", error);
+      res.status(500).json({ error: "No fue posible guardar el soporte del acta. Intente nuevamente." });
     }
   });
 

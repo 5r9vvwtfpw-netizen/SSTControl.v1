@@ -499,7 +499,7 @@ export default function CopasstGestion() {
       if (actaCreateSelectedFile && newActa.id) {
         const formData = new FormData();
         formData.append('archivo', actaCreateSelectedFile);
-        await fetch(`/api/copasst-actas/${newActa.id}/upload`, {
+        const uploadRes = await fetch(`/api/copasst-actas/${newActa.id}/upload`, {
           method: 'POST',
           body: formData,
           credentials: 'include',
@@ -507,6 +507,10 @@ export default function CopasstGestion() {
             ...(effectiveCompanyId ? { "X-Company-Id": effectiveCompanyId } : {}),
           },
         });
+        if (!uploadRes.ok) {
+          const errorData = await uploadRes.json().catch(() => null);
+          throw new Error(errorData?.error || "El acta fue creada, pero no fue posible subir el archivo");
+        }
       }
       return newActa;
     },

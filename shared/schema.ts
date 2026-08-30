@@ -8021,6 +8021,8 @@ export const convivenciaActas = pgTable("convivencia_actas", {
   firmas: jsonb("firmas"), // [{nombre, cargo, firmado: boolean}]
   // Documento
   documentoUrl: text("documento_url"), // URL del PDF del acta
+  archivoAdjuntoUrl: text("archivo_adjunto_url"), // URL del soporte PDF cargado
+  archivoAdjuntoNombre: text("archivo_adjunto_nombre"), // Nombre original del soporte
   createdAt: timestamp("created_at").defaultNow(),
 });
 

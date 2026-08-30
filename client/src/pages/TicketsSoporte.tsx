@@ -358,7 +358,13 @@ export default function TicketsSoporte() {
     });
     
     if (!response.ok) {
-      throw new Error('Error al subir archivos');
+      const contentType = response.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.error || 'Error al subir archivos');
+      }
+      const errorText = await response.text().catch(() => '');
+      throw new Error(errorText || 'Error al subir archivos');
     }
     
     return response.json();
