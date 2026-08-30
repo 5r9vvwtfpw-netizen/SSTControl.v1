@@ -2590,3 +2590,66 @@ export async function sendTrialSuspendedEmail(params: {
     return { success: false, error: error.message };
   }
 }
+
+function escapeSecurityEmailValue(value: string | null | undefined): string {
+  return (value || "No disponible")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+export async function sendSecurityAccessAlertEmail(params: {
+  to: string;
+  userName: string;
+  username: string;
+  role: string;
+  eventLabel: string;
+  decision: "allowed" | "blocked";
+  ip: string;
+  device: string | null;
+  location: string | null;
+  occurredAt: Date;
+}): Promise<{ success: boolean; error?: string }> {
+  try {
+    const decisionLabel = params.decision === "blocked" ? "ACCESO BLOQUEADO" : "ACCESO PERMITIDO CON ALERTA";
+    const result = await resend.emails.send({
+      from: `${FROM_NAME} <${FROM_EMAIL}>`,
+      to: params.to,
+      subject: `[Seguridad] ${params.eventLabel}: ${params.userName}`,
+      html: `
+        <!DOCTYPE html>
+        <html lang="es">
+          <body style="margin:0;padding:24px;background:#f3f4f6;font-family:Segoe UI,Arial,sans-serif;color:#1f2937;">
+            <div style="max-width:640px;margin:auto;background:white;border-radius:10px;overflow:hidden;border:1px solid #e5e7eb;">
+              <div style="padding:22px 28px;background:#991b1b;color:white;">
+                <h1 style="margin:0;font-size:21px;">Alerta de seguridad de acceso</h1>
+              </div>
+              <div style="padding:26px 28px;">
+                <p style="margin-top:0;">El sistema detectó un evento que requiere revisión del superadministrador.</p>
+                <table style="width:100%;border-collapse:collapse;font-size:14px;">
+                  <tr><td style="padding:8px;border-bottom:1px solid #eee;"><strong>Evento</strong></td><td style="padding:8px;border-bottom:1px solid #eee;">${escapeSecurityEmailValue(params.eventLabel)}</td></tr>
+                  <tr><td style="padding:8px;border-bottom:1px solid #eee;"><strong>Decisión</strong></td><td style="padding:8px;border-bottom:1px solid #eee;">${decisionLabel}</td></tr>
+                  <tr><td style="padding:8px;border-bottom:1px solid #eee;"><strong>Usuario</strong></td><td style="padding:8px;border-bottom:1px solid #eee;">${escapeSecurityEmailValue(params.userName)} (${escapeSecurityEmailValue(params.username)})</td></tr>
+                  <tr><td style="padding:8px;border-bottom:1px solid #eee;"><strong>Rol</strong></td><td style="padding:8px;border-bottom:1px solid #eee;">${escapeSecurityEmailValue(params.role)}</td></tr>
+                  <tr><td style="padding:8px;border-bottom:1px solid #eee;"><strong>IP</strong></td><td style="padding:8px;border-bottom:1px solid #eee;">${escapeSecurityEmailValue(params.ip)}</td></tr>
+                  <tr><td style="padding:8px;border-bottom:1px solid #eee;"><strong>Ubicación aproximada</strong></td><td style="padding:8px;border-bottom:1px solid #eee;">${escapeSecurityEmailValue(params.location)}</td></tr>
+                  <tr><td style="padding:8px;border-bottom:1px solid #eee;"><strong>Dispositivo</strong></td><td style="padding:8px;border-bottom:1px solid #eee;">${escapeSecurityEmailValue(params.device)}</td></tr>
+                  <tr><td style="padding:8px;"><strong>Fecha</strong></td><td style="padding:8px;">${params.occurredAt.toLocaleString("es-CO", { timeZone: "America/Bogota" })}</td></tr>
+                </table>
+                <p style="margin-bottom:0;margin-top:22px;font-size:13px;color:#6b7280;">
+                  La ubicación se estima a partir de la IP y puede ser imprecisa. Revise el historial en Actividad de Login.
+                </p>
+              </div>
+            </div>
+          </body>
+        </html>
+      `,
+    });
+    if (result.error) return { success: false, error: result.error.message };
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error?.message || "Error enviando alerta de seguridad" };
+  }
+}

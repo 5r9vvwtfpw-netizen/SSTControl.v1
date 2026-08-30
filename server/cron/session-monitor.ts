@@ -6,6 +6,7 @@
 import { db } from "../db";
 import { sql } from "drizzle-orm";
 import logger from "../lib/logger";
+import { processSecurityAlert } from "../services/security-access";
 
 const MAX_SESSION_HOURS = 8;
 
@@ -19,12 +20,22 @@ export async function checkLongSessions() {
       WHERE is_active = true
         AND is_suspicious = false
         AND EXTRACT(EPOCH FROM (now() - login_at)) / 3600 > ${MAX_SESSION_HOURS}
-      RETURNING id, user_id, ip_address, login_at
+      RETURNING id, user_id, ip_address, user_agent, login_at
     `);
 
     const rows = (result as any).rows ?? [];
     if (rows.length > 0) {
       logger.warn({ count: rows.length }, `[SESSION-MONITOR] ${rows.length} sesión(es) larga(s) marcadas como sospechosas`);
+      for (const row of rows) {
+        void processSecurityAlert({
+          sessionRecordId: row.id,
+          userId: row.user_id,
+          eventType: "long_session",
+          decision: "allowed",
+          ip: row.ip_address || "unknown",
+          userAgent: row.user_agent || null,
+        });
+      }
     }
   } catch (err) {
     logger.error({ err }, "[SESSION-MONITOR] Error en checkLongSessions");

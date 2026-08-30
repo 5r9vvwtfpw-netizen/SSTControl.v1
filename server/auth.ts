@@ -15,9 +15,12 @@ import { eq, sql, and } from "drizzle-orm";
 import { z } from "zod";
 import { loginRateLimiter, passwordResetRateLimiter, registrationRateLimiter } from "./middleware/rate-limit";
 import logger from "./lib/logger";
+import { enrichSessionLocation, processSecurityAlert } from "./services/security-access";
 
 // ── Monitoreo de sesiones ─────────────────────────────────────────────────────
 const MAX_SESSION_HOURS = 8;
+const UNAUTHORIZED_IP_ALLOWED_ATTEMPTS = 3;
+const UNAUTHORIZED_IP_WINDOW_HOURS = 24;
 
 function normalizeClientIp(value: string | string[] | undefined): string {
   const raw = Array.isArray(value) ? value[0] : value;
@@ -34,7 +37,100 @@ function getClientIp(req: Request): string {
   );
 }
 
-async function recordLoginSession(userId: string, sessionId: string, ip: string, userAgent: string | null) {
+function getOrCreateDeviceId(req: Request, res: Response): string {
+  const cookies = (req.headers.cookie || "").split(";").map((part) => part.trim());
+  const existing = cookies.find((cookie) => cookie.startsWith("sst_device_id="))?.split("=")[1];
+  const deviceId = existing && /^[a-f0-9]{32}$/.test(existing)
+    ? existing
+    : randomBytes(16).toString("hex");
+  if (!existing) {
+    res.cookie("sst_device_id", deviceId, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 365 * 24 * 60 * 60 * 1000,
+    });
+  }
+  return deviceId;
+}
+
+async function evaluateIpAccess(userId: string, ip: string): Promise<{
+  monitored: boolean;
+  authorized: boolean;
+  blocked: boolean;
+  allowedUnauthorizedAttempts: number;
+  blockedUntil: Date | null;
+}> {
+  const result = await db.execute(sql`
+    SELECT
+      COALESCE(u.authorized_ips, '{}') AS authorized_ips,
+      COUNT(s.id) FILTER (
+        WHERE s.alert_type = 'unauthorized_ip'
+          AND s.access_decision = 'allowed'
+          AND s.login_at >= now() - (${UNAUTHORIZED_IP_WINDOW_HOURS} * interval '1 hour')
+      )::int AS allowed_unauthorized_attempts,
+      MIN(s.login_at) FILTER (
+        WHERE s.alert_type = 'unauthorized_ip'
+          AND s.access_decision = 'allowed'
+          AND s.login_at >= now() - (${UNAUTHORIZED_IP_WINDOW_HOURS} * interval '1 hour')
+      ) AS oldest_attempt
+    FROM users u
+    LEFT JOIN user_sessions_log s ON s.user_id = u.id
+    WHERE u.id = ${userId}
+    GROUP BY u.id, u.authorized_ips
+  `);
+  const row: any = (result as any).rows?.[0];
+  const authorizedIps: string[] = row?.authorized_ips ?? [];
+  const monitored = authorizedIps.length > 0;
+  const authorized = !monitored || authorizedIps.includes(ip);
+  const attempts = Number(row?.allowed_unauthorized_attempts) || 0;
+  const blocked = monitored && !authorized && attempts >= UNAUTHORIZED_IP_ALLOWED_ATTEMPTS;
+  const blockedUntil = blocked && row?.oldest_attempt
+    ? new Date(new Date(row.oldest_attempt).getTime() + UNAUTHORIZED_IP_WINDOW_HOURS * 60 * 60 * 1000)
+    : null;
+  return { monitored, authorized, blocked, allowedUnauthorizedAttempts: attempts, blockedUntil };
+}
+
+async function recordBlockedIpAttempt(
+  userId: string,
+  ip: string,
+  userAgent: string | null,
+  deviceId: string,
+): Promise<void> {
+  const result = await db.execute(sql`
+    INSERT INTO user_sessions_log (
+      user_id, ip_address, user_agent, device_id, access_decision,
+      login_at, last_activity_at, logout_at, duration_minutes,
+      is_active, is_suspicious, alert_type, alert_note
+    )
+    VALUES (
+      ${userId}, ${ip}, ${userAgent}, ${deviceId}, 'blocked',
+      now(), now(), now(), 0,
+      false, true, 'blocked_unauthorized_ip',
+      ${`Acceso bloqueado después de ${UNAUTHORIZED_IP_ALLOWED_ATTEMPTS} accesos permitidos desde IP no autorizada en ${UNAUTHORIZED_IP_WINDOW_HOURS} horas`}
+    )
+    RETURNING id
+  `);
+  const recordId = (result as any).rows?.[0]?.id;
+  if (recordId) {
+    void processSecurityAlert({
+      sessionRecordId: recordId,
+      userId,
+      eventType: "blocked_unauthorized_ip",
+      decision: "blocked",
+      ip,
+      userAgent,
+    });
+  }
+}
+
+async function recordLoginSession(
+  userId: string,
+  sessionId: string,
+  ip: string,
+  userAgent: string | null,
+  deviceId: string,
+) {
   try {
     // 1. Cerrar sesiones activas previas del mismo usuario (detectar acceso simultáneo)
     const activeSessions = await db
@@ -44,16 +140,31 @@ async function recordLoginSession(userId: string, sessionId: string, ip: string,
 
     if (activeSessions.length > 0) {
       // Marcar sesiones previas como cerradas y sospechosas (simultáneas)
-      await db.execute(sql`
+      const simultaneousResult = await db.execute(sql`
         UPDATE user_sessions_log
         SET is_active = false,
             logout_at = now(),
             duration_minutes = EXTRACT(EPOCH FROM (now() - login_at)) / 60,
             is_suspicious = true,
-            alert_type = 'simultaneous',
-            alert_note = ${'Nueva sesión detectada desde IP ' + ip + '. Sesión previa cerrada automáticamente.'}
+            alert_type = COALESCE(alert_type, 'simultaneous'),
+            alert_note = CONCAT_WS(
+              ' | ',
+              alert_note,
+              ${'Nueva sesión detectada desde IP ' + ip + '. Sesión previa cerrada automáticamente.'}::text
+            )
         WHERE user_id = ${userId} AND is_active = true
+        RETURNING id, ip_address, user_agent
       `);
+      for (const previous of ((simultaneousResult as any).rows ?? [])) {
+        void processSecurityAlert({
+          sessionRecordId: previous.id,
+          userId,
+          eventType: "simultaneous",
+          decision: "allowed",
+          ip: previous.ip_address || ip,
+          userAgent: previous.user_agent || null,
+        });
+      }
       logger.warn({ userId, ip, prevCount: activeSessions.length }, "[SESSION] Sesiones simultáneas detectadas");
     }
 
@@ -70,18 +181,32 @@ async function recordLoginSession(userId: string, sessionId: string, ip: string,
     const ipAuthorized = authorizedIps.length === 0 || authorizedIps.includes(ip);
 
     // 3. Registrar nueva sesión
-    await db.execute(sql`
-      INSERT INTO user_sessions_log (user_id, session_id, ip_address, user_agent, login_at, last_activity_at, is_active, is_suspicious, alert_type, alert_note)
+    const insertResult = await db.execute(sql`
+      INSERT INTO user_sessions_log (user_id, session_id, ip_address, user_agent, device_id, access_decision, login_at, last_activity_at, is_active, is_suspicious, alert_type, alert_note)
       VALUES (
-        ${userId}, ${sessionId}, ${ip}, ${userAgent}, now(), now(), true,
+        ${userId}, ${sessionId}, ${ip}, ${userAgent}, ${deviceId}, 'allowed', now(), now(), true,
         ${!ipAuthorized},
         ${!ipAuthorized ? 'unauthorized_ip' : null},
         ${!ipAuthorized ? 'Acceso desde IP no registrada: ' + ip : null}
       )
+      RETURNING id
     `);
+    const recordId = (insertResult as any).rows?.[0]?.id;
 
     if (!ipAuthorized) {
       logger.warn({ userId, ip, authorizedIps }, "[SESSION] Acceso desde IP no autorizada");
+      if (recordId) {
+        void processSecurityAlert({
+          sessionRecordId: recordId,
+          userId,
+          eventType: "unauthorized_ip",
+          decision: "allowed",
+          ip,
+          userAgent,
+        });
+      }
+    } else if (recordId) {
+      void enrichSessionLocation(recordId, ip);
     }
   } catch (err) {
     logger.error({ err }, "[SESSION] Error registrando sesión");
@@ -435,7 +560,7 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/login", loginRateLimiter, (req, res, next) => {
-    passport.authenticate("local", (err: any, user: SelectUser | false, info: any) => {
+    passport.authenticate("local", async (err: any, user: SelectUser | false, info: any) => {
       if (err) {
         logger.error({ err }, "Login error");
         return res.status(500).json({ error: "Error del servidor" });
@@ -465,6 +590,23 @@ export function setupAuth(app: Express) {
           email: user.email
         });
       }
+
+      const clientIp = getClientIp(req);
+      const deviceId = getOrCreateDeviceId(req, res);
+      try {
+        const ipAccess = await evaluateIpAccess(user.id, clientIp);
+        if (ipAccess.blocked) {
+          await recordBlockedIpAttempt(user.id, clientIp, req.headers["user-agent"] || null, deviceId);
+          logger.warn({ userId: user.id, clientIp, blockedUntil: ipAccess.blockedUntil }, "Login blocked - repeated unauthorized IP");
+          return res.status(403).json({
+            error: "Acceso bloqueado temporalmente por ingresos reiterados desde una IP no autorizada. Contacte al superadministrador.",
+            code: "IP_TEMPORARILY_BLOCKED",
+            blockedUntil: ipAccess.blockedUntil?.toISOString() || null,
+          });
+        }
+      } catch (securityError) {
+        logger.error({ securityError, userId: user.id }, "IP security evaluation failed; continuing login");
+      }
       
       req.session.regenerate((err) => {
         if (err) {
@@ -479,7 +621,6 @@ export function setupAuth(app: Express) {
           }
           
           try {
-            const clientIp = getClientIp(req);
             await db.update(schema.users)
               .set({
                 lastLoginAt: new Date(),
@@ -490,7 +631,7 @@ export function setupAuth(app: Express) {
 
             // ── Registro de sesión y alertas de seguridad ──────────────────
             await recordLoginSession(user.id, req.sessionID, clientIp,
-              req.headers['user-agent'] || null);
+              req.headers['user-agent'] || null, deviceId);
           } catch (trackErr) {
             logger.error({ err: trackErr }, "Error tracking login");
           }
@@ -504,7 +645,7 @@ export function setupAuth(app: Express) {
 
   // Dedicated support login endpoint - only allows soporte and superadmin roles
   app.post("/api/support-login", (req, res, next) => {
-    passport.authenticate("local", (err: any, user: SelectUser | false, info: any) => {
+    passport.authenticate("local", async (err: any, user: SelectUser | false, info: any) => {
       if (err) {
         logger.error({ err }, "Support login error");
         return res.status(500).json({ error: "Error del servidor" });
@@ -525,6 +666,23 @@ export function setupAuth(app: Express) {
 
       // Support users are created by superadmin directly - no email verification needed
       // Only regular users need email verification through the main login flow
+
+      const clientIp = getClientIp(req);
+      const deviceId = getOrCreateDeviceId(req, res);
+      try {
+        const ipAccess = await evaluateIpAccess(user.id, clientIp);
+        if (ipAccess.blocked) {
+          await recordBlockedIpAttempt(user.id, clientIp, req.headers["user-agent"] || null, deviceId);
+          logger.warn({ userId: user.id, clientIp, blockedUntil: ipAccess.blockedUntil }, "Support login blocked - repeated unauthorized IP");
+          return res.status(403).json({
+            error: "Acceso bloqueado temporalmente por ingresos reiterados desde una IP no autorizada. Contacte al superadministrador.",
+            code: "IP_TEMPORARILY_BLOCKED",
+            blockedUntil: ipAccess.blockedUntil?.toISOString() || null,
+          });
+        }
+      } catch (securityError) {
+        logger.error({ securityError, userId: user.id }, "Support IP security evaluation failed; continuing login");
+      }
       
       req.session.regenerate((err) => {
         if (err) {
@@ -539,7 +697,6 @@ export function setupAuth(app: Express) {
           }
           
           try {
-            const clientIp = getClientIp(req);
             await db.update(schema.users)
               .set({
                 lastLoginAt: new Date(),
@@ -549,7 +706,7 @@ export function setupAuth(app: Express) {
               .where(eq(schema.users.id, user.id));
 
             await recordLoginSession(user.id, req.sessionID, clientIp,
-              req.headers["user-agent"] || null);
+              req.headers["user-agent"] || null, deviceId);
           } catch (trackErr) {
             logger.error({ err: trackErr }, "Error tracking support login");
           }

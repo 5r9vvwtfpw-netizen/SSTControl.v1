@@ -10,6 +10,16 @@ export async function createUserSessionsLog() {
         session_id TEXT,
         ip_address TEXT,
         user_agent TEXT,
+        device_id TEXT,
+        access_decision TEXT NOT NULL DEFAULT 'allowed',
+        geo_country TEXT,
+        geo_region TEXT,
+        geo_city TEXT,
+        geo_timezone TEXT,
+        geo_isp TEXT,
+        geo_latitude TEXT,
+        geo_longitude TEXT,
+        geo_status TEXT,
         login_at TIMESTAMP NOT NULL DEFAULT now(),
         last_activity_at TIMESTAMP DEFAULT now(),
         logout_at TIMESTAMP,
@@ -28,6 +38,24 @@ export async function createUserSessionsLog() {
     `);
     await db.execute(sql`
       ALTER TABLE users ADD COLUMN IF NOT EXISTS authorized_ips TEXT[] DEFAULT '{}'
+    `);
+    await db.execute(sql`
+      ALTER TABLE user_sessions_log
+        ADD COLUMN IF NOT EXISTS device_id TEXT,
+        ADD COLUMN IF NOT EXISTS access_decision TEXT NOT NULL DEFAULT 'allowed',
+        ADD COLUMN IF NOT EXISTS geo_country TEXT,
+        ADD COLUMN IF NOT EXISTS geo_region TEXT,
+        ADD COLUMN IF NOT EXISTS geo_city TEXT,
+        ADD COLUMN IF NOT EXISTS geo_timezone TEXT,
+        ADD COLUMN IF NOT EXISTS geo_isp TEXT,
+        ADD COLUMN IF NOT EXISTS geo_latitude TEXT,
+        ADD COLUMN IF NOT EXISTS geo_longitude TEXT,
+        ADD COLUMN IF NOT EXISTS geo_status TEXT
+    `);
+    await db.execute(sql`
+      CREATE INDEX IF NOT EXISTS idx_user_sessions_unauthorized_window
+      ON user_sessions_log(user_id, login_at)
+      WHERE alert_type = 'unauthorized_ip' AND access_decision = 'allowed'
     `);
     console.log("[Migration] ✅ Tabla user_sessions_log y columna authorized_ips creadas");
   } catch (error: any) {

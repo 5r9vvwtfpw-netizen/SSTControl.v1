@@ -55,6 +55,14 @@ interface LoginSession {
   id: string;
   ipAddress: string | null;
   userAgent: string | null;
+  deviceId: string | null;
+  accessDecision: "allowed" | "blocked";
+  geoCountry: string | null;
+  geoRegion: string | null;
+  geoCity: string | null;
+  geoTimezone: string | null;
+  geoIsp: string | null;
+  geoStatus: "resolved" | "private" | "unavailable" | null;
   loginAt: string;
   lastActivityAt: string | null;
   logoutAt: string | null;
@@ -90,6 +98,7 @@ const roleLabels: Record<string, string> = {
 
 const alertLabels: Record<string, string> = {
   unauthorized_ip: "IP no autorizada",
+  blocked_unauthorized_ip: "Acceso bloqueado",
   simultaneous: "Sesión simultánea",
   long_session: "Más de 8 horas",
 };
@@ -402,7 +411,7 @@ export default function AdminLoginActivity() {
               Seguridad de {selectedUser?.fullName || selectedUser?.username}
             </DialogTitle>
             <DialogDescription>
-              Una IP nueva genera una alerta y queda registrada; el primer ingreso no se bloquea automáticamente.
+              Una IP nueva genera una alerta. Tras 3 accesos no autorizados en 24 horas, el siguiente intento se bloquea temporalmente.
             </DialogDescription>
           </DialogHeader>
 
@@ -494,11 +503,12 @@ export default function AdminLoginActivity() {
                 <div className="rounded-md border py-12 text-center text-muted-foreground">No hay sesiones para este filtro.</div>
               ) : (
                 <div className="max-h-[500px] overflow-auto rounded-md border">
-                  <table className="w-full min-w-[720px] text-sm">
+                  <table className="w-full min-w-[860px] text-sm">
                     <thead className="sticky top-0 bg-background">
                       <tr className="border-b">
                         <th className="px-3 py-2 text-left">Ingreso</th>
                         <th className="px-3 py-2 text-left">IP</th>
+                        <th className="px-3 py-2 text-left">Ubicación aproximada</th>
                         <th className="px-3 py-2 text-left">Dispositivo</th>
                         <th className="px-3 py-2 text-left">Duración</th>
                         <th className="px-3 py-2 text-left">Estado</th>
@@ -514,13 +524,27 @@ export default function AdminLoginActivity() {
                             </div>
                           </td>
                           <td className="px-3 py-3">
+                            <div>{[session.geoCity, session.geoRegion, session.geoCountry].filter(Boolean).join(", ") || "No disponible"}</div>
+                            {session.geoIsp && <div className="text-xs text-muted-foreground">{session.geoIsp}</div>}
+                          </td>
+                          <td className="px-3 py-3">
                             <div className="flex items-center gap-1">
                               <Laptop className="h-3 w-3" />{deviceName(session.userAgent)}
                             </div>
+                            {session.deviceId && (
+                              <div className="mt-1 font-mono text-[11px] text-muted-foreground">
+                                Equipo: {session.deviceId.slice(0, 8)}
+                              </div>
+                            )}
                           </td>
                           <td className="px-3 py-3 whitespace-nowrap">{durationLabel(session.durationMinutes)}</td>
                           <td className="px-3 py-3">
-                            {session.isSuspicious ? (
+                            {session.accessDecision === "blocked" ? (
+                              <div className="space-y-1">
+                                <Badge variant="destructive">Acceso bloqueado</Badge>
+                                {session.alertNote && <p className="max-w-64 text-xs text-muted-foreground">{session.alertNote}</p>}
+                              </div>
+                            ) : session.isSuspicious ? (
                               <div className="space-y-1">
                                 <Badge variant="destructive">{alertLabels[session.alertType || ""] || "Sospechosa"}</Badge>
                                 {session.alertNote && <p className="max-w-64 text-xs text-muted-foreground">{session.alertNote}</p>}

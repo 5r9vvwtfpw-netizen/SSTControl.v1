@@ -11013,6 +11013,16 @@ export const userSessions = pgTable("user_sessions_log", {
   sessionId: text("session_id"), // ID de sesión de express-session
   ipAddress: text("ip_address"),
   userAgent: text("user_agent"),
+  deviceId: text("device_id"), // Identificador persistente del navegador (no prueba identidad física)
+  accessDecision: text("access_decision").notNull().default("allowed"), // allowed | blocked
+  geoCountry: text("geo_country"),
+  geoRegion: text("geo_region"),
+  geoCity: text("geo_city"),
+  geoTimezone: text("geo_timezone"),
+  geoIsp: text("geo_isp"),
+  geoLatitude: text("geo_latitude"),
+  geoLongitude: text("geo_longitude"),
+  geoStatus: text("geo_status"), // resolved | private | unavailable
   loginAt: timestamp("login_at").notNull().default(sql`now()`),
   lastActivityAt: timestamp("last_activity_at").default(sql`now()`),
   logoutAt: timestamp("logout_at"),
