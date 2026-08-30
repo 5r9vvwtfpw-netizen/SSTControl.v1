@@ -6,12 +6,13 @@ Esta función se administra desde **Actividad Login** y solo está disponible pa
 
 ## Verificación de dos pasos por correo
 
-En cada inicio de sesión, todos los roles deben validar un código temporal enviado al correo de su cuenta, con dos excepciones:
+En cada inicio de sesión, todos los roles deben validar un código temporal enviado al correo de su cuenta, con tres excepciones:
 
 - **Super Administrador:** acceso directo después de validar contraseña y controles de IP.
 - **Trabajador:** acceso directo al portal de empleados después de validar contraseña y controles de IP.
+- **Técnico Mecánico/Mantenimiento Mecánico:** acceso directo después de validar contraseña y controles de IP.
 
-La verificación sí es obligatoria para Super Usuario, Gerente General, Responsable SST, Profesional/Licenciado SST, Soporte Técnico, coordinadores, jefes, supervisores, Vigía SST, Auditor Interno, Técnico Mecánico y cualquier otro rol distinto de las dos excepciones.
+La verificación sí es obligatoria para Super Usuario, Gerente General, Responsable SST, Profesional/Licenciado SST, Soporte Técnico, coordinadores, jefes, supervisores, Vigía SST, Auditor Interno y cualquier otro rol distinto de las tres excepciones.
 
 El código:
 

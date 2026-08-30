@@ -239,8 +239,8 @@ async function closeLoginSession(sessionId: string) {
 }
 
 function requiresTwoFactor(role: string): boolean {
-  // Todos los roles tienen MFA salvo Super Admin y Trabajador.
-  return role !== "superadmin" && role !== "trabajador";
+  // Todos los roles tienen MFA salvo Super Admin, Trabajador y Técnico Mecánico.
+  return !["superadmin", "trabajador", "tecnico_mecanico"].includes(role);
 }
 
 function hashLoginCode(code: string): string {
