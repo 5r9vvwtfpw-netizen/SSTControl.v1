@@ -256,6 +256,7 @@ import { setupTrialWatermarkOnAllPages, addTrialFooter, setupLsoWatermarkOnAllPa
 import { 
   addStandardHeader, 
   addSignatureFooter, 
+  addCommitteeActaSignatureFooter,
   addSectionBar,
   addSimpleTable,
   getSignersForCompany, 
@@ -14192,8 +14193,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.pipe(res);
 
       const logo = await loadCompanyLogo(company?.logoUrl);
-      const signers = await getSignersForCompany(companyId);
-
       let currentY = await addStandardHeader({
         doc,
         company: {
@@ -14228,7 +14227,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       currentY = addSectionBar(doc, 'Contenido del acta', currentY);
       addParagraph(doc, acta.notas || 'Sin contenido registrado', { y: currentY });
 
-      await addSignatureFooter(doc, signers, false);
+      addCommitteeActaSignatureFooter(doc, [
+        {
+          label: 'Presidente',
+          name: acta.presidente,
+          role: 'Presidente del COPASST',
+        },
+        {
+          label: 'Secretario(a)',
+          name: acta.secretaria,
+          role: 'Secretario(a) del COPASST',
+        },
+      ]);
       doc.end();
 
     } catch (error: any) {
@@ -46511,7 +46521,6 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       doc.pipe(res);
 
       const logoBuffer = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId, false);
       const tipoLabels: Record<string, string> = {
         convocatoria: "Convocatoria",
         escrutinio: "Escrutinio",
@@ -46565,7 +46574,24 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         addParagraph(doc, acta.observaciones, { y });
       }
 
-      await addSignatureFooter(doc, signers, false);
+      const actaFirmas = Array.isArray(acta.firmas)
+        ? acta.firmas as Array<{ nombre?: string; cargo?: string }>
+        : [];
+      const presidente = actaFirmas.find((firma) => firma.cargo === "presidente");
+      const secretario = actaFirmas.find((firma) => firma.cargo === "secretario");
+
+      addCommitteeActaSignatureFooter(doc, [
+        {
+          label: "Presidente",
+          name: presidente?.nombre,
+          role: "Presidente del Comité de Convivencia",
+        },
+        {
+          label: "Secretario(a)",
+          name: secretario?.nombre,
+          role: "Secretario(a) del Comité de Convivencia",
+        },
+      ]);
       doc.end();
     } catch (error: any) {
       handlePdfError(error, res, "convivencia-acta-pdf");

@@ -106,6 +106,12 @@ export interface StandardFooterOptions {
   includeLSO?: boolean;
 }
 
+export interface CommitteeActaSigner {
+  label: string;
+  name?: string | null;
+  role: string;
+}
+
 /**
  * Obtiene los firmantes automáticamente de la base de datos
  * según la empresa y el tipo de documento
@@ -611,6 +617,88 @@ export async function addSignatureFooter(
       doc.fillColor(PDF_COLORS.BLACK);
     }
   }
+}
+
+/**
+ * Agrega un pie de firmas específico para actas de comité.
+ * Los nombres provienen de los firmantes seleccionados al crear o editar el acta.
+ * Se deja una línea libre para que el documento generado pueda firmarse físicamente.
+ */
+export function addCommitteeActaSignatureFooter(
+  doc: typeof PDFDocument.prototype,
+  signers: CommitteeActaSigner[]
+): void {
+  const margin = PDF_CONFIG.MARGIN;
+  const pageWidth = doc.page.width;
+  const pageHeight = doc.page.height;
+  const footerHeight = 92;
+  const potentialFooterY = pageHeight - margin - footerHeight;
+
+  let footerY: number;
+  if (doc.y > potentialFooterY) {
+    doc.addPage();
+    footerY = pageHeight - margin - footerHeight;
+  } else {
+    footerY = potentialFooterY;
+  }
+
+  const effectiveSigners = signers.length > 0
+    ? signers
+    : [{ label: 'FIRMANTE', name: null, role: 'Firmante del acta' }];
+  const tableWidth = pageWidth - margin * 2;
+  const colWidth = tableWidth / effectiveSigners.length;
+  const headerRowHeight = 20;
+
+  doc.rect(margin, footerY, tableWidth, footerHeight).stroke(PDF_COLORS.GREEN_PRIMARY);
+
+  for (let i = 1; i < effectiveSigners.length; i++) {
+    doc
+      .moveTo(margin + colWidth * i, footerY)
+      .lineTo(margin + colWidth * i, footerY + footerHeight)
+      .stroke(PDF_COLORS.GREEN_PRIMARY);
+  }
+
+  doc
+    .moveTo(margin, footerY + headerRowHeight)
+    .lineTo(pageWidth - margin, footerY + headerRowHeight)
+    .stroke(PDF_COLORS.GREEN_PRIMARY);
+
+  effectiveSigners.forEach((signer, index) => {
+    const colX = margin + colWidth * index;
+    const contentX = colX + 8;
+    const contentWidth = colWidth - 16;
+
+    doc
+      .fontSize(8)
+      .font('Helvetica-Bold')
+      .fillColor(PDF_COLORS.BLACK)
+      .text(signer.label.toUpperCase(), contentX, footerY + 5, {
+        width: contentWidth,
+        align: 'center',
+      });
+
+    const signatureLineY = footerY + 51;
+    doc
+      .moveTo(contentX + 18, signatureLineY)
+      .lineTo(colX + colWidth - 26, signatureLineY)
+      .stroke(PDF_COLORS.GRAY_BORDER);
+
+    doc
+      .fontSize(7)
+      .font('Helvetica')
+      .fillColor(PDF_COLORS.BLACK)
+      .text(signer.name || 'Sin firmante seleccionado', contentX, signatureLineY + 6, {
+        width: contentWidth,
+        align: 'center',
+      });
+
+    doc
+      .fontSize(6)
+      .text(signer.role, contentX, signatureLineY + 19, {
+        width: contentWidth,
+        align: 'center',
+      });
+  });
 }
 
 /**
