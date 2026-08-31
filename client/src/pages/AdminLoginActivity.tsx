@@ -404,7 +404,7 @@ export default function AdminLoginActivity() {
       </Card>
 
       <Dialog open={!!selectedUser} onOpenChange={(open) => !open && setSelectedUser(null)}>
-        <DialogContent className="max-h-[92vh] max-w-6xl overflow-y-auto">
+        <DialogContent className="max-h-[92vh] w-[calc(100vw-1rem)] max-w-6xl overflow-x-hidden overflow-y-auto p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Shield className="h-5 w-5" />
@@ -415,7 +415,7 @@ export default function AdminLoginActivity() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid gap-6 lg:grid-cols-[330px_1fr]">
+          <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(260px,330px)_minmax(0,1fr)]">
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">IP autorizadas</CardTitle>
@@ -470,15 +470,15 @@ export default function AdminLoginActivity() {
               </CardContent>
             </Card>
 
-            <div className="space-y-3">
+            <div className="min-w-0 space-y-3">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h3 className="font-semibold">Historial de sesiones</h3>
                   <p className="text-xs text-muted-foreground">Se muestran hasta 100 accesos recientes.</p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Select value={alertFilter} onValueChange={setAlertFilter}>
-                    <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="w-full sm:w-40"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Todas</SelectItem>
                       <SelectItem value="suspicious">Con alerta</SelectItem>
@@ -486,7 +486,7 @@ export default function AdminLoginActivity() {
                     </SelectContent>
                   </Select>
                   <Select value={dateFilter} onValueChange={setDateFilter}>
-                    <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="w-full sm:w-40"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Todo el período</SelectItem>
                       <SelectItem value="7">Últimos 7 días</SelectItem>
