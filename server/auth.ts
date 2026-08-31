@@ -338,6 +338,10 @@ async function enforceAuthenticatedSessionActivity(req: Request, res: Response, 
 }
 
 function requiresTwoFactor(role: string): boolean {
+  // En desarrollo se omite MFA para facilitar las pruebas locales.
+  // El entorno de producción siempre conserva la verificación de dos pasos.
+  if (process.env.NODE_ENV === "development") return false;
+
   // Todos los roles tienen MFA salvo Super Admin, Trabajador y Técnico Mecánico.
   return !["superadmin", "trabajador", "tecnico_mecanico"].includes(role);
 }
