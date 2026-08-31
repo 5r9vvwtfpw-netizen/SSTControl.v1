@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -13,7 +13,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -47,7 +46,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Loader2, Plus, Calendar, Users, Vote, FileText, AlertTriangle,
   CheckCircle, Clock, User, Crown, Pencil, ChevronRight, Download,
-  Trash2, Search, Printer, Upload, X, Eye, EyeOff, CalendarDays, Target
+  Trash2, Search, Printer, Eye, EyeOff, CalendarDays, Target
 } from "lucide-react";
 import { Link } from "wouter";
 import { format, addYears, differenceInDays, parseISO } from "date-fns";
@@ -96,12 +95,6 @@ export default function CopasstGestion() {
   // Workers selected for edit acta form
   const [editSelectedActaPresidente, setEditSelectedActaPresidente] = useState<Worker | null>(null);
   const [editSelectedActaSecretaria, setEditSelectedActaSecretaria] = useState<Worker | null>(null);
-
-  // File upload state for actas
-  const actaCreateFileInputRef = useRef<HTMLInputElement>(null);
-  const [actaCreateSelectedFile, setActaCreateSelectedFile] = useState<File | null>(null);
-  const actaFileInputRef = useRef<HTMLInputElement>(null);
-  const [uploadingActaId, setUploadingActaId] = useState<string | null>(null);
 
   // Get current user and companies
   const { data: user } = useQuery<UserType>({
@@ -495,41 +488,18 @@ export default function CopasstGestion() {
   const createActaMutation = useMutation({
     mutationFn: async (data: InsertCopasstActa) => {
       const res = await apiRequest("POST", "/api/copasst-actas", data);
-      const newActa = await res.json();
-      if (actaCreateSelectedFile && newActa.id) {
-        const formData = new FormData();
-        formData.append('archivo', actaCreateSelectedFile);
-        const uploadRes = await fetch(`/api/copasst-actas/${newActa.id}/upload`, {
-          method: 'POST',
-          body: formData,
-          credentials: 'include',
-          headers: {
-            ...(effectiveCompanyId ? { "X-Company-Id": effectiveCompanyId } : {}),
-          },
-        });
-        if (!uploadRes.ok) {
-          const errorData = await uploadRes.json().catch(() => null);
-          throw new Error(errorData?.error || "El acta fue creada, pero no fue posible subir el archivo");
-        }
-      }
-      return newActa;
+      return await res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/copasst-actas", effectiveCompanyId] });
       toast({
         title: "Acta COPASST creada",
-        description: actaCreateSelectedFile 
-          ? "El acta se creó exitosamente con el archivo adjunto."
-          : "El acta se creó exitosamente con número automático.",
+        description: "El acta se creó exitosamente con número automático.",
         className: "bg-yellow-50 border-yellow-200",
       });
       setIsCreateActaOpen(false);
       setSelectedActaPresidente(null);
       setSelectedActaSecretaria(null);
-      setActaCreateSelectedFile(null);
-      if (actaCreateFileInputRef.current) {
-        actaCreateFileInputRef.current.value = '';
-      }
       actaCreateForm.reset({
         fecha: format(new Date(), "yyyy-MM-dd"),
         notas: "",
@@ -578,68 +548,6 @@ export default function CopasstGestion() {
         className: "bg-yellow-50 border-yellow-200",
       });
       setDeleteActaId(null);
-    },
-    onError: (error: Error) => {
-      toast({ variant: "destructive", title: "Error", description: error.message });
-    },
-  });
-
-  const uploadActaFileMutation = useMutation({
-    mutationFn: async ({ actaId, file }: { actaId: string; file: File }) => {
-      const formData = new FormData();
-      formData.append('archivo', file);
-      const res = await fetch(`/api/copasst-actas/${actaId}/upload`, {
-        method: 'POST',
-        body: formData,
-        credentials: 'include',
-        headers: {
-          ...(effectiveCompanyId ? { "X-Company-Id": effectiveCompanyId } : {}),
-        },
-      });
-      if (!res.ok) {
-        const contentType = res.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
-          const errorData = await res.json().catch(() => ({ error: 'Error al subir archivo' }));
-          throw new Error(errorData.error || 'Error al subir archivo');
-        } else {
-          const textError = await res.text().catch(() => 'Error al subir archivo');
-          throw new Error(textError || 'Error al subir archivo');
-        }
-      }
-      return await res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/copasst-actas", effectiveCompanyId] });
-      toast({
-        title: "Archivo subido",
-        description: "El archivo PDF se subió exitosamente.",
-        className: "bg-green-50 border-green-200",
-      });
-      setUploadingActaId(null);
-      if (actaFileInputRef.current) {
-        actaFileInputRef.current.value = '';
-      }
-    },
-    onError: (error: Error) => {
-      toast({ variant: "destructive", title: "Error al subir archivo", description: error.message });
-      setUploadingActaId(null);
-      if (actaFileInputRef.current) {
-        actaFileInputRef.current.value = '';
-      }
-    },
-  });
-
-  const deleteActaFileMutation = useMutation({
-    mutationFn: async (actaId: string) => {
-      await apiRequest("DELETE", `/api/copasst-actas/${actaId}/upload`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/copasst-actas", effectiveCompanyId] });
-      toast({
-        title: "Archivo eliminado",
-        description: "El archivo se eliminó exitosamente.",
-        className: "bg-yellow-50 border-yellow-200",
-      });
     },
     onError: (error: Error) => {
       toast({ variant: "destructive", title: "Error", description: error.message });
@@ -748,46 +656,6 @@ export default function CopasstGestion() {
     }
   };
 
-  const handleActaFileSelect = (actaId: string) => {
-    setUploadingActaId(actaId);
-    actaFileInputRef.current?.click();
-  };
-
-  const MAX_ACTA_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-
-  const handleActaFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file && uploadingActaId) {
-      if (file.type !== 'application/pdf') {
-        toast({
-          variant: "destructive",
-          title: "Tipo de archivo no válido",
-          description: "Solo se permiten archivos PDF.",
-        });
-        setUploadingActaId(null);
-        if (actaFileInputRef.current) {
-          actaFileInputRef.current.value = '';
-        }
-        return;
-      }
-      if (file.size > MAX_ACTA_FILE_SIZE) {
-        toast({
-          variant: "destructive",
-          title: "Archivo demasiado grande",
-          description: "El archivo excede el límite de 10MB.",
-        });
-        setUploadingActaId(null);
-        if (actaFileInputRef.current) {
-          actaFileInputRef.current.value = '';
-        }
-        return;
-      }
-      uploadActaFileMutation.mutate({ actaId: uploadingActaId, file });
-    } else if (actaFileInputRef.current) {
-      actaFileInputRef.current.value = '';
-    }
-  };
-
   const handleActaCreate = (data: InsertCopasstActa) => {
     createActaMutation.mutate(data);
   };
@@ -837,6 +705,7 @@ export default function CopasstGestion() {
       (acta.presidente && acta.presidente.toLowerCase().includes(actaSearchTerm.toLowerCase())) ||
       (acta.secretaria && acta.secretaria.toLowerCase().includes(actaSearchTerm.toLowerCase()))
   );
+  const hasLegacyAttachments = actas.some((acta) => Boolean(acta.archivoAdjuntoUrl));
 
   const empleadorMiembros = miembros.filter(m => m.tipoRepresentante === 'empleador');
   const trabajadorMiembros = miembros.filter(m => m.tipoRepresentante === 'trabajador');
@@ -1549,14 +1418,14 @@ export default function CopasstGestion() {
                         <TableHead>Fecha</TableHead>
                         <TableHead>Presidente</TableHead>
                         <TableHead>Secretario(a)</TableHead>
-                        <TableHead>Archivo Adjunto</TableHead>
+                        {hasLegacyAttachments && <TableHead>Soporte histórico</TableHead>}
                         <TableHead className="text-right">Acciones</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {filteredActas.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                          <TableCell colSpan={hasLegacyAttachments ? 6 : 5} className="text-center text-muted-foreground py-8">
                             <FileText className="h-12 w-12 mx-auto mb-2 opacity-50" />
                             <p>No se encontraron actas COPASST</p>
                           </TableCell>
@@ -1568,51 +1437,27 @@ export default function CopasstGestion() {
                             <TableCell>{new Date(acta.fecha).toLocaleDateString('es-CO')}</TableCell>
                             <TableCell>{acta.presidente || '-'}</TableCell>
                             <TableCell>{acta.secretaria || '-'}</TableCell>
-                            <TableCell>
-                              {acta.archivoAdjuntoUrl ? (
-                                <div className="flex items-center gap-2">
+                            {hasLegacyAttachments && (
+                              <TableCell>
+                                {acta.archivoAdjuntoUrl ? (
                                   <a
                                     href={acta.archivoAdjuntoUrl}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-blue-600 hover:text-blue-800 flex items-center gap-1 text-sm"
-                                    title={acta.archivoAdjuntoNombre || 'Descargar archivo'}
-                                    data-testid={`link-archivo-${acta.id}`}
+                                    title={acta.archivoAdjuntoNombre || 'Abrir soporte histórico'}
+                                    data-testid={`link-archivo-historico-${acta.id}`}
                                   >
                                     <Download className="h-4 w-4" />
-                                    <span className="max-w-[120px] truncate">{acta.archivoAdjuntoNombre || 'Archivo PDF'}</span>
+                                    <span className="max-w-[140px] truncate">
+                                      {acta.archivoAdjuntoNombre || 'Soporte histórico'}
+                                    </span>
                                   </a>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => deleteActaFileMutation.mutate(acta.id)}
-                                    disabled={deleteActaFileMutation.isPending}
-                                    title="Eliminar archivo"
-                                    data-testid={`button-delete-file-${acta.id}`}
-                                  >
-                                    <X className="h-4 w-4 text-red-500" />
-                                  </Button>
-                                </div>
-                              ) : (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleActaFileSelect(acta.id)}
-                                  disabled={uploadActaFileMutation.isPending && uploadingActaId === acta.id}
-                                  data-testid={`button-upload-${acta.id}`}
-                                  title="Subir PDF firmado"
-                                >
-                                  {uploadActaFileMutation.isPending && uploadingActaId === acta.id ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                  ) : (
-                                    <>
-                                      <Upload className="h-4 w-4 mr-1" />
-                                      Subir PDF
-                                    </>
-                                  )}
-                                </Button>
-                              )}
-                            </TableCell>
+                                ) : (
+                                  <span className="text-muted-foreground text-sm">—</span>
+                                )}
+                              </TableCell>
+                            )}
                             <TableCell className="text-right">
                               <div className="flex justify-end gap-2">
                                 <Button
@@ -1652,14 +1497,6 @@ export default function CopasstGestion() {
             </CardContent>
           </Card>
 
-          <input
-            type="file"
-            ref={actaFileInputRef}
-            onChange={handleActaFileChange}
-            accept="application/pdf"
-            className="hidden"
-            data-testid="input-file-acta"
-          />
         </TabsContent>
       </Tabs>
 
@@ -2140,22 +1977,6 @@ export default function CopasstGestion() {
                 )}
               />
 
-              <div className="space-y-2">
-                <Label>Archivo PDF (Opcional)</Label>
-                <Input
-                  type="file"
-                  ref={actaCreateFileInputRef}
-                  accept="application/pdf"
-                  onChange={(e) => setActaCreateSelectedFile(e.target.files?.[0] || null)}
-                  data-testid="input-acta-create-file"
-                />
-                {actaCreateSelectedFile && (
-                  <p className="text-sm text-muted-foreground">
-                    Archivo seleccionado: {actaCreateSelectedFile.name}
-                  </p>
-                )}
-              </div>
-
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setIsCreateActaOpen(false)}>
                   Cancelar
@@ -2293,7 +2114,7 @@ export default function CopasstGestion() {
           <AlertDialogHeader>
             <AlertDialogTitle>¿Eliminar acta?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción no se puede deshacer. El acta y su archivo adjunto (si existe) serán eliminados permanentemente.
+              Esta acción no se puede deshacer. El acta será eliminada permanentemente.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

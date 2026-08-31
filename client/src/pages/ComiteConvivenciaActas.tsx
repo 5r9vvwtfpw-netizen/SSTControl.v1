@@ -35,7 +35,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import {
   Loader2, Plus, Calendar, Users, Vote, FileText, AlertTriangle,
-  CheckCircle, ChevronRight, Download, Crown, Eye, EyeOff, Pencil, Trash2, Upload, FileSignature
+  CheckCircle, ChevronRight, Download, Crown, Eye, EyeOff, Pencil, Trash2, FileSignature
 } from "lucide-react";
 import { Link } from "wouter";
 import { Label } from "@/components/ui/label";
@@ -64,7 +64,6 @@ export default function ComiteConvivenciaActas() {
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>("");
   const [isCreateActaOpen, setIsCreateActaOpen] = useState(false);
   const [editingActa, setEditingActa] = useState<ConvivenciaActa | null>(null);
-  const [uploadingActaId, setUploadingActaId] = useState<string | null>(null);
   const [firmaPresidenteId, setFirmaPresidenteId] = useState<string>("");
   const [firmaSecretarioId, setFirmaSecretarioId] = useState<string>("");
 
@@ -472,40 +471,6 @@ export default function ComiteConvivenciaActas() {
     },
   });
 
-  const uploadActaFileMutation = useMutation({
-    mutationFn: async ({ id, file }: { id: string; file: File }) => {
-      const formData = new FormData();
-      formData.append("file", file);
-      const res = await fetch(`/api/convivencia-actas/${id}/upload`, {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          ...(effectiveCompanyId ? { "X-Company-Id": effectiveCompanyId } : {}),
-        },
-        body: formData,
-      });
-      if (!res.ok) {
-        const contentType = res.headers.get("content-type") || "";
-        if (contentType.includes("application/json")) {
-          const errorData = await res.json().catch(() => null);
-          throw new Error(errorData?.error || "Error al subir archivo");
-        }
-        const errorText = await res.text().catch(() => "");
-        throw new Error(errorText || "Error al subir archivo");
-      }
-      return await res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/convivencia-actas", effectiveCompanyId] });
-      toast({ title: "Archivo subido", description: "El documento se adjuntó correctamente." });
-      setUploadingActaId(null);
-    },
-    onError: (error: Error) => {
-      toast({ variant: "destructive", title: "Error", description: error.message });
-      setUploadingActaId(null);
-    },
-  });
-
   const handleAdvancePhase = () => {
     if (!activeElection) return;
     const currentIndex = ELECTION_PHASES.findIndex(p => p.key === activeElection.estado);
@@ -643,11 +608,6 @@ export default function ComiteConvivenciaActas() {
     } else {
       createActaMutation.mutate({ ...dataWithFirmas, companyId: effectiveCompanyId });
     }
-  };
-
-  const handleFileUpload = (actaId: string, file: File) => {
-    setUploadingActaId(actaId);
-    uploadActaFileMutation.mutate({ id: actaId, file });
   };
 
   const empleadorMiembros = miembros.filter(m => m.representacion === 'empleador');
@@ -1232,7 +1192,7 @@ export default function ComiteConvivenciaActas() {
                         <TableCell className="max-w-[200px] truncate">{acta.asunto}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
-                            {acta.documentoUrl ? (
+                            {acta.documentoUrl && (
                               <Button
                                 variant="ghost"
                                 size="icon"
@@ -1242,34 +1202,6 @@ export default function ComiteConvivenciaActas() {
                               >
                                 <Download className="h-4 w-4" />
                               </Button>
-                            ) : (
-                              <label>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  asChild
-                                  disabled={uploadingActaId === acta.id}
-                                  data-testid={`button-subir-acta-${acta.id}`}
-                                  title="Subir documento"
-                                >
-                                  <span>
-                                    {uploadingActaId === acta.id ? (
-                                      <Loader2 className="h-4 w-4 animate-spin" />
-                                    ) : (
-                                      <Upload className="h-4 w-4" />
-                                    )}
-                                  </span>
-                                </Button>
-                                <input
-                                  type="file"
-                                  accept=".pdf,.doc,.docx"
-                                  className="hidden"
-                                  onChange={(e) => {
-                                    const file = e.target.files?.[0];
-                                    if (file) handleFileUpload(acta.id, file);
-                                  }}
-                                />
-                              </label>
                             )}
                             <Button
                               variant="ghost"
