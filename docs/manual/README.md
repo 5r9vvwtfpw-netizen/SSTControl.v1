@@ -90,5 +90,5 @@ Cada vez que agregues funcionalidades al sistema:
 
 ---
 
-**Versión actual:** 1.0  
-**Última actualización:** Enero 2025
+**Versión actual:** 4.1.0  
+**Última actualización:** 31 de agosto de 2026

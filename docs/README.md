@@ -163,6 +163,6 @@ Puedes contactar al equipo de desarrollo o consultar:
 
 ---
 
-**Versión:** 1.0  
-**Última actualización:** Enero 2025  
+**Versión:** 4.1.0  
+**Última actualización:** 31 de agosto de 2026  
 **Estado:** ✅ Sistema de ayuda completamente funcional
