@@ -63,6 +63,7 @@ async function seedSuperadminUser() {
 export async function seedAdminUser() {
   try {
     console.log("🔐 Verificando usuario admin...");
+    const adminEmail = "admin@sst-colombia.com";
 
     // Verificar si las tablas existen
     try {
@@ -105,7 +106,15 @@ export async function seedAdminUser() {
           .set({ companyId: demoCompanyId })
           .where(eq(schema.users.username, "admin"));
         console.log("✅ Usuario admin actualizado con empresa DEMO-PRUEBA");
-      } else {
+      }
+      if (existingAdmin[0].email !== adminEmail) {
+        await db
+          .update(schema.users)
+          .set({ email: adminEmail })
+          .where(eq(schema.users.username, "admin"));
+        console.log(`✅ Correo del usuario admin actualizado a ${adminEmail}`);
+      }
+      if (existingAdmin[0].companyId && existingAdmin[0].email === adminEmail) {
         console.log("✅ Usuario admin ya existe");
       }
       // Siempre verificar/crear superadmin, LSO y soporte antes de salir
@@ -125,7 +134,7 @@ export async function seedAdminUser() {
       .values({
         username: "admin",
         password: hashedPassword,
-        email: "admin@sstcolombia.com",
+        email: adminEmail,
         fullName: "Administrador del Sistema",
         role: "admin",
         companyId: demoCompanyId, // Admin asignado a DEMO-PRUEBA (strict tenant isolation)
