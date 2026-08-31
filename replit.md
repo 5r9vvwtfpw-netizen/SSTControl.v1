@@ -1,5 +1,5 @@
 # SST Colombia - Sistema de Salud y Seguridad en el Trabajo
-**Versión actual: v4.0.0**
+**Versión actual: v4.1.0**
 
 ## Overview
 This project is an integral management system for Occupational Health and Safety (SST) in Colombia, designed for compliance with national regulations (Resolución 0312/2019) and ISO 45001:2018 standards. It offers a comprehensive digital solution for managing workers, tracking incidents, scheduling training, and generating real-time statistical reports. The system aims to be a leading tool for SST compliance and management, enhancing worker safety and operational efficiency through features like multi-tenant architecture, automatic company classification, and a complete Strategic Road Safety Plan (PESV) module.

@@ -46,6 +46,8 @@ import { ProviderAccessDialog } from "@/components/ProviderAccessDialog";
 import { Badge } from "@/components/ui/badge";
 import { NotificationBell } from "@/components/NotificationBell";
 
+const SYSTEM_VERSION = "v4.1.0";
+
 type PHVASection = "configuracion" | "planear" | "hacer" | "verificar" | "actuar";
 
 interface MenuItem {
@@ -586,6 +588,7 @@ export function PHVANavigation() {
               <div>
                 <h1 className="text-xl font-bold">SG-SST</h1>
                 <p className="text-xs opacity-90">Sistema de Gestión</p>
+                <p className="text-[10px] opacity-70" data-testid="text-system-version">Sistema {SYSTEM_VERSION}</p>
               </div>
             </div>
 
