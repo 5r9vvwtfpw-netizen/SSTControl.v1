@@ -844,15 +844,18 @@ app.post(
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Serve uploaded files
-app.use('/uploads', express.static('uploads'));
-app.use('/uploads', express.static('public/uploads'));
-
 // Serve documentation files
 app.use('/docs', express.static('docs'));
 
-// Serve public JSON files (CIIU classification for external pricing pages)
-app.use(express.static('public'));
+// Serve public assets, but never expose uploaded documents through this mount.
+// Protected /uploads routes are registered after authentication in routes.ts.
+const publicAssets = express.static('public');
+app.use((req, res, next) => {
+  if (req.path === '/uploads' || req.path.startsWith('/uploads/')) {
+    return next();
+  }
+  return publicAssets(req, res, next);
+});
 
 // No-cache headers for all frontend routes — prevents browsers from serving
 // stale JavaScript to end users after updates are deployed

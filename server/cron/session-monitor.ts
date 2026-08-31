@@ -1,6 +1,6 @@
 /**
  * Monitor de seguridad de sesiones.
- * Cierra sesiones inactivas o vencidas y marca sesiones largas como sospechosas.
+ * Cierra sesiones que alcanzan el límite absoluto y marca sesiones largas como sospechosas.
  * Se ejecuta cada minuto.
  */
 import { db } from "../db";
@@ -10,7 +10,6 @@ import { processSecurityAlert } from "../services/security-access";
 
 const MAX_SESSION_HOURS = 8;
 const ABSOLUTE_SESSION_HOURS = 12;
-const IDLE_SESSION_MINUTES = 30;
 
 async function closeExpiredSessions() {
   const result = await db.execute(sql`
@@ -18,25 +17,14 @@ async function closeExpiredSessions() {
     SET is_active = false,
         logout_at = now(),
         duration_minutes = EXTRACT(EPOCH FROM (now() - login_at)) / 60,
-        alert_type = CASE
-          WHEN login_at <= now() - (${ABSOLUTE_SESSION_HOURS} * interval '1 hour')
-          THEN 'absolute_timeout'
-          ELSE 'idle_timeout'
-        END,
+        alert_type = 'absolute_timeout',
         alert_note = CONCAT_WS(
           ' | ',
           alert_note,
-          CASE
-            WHEN login_at <= now() - (${ABSOLUTE_SESSION_HOURS} * interval '1 hour')
-            THEN ${`Sesión cerrada automáticamente al alcanzar el límite máximo de ${ABSOLUTE_SESSION_HOURS} horas`}::text
-            ELSE ${`Sesión cerrada automáticamente después de ${IDLE_SESSION_MINUTES} minutos sin actividad`}::text
-          END
+          ${`Sesión cerrada automáticamente al alcanzar el límite máximo de ${ABSOLUTE_SESSION_HOURS} horas`}::text
         )
     WHERE is_active = true
-      AND (
-        COALESCE(last_activity_at, login_at) <= now() - (${IDLE_SESSION_MINUTES} * interval '1 minute')
-        OR login_at <= now() - (${ABSOLUTE_SESSION_HOURS} * interval '1 hour')
-      )
+      AND login_at <= now() - (${ABSOLUTE_SESSION_HOURS} * interval '1 hour')
     RETURNING id
   `);
   const count = ((result as any).rows ?? []).length;

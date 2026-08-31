@@ -20,8 +20,6 @@ import { enrichSessionLocation, processSecurityAlert } from "./services/security
 // ── Monitoreo de sesiones ─────────────────────────────────────────────────────
 const MAX_SESSION_HOURS = 8;
 const ABSOLUTE_SESSION_HOURS = 12;
-const IDLE_SESSION_MINUTES = 30;
-const ACTIVITY_UPDATE_SECONDS = 60;
 const UNAUTHORIZED_IP_ALLOWED_ATTEMPTS = 3;
 const UNAUTHORIZED_IP_WINDOW_HOURS = 24;
 const LOGIN_CODE_MINUTES = 10;
@@ -241,12 +239,10 @@ async function closeLoginSession(sessionId: string) {
   }
 }
 
-type SessionExpiryReason = "idle_timeout" | "absolute_timeout";
+type SessionExpiryReason = "absolute_timeout";
 
 async function expireLoginSession(sessionId: string, reason: SessionExpiryReason) {
-  const note = reason === "idle_timeout"
-    ? `Sesión cerrada automáticamente después de ${IDLE_SESSION_MINUTES} minutos sin actividad`
-    : `Sesión cerrada automáticamente al alcanzar el límite máximo de ${ABSOLUTE_SESSION_HOURS} horas`;
+  const note = `Sesión cerrada automáticamente al alcanzar el límite máximo de ${ABSOLUTE_SESSION_HOURS} horas`;
 
   await db.execute(sql`
     UPDATE user_sessions_log
@@ -293,12 +289,10 @@ async function enforceAuthenticatedSessionActivity(req: Request, res: Response, 
 
     const now = Date.now();
     const loginAt = new Date(sessionRecord.login_at).getTime();
-    const lastActivityAt = new Date(sessionRecord.last_activity_at || sessionRecord.login_at).getTime();
     const absoluteExpired = now - loginAt >= ABSOLUTE_SESSION_HOURS * 60 * 60 * 1000;
-    const idleExpired = now - lastActivityAt >= IDLE_SESSION_MINUTES * 60 * 1000;
 
-    if (absoluteExpired || idleExpired) {
-      const reason: SessionExpiryReason = absoluteExpired ? "absolute_timeout" : "idle_timeout";
+    if (absoluteExpired) {
+      const reason: SessionExpiryReason = "absolute_timeout";
       await expireLoginSession(req.sessionID, reason);
 
       req.logout((logoutError) => {
@@ -311,23 +305,12 @@ async function enforceAuthenticatedSessionActivity(req: Request, res: Response, 
           }
           res.clearCookie("connect.sid");
           return res.status(401).json({
-            error: reason === "idle_timeout"
-              ? "Tu sesión se cerró por inactividad."
-              : "Tu sesión alcanzó el tiempo máximo permitido.",
-            code: reason === "idle_timeout" ? "SESSION_IDLE_TIMEOUT" : "SESSION_ABSOLUTE_TIMEOUT",
+            error: "Tu sesión alcanzó el tiempo máximo permitido.",
+            code: "SESSION_ABSOLUTE_TIMEOUT",
           });
         });
       });
       return;
-    }
-
-    const isExplicitActivityHeartbeat = req.method === "POST" && req.path === "/api/session/activity";
-    if (isExplicitActivityHeartbeat && now - lastActivityAt >= ACTIVITY_UPDATE_SECONDS * 1000) {
-      await db.execute(sql`
-        UPDATE user_sessions_log
-        SET last_activity_at = now()
-        WHERE session_id = ${req.sessionID} AND is_active = true
-      `);
     }
 
     return next();
@@ -962,8 +945,6 @@ export function setupAuth(app: Express) {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     return res.status(200).json({
       active: true,
-      idleTimeoutMinutes: IDLE_SESSION_MINUTES,
-      warningMinutes: 2,
       absoluteTimeoutHours: ABSOLUTE_SESSION_HOURS,
     });
   });

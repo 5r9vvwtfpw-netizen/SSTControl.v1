@@ -1664,8 +1664,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Object Storage routes - serve files from Replit Object Storage
 
-  // Route to serve files directly from Object Storage at /objects/*
-  app.get("/objects/*", async (req, res) => {
+  // Route to serve authenticated files directly from Object Storage at /objects/*
+  app.get("/objects/*", authRequireAuth, async (req, res) => {
     try {
       const objectStorageService = new ObjectStorageService();
       const objectPath = req.path; // e.g., /objects/uploads/uuid.pdf
@@ -1687,16 +1687,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'ticket-attachments'
       ];
       
-      const userCompanyId = req.user ? (req.user as any).companyId : null;
+      const userCompanyId = getEffectiveCompanyId(req);
       
       // Check if the path is a company-owned file type
       const isCompanyOwnedFile = companyOwnedPaths.some(pathSegment => objectPath.includes(pathSegment));
       
-      // Allow download if: user is authenticated AND file is company-owned OR contains their companyId
-      const isOwnCompanyFile = userCompanyId && (
-        objectPath.includes(`/${userCompanyId}/`) || 
-        isCompanyOwnedFile
+      const companyIdMatch = objectPath.match(
+        /\/(?:curso-50-horas|afiliaciones|alto-riesgo|logos|signatures|documentos|programas-capacitacion|copasst-actas|convivencia-actas|worker-photos|ticket-attachments)\/([^/]+)\//
       );
+      const pathCompanyId = companyIdMatch?.[1] || null;
+
+      // New uploads include companyId in their path. Reject cross-company access.
+      // Legacy UUID-only paths remain available to authenticated users for compatibility.
+      if (pathCompanyId && pathCompanyId !== userCompanyId) {
+        return res.status(403).json({ error: "No tienes acceso a este archivo" });
+      }
+
+      const isOwnCompanyFile = Boolean(userCompanyId && (
+        (pathCompanyId && pathCompanyId === userCompanyId) ||
+        (!pathCompanyId && isCompanyOwnedFile)
+      ));
       
       // Only apply subscription restriction to non-company files (like bulk exports)
       // Company files (their own uploads) should always be accessible to authenticated users
@@ -1721,48 +1731,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Route to serve evidence files with fallback to Object Storage
-  // First checks local filesystem, then falls back to Object Storage
-  app.get("/uploads/evidences/:filename", async (req, res, next) => {
-    const filename = req.params.filename;
-    const localPath = path.join(process.cwd(), 'uploads', 'evidences', filename);
-    
-    // Check if file exists locally
+  // Serve legacy local uploads only after authentication. These routes replace
+  // the former public express.static mounts without moving or deleting history.
+  app.get("/uploads/*", authRequireAuth, async (req, res) => {
     try {
-      await fs.promises.access(localPath, fs.constants.R_OK);
-      // File exists locally, let express.static handle it
-      return next();
-    } catch {
-      // File doesn't exist locally, try Object Storage
-    }
-    
-    // Try to serve from Object Storage
-    try {
-      const objectStorageService = new ObjectStorageService();
-      // Try with the exact filename in Object Storage
-      const objectPath = `/objects/uploads/${filename}`;
-      // Solo restringir descargas para usuarios trial autenticados
-      if (req.user && (req.user as any).companyId) {
-        const downloadCheck = await canUserDownloadDocuments(req, storage);
-        if (!downloadCheck.allowed) {
-          return res.status(403).json({ 
-            error: "Descarga no disponible",
-            message: downloadCheck.message,
-            requiresSubscription: true
-          });
+      const relativePath = req.params[0];
+      if (!relativePath || relativePath.includes("..") || path.isAbsolute(relativePath)) {
+        return res.status(400).json({ error: "Ruta de archivo inválida" });
+      }
+
+      const candidateRoots = [
+        path.resolve(process.cwd(), "uploads"),
+        path.resolve(process.cwd(), "public", "uploads"),
+      ];
+
+      for (const root of candidateRoots) {
+        const filePath = path.resolve(root, relativePath);
+        if (!filePath.startsWith(root + path.sep)) continue;
+
+        try {
+          const stats = await fs.promises.stat(filePath);
+          if (stats.isFile()) {
+            res.setHeader("Cache-Control", "private, no-store");
+            return res.sendFile(filePath);
+          }
+        } catch (error: any) {
+          if (error?.code !== "ENOENT") throw error;
         }
       }
 
-      await objectStorageService.downloadObject(objectPath, res);
-    } catch (error) {
-      if (error instanceof ObjectNotFoundError) {
-        return res.status(404).send("File not found");
+      // Historical SST evidence can live in Object Storage even when the local
+      // fallback file is no longer present.
+      if (relativePath.startsWith("evidences/")) {
+        const filename = path.basename(relativePath);
+        try {
+          const objectStorageService = new ObjectStorageService();
+          await objectStorageService.downloadObject(`/objects/uploads/${filename}`, res);
+          return;
+        } catch (error) {
+          if (!(error instanceof ObjectNotFoundError)) throw error;
+        }
       }
-      console.error("Error serving evidence from Object Storage:", error);
-      res.status(500).send("Error serving file");
+
+      return res.status(404).send("File not found");
+    } catch (error) {
+      console.error("Error serving protected local upload:", error);
+      return res.status(500).send("Error serving file");
     }
   });
-
 
   // Configure WebSocket session authentication
   const sessMiddleware = getSessionMiddleware();
