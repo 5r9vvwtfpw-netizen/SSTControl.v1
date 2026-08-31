@@ -610,6 +610,10 @@ export default function ComiteConvivenciaActas() {
     }
   };
 
+  const handleDownloadActaPdf = (actaId: string) => {
+    window.open(`/api/convivencia-actas/${actaId}/pdf`, "_blank");
+  };
+
   const empleadorMiembros = miembros.filter(m => m.representacion === 'empleador');
   const trabajadorMiembros = miembros.filter(m => m.representacion === 'trabajador');
 
@@ -1192,13 +1196,22 @@ export default function ComiteConvivenciaActas() {
                         <TableCell className="max-w-[200px] truncate">{acta.asunto}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDownloadActaPdf(acta.id)}
+                              data-testid={`button-descargar-pdf-acta-${acta.id}`}
+                              title="Descargar acta en PDF"
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
                             {acta.documentoUrl && (
                               <Button
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => window.open(acta.documentoUrl!, '_blank')}
                                 data-testid={`button-descargar-acta-${acta.id}`}
-                                title="Descargar documento"
+                                title="Descargar documento histórico"
                               >
                                 <Download className="h-4 w-4" />
                               </Button>

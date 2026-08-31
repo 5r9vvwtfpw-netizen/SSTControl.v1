@@ -5335,7 +5335,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Create PDF
       const { default: PDFDocument } = await import('pdfkit');
-      const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
+      const doc = new PDFDocument({ margin: PDF_CONFIG.MARGIN, size: PDF_CONFIG.PAGE_SIZE });
       // Obtener estado de suscripción para marca de agua
       const furat_subscription = await storage.getSubscriptionByCompany(accident.companyId);
       const furat_trialStatus = getTrialStatus(furat_subscription?.status || 'trial', furat_subscription?.trialEnd || null, true, true);
@@ -13585,9 +13585,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const budget_subscription = await storage.getSubscriptionByCompany(companyId);
       const budget_trialStatus = getTrialStatus(budget_subscription?.status || 'trial', budget_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, budget_trialStatus.requiresWatermark);
-      const margin = 35;
-      const pageWidth = doc.page.width;
-
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="Resumen-Presupuestal-SST-${new Date().toISOString().split('T')[0]}.pdf"`);
 
@@ -14197,7 +14194,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const logo = await loadCompanyLogo(company?.logoUrl);
       const signers = await getSignersForCompany(companyId);
 
-      await addStandardHeader({
+      let currentY = await addStandardHeader({
         doc,
         company: {
           id: company.id,
@@ -14212,54 +14209,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         logoBuffer: logo,
       });
 
-      let currentY = doc.y + 15;
+      currentY = addSectionBar(doc, 'Información del acta', currentY);
+      currentY = addLabeledField(doc, 'Acta N°', acta.numeroActa, { y: currentY });
+      currentY = addLabeledField(doc, 'Fecha', formatDate(acta.fecha), { y: currentY });
+      currentY += 6;
 
-      // Acta details section with green header
-      doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e7e34')
-        .text('INFORMACIÓN DEL ACTA', margin, currentY);
-      currentY = doc.y + 10;
-
-      doc.fontSize(8).font('Helvetica-Bold').fillColor('#000000')
-        .text('Acta N°: ', margin, currentY, { continued: true });
-      doc.font('Helvetica').text(acta.numeroActa);
-      currentY = doc.y + 5;
-
-      doc.fontSize(8).font('Helvetica-Bold')
-        .text('Fecha: ', margin, currentY, { continued: true });
-      doc.font('Helvetica').text(new Date(acta.fecha).toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' }));
-      currentY = doc.y + 15;
-
-      // Presidente y Secretaria info
       if (acta.presidente || acta.secretaria) {
-        doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e7e34')
-          .text('DIRECTIVOS DEL COMITÉ', margin, currentY);
-        currentY = doc.y + 10;
-
+        currentY = addSectionBar(doc, 'Directivos del comité', currentY);
         if (acta.presidente) {
-          doc.fontSize(8).font('Helvetica-Bold').fillColor('#000000')
-            .text('Presidente: ', margin, currentY, { continued: true });
-          doc.font('Helvetica').text(acta.presidente);
-          currentY = doc.y + 5;
+          currentY = addLabeledField(doc, 'Presidente', acta.presidente, { y: currentY });
         }
-
         if (acta.secretaria) {
-          doc.fontSize(8).font('Helvetica-Bold')
-            .text('Secretario(a): ', margin, currentY, { continued: true });
-          doc.font('Helvetica').text(acta.secretaria);
-          currentY = doc.y + 15;
+          currentY = addLabeledField(doc, 'Secretario(a)', acta.secretaria, { y: currentY });
         }
+        currentY += 6;
       }
 
-      // Content/Notes section with green header
-      doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e7e34')
-        .text('CONTENIDO DEL ACTA', margin, currentY);
-      currentY = doc.y + 10;
-
-      doc.fontSize(8).font('Helvetica').fillColor('#000000')
-        .text(acta.notas || 'Sin contenido registrado', margin, currentY, {
-          width: pageWidth - 2 * margin,
-          align: 'justify'
-        });
+      currentY = addSectionBar(doc, 'Contenido del acta', currentY);
+      addParagraph(doc, acta.notas || 'Sin contenido registrado', { y: currentY });
 
       await addSignatureFooter(doc, signers, false);
       doc.end();
@@ -46501,6 +46468,107 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       res.json(acta);
     } catch (error: any) {
       res.status(400).send(error.message);
+    }
+  });
+
+  app.get("/api/convivencia-actas/:id/pdf", requirePermission("companies:view"), async (req, res) => {
+    try {
+      const companyId = getConvivenciaCompanyId(req);
+      if (!companyId) {
+        return res.status(403).send("Usuario no asociado a una empresa");
+      }
+
+      const acta = await storage.getConvivenciaActa(req.params.id);
+      if (!acta) {
+        return res.status(404).send("Acta no encontrada");
+      }
+      if (acta.companyId !== companyId) {
+        return res.status(403).send("Acceso no autorizado");
+      }
+
+      const company = await storage.getCompany(companyId);
+      if (!company) {
+        return res.status(404).send("Empresa no encontrada");
+      }
+
+      const { default: PDFDocument } = await import("pdfkit");
+      const doc = new PDFDocument({ margin: PDF_CONFIG.MARGIN, size: PDF_CONFIG.PAGE_SIZE });
+
+      const subscription = await storage.getSubscriptionByCompany(companyId);
+      const trialStatus = getTrialStatus(
+        subscription?.status || "trial",
+        subscription?.trialEnd || null,
+        true,
+        true
+      );
+      setupTrialWatermarkOnAllPages(doc, trialStatus.requiresWatermark);
+
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="Acta-Convivencia-${acta.numero}.pdf"`
+      );
+      doc.pipe(res);
+
+      const logoBuffer = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(companyId, false);
+      const tipoLabels: Record<string, string> = {
+        convocatoria: "Convocatoria",
+        escrutinio: "Escrutinio",
+        constitucion: "Constitución",
+        sesion: "Sesión",
+        queja: "Queja",
+      };
+
+      let y = await addStandardHeader({
+        doc,
+        company,
+        documentTitle: "ACTA REUNIÓN COMITÉ DE CONVIVENCIA LABORAL",
+        documentCode: `SST-CONV-ACTA-${String(acta.numero).padStart(3, "0")}`,
+        version: "1.0",
+        date: new Date(acta.fecha),
+        logoBuffer,
+      });
+
+      y = addSectionBar(doc, "Información del acta", y);
+      y = addLabeledField(doc, "Acta N°", String(acta.numero), { y });
+      y = addLabeledField(doc, "Tipo", tipoLabels[acta.tipo] || acta.tipo, { y });
+      y = addLabeledField(doc, "Fecha", formatDate(acta.fecha), { y });
+      y = addLabeledField(doc, "Asunto", acta.asunto, { y });
+      y += 6;
+
+      y = addSectionBar(doc, "Contenido del acta", y);
+      y = addParagraph(doc, acta.contenido || "Sin contenido registrado", { y });
+
+      if (acta.asistentes.length > 0) {
+        y = addSectionBar(doc, "Asistentes", y);
+        y = addSimpleTable(
+          doc,
+          ["N°", "Nombre"],
+          acta.asistentes.map((asistente, index) => [String(index + 1), asistente]),
+          { y, columnWidths: [50, 492] }
+        );
+      }
+
+      if (acta.acuerdos && acta.acuerdos.length > 0) {
+        y = addSectionBar(doc, "Acuerdos", y);
+        y = addSimpleTable(
+          doc,
+          ["N°", "Acuerdo"],
+          acta.acuerdos.map((acuerdo, index) => [String(index + 1), acuerdo]),
+          { y, columnWidths: [50, 492] }
+        );
+      }
+
+      if (acta.observaciones) {
+        y = addSectionBar(doc, "Observaciones", y);
+        addParagraph(doc, acta.observaciones, { y });
+      }
+
+      await addSignatureFooter(doc, signers, false);
+      doc.end();
+    } catch (error: any) {
+      handlePdfError(error, res, "convivencia-acta-pdf");
     }
   });
 
