@@ -856,7 +856,7 @@ export class LegalDocsPdfService {
       ['Cifrado en tránsito:', 'TLS 1.3'],
       ['Cifrado en reposo:', 'AES-256-GCM con derivación de llaves por campo'],
       ['Autenticación:', 'scrypt con salt aleatorio de 16 bytes (no reversible) + timingSafeEqual'],
-      ['Sesiones:', 'Cookies httpOnly, secure, sameSite strict, expiración 12 horas'],
+       ['Sesiones:', 'Cookies httpOnly, secure, sameSite strict, límite absoluto 6 horas; sin cierre por inactividad'],
       ['Control de acceso:', 'RBAC con 13 roles diferenciados (Decreto 1072/2015)'],
       ['Roles del sistema:', 'Superadmin, Soporte, Superusuario, Admin, Responsable SST, Coordinador Salud, LSO, Coordinador SST, Coordinador RRHH, Jefe Personal, Supervisor, Vigía SST, Auditor Interno, Trabajador'],
       ['Firewall/WAF:', 'DDoS, SQL injection, XSS'],

@@ -8,8 +8,8 @@ import { sql } from "drizzle-orm";
 import logger from "../lib/logger";
 import { processSecurityAlert } from "../services/security-access";
 
-const MAX_SESSION_HOURS = 8;
-const ABSOLUTE_SESSION_HOURS = 12;
+const MAX_SESSION_HOURS = 6;
+const ABSOLUTE_SESSION_HOURS = 6;
 
 async function closeExpiredSessions() {
   const result = await db.execute(sql`

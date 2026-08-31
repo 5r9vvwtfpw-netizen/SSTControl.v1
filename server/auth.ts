@@ -18,8 +18,8 @@ import logger from "./lib/logger";
 import { enrichSessionLocation, processSecurityAlert } from "./services/security-access";
 
 // ── Monitoreo de sesiones ─────────────────────────────────────────────────────
-const MAX_SESSION_HOURS = 8;
-const ABSOLUTE_SESSION_HOURS = 12;
+const MAX_SESSION_HOURS = 6;
+const ABSOLUTE_SESSION_HOURS = 6;
 const UNAUTHORIZED_IP_ALLOWED_ATTEMPTS = 3;
 const UNAUTHORIZED_IP_WINDOW_HOURS = 24;
 const LOGIN_CODE_MINUTES = 10;
@@ -464,7 +464,7 @@ export function setupAuth(app: Express) {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 1000 * 60 * 60 * 12
+     maxAge: 1000 * 60 * 60 * 6
     }
   };
 
