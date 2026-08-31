@@ -638,7 +638,7 @@ function AuthenticatedLayout() {
 function ConditionalChatBot() {
   const { user } = useAuth();
   if (!user) return null;
-  if (user.role === "trabajador" || user.role === "lso" || user.role === "lso_externo") return null;
+  if (user.role === "trabajador") return null;
   return <ChatBot />;
 }
 
