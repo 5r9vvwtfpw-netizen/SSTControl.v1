@@ -71,6 +71,7 @@ import { NotificationBell } from "@/components/NotificationBell";
 import { Footer, FooterMinimal } from "@/components/Footer";
 import { ChatBot } from "@/components/ChatBot";
 import { SubscriptionValidityDialog } from "@/components/SubscriptionValidityDialog";
+import { SessionTimeoutGuard } from "@/components/SessionTimeoutGuard";
 import NotFound from "@/pages/not-found";
 import InstalarApp from "@/pages/InstalarApp";
 import Dashboard from "@/pages/Dashboard";
@@ -651,6 +652,7 @@ export default function App() {
             <DevEnvBannerSpacer />
             <DemoWatermark />
             <AuthenticatedLayout />
+            <SessionTimeoutGuard />
             <ConditionalChatBot />
             <SubscriptionValidityDialog />
           </AuthProvider>

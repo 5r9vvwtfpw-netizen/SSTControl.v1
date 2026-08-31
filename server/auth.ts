@@ -19,6 +19,9 @@ import { enrichSessionLocation, processSecurityAlert } from "./services/security
 
 // ── Monitoreo de sesiones ─────────────────────────────────────────────────────
 const MAX_SESSION_HOURS = 8;
+const ABSOLUTE_SESSION_HOURS = 12;
+const IDLE_SESSION_MINUTES = 30;
+const ACTIVITY_UPDATE_SECONDS = 60;
 const UNAUTHORIZED_IP_ALLOWED_ATTEMPTS = 3;
 const UNAUTHORIZED_IP_WINDOW_HOURS = 24;
 const LOGIN_CODE_MINUTES = 10;
@@ -238,6 +241,102 @@ async function closeLoginSession(sessionId: string) {
   }
 }
 
+type SessionExpiryReason = "idle_timeout" | "absolute_timeout";
+
+async function expireLoginSession(sessionId: string, reason: SessionExpiryReason) {
+  const note = reason === "idle_timeout"
+    ? `Sesión cerrada automáticamente después de ${IDLE_SESSION_MINUTES} minutos sin actividad`
+    : `Sesión cerrada automáticamente al alcanzar el límite máximo de ${ABSOLUTE_SESSION_HOURS} horas`;
+
+  await db.execute(sql`
+    UPDATE user_sessions_log
+    SET is_active = false,
+        logout_at = now(),
+        duration_minutes = EXTRACT(EPOCH FROM (now() - login_at)) / 60,
+        alert_type = ${reason}::text,
+        alert_note = CONCAT_WS(' | '::text, alert_note, ${note}::text)
+    WHERE session_id = ${sessionId} AND is_active = true
+  `);
+}
+
+async function enforceAuthenticatedSessionActivity(req: Request, res: Response, next: NextFunction) {
+  if (!req.isAuthenticated?.() || !req.sessionID) return next();
+
+  try {
+    const result = await db.execute(sql`
+      SELECT login_at, last_activity_at
+      FROM user_sessions_log
+      WHERE session_id = ${req.sessionID} AND is_active = true
+      ORDER BY login_at DESC
+      LIMIT 1
+    `);
+    const sessionRecord = (result as any).rows?.[0];
+
+    if (!sessionRecord) {
+      req.logout((logoutError) => {
+        if (logoutError) {
+          logger.error({ err: logoutError }, "[SESSION] Error cerrando sesión revocada");
+        }
+        req.session.destroy((destroyError) => {
+          if (destroyError) {
+            logger.error({ err: destroyError }, "[SESSION] Error destruyendo sesión revocada");
+          }
+          res.clearCookie("connect.sid");
+          return res.status(401).json({
+            error: "Esta sesión ya no está activa. Inicia sesión nuevamente.",
+            code: "SESSION_REVOKED",
+          });
+        });
+      });
+      return;
+    }
+
+    const now = Date.now();
+    const loginAt = new Date(sessionRecord.login_at).getTime();
+    const lastActivityAt = new Date(sessionRecord.last_activity_at || sessionRecord.login_at).getTime();
+    const absoluteExpired = now - loginAt >= ABSOLUTE_SESSION_HOURS * 60 * 60 * 1000;
+    const idleExpired = now - lastActivityAt >= IDLE_SESSION_MINUTES * 60 * 1000;
+
+    if (absoluteExpired || idleExpired) {
+      const reason: SessionExpiryReason = absoluteExpired ? "absolute_timeout" : "idle_timeout";
+      await expireLoginSession(req.sessionID, reason);
+
+      req.logout((logoutError) => {
+        if (logoutError) {
+          logger.error({ err: logoutError }, "[SESSION] Error cerrando sesión vencida");
+        }
+        req.session.destroy((destroyError) => {
+          if (destroyError) {
+            logger.error({ err: destroyError }, "[SESSION] Error destruyendo sesión vencida");
+          }
+          res.clearCookie("connect.sid");
+          return res.status(401).json({
+            error: reason === "idle_timeout"
+              ? "Tu sesión se cerró por inactividad."
+              : "Tu sesión alcanzó el tiempo máximo permitido.",
+            code: reason === "idle_timeout" ? "SESSION_IDLE_TIMEOUT" : "SESSION_ABSOLUTE_TIMEOUT",
+          });
+        });
+      });
+      return;
+    }
+
+    const isExplicitActivityHeartbeat = req.method === "POST" && req.path === "/api/session/activity";
+    if (isExplicitActivityHeartbeat && now - lastActivityAt >= ACTIVITY_UPDATE_SECONDS * 1000) {
+      await db.execute(sql`
+        UPDATE user_sessions_log
+        SET last_activity_at = now()
+        WHERE session_id = ${req.sessionID} AND is_active = true
+      `);
+    }
+
+    return next();
+  } catch (error) {
+    logger.error({ error }, "[SESSION] Error validando actividad; se conserva la sesión");
+    return next();
+  }
+}
+
 function requiresTwoFactor(role: string): boolean {
   // Todos los roles tienen MFA salvo Super Admin, Trabajador y Técnico Mecánico.
   return !["superadmin", "trabajador", "tecnico_mecanico"].includes(role);
@@ -389,6 +488,7 @@ export function setupAuth(app: Express) {
   app.use(sessionMiddleware);
   app.use(passport.initialize());
   app.use(passport.session());
+  app.use(enforceAuthenticatedSessionActivity);
 
   passport.use(
     new LocalStrategy(async (username, password, done) => {
@@ -851,6 +951,16 @@ export function setupAuth(app: Express) {
       if (err) return next(err);
       await closeLoginSession(sessionId);
       res.sendStatus(200);
+    });
+  });
+
+  app.post("/api/session/activity", (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    return res.status(200).json({
+      active: true,
+      idleTimeoutMinutes: IDLE_SESSION_MINUTES,
+      warningMinutes: 2,
+      absoluteTimeoutHours: ABSOLUTE_SESSION_HOURS,
     });
   });
 
