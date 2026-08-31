@@ -8,7 +8,7 @@ export function Footer() {
         <div className="flex flex-col md:flex-row items-center justify-between gap-2 text-xs text-muted-foreground">
           <div className="flex items-center gap-1">
             <Shield className="h-3 w-3" />
-            <span>© 2026 SST Colombia | Registro DNDA 13-197-177 | v4.0.0</span>
+            <span>© 2026 SST Colombia | Registro DNDA 13-197-177 | v4.1.0</span>
           </div>
           
           <div className="flex flex-wrap items-center justify-center gap-3 md:gap-4">
@@ -67,7 +67,7 @@ export function FooterMinimal() {
   return (
     <footer className="bg-muted/50 border-t py-2 px-4 text-center text-xs text-muted-foreground">
       <div className="flex flex-wrap items-center justify-center gap-2">
-        <span>© 2026 SST Colombia | DNDA 13-197-177 | v4.0.0</span>
+        <span>© 2026 SST Colombia | DNDA 13-197-177 | v4.1.0</span>
         <span className="hidden sm:inline">|</span>
         <div className="flex items-center gap-2">
           <Link 
