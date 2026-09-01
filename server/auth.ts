@@ -24,6 +24,9 @@ const UNAUTHORIZED_IP_ALLOWED_ATTEMPTS = 3;
 const UNAUTHORIZED_IP_WINDOW_HOURS = 24;
 const LOGIN_CODE_MINUTES = 10;
 const LOGIN_CODE_MAX_ATTEMPTS = 5;
+// La empresa demo interna usa inicio de sesión directo para las demostraciones.
+// Mantener esta excepción limitada a su ID evita desactivar MFA para otros clientes.
+const MFA_EXEMPT_COMPANY_IDS = new Set(["demo-company-001"]);
 
 function normalizeClientIp(value: string | string[] | undefined): string {
   const raw = Array.isArray(value) ? value[0] : value;
@@ -320,10 +323,13 @@ async function enforceAuthenticatedSessionActivity(req: Request, res: Response, 
   }
 }
 
-function requiresTwoFactor(role: string): boolean {
+function requiresTwoFactor(role: string, companyId?: string | null): boolean {
   // En desarrollo se omite MFA para facilitar las pruebas locales.
   // El entorno de producción siempre conserva la verificación de dos pasos.
   if (process.env.NODE_ENV === "development") return false;
+
+  // Excepción únicamente para la empresa interna DEMO-PRUEBA.
+  if (companyId && MFA_EXEMPT_COMPANY_IDS.has(companyId)) return false;
 
   // Todos los roles tienen MFA salvo Super Admin, Trabajador y Técnico Mecánico.
   return !["superadmin", "trabajador", "tecnico_mecanico"].includes(role);
@@ -783,7 +789,7 @@ export function setupAuth(app: Express) {
         logger.error({ securityError, userId: user.id }, "IP security evaluation failed; continuing login");
       }
 
-      if (requiresTwoFactor(user.role)) {
+      if (requiresTwoFactor(user.role, user.companyId)) {
         const challenge = await createLoginVerificationChallenge(user, "main");
         if ("error" in challenge) {
           return res.status(400).json({ error: challenge.error, code: "MFA_EMAIL_REQUIRED" });
@@ -839,7 +845,7 @@ export function setupAuth(app: Express) {
         logger.error({ securityError, userId: user.id }, "Support IP security evaluation failed; continuing login");
       }
 
-      if (requiresTwoFactor(user.role)) {
+      if (requiresTwoFactor(user.role, user.companyId)) {
         const challenge = await createLoginVerificationChallenge(user, "support");
         if ("error" in challenge) {
           return res.status(400).json({ error: challenge.error, code: "MFA_EMAIL_REQUIRED" });
@@ -896,7 +902,7 @@ export function setupAuth(app: Express) {
       }
 
       const user = await storage.getUser(challenge.user_id);
-      if (!user || !requiresTwoFactor(user.role)) {
+      if (!user || !requiresTwoFactor(user.role, user.companyId)) {
         return res.status(400).json({ error: "La verificación ya no corresponde a una cuenta válida." });
       }
       if (challenge.channel === "support" && user.role !== "soporte") {
