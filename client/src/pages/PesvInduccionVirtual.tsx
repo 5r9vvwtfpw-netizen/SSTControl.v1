@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { Link } from "wouter";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,7 +18,7 @@ import { useCompanyContext } from "@/hooks/use-company-context";
 import {
   Plus, Pencil, Trash2, Video, FileText, BookOpen, GraduationCap, Eye, Send,
   Users, CheckCircle2, XCircle, Car, Loader2, UserPlus, UsersRound, Wand2,
-  ChevronUp, ChevronDown, Upload, File, ClipboardList, AlertCircle, Download,
+  ChevronUp, ChevronDown, Upload, File, ClipboardList, AlertCircle, Download, ArrowLeft,
 } from "lucide-react";
 import { getPlantillaPesv } from "@/data/induccion-plantillas-pesv";
 import type { ContenidoInduccion, PreguntaInduccion, SesionInduccionVirtual, Worker } from "@shared/schema";
@@ -378,6 +379,14 @@ export default function PesvInduccionVirtual() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          {/* Regreso al listado de evaluaciones PESV */}
+          <Link href="/pesv/evaluaciones">
+            <Button type="button" variant="outline" data-testid="button-back-pesv-evaluations">
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Volver a Evaluación PESV
+            </Button>
+          </Link>
+
           {/* Plantilla */}
           <Button variant="outline" onClick={() => setPlantillaDialogOpen(true)}>
             <Wand2 className="h-4 w-4 mr-2" />
