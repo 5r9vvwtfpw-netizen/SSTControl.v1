@@ -59,6 +59,13 @@ const ITEMS_INSPECCION = [
 
 type ItemKey = "tires" | "lights" | "mirrors" | "bodywork" | "seatbelts" | "horn" | "windshield" | "instruments" | "brakes" | "steering" | "suspension" | "fluids" | "fireExtinguisher" | "firstAidKit" | "reflectiveTriangles" | "safetyVest";
 
+type DriverVehicleAssignmentOption = {
+  vehicleId: string;
+  startDate: string;
+  endDate: string | null;
+  isActive: number;
+};
+
 const ALL_KEYS: ItemKey[] = ["tires","lights","mirrors","bodywork","seatbelts","horn","windshield","instruments","brakes","steering","suspension","fluids","fireExtinguisher","firstAidKit","reflectiveTriangles","safetyVest"];
 const CRITICAL_KEYS: ItemKey[] = ["tires","brakes","fireExtinguisher"];
 
@@ -133,6 +140,32 @@ export default function PesvInspeccionesEvaluacion() {
 
   const { data: drivers = [] } = useQuery<Driver[]>({
     queryKey: ["/api/drivers"],
+  });
+
+  const { data: driverVehicleAssignments = [] } = useQuery<DriverVehicleAssignmentOption[]>({
+    queryKey: ["/api/drivers", formData.driverId, "vehicle-assignments"],
+    queryFn: async () => {
+      const res = await fetch(`/api/drivers/${formData.driverId}/vehicle-assignments`, { credentials: "include" });
+      if (!res.ok) throw new Error("Error al consultar los vehículos asignados");
+      return res.json();
+    },
+    enabled: !!formData.driverId,
+  });
+
+  const activeAssignedVehicleIds = new Set(
+    driverVehicleAssignments
+      .filter((assignment) => {
+        const today = new Date().toISOString().slice(0, 10);
+        return assignment.isActive === 1
+          && assignment.startDate <= today
+          && (!assignment.endDate || assignment.endDate >= today);
+      })
+      .map((assignment) => assignment.vehicleId),
+  );
+  const availableInspectionVehicles = vehicles.filter((vehicle) => {
+    if (vehicle.status !== "activo") return false;
+    if (!formData.driverId || driverVehicleAssignments.length === 0) return true;
+    return activeAssignedVehicleIds.has(vehicle.id);
   });
 
   const createInspectionMutation = useMutation({
@@ -295,7 +328,7 @@ export default function PesvInspeccionesEvaluacion() {
                         <SelectValue placeholder="Seleccione vehículo" />
                       </SelectTrigger>
                       <SelectContent>
-                        {vehicles.filter(v => v.status === "activo").map((vehicle) => (
+                        {availableInspectionVehicles.map((vehicle) => (
                           <SelectItem key={vehicle.id} value={vehicle.id}>
                             {vehicle.plate} - {vehicle.brand} {vehicle.model}
                           </SelectItem>
@@ -307,7 +340,7 @@ export default function PesvInspeccionesEvaluacion() {
                     <Label htmlFor="driverId">Conductor *</Label>
                     <Select
                       value={formData.driverId}
-                      onValueChange={(value) => setFormData({ ...formData, driverId: value })}
+                      onValueChange={(value) => setFormData({ ...formData, driverId: value, vehicleId: "" })}
                     >
                       <SelectTrigger data-testid="select-driver">
                         <SelectValue placeholder="Seleccione conductor" />
@@ -320,6 +353,9 @@ export default function PesvInspeccionesEvaluacion() {
                         ))}
                       </SelectContent>
                     </Select>
+                    {formData.driverId && driverVehicleAssignments.length > 0 && availableInspectionVehicles.length === 0 && (
+                      <p className="text-xs text-amber-600">El conductor no tiene vehículos con asignación activa.</p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="inspectionDate">Fecha *</Label>

@@ -5661,7 +5661,10 @@ function InspeccionVehiculoPortalTab() {
   const [observations, setObservations] = useState("");
   const [correctiveActions, setCorrectiveActions] = useState("");
 
-  const { data: vehiculosData, isLoading: vehiculosLoading } = useQuery<{ vehiculos: VehiculoPortal[] }>({
+  const { data: vehiculosData, isLoading: vehiculosLoading } = useQuery<{
+    vehiculos: VehiculoPortal[];
+    assignmentMode: "assigned" | "fallback";
+  }>({
     queryKey: ["/api/portal/mis-vehiculos"],
   });
   const vehiculos = vehiculosData?.vehiculos || [];
@@ -5717,6 +5720,15 @@ function InspeccionVehiculoPortalTab() {
         </div>
       </div>
 
+      {vehiculosData?.assignmentMode === "fallback" && vehiculos.length > 0 && (
+        <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 p-3">
+          <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+          <p className="text-xs text-amber-800 dark:text-amber-300">
+            Aún no tiene vehículos asignados. Temporalmente se muestra la flota activa de la empresa para no bloquear su inspección.
+          </p>
+        </div>
+      )}
+
       {/* Ya enviada hoy */}
       {yaEnviada ? (
         <Card data-testid="card-inspeccion-ya-enviada">
@@ -5762,7 +5774,7 @@ function InspeccionVehiculoPortalTab() {
               {vehiculosLoading ? (
                 <Skeleton className="h-9 w-full" />
               ) : vehiculos.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No hay vehículos activos registrados en su empresa.</p>
+                <p className="text-sm text-muted-foreground">No hay vehículos activos asignados o registrados para realizar la inspección.</p>
               ) : (
                 <Select value={vehicleId} onValueChange={setVehicleId} data-testid="select-vehiculo-inspeccion">
                   <SelectTrigger id="vehiculo-select">

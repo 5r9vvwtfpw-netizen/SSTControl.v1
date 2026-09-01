@@ -71,6 +71,7 @@ import {
   insertSstEvidenceSchema,
   insertVehicleSchema,
   insertDriverSchema,
+  insertDriverVehicleAssignmentSchema,
   insertDriverComparendoSchema,
   insertVehicleInspectionSchema,
   insertRoadIncidentSchema,
@@ -9756,6 +9757,208 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error deleting driver:", error);
       res.status(500).json({ error: error.message || "Error al eliminar el conductor" });
+    }
+  });
+
+  // Driver ↔ Vehicle assignments (many-to-many with history)
+  app.get("/api/drivers/:driverId/vehicle-assignments", requireAuth, async (req, res) => {
+    try {
+      const userCompanyId = getEffectiveCompanyId(req);
+      const isAdmin = hasGlobalAccess(req.user!.role);
+      const driver = isAdmin
+        ? await storage.getDriverById(req.params.driverId)
+        : userCompanyId
+          ? await storage.getDriver(req.params.driverId, userCompanyId)
+          : undefined;
+
+      if (!driver) return res.status(404).json({ error: "Conductor no encontrado" });
+
+      const assignments = await db
+        .select({
+          id: schema.driverVehicleAssignments.id,
+          companyId: schema.driverVehicleAssignments.companyId,
+          driverId: schema.driverVehicleAssignments.driverId,
+          vehicleId: schema.driverVehicleAssignments.vehicleId,
+          startDate: schema.driverVehicleAssignments.startDate,
+          endDate: schema.driverVehicleAssignments.endDate,
+          isActive: schema.driverVehicleAssignments.isActive,
+          observations: schema.driverVehicleAssignments.observations,
+          createdAt: schema.driverVehicleAssignments.createdAt,
+          updatedAt: schema.driverVehicleAssignments.updatedAt,
+          vehiclePlate: schema.vehicles.plate,
+          vehicleBrand: schema.vehicles.brand,
+          vehicleModel: schema.vehicles.model,
+          vehicleYear: schema.vehicles.year,
+          vehicleStatus: schema.vehicles.status,
+        })
+        .from(schema.driverVehicleAssignments)
+        .innerJoin(schema.vehicles, eq(schema.driverVehicleAssignments.vehicleId, schema.vehicles.id))
+        .where(and(
+          eq(schema.driverVehicleAssignments.driverId, driver.id),
+          eq(schema.driverVehicleAssignments.companyId, driver.companyId),
+        ))
+        .orderBy(desc(schema.driverVehicleAssignments.isActive), desc(schema.driverVehicleAssignments.startDate));
+
+      res.json(assignments);
+    } catch (error: any) {
+      console.error("Error fetching driver vehicle assignments:", error);
+      res.status(500).json({ error: error.message || "Error al consultar las asignaciones" });
+    }
+  });
+
+  app.get("/api/vehicles/:vehicleId/driver-assignments", requireAuth, async (req, res) => {
+    try {
+      const userCompanyId = getEffectiveCompanyId(req);
+      const isAdmin = hasGlobalAccess(req.user!.role);
+      const vehicle = isAdmin
+        ? await storage.getVehicleById(req.params.vehicleId)
+        : userCompanyId
+          ? await storage.getVehicle(req.params.vehicleId, userCompanyId)
+          : undefined;
+
+      if (!vehicle) return res.status(404).json({ error: "Vehículo no encontrado" });
+
+      const assignments = await db
+        .select({
+          id: schema.driverVehicleAssignments.id,
+          companyId: schema.driverVehicleAssignments.companyId,
+          driverId: schema.driverVehicleAssignments.driverId,
+          vehicleId: schema.driverVehicleAssignments.vehicleId,
+          startDate: schema.driverVehicleAssignments.startDate,
+          endDate: schema.driverVehicleAssignments.endDate,
+          isActive: schema.driverVehicleAssignments.isActive,
+          observations: schema.driverVehicleAssignments.observations,
+          driverName: schema.drivers.name,
+          driverIdentificationNumber: schema.drivers.identificationNumber,
+          driverLicenseType: schema.drivers.licenseType,
+          driverStatus: schema.drivers.status,
+        })
+        .from(schema.driverVehicleAssignments)
+        .innerJoin(schema.drivers, eq(schema.driverVehicleAssignments.driverId, schema.drivers.id))
+        .where(and(
+          eq(schema.driverVehicleAssignments.vehicleId, vehicle.id),
+          eq(schema.driverVehicleAssignments.companyId, vehicle.companyId),
+        ))
+        .orderBy(desc(schema.driverVehicleAssignments.isActive), desc(schema.driverVehicleAssignments.startDate));
+
+      res.json(assignments);
+    } catch (error: any) {
+      console.error("Error fetching vehicle driver assignments:", error);
+      res.status(500).json({ error: error.message || "Error al consultar las asignaciones" });
+    }
+  });
+
+  app.post("/api/drivers/:driverId/vehicle-assignments", requirePermission("drivers:edit"), async (req, res) => {
+    try {
+      const userCompanyId = getEffectiveCompanyId(req);
+      const isAdmin = hasGlobalAccess(req.user!.role);
+      const driver = isAdmin
+        ? await storage.getDriverById(req.params.driverId)
+        : userCompanyId
+          ? await storage.getDriver(req.params.driverId, userCompanyId)
+          : undefined;
+
+      if (!driver) return res.status(404).json({ error: "Conductor no encontrado" });
+
+      const validated = insertDriverVehicleAssignmentSchema.parse({
+        ...req.body,
+        driverId: driver.id,
+        isActive: 1,
+      });
+      const vehicle = await storage.getVehicle(validated.vehicleId, driver.companyId);
+      if (!vehicle) {
+        return res.status(400).json({ error: "El vehículo no pertenece a la misma empresa del conductor" });
+      }
+      if (vehicle.status === "inactivo" || vehicle.status === "dado-de-baja") {
+        return res.status(400).json({ error: "No se puede asignar un vehículo inactivo o dado de baja" });
+      }
+
+      const [existing] = await db
+        .select({ id: schema.driverVehicleAssignments.id })
+        .from(schema.driverVehicleAssignments)
+        .where(and(
+          eq(schema.driverVehicleAssignments.companyId, driver.companyId),
+          eq(schema.driverVehicleAssignments.driverId, driver.id),
+          eq(schema.driverVehicleAssignments.vehicleId, vehicle.id),
+          eq(schema.driverVehicleAssignments.isActive, 1),
+        ))
+        .limit(1);
+      if (existing) {
+        return res.status(409).json({ error: "Este vehículo ya está asignado al conductor" });
+      }
+
+      const [assignment] = await db
+        .insert(schema.driverVehicleAssignments)
+        .values({
+          ...validated,
+          companyId: driver.companyId,
+          assignedBy: req.user!.id,
+          endDate: validated.endDate || null,
+          observations: validated.observations || null,
+        })
+        .returning();
+
+      res.status(201).json(assignment);
+    } catch (error: any) {
+      if (error?.code === "23505") {
+        return res.status(409).json({ error: "Este vehículo ya está asignado al conductor" });
+      }
+      res.status(400).json({ error: error.message || "No se pudo crear la asignación" });
+    }
+  });
+
+  app.patch("/api/drivers/:driverId/vehicle-assignments/:assignmentId", requirePermission("drivers:edit"), async (req, res) => {
+    try {
+      const userCompanyId = getEffectiveCompanyId(req);
+      const isAdmin = hasGlobalAccess(req.user!.role);
+      const driver = isAdmin
+        ? await storage.getDriverById(req.params.driverId)
+        : userCompanyId
+          ? await storage.getDriver(req.params.driverId, userCompanyId)
+          : undefined;
+
+      if (!driver) return res.status(404).json({ error: "Conductor no encontrado" });
+
+      const updateSchema = z.object({
+        endDate: z.string().nullable().optional(),
+        observations: z.string().max(1000).nullable().optional(),
+        isActive: z.number().int().min(0).max(1).optional(),
+      });
+      const validated = updateSchema.parse(req.body);
+
+      const [existing] = await db
+        .select()
+        .from(schema.driverVehicleAssignments)
+        .where(and(
+          eq(schema.driverVehicleAssignments.id, req.params.assignmentId),
+          eq(schema.driverVehicleAssignments.driverId, driver.id),
+          eq(schema.driverVehicleAssignments.companyId, driver.companyId),
+        ))
+        .limit(1);
+      if (!existing) return res.status(404).json({ error: "Asignación no encontrada" });
+
+      const isFinishing = validated.isActive === 0;
+      const endDate = isFinishing
+        ? (validated.endDate || new Date().toISOString().slice(0, 10))
+        : validated.endDate;
+      if (endDate && endDate < existing.startDate) {
+        return res.status(400).json({ error: "La fecha de finalización no puede ser anterior a la fecha de inicio" });
+      }
+
+      const [updated] = await db
+        .update(schema.driverVehicleAssignments)
+        .set({
+          ...(validated.observations !== undefined ? { observations: validated.observations || null } : {}),
+          ...(validated.isActive !== undefined ? { isActive: validated.isActive } : {}),
+          ...(endDate !== undefined ? { endDate: endDate || null } : {}),
+          updatedAt: new Date(),
+        })
+        .where(eq(schema.driverVehicleAssignments.id, existing.id))
+        .returning();
+
+      res.json(updated);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message || "No se pudo actualizar la asignación" });
     }
   });
 
@@ -43094,13 +43297,70 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     }
   });
 
-  // GET /api/portal/mis-vehiculos — vehículos activos de la empresa para el conductor
+  // GET /api/portal/mis-vehiculos — vehículos asignados activos del conductor
   app.get("/api/portal/mis-vehiculos", requireAuth, async (req, res) => {
     try {
       const user = req.user as schema.User;
       const companyId = user.companyId;
       if (!companyId) return res.status(403).json({ error: "Sin empresa asociada" });
 
+      let workerId = user.workerId;
+      if (!workerId && user.email) {
+        const worker = await storage.getWorkerByEmail(user.email, companyId);
+        if (worker) workerId = worker.id;
+      }
+
+      const [driverRecord] = workerId
+        ? await db
+            .select({ id: schema.drivers.id })
+            .from(schema.drivers)
+            .where(and(eq(schema.drivers.workerId, workerId), eq(schema.drivers.companyId, companyId)))
+            .limit(1)
+        : [];
+
+      const assignedVehicles = driverRecord
+        ? await db
+            .select({
+              id: schema.vehicles.id,
+              plate: schema.vehicles.plate,
+              brand: schema.vehicles.brand,
+              model: schema.vehicles.model,
+              year: schema.vehicles.year,
+              type: schema.vehicles.type,
+            })
+            .from(schema.driverVehicleAssignments)
+            .innerJoin(schema.vehicles, eq(schema.driverVehicleAssignments.vehicleId, schema.vehicles.id))
+            .where(and(
+              eq(schema.driverVehicleAssignments.companyId, companyId),
+              eq(schema.driverVehicleAssignments.driverId, driverRecord.id),
+              eq(schema.driverVehicleAssignments.isActive, 1),
+              eq(schema.vehicles.status, "activo"),
+              sql`${schema.driverVehicleAssignments.startDate} <= CURRENT_DATE`,
+              sql`(${schema.driverVehicleAssignments.endDate} IS NULL OR ${schema.driverVehicleAssignments.endDate} >= CURRENT_DATE)`,
+            ))
+            .orderBy(schema.vehicles.plate)
+        : [];
+
+      if (assignedVehicles.length > 0) {
+        return res.json({ vehiculos: assignedVehicles, assignmentMode: "assigned" });
+      }
+
+      const [hasAssignmentHistory] = driverRecord
+        ? await db
+            .select({ id: schema.driverVehicleAssignments.id })
+            .from(schema.driverVehicleAssignments)
+            .where(and(
+              eq(schema.driverVehicleAssignments.companyId, companyId),
+              eq(schema.driverVehicleAssignments.driverId, driverRecord.id),
+            ))
+            .limit(1)
+        : [];
+
+      if (hasAssignmentHistory) {
+        return res.json({ vehiculos: [], assignmentMode: "assigned" });
+      }
+
+      // Backward-compatible fallback only until this driver receives a first assignment.
       const vehiculos = await db
         .select({
           id: schema.vehicles.id,
@@ -43114,7 +43374,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         .where(and(eq(schema.vehicles.companyId, companyId), eq(schema.vehicles.status, "activo")))
         .orderBy(schema.vehicles.plate);
 
-      res.json({ vehiculos });
+      res.json({ vehiculos, assignmentMode: "fallback" });
     } catch (error: any) {
       console.error('[portal/mis-vehiculos]', error);
       res.status(500).json({ error: error.message });
@@ -43226,6 +43486,34 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         .where(and(eq(schema.vehicles.id, vehicleId), eq(schema.vehicles.companyId, companyId)))
         .limit(1);
       if (!vehicleCheck) return res.status(400).json({ error: "Vehículo no válido" });
+
+      const [hasActiveAssignments] = await db
+        .select({ id: schema.driverVehicleAssignments.id })
+        .from(schema.driverVehicleAssignments)
+        .where(and(
+          eq(schema.driverVehicleAssignments.companyId, companyId),
+          eq(schema.driverVehicleAssignments.driverId, driverRecord.id),
+          eq(schema.driverVehicleAssignments.isActive, 1),
+        ))
+        .limit(1);
+
+      if (hasActiveAssignments) {
+        const [validAssignment] = await db
+          .select({ id: schema.driverVehicleAssignments.id })
+          .from(schema.driverVehicleAssignments)
+          .where(and(
+            eq(schema.driverVehicleAssignments.companyId, companyId),
+            eq(schema.driverVehicleAssignments.driverId, driverRecord.id),
+            eq(schema.driverVehicleAssignments.vehicleId, vehicleId),
+            eq(schema.driverVehicleAssignments.isActive, 1),
+            sql`${schema.driverVehicleAssignments.startDate} <= CURRENT_DATE`,
+            sql`(${schema.driverVehicleAssignments.endDate} IS NULL OR ${schema.driverVehicleAssignments.endDate} >= CURRENT_DATE)`,
+          ))
+          .limit(1);
+        if (!validAssignment) {
+          return res.status(403).json({ error: "Este vehículo no está asignado actualmente al conductor" });
+        }
+      }
 
       // Auto-calcular resultado
       const toInt = (v: any) => Number(v) || 0;

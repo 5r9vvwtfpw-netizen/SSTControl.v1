@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Pencil, Trash2, ArrowLeft, FileDown, AlertTriangle } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, ArrowLeft, FileDown, AlertTriangle, Truck, Link2Off } from "lucide-react";
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +21,21 @@ import { BackToPesvEvaluationButton } from "@/components/BackToPesvEvaluationBut
 import { Link } from "wouter";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
 
+type DriverVehicleAssignmentRow = {
+  id: string;
+  driverId: string;
+  vehicleId: string;
+  startDate: string;
+  endDate: string | null;
+  isActive: number;
+  observations: string | null;
+  vehiclePlate: string;
+  vehicleBrand: string;
+  vehicleModel: string;
+  vehicleYear: number;
+  vehicleStatus: string;
+};
+
 export default function PesvConductores() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -30,6 +45,14 @@ export default function PesvConductores() {
   const [editingDriver, setEditingDriver] = useState<Driver | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [deletingDriverId, setDeletingDriverId] = useState<string | null>(null);
+  const [assignmentDriverId, setAssignmentDriverId] = useState<string | null>(null);
+  const [assignmentDriverName, setAssignmentDriverName] = useState("");
+  const [assignmentDialogOpen, setAssignmentDialogOpen] = useState(false);
+  const [assignmentForm, setAssignmentForm] = useState({
+    vehicleId: "",
+    startDate: new Date().toISOString().slice(0, 10),
+    observations: "",
+  });
 
   // Comparendos state
   const [comparendoDriverId, setComparendoDriverId] = useState<string | null>(null);
@@ -84,9 +107,77 @@ export default function PesvConductores() {
     enabled: !!comparendoDriverId,
   });
 
-  const { data: vehicles = [] } = useQuery<{ id: string; plate: string; brand: string; model: string }[]>({
+  const { data: vehicles = [] } = useQuery<{ id: string; plate: string; brand: string; model: string; year: number; status: string }[]>({
     queryKey: ["/api/vehicles"],
   });
+
+  const { data: vehicleAssignments = [], isLoading: assignmentsLoading } = useQuery<DriverVehicleAssignmentRow[]>({
+    queryKey: ["/api/drivers", assignmentDriverId, "vehicle-assignments"],
+    queryFn: async () => {
+      const res = await fetch(`/api/drivers/${assignmentDriverId}/vehicle-assignments`, { credentials: "include" });
+      if (!res.ok) throw new Error(await res.text());
+      return res.json();
+    },
+    enabled: !!assignmentDriverId,
+  });
+
+  const createAssignmentMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", `/api/drivers/${assignmentDriverId}/vehicle-assignments`, assignmentForm);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/drivers", assignmentDriverId, "vehicle-assignments"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/portal/mis-vehiculos"] });
+      setAssignmentForm({
+        vehicleId: "",
+        startDate: new Date().toISOString().slice(0, 10),
+        observations: "",
+      });
+      toast({ title: "Vehículo asignado", description: "La asignación quedó activa para el conductor." });
+    },
+    onError: (error: Error) => {
+      toast({ title: "No se pudo asignar", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const finishAssignmentMutation = useMutation({
+    mutationFn: async (assignmentId: string) => {
+      const res = await apiRequest("PATCH", `/api/drivers/${assignmentDriverId}/vehicle-assignments/${assignmentId}`, {
+        isActive: 0,
+        endDate: new Date().toISOString().slice(0, 10),
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/drivers", assignmentDriverId, "vehicle-assignments"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/portal/mis-vehiculos"] });
+      toast({ title: "Asignación finalizada", description: "El historial se conservó correctamente." });
+    },
+    onError: (error: Error) => {
+      toast({ title: "No se pudo finalizar", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const handleOpenAssignments = (driver: Driver) => {
+    setAssignmentDriverId(driver.id);
+    setAssignmentDriverName(driver.name);
+    setAssignmentDialogOpen(true);
+    setAssignmentForm({
+      vehicleId: "",
+      startDate: new Date().toISOString().slice(0, 10),
+      observations: "",
+    });
+  };
+
+  const activeAssignedVehicleIds = new Set(
+    vehicleAssignments.filter((assignment) => assignment.isActive === 1).map((assignment) => assignment.vehicleId),
+  );
+  const availableVehicles = vehicles.filter(
+    (vehicle) =>
+      (vehicle.status === "activo" || vehicle.status === "mantenimiento") &&
+      !activeAssignedVehicleIds.has(vehicle.id),
+  );
 
   const createComparendoMutation = useMutation({
     mutationFn: async (data: z.infer<typeof insertDriverComparendoSchema>) => {
@@ -682,6 +773,15 @@ export default function PesvConductores() {
                       >
                         <FileDown className="h-4 w-4" />
                       </Button>
+                       <Button
+                         variant="ghost"
+                         size="icon"
+                         onClick={() => handleOpenAssignments(driver)}
+                         title="Vehículos asignados"
+                         data-testid={`button-vehicle-assignments-${driver.id}`}
+                       >
+                         <Truck className="h-4 w-4" />
+                       </Button>
                       {isAdmin && (
                         <>
                           <Button
@@ -731,6 +831,158 @@ export default function PesvConductores() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={assignmentDialogOpen} onOpenChange={(open) => {
+        setAssignmentDialogOpen(open);
+        if (!open) {
+          setAssignmentDriverId(null);
+          setAssignmentDriverName("");
+        }
+      }}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Truck className="h-5 w-5" />
+              Vehículos asignados — {assignmentDriverName}
+            </DialogTitle>
+            <DialogDescription>
+              Un conductor puede tener varios vehículos activos. Al finalizar una asignación, el historial se conserva.
+            </DialogDescription>
+          </DialogHeader>
+
+          {isAdmin && (
+            <form
+              className="grid gap-4 rounded-lg border p-4 md:grid-cols-2"
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (assignmentForm.vehicleId) createAssignmentMutation.mutate();
+              }}
+            >
+              <div className="space-y-2">
+                <Label htmlFor="assignment-vehicle">Vehículo *</Label>
+                <Select
+                  value={assignmentForm.vehicleId}
+                  onValueChange={(vehicleId) => setAssignmentForm((current) => ({ ...current, vehicleId }))}
+                >
+                  <SelectTrigger id="assignment-vehicle" data-testid="select-assignment-vehicle">
+                    <SelectValue placeholder="Seleccione un vehículo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableVehicles.map((vehicle) => (
+                      <SelectItem key={vehicle.id} value={vehicle.id}>
+                        {vehicle.plate} — {vehicle.brand} {vehicle.model}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {availableVehicles.length === 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    No hay otros vehículos activos disponibles para asignar.
+                  </p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="assignment-start-date">Fecha de inicio *</Label>
+                <Input
+                  id="assignment-start-date"
+                  type="date"
+                  value={assignmentForm.startDate}
+                  onChange={(event) => setAssignmentForm((current) => ({ ...current, startDate: event.target.value }))}
+                  required
+                  data-testid="input-assignment-start-date"
+                />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="assignment-observations">Observaciones</Label>
+                <Textarea
+                  id="assignment-observations"
+                  value={assignmentForm.observations}
+                  onChange={(event) => setAssignmentForm((current) => ({ ...current, observations: event.target.value }))}
+                  placeholder="Turno, ruta habitual o condiciones de uso"
+                  data-testid="textarea-assignment-observations"
+                />
+              </div>
+              <div className="md:col-span-2 flex justify-end">
+                <Button
+                  type="submit"
+                  disabled={!assignmentForm.vehicleId || !assignmentForm.startDate || createAssignmentMutation.isPending}
+                  data-testid="button-create-vehicle-assignment"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  {createAssignmentMutation.isPending ? "Asignando..." : "Asignar vehículo"}
+                </Button>
+              </div>
+            </form>
+          )}
+
+          <div className="space-y-3">
+            <h4 className="font-semibold">Asignaciones e historial</h4>
+            {assignmentsLoading ? (
+              <p className="text-sm text-muted-foreground">Cargando asignaciones...</p>
+            ) : vehicleAssignments.length === 0 ? (
+              <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+                Este conductor todavía no tiene vehículos asignados.
+              </div>
+            ) : (
+              <div className="rounded-lg border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Vehículo</TableHead>
+                      <TableHead>Vigencia</TableHead>
+                      <TableHead>Estado</TableHead>
+                      <TableHead className="text-right">Acción</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {vehicleAssignments.map((assignment) => (
+                      <TableRow key={assignment.id}>
+                        <TableCell>
+                          <div className="font-medium">{assignment.vehiclePlate}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {assignment.vehicleBrand} {assignment.vehicleModel} · {assignment.vehicleYear}
+                          </div>
+                          {assignment.observations && (
+                            <div className="text-xs text-muted-foreground mt-1">{assignment.observations}</div>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          {assignment.startDate}
+                          <span className="mx-1">→</span>
+                          {assignment.endDate || "Actual"}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={assignment.isActive === 1 ? "default" : "secondary"}>
+                            {assignment.isActive === 1 ? "Activa" : "Finalizada"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {isAdmin && assignment.isActive === 1 && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                if (confirm(`¿Finalizar la asignación del vehículo ${assignment.vehiclePlate}?`)) {
+                                  finishAssignmentMutation.mutate(assignment.id);
+                                }
+                              }}
+                              disabled={finishAssignmentMutation.isPending}
+                              data-testid={`button-finish-assignment-${assignment.id}`}
+                            >
+                              <Link2Off className="h-4 w-4 mr-2" />
+                              Finalizar
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* ── Comparendos Dialog ─────────────────────────────────── */}
       <Dialog open={comparendoDialogOpen} onOpenChange={(open) => { setComparendoDialogOpen(open); if (!open) { setComparendoDriverId(null); resetComparendoForm(); } }}>

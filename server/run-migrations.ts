@@ -57,6 +57,7 @@ import { syncInduccionPesv } from './migrations/sync-induccion-pesv';
 import { syncSubscriptionExpiryWarningColumn } from './migrations/sync-subscription-expiry-warning-column';
 import { createLoginVerificationChallenges } from './migrations/create-login-verification-challenges';
 import { syncConvivenciaActasAttachmentColumns } from './migrations/sync-convivencia-actas-attachment-columns';
+import { createDriverVehicleAssignmentsTable } from './migrations/create-driver-vehicle-assignments';
 
 /**
  * Ejecuta migraciones de base de datos automáticamente
@@ -125,6 +126,7 @@ export async function runMigrations() {
     await syncInduccionPesv();
     await createLoginVerificationChallenges();
     await syncConvivenciaActasAttachmentColumns();
+    await createDriverVehicleAssignmentsTable();
     console.log('✅ Migraciones completadas exitosamente');
   } catch (error: any) {
     console.error('⚠️ Error en migraciones:', error.message);

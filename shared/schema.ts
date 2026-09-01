@@ -963,6 +963,24 @@ export const drivers = pgTable("drivers", {
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
 
+// Many-to-many assignment history between PESV drivers and vehicles
+export const driverVehicleAssignments = pgTable("driver_vehicle_assignments", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+  driverId: varchar("driver_id").notNull().references(() => drivers.id, { onDelete: "cascade" }),
+  vehicleId: varchar("vehicle_id").notNull().references(() => vehicles.id, { onDelete: "cascade" }),
+  startDate: date("start_date").notNull(),
+  endDate: date("end_date"),
+  isActive: integer("is_active").notNull().default(1),
+  observations: text("observations"),
+  assignedBy: varchar("assigned_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+}, (table) => ({
+  driverActiveIdx: index("driver_vehicle_assignments_driver_active_idx").on(table.companyId, table.driverId, table.isActive),
+  vehicleActiveIdx: index("driver_vehicle_assignments_vehicle_active_idx").on(table.companyId, table.vehicleId, table.isActive),
+}));
+
 // Pre-operational inspection status
 export const inspectionResultEnum = pgEnum("inspection_result", ["apto", "apto-con-observaciones", "no-apto"]);
 
@@ -1182,6 +1200,23 @@ export const insertDriverSchema = createInsertSchema(drivers)
   });
 export type InsertDriver = z.infer<typeof insertDriverSchema>;
 export type Driver = typeof drivers.$inferSelect;
+
+export const insertDriverVehicleAssignmentSchema = createInsertSchema(driverVehicleAssignments)
+  .omit({ id: true, companyId: true, assignedBy: true, createdAt: true, updatedAt: true })
+  .extend({
+    driverId: z.string().min(1, "Debe seleccionar un conductor"),
+    vehicleId: z.string().min(1, "Debe seleccionar un vehículo"),
+    startDate: z.string().min(1, "La fecha de inicio es obligatoria"),
+    endDate: z.string().nullable().optional(),
+    observations: z.string().max(1000).nullable().optional(),
+    isActive: z.number().int().min(0).max(1).optional().default(1),
+  })
+  .refine((data) => !data.endDate || data.endDate >= data.startDate, {
+    message: "La fecha de finalización no puede ser anterior a la fecha de inicio",
+    path: ["endDate"],
+  });
+export type InsertDriverVehicleAssignment = z.infer<typeof insertDriverVehicleAssignmentSchema>;
+export type DriverVehicleAssignment = typeof driverVehicleAssignments.$inferSelect;
 
 // Comparendo status enum
 export const comparendoStatusEnum = pgEnum("comparendo_status", ["pendiente", "pagado", "recurrido", "prescrito"]);
