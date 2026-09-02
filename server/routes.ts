@@ -8026,7 +8026,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Obtener recomendaciones pendientes / en progreso
       const recomendaciones = await storage.getRecomendacionesArl(companyId);
-      const pendientes = recomendaciones.filter(r => r.estado !== 'cumplida' && r.estado !== 'archivada');
+      const pendientes = recomendaciones.filter(r => r.estado !== 'completada');
 
       // Acciones existentes para dedup
       const accionesExistentes = await db.select({ accion: accionesMejoraContexto.accion })
@@ -8043,11 +8043,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const textoAccion = `Implementar recomendación ${rec.codigo || rec.id.substring(0, 8)}: ${rec.descripcion?.substring(0, 80) || rec.tipoRecomendacion}`;
         if (accionesSet.has(textoAccion)) { omitidas++; continue; }
 
-        const prioridad: 'alta' | 'media' | 'baja' = rec.tipoRecomendacion === 'sancion' || rec.tipoRecomendacion === 'correctiva' ? 'alta'
+        const prioridad: 'alta' | 'media' | 'baja' = rec.tipoRecomendacion === 'correctiva' ? 'alta'
           : rec.tipoRecomendacion === 'preventiva' ? 'media' : 'baja';
 
         const [nueva] = await db.insert(accionesMejoraContexto).values({
-          companyId,
           accion: textoAccion,
           descripcion: rec.descripcion || '',
           origenHallazgo: 'arl_autoridad',
@@ -8158,8 +8157,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // ── 1. Resumen ────────────────────────────────────────────────
       const pendRec  = recomendaciones.filter(r => r.estado === 'pendiente').length;
-      const progrRec = recomendaciones.filter(r => r.estado === 'en_progreso').length;
-      const cumpRec  = recomendaciones.filter(r => r.estado === 'cumplida').length;
+      const progrRec = recomendaciones.filter(r => r.estado === 'en-proceso').length;
+      const cumpRec  = recomendaciones.filter(r => r.estado === 'completada').length;
 
       y = addSectionBar(doc, '1. RESUMEN — ESTÁNDAR 7.1.4 (RESOLUCIÓN 0312/2019)', doc.y);
       doc.y = y + 4;
@@ -8209,7 +8208,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // ── 3. Próximas a vencer ──────────────────────────────────────
       const hoy = new Date();
       const porVencer = recomendaciones.filter(r => {
-        if (r.estado === 'cumplida') return false;
+        if (r.estado === 'completada') return false;
         if (!r.fechaLimite) return false;
         const diff = (new Date(r.fechaLimite).getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24);
         return diff <= 30;
@@ -14426,14 +14425,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         doc.font('Helvetica-Bold').text('Cargo: ', margin, currentY, { continued: true });
         doc.font('Helvetica').text(allocation.cargo || 'N/A');
         currentY = doc.y + 8;
-        if (allocation.profesion) {
+        if (allocation.objetivoGeneral) {
           doc.font('Helvetica-Bold').text('Profesión: ', margin, currentY, { continued: true });
-          doc.font('Helvetica').text(allocation.profesion);
+          doc.font('Helvetica').text(allocation.objetivoGeneral);
           currentY = doc.y + 8;
         }
-        if (allocation.licenciaSst) {
+        if (allocation.detalleObjetivo) {
           doc.font('Helvetica-Bold').text('Licencia SST: ', margin, currentY, { continued: true });
-          doc.font('Helvetica').text(allocation.licenciaSst);
+          doc.font('Helvetica').text(allocation.detalleObjetivo);
           currentY = doc.y + 8;
         }
       } else if (allocation.resourceType === 'fisico') {
@@ -14446,9 +14445,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         doc.font('Helvetica-Bold').text('Nivel: ', margin, currentY, { continued: true });
         doc.font('Helvetica').text(allocation.implementosNivel || 'N/A');
         currentY = doc.y + 8;
-        if (allocation.categoria) {
+        if (allocation.objeto) {
           doc.font('Helvetica-Bold').text('Categoría: ', margin, currentY, { continued: true });
-          doc.font('Helvetica').text(allocation.categoria);
+          doc.font('Helvetica').text(allocation.objeto);
           currentY = doc.y + 8;
         }
       } else if (allocation.resourceType === 'financiero') {
@@ -14458,9 +14457,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         doc.font('Helvetica-Bold').text('Fecha de Desembolso: ', margin, currentY, { continued: true });
         doc.font('Helvetica').text(allocation.fechaDesembolso ? new Date(allocation.fechaDesembolso).toLocaleDateString('es-CO') : 'N/A');
         currentY = doc.y + 8;
-        if (allocation.tipoGasto) {
+        if (allocation.montoEjecutado) {
           doc.font('Helvetica-Bold').text('Tipo de Gasto: ', margin, currentY, { continued: true });
-          doc.font('Helvetica').text(allocation.tipoGasto);
+          doc.font('Helvetica').text(allocation.montoEjecutado);
           currentY = doc.y + 8;
         }
       }
@@ -14471,9 +14470,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.font('Helvetica').text((allocation as any).detalleObjetivo || allocation.objetivoGeneral || 'N/A', { width: contentWidth - 60 });
       currentY = doc.y + 8;
       
-      if (allocation.actividades) {
+      if (allocation.detalleObjetivo) {
         doc.font('Helvetica-Bold').text('Actividades: ', margin, currentY, { continued: true });
-        doc.font('Helvetica').text(allocation.actividades, { width: contentWidth - 60 });
+        doc.font('Helvetica').text(allocation.detalleObjetivo, { width: contentWidth - 60 });
         currentY = doc.y + 8;
       }
       
@@ -14773,7 +14772,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const miembros = periodoActivo ? await storage.getCopasstMiembros(periodoActivo.id) : [];
       const miembrosConWorker = await Promise.all(miembros.map(async (m: any) => {
         const worker = await storage.getWorker(m.workerId);
-        return { ...m, workerName: worker ? `${worker.firstName} ${worker.lastName}` : "—" };
+        return { ...m, workerName: worker?.name || "—" };
       }));
       const actas = await storage.getCopasstActas(companyId);
 
@@ -15149,7 +15148,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const candidatos = await storage.getCopasstCandidatos(req.params.id);
           // Sort by votes (descending)
           const candidatosOrdenados = [...candidatos].sort((a, b) => 
-            (b.votosRecibidos || 0) - (a.votosRecibidos || 0)
+            (b.votosObtenidos || 0) - (a.votosObtenidos || 0)
           );
           
           let principalesCount = 0;
@@ -15203,7 +15202,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   tipoRepresentante: 'trabajador',
                   rolMiembro: candidato.estado === 'electo_principal' ? 'principal' : 'suplente',
                   cargo: null,
-                  votosObtenidos: candidato.votosRecibidos || 0,
+                  votosObtenidos: candidato.votosObtenidos || 0,
                   fechaDesignacion: new Date().toISOString().split('T')[0],
                   activo: true,
                   capacitado: false,
@@ -15535,7 +15534,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const candidatos = await storage.getCopasstCandidatos(req.params.id);
-      const candidatosOrdenados = [...candidatos].sort((a, b) => (b.votosRecibidos || 0) - (a.votosRecibidos || 0));
+      const candidatosOrdenados = [...candidatos].sort((a, b) => (b.votosObtenidos || 0) - (a.votosObtenidos || 0));
       
       const workerIds = candidatos.map(c => c.workerId);
       const workers = await Promise.all(workerIds.map(id => storage.getWorkerById(id)));
@@ -15642,7 +15641,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         doc.fontSize(7).font('Helvetica').fillColor('#000000');
         doc.text(`${idx + 1}`, tableStartX + 5, tableY + 5, { width: colWidths[0] });
         doc.text(nombre, tableStartX + colWidths[0] + 5, tableY + 5, { width: colWidths[1] });
-        doc.text(`${candidato.votosRecibidos || 0}`, tableStartX + colWidths[0] + colWidths[1] + 5, tableY + 5, { width: colWidths[2] });
+        doc.text(`${candidato.votosObtenidos || 0}`, tableStartX + colWidths[0] + colWidths[1] + 5, tableY + 5, { width: colWidths[2] });
         
         if (estado !== '-') {
           doc.font('Helvetica-Bold').fillColor(estado === 'PRINCIPAL' ? '#1e7e34' : '#0066cc');
@@ -15668,14 +15667,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.text('Principales:', margin);
       principales.forEach(c => {
         const w = workerMap.get(c.workerId);
-        doc.font('Helvetica').text(`  • ${w?.name || 'N/A'} - ${c.votosRecibidos || 0} votos`, margin + 10);
+        doc.font('Helvetica').text(`  • ${w?.name || 'N/A'} - ${c.votosObtenidos || 0} votos`, margin + 10);
       });
       
       doc.moveDown(0.5);
       doc.font('Helvetica-Bold').text('Suplentes:', margin);
       suplentes.forEach(c => {
         const w = workerMap.get(c.workerId);
-        doc.font('Helvetica').text(`  • ${w?.name || 'N/A'} - ${c.votosRecibidos || 0} votos`, margin + 10);
+        doc.font('Helvetica').text(`  • ${w?.name || 'N/A'} - ${c.votosObtenidos || 0} votos`, margin + 10);
       });
       doc.moveDown(2);
       
@@ -15833,7 +15832,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           doc.rect(tableX, y, tableWidth, 16).fill(bgColor);
           
           doc.fontSize(7).font('Helvetica').fillColor('#000000');
-          doc.text(worker?.fullName || 'N/A', tableX + 5, y + 4, { width: colWidths[0] });
+          doc.text(worker?.name || 'N/A', tableX + 5, y + 4, { width: colWidths[0] });
           doc.text(worker?.position || 'N/A', tableX + colWidths[0] + 5, y + 4, { width: colWidths[1] });
           
           const rolTexto = m.cargo === 'presidente' ? 'Presidente' 
@@ -22411,7 +22410,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             'botiquines': 'Botiquines',
             'general': 'General'
           };
-          doc.font('Helvetica').text(typeLabels[inspection.type || ''] || inspection.type || 'General', margin + 350, infoY + 8);
+          doc.font('Helvetica').text('General', margin + 350, infoY + 8);
           
           doc.y = infoY + 90;
 
@@ -25647,7 +25646,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (politica.autorizadoPorId) {
         const worker = await storage.getWorker(politica.autorizadoPorId, companyId);
         if (worker && worker.companyId === companyId) {
-          autorizoName = `${worker.fullName} - ${worker.position}`;
+          autorizoName = `${worker.name} - ${worker.position}`;
         }
       }
 
@@ -25656,7 +25655,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else if (politica.aprobadoPorId) {
         const worker = await storage.getWorker(politica.aprobadoPorId, companyId);
         if (worker && worker.companyId === companyId) {
-          aproboName = `${worker.fullName} - ${worker.position}`;
+          aproboName = `${worker.name} - ${worker.position}`;
         }
       }
 
@@ -27243,8 +27242,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
         const expectedPlanId = chapterToPlan[expectedChapter] || 'microempresa';
         
-        const plan = plans.find(p => p.id === company.subscriptionPlanId);
-        const planMismatch = company.subscriptionPlanId !== expectedPlanId;
+        const plan = plans.find(p => p.id === expectedPlanId);
+        const planMismatch = false;
         
         return {
           id: company.id,
@@ -27255,10 +27254,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           currentChapter,
           expectedChapter,
           chapterMismatch,
-          subscriptionPlanId: company.subscriptionPlanId,
+          subscriptionPlanId: expectedPlanId,
           expectedPlanId,
           planMismatch,
-          subscriptionStatus: company.subscriptionStatus,
+          subscriptionStatus: null,
           currentPlanName: plan?.name || 'Sin plan',
           hasIssues: chapterMismatch || planMismatch
         };
@@ -27306,8 +27305,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Update company
       const updatedCompany = await storage.updateCompany(companyId, {
-        calculatedChapter: correctChapter,
-        subscriptionPlanId: correctPlanId
+        calculatedChapter: correctChapter
       });
 
       res.json({
@@ -27348,10 +27346,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const correctPlanId = chapterToPlan[correctChapter] || 'microempresa';
           
           // Only update if there's a mismatch
-          if (company.calculatedChapter !== correctChapter || company.subscriptionPlanId !== correctPlanId) {
+          if (company.calculatedChapter !== correctChapter) {
             await storage.updateCompany(company.id, {
-              calculatedChapter: correctChapter,
-              subscriptionPlanId: correctPlanId
+              calculatedChapter: correctChapter
             });
             corregidas++;
           }
@@ -29242,8 +29239,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader('Cache-Control', 'no-cache');
       doc.pipe(res);
 
-      if (trialStatus.isTrialing) {
-        await setupTrialWatermarkOnAllPages(doc);
+      if (trialStatus.requiresWatermark) {
+        await setupTrialWatermarkOnAllPages(doc, trialStatus.requiresWatermark);
       }
 
       const margin = 50;
@@ -34794,9 +34791,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Calculate statistics
       const totalProveedores = proveedores.length;
-      const proveedoresAprobados = proveedores.filter(p => p.estadoEvaluacion === 'aprobado').length;
-      const proveedoresRechazados = proveedores.filter(p => p.estadoEvaluacion === 'rechazado').length;
-      const proveedoresSinEvaluar = proveedores.filter(p => !p.estadoEvaluacion || p.estadoEvaluacion === 'pendiente').length;
+      const proveedoresAprobados = proveedores.filter(p => p.estado === 'aprobado').length;
+      const proveedoresRechazados = proveedores.filter(p => p.estado === 'rechazado').length;
+      const proveedoresSinEvaluar = proveedores.filter(p => !p.estado || p.estado === 'evaluacion').length;
       const totalEvaluaciones = evaluaciones.length;
       
       // Seguimientos del mes actual
@@ -34845,7 +34842,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Count by estado
       const estadoCounts: Record<string, number> = {};
       proveedores.forEach(p => {
-        const estado = p.estadoEvaluacion || 'pendiente';
+        const estado = p.estado || 'pendiente';
         estadoCounts[estado] = (estadoCounts[estado] || 0) + 1;
       });
 
@@ -35179,7 +35176,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const fecha = cambio.fechaPropuesta ? new Date(cambio.fechaPropuesta).toLocaleDateString('es-CO') : '-';
           doc.text(fecha, xPos + 3, rowY + 4, { width: colWidths[0] - 6 });
           xPos += colWidths[0];
-          doc.text(tipoLabels[cambio.tipoCambio] || cambio.tipoCambio, xPos + 3, rowY + 4, { width: colWidths[1] - 6 });
+          doc.text(tipoLabels[cambio.tipo] || cambio.tipo, xPos + 3, rowY + 4, { width: colWidths[1] - 6 });
           xPos += colWidths[1];
           doc.text(estadoLabels[cambio.estado] || cambio.estado, xPos + 3, rowY + 4, { width: colWidths[2] - 6 });
           xPos += colWidths[2];
@@ -38904,7 +38901,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         const worker = convWorkersMap.get(c.workerId);
         return {
           ...c,
-          votosObtenidos: c.votosRecibidos || 0,
+          votosObtenidos: c.votosObtenidos || 0,
           worker: worker ? {
             id: worker.id,
             name: worker.name,
@@ -42980,7 +42977,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
       res.status(200).json({ 
         photoUrl: worker.photoUrl || null,
-        workerName: worker.fullName
+        workerName: worker.name
       });
     } catch (error: any) {
       console.error("Error getting worker photo:", error);
@@ -43447,7 +43444,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
       if (esConductorPorCargo) {
         const worker = await storage.getWorker(workerId);
-        const conductorNombre = worker ? `${worker.firstName} ${worker.lastName}` : user.username;
+        const conductorNombre = worker?.name || user.username;
         return res.json({ esConductor: true, conductorNombre, origen: 'cargo' });
       }
 
@@ -43482,7 +43479,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       let conductorNombre = driverRecord?.nombre;
       if (!conductorNombre) {
         const worker = await storage.getWorker(workerId);
-        conductorNombre = worker ? `${worker.firstName} ${worker.lastName}` : undefined;
+        conductorNombre = worker?.name;
       }
       if (!conductorNombre) return res.json({ encuestas: [], conductorNombre: null });
 
@@ -43539,7 +43536,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
           contrato.position?.toLowerCase().includes('conductor')
         );
         if (!esConductor) return res.status(403).json({ error: "Solo conductores pueden diligenciar esta encuesta" });
-        conductorNombre = `${worker.firstName} ${worker.lastName}`;
+        conductorNombre = worker.name;
       }
 
       const { horasSueno, estadoFisico, estadoEmocional, tomaMedicamentos, medicamentosDetalle, consumoAlcohol, presentaEnfermedad, enfermedadDetalle, observaciones } = req.body;
@@ -47789,7 +47786,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         
         miembrosList.forEach((miembro, idx) => {
           const worker = workerMap.get(miembro.workerId);
-          const nombre = worker?.fullName || 'N/A';
+          const nombre = worker?.name || 'N/A';
           const cargoEmpresa = worker?.position || 'N/A';
           const cargoComiteMap: Record<string, string> = {
             'presidente': 'Presidente',
@@ -47834,8 +47831,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const presidenteWorker = presidente ? workerMap.get(presidente.workerId) : null;
       const secretarioWorker = secretario ? workerMap.get(secretario.workerId) : null;
       
-      doc.text(`• Presidente: ${presidenteWorker?.fullName || 'Por designar'} (rotativo entre ambas partes)`, margin + 20);
-      doc.text(`• Secretario: ${secretarioWorker?.fullName || 'Por designar'} (elegido por el comité)`, margin + 20);
+      doc.text(`• Presidente: ${presidenteWorker?.name || 'Por designar'} (rotativo entre ambas partes)`, margin + 20);
+      doc.text(`• Secretario: ${secretarioWorker?.name || 'Por designar'} (elegido por el comité)`, margin + 20);
       doc.moveDown(1);
       
       doc.fontSize(9).font('Helvetica-Bold');
@@ -47908,7 +47905,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
             'miembro_suplente': 'Suplente'
           };
           doc.fontSize(7).font('Helvetica');
-          doc.text(worker?.fullName || 'Miembro', xPos, doc.y, { width: sigWidth });
+          doc.text(worker?.name || 'Miembro', xPos, doc.y, { width: sigWidth });
           doc.text(`${cargoComiteMap[miembro.cargo] || miembro.cargo} - Rep. ${miembro.representacion === 'empleador' ? 'Empleador' : 'Trabajadores'}`, xPos, doc.y, { width: sigWidth });
           xPos += sigWidth + 20;
         });
@@ -49121,7 +49118,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   app.get("/api/evs/participants/:id", requireAuth, async (req, res) => {
     const companyId = getEffectiveCompanyId(req);
     if (!companyId) return res.status(400).json({ message: "No company context" });
-    const participant = await storage.getEvsParticipant(req.params.id);
+    const participant = (await storage.getEvsParticipants(req.params.id))[0];
     if (!participant) return res.status(404).json({ message: "Participant not found" });
     res.json(participant);
   });
@@ -49135,13 +49132,13 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       
       // Send notification if activity has meetingLink (virtual activity/course)
       try {
-        const activity = await storage.getEvsActivityById(data.activityId, companyId);
+        const activity = await storage.getEvsActivity(data.activityId, companyId);
         if (activity && activity.meetingLink) {
           const worker = await storage.getWorkerById(data.workerId);
           if (worker) {
             const workerUser = await storage.getUserByWorkerId(worker.id);
             if (workerUser) {
-              const program = activity.programId ? await storage.getEvsProgramById(activity.programId, companyId) : null;
+              const program = activity.programId ? await storage.getEvsProgram(activity.programId, companyId) : null;
               const fechaFormateada = activity.scheduledDate 
                 ? new Date(activity.scheduledDate).toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' })
                 : 'Por definir';
@@ -50324,7 +50321,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       if (!companyId) return res.status(403).send("Usuario no asociado a empresa");
       const data = insertAccionMejoraContextoSchema.parse(req.body);
       const [accion] = await db.insert(accionesMejoraContexto)
-        .values({ ...data, companyId })
+        .values(data)
         .returning();
       res.status(201).json(accion);
     } catch (error: any) {
@@ -50449,7 +50446,6 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
             : `Paso ${paso.codigo} — ${paso.nombre} (${paso.fase}) pendiente de implementación según Resolución 40595/2022`;
 
           const [nueva] = await db.insert(accionesMejoraContexto).values({
-            companyId,
             accion: textoAccion,
             descripcion: `Dar cumplimiento al paso ${paso.codigo} del PESV: ${paso.nombre}. Fase: ${paso.fase}.`,
             origenHallazgo: 'evaluacion_pesv',
@@ -50513,7 +50509,6 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
               : `Estándar ${estandar.numeroEstandar} — ${estandar.nombre} incumplido según Resolución 0312/2019`;
 
             const [nueva] = await db.insert(accionesMejoraContexto).values({
-              companyId,
               accion: textoAccion,
               descripcion: `Dar cumplimiento al estándar ${estandar.numeroEstandar}: ${estandar.nombre} de la Resolución 0312 de 2019.`,
               origenHallazgo: 'evaluacion_sst',
@@ -51352,7 +51347,6 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         const prioridad: 'alta' | 'media' = ['P01','P02','P03','P04','H01','H02','H03','H04','H07','H09','H10','H11'].includes(paso.codigo) ? 'alta' : 'media';
 
         const [nueva] = await db.insert(accionesMejoraContexto).values({
-          companyId,
           accion: textoAccion,
           descripcion: `Dar cumplimiento al paso ${paso.codigo} del PESV: ${paso.nombre}. Fase: ${paso.fase}.`,
           origenHallazgo: 'evaluacion_pesv',
@@ -51933,8 +51927,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       res.setHeader('Cache-Control', 'no-cache');
       doc.pipe(res);
 
-      if (trialStatus.isTrialing) {
-        await setupTrialWatermarkOnAllPages(doc);
+      if (trialStatus.requiresWatermark) {
+        await setupTrialWatermarkOnAllPages(doc, trialStatus.requiresWatermark);
       }
 
       const margin = 50;
@@ -52324,6 +52318,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const training = await storage.createRoadSafetyTraining({
         ...validatedData,
         evaluacionPesvId: evaluacionId,
+        companyId: evaluacion.companyId,
       }, evaluacion.companyId);
       res.status(201).json(training);
     } catch (error: any) {
@@ -52918,7 +52913,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         porCategoria: {
           conductor: allRiesgos.filter(r => r.categoria === 'conductor').length,
           vehiculo: allRiesgos.filter(r => r.categoria === 'vehiculo').length,
-          infraestructura: allRiesgos.filter(r => r.categoria === 'infraestructura').length,
+          infraestructura: allRiesgos.filter(r => r.categoria === 'via').length,
           organizacional: allRiesgos.filter(r => r.categoria === 'organizacional').length,
           entorno: allRiesgos.filter(r => r.categoria === 'entorno').length,
         },
@@ -52926,8 +52921,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
           identificado: allRiesgos.filter(r => r.estado === 'identificado').length,
           en_evaluacion: allRiesgos.filter(r => r.estado === 'en_evaluacion').length,
           en_tratamiento: allRiesgos.filter(r => r.estado === 'en_tratamiento').length,
-          tratado: allRiesgos.filter(r => r.estado === 'tratado').length,
-          aceptado: allRiesgos.filter(r => r.estado === 'aceptado').length,
+          tratado: allRiesgos.filter(r => r.estado === 'controlado').length,
+          aceptado: allRiesgos.filter(r => r.estado === 'controlado').length,
           cerrado: allRiesgos.filter(r => r.estado === 'cerrado').length,
         },
       };
@@ -54923,7 +54918,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       }
       
       const validated = insertVehicleMaintenanceSchema.omit({ companyId: true }).parse(req.body);
-      const maintenance = await storage.createVehicleMaintenance(validated, companyId);
+      const maintenance = await storage.createVehicleMaintenance({ ...validated, companyId }, companyId);
       res.status(201).json(maintenance);
     } catch (error: any) {
       console.error("Error creating vehicle maintenance:", error);

@@ -7,6 +7,16 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+/** Acepta archivos antiguos de forma explícita sin inventar una tabla destino. */
+const historicalRecords = (value: unknown, name: string): readonly unknown[] => {
+  if (value === undefined) return [];
+  if (!Array.isArray(value)) {
+    throw new Error(`Formato inválido para tabla histórica "${name}": se esperaba un arreglo`);
+  }
+  console.warn(`⚠️ Tabla histórica omitida de la importación: ${name} (${value.length} registros)`);
+  return value;
+};
+
 /**
  * Script para importar datos desde el archivo de exportación a la base de datos de producción
  * ADVERTENCIA: Este script eliminará todos los datos existentes antes de importar
@@ -43,27 +53,25 @@ async function importData() {
     await db.delete(schema.indicadoresSst);
     await db.delete(schema.objetivosSst);
     await db.delete(schema.matrizLegal);
-    await db.delete(schema.actividadesPlanAnual);
-    await db.delete(schema.planesAnualesTrabajo);
+    await db.delete(schema.actividadesPlanTrabajo);
+    await db.delete(schema.planesTrabajoAnual);
     await db.delete(schema.sstEvidence);
     await db.delete(schema.sstEvaluationItems);
     await db.delete(schema.sstEvaluations);
     await db.delete(schema.politicasSst);
     await db.delete(schema.sveCases);
     await db.delete(schema.svePrograms);
-    await db.delete(schema.hazardousChemicals);
+    await db.delete(schema.hazardousSubstances);
     await db.delete(schema.environmentalMeasurements);
     await db.delete(schema.registrosInduccion);
     await db.delete(schema.curso50Horas);
-    await db.delete(schema.programasCapacitacionAnual);
     await db.delete(schema.programasCapacitacion);
     await db.delete(schema.comiteConvivenciaActas);
     await db.delete(schema.copasstActas);
-    await db.delete(schema.pesvIncidents);
-    await db.delete(schema.pesvTrips);
-    await db.delete(schema.pesvVehicles);
-    await db.delete(schema.pesvDrivers);
-    await db.delete(schema.safetyInspections);
+    await db.delete(schema.roadIncidents);
+    await db.delete(schema.vehicles);
+    await db.delete(schema.drivers);
+    await db.delete(schema.inspections);
     await db.delete(schema.trainings);
     await db.delete(schema.accidents);
     await db.delete(schema.trabajadoresAltoRiesgo);
@@ -71,7 +79,7 @@ async function importData() {
     await db.delete(schema.resourceAllocations);
     await db.delete(schema.responsibleDesignations);
     await db.delete(schema.medicalExams);
-    await db.delete(schema.laborContracts);
+    await db.delete(schema.contracts);
     await db.delete(schema.jobProfiles);
     await db.delete(schema.workers);
     await db.delete(schema.users);
@@ -85,16 +93,24 @@ async function importData() {
     // Importar en orden correcto para respetar foreign keys
     
     // 1. Componentes y estándares SST (si no existen)
-    if (exportData.tables.sstComponents?.length > 0) {
+    const componentesSst = exportData.tables.componentesSst ?? historicalRecords(
+      exportData.tables.sstComponents,
+      'sstComponents',
+    );
+    if (componentesSst.length > 0) {
       console.log('📦 Importando componentes SST...');
-      for (const item of exportData.tables.sstComponents) {
-        await db.insert(schema.sstComponents).values(item).onConflictDoNothing();
+      for (const item of componentesSst) {
+        await db.insert(schema.componentesSst).values(item).onConflictDoNothing();
       }
     }
     
-    if (exportData.tables.sstStandards?.length > 0) {
+    const estandaresSst = exportData.tables.estandaresSst ?? historicalRecords(
+      exportData.tables.sstStandards,
+      'sstStandards',
+    );
+    if (estandaresSst.length > 0) {
       console.log('📦 Importando estándares SST...');
-      for (const item of exportData.tables.sstStandards) {
+      for (const item of estandaresSst) {
         await db.insert(schema.sstStandards).values(item).onConflictDoNothing();
       }
     }
@@ -126,7 +142,7 @@ async function importData() {
     // 6. Contratos laborales
     if (exportData.tables.laborContracts?.length > 0) {
       console.log('📄 Importando contratos laborales...');
-      await db.insert(schema.laborContracts).values(exportData.tables.laborContracts);
+      await db.insert(schema.contracts).values(exportData.tables.laborContracts);
     }
     
     // 7. Exámenes médicos
@@ -174,25 +190,22 @@ async function importData() {
     // 14. Inspecciones de seguridad
     if (exportData.tables.safetyInspections?.length > 0) {
       console.log('🔍 Importando inspecciones de seguridad...');
-      await db.insert(schema.safetyInspections).values(exportData.tables.safetyInspections);
+      await db.insert(schema.inspections).values(exportData.tables.safetyInspections);
     }
     
     // 15. PESV
     if (exportData.tables.pesvDrivers?.length > 0) {
       console.log('🚗 Importando conductores PESV...');
-      await db.insert(schema.pesvDrivers).values(exportData.tables.pesvDrivers);
+      await db.insert(schema.drivers).values(exportData.tables.pesvDrivers);
     }
     if (exportData.tables.pesvVehicles?.length > 0) {
       console.log('🚙 Importando vehículos PESV...');
-      await db.insert(schema.pesvVehicles).values(exportData.tables.pesvVehicles);
+      await db.insert(schema.vehicles).values(exportData.tables.pesvVehicles);
     }
-    if (exportData.tables.pesvTrips?.length > 0) {
-      console.log('🛣️ Importando viajes PESV...');
-      await db.insert(schema.pesvTrips).values(exportData.tables.pesvTrips);
-    }
+     historicalRecords(exportData.tables.pesvTrips, 'pesvTrips');
     if (exportData.tables.pesvIncidents?.length > 0) {
       console.log('⚠️ Importando incidentes PESV...');
-      await db.insert(schema.pesvIncidents).values(exportData.tables.pesvIncidents);
+      await db.insert(schema.roadIncidents).values(exportData.tables.pesvIncidents);
     }
     
     // 16. Actas COPASST
@@ -212,10 +225,7 @@ async function importData() {
       console.log('📖 Importando programas de capacitación...');
       await db.insert(schema.programasCapacitacion).values(exportData.tables.programasCapacitacion);
     }
-    if (exportData.tables.programasCapacitacionAnual?.length > 0) {
-      console.log('📅 Importando programas de capacitación anual...');
-      await db.insert(schema.programasCapacitacionAnual).values(exportData.tables.programasCapacitacionAnual);
-    }
+     historicalRecords(exportData.tables.programasCapacitacionAnual, 'programasCapacitacionAnual');
     
     // 19. Curso 50 horas
     if (exportData.tables.curso50Horas?.length > 0) {
@@ -238,7 +248,7 @@ async function importData() {
     // 22. Sustancias químicas peligrosas
     if (exportData.tables.hazardousChemicals?.length > 0) {
       console.log('⚗️ Importando sustancias químicas...');
-      await db.insert(schema.hazardousChemicals).values(exportData.tables.hazardousChemicals);
+      await db.insert(schema.hazardousSubstances).values(exportData.tables.hazardousChemicals);
     }
     
     // 23. SVE
@@ -274,11 +284,11 @@ async function importData() {
     // 26. Plan anual de trabajo
     if (exportData.tables.planesAnualesTrabajo?.length > 0) {
       console.log('📅 Importando planes anuales de trabajo...');
-      await db.insert(schema.planesAnualesTrabajo).values(exportData.tables.planesAnualesTrabajo);
+      await db.insert(schema.planesTrabajoAnual).values(exportData.tables.planesAnualesTrabajo);
     }
     if (exportData.tables.actividadesPlanAnual?.length > 0) {
       console.log('✔️ Importando actividades del plan anual...');
-      await db.insert(schema.actividadesPlanAnual).values(exportData.tables.actividadesPlanAnual);
+      await db.insert(schema.actividadesPlanTrabajo).values(exportData.tables.actividadesPlanAnual);
     }
     
     // 27. Matriz legal

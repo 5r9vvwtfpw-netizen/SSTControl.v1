@@ -49,7 +49,7 @@ async function importDataSQL() {
     console.log('\n📥 Importando datos...');
     
     // Ejecutar el archivo SQL completo
-    await pool.query(sqlContent);
+    await (pool as unknown as { query(query: string): Promise<unknown> }).query(sqlContent);
     
     console.log('\n✅ Importación SQL completada exitosamente!');
     console.log(`📊 ${insertCount} registros procesados`);

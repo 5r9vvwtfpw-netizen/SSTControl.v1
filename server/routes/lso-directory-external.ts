@@ -226,7 +226,7 @@ export function registerLsoDirectoryExternalRoutes(app: Express) {
             const removalDateStr = new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' });
             const removalMsg = await storage.createInternalMessage({
               companyId, senderId: prevLso.id, senderName: 'Sistema SST Colombia', senderRole: 'superadmin',
-              receiverId: prevLso.id, receiverName: `${prevLso.firstName || ''} ${prevLso.lastName || ''}`.trim() || prevLso.username,
+              receiverId: prevLso.id, receiverName: prevLso.fullName || prevLso.username,
               receiverRole: prevLso.role, subject: `Finalización de asignación - ${company.name}`,
               content: `Le informamos que la empresa "${company.name}" (NIT: ${company.nit || 'N/A'}) ha finalizado su asignación como profesional licenciado responsable del SG-SST a partir del ${removalDateStr}. Un nuevo profesional ha sido asignado en su lugar. Los documentos que usted firmó durante su gestión permanecen válidos.`,
               priority: 'urgent', status: 'unread', relatedEntity: 'lso_assignment', relatedEntityId: existing.id,
@@ -234,7 +234,7 @@ export function registerLsoDirectoryExternalRoutes(app: Express) {
             try { notifyNewMessage(prevLso.id, prevLso.id, removalMsg.id); } catch (e) { /* ignore */ }
             if (prevLso.email) {
               await sendLsoRemovalNotificationEmail(prevLso.email, {
-                lsoName: `${prevLso.firstName || ''} ${prevLso.lastName || ''}`.trim() || prevLso.username,
+                lsoName: prevLso.fullName || prevLso.username,
                 companyName: company.name, companyNit: company.nit || 'N/A', removalDate: removalDateStr,
               });
             }
@@ -314,7 +314,7 @@ export function registerLsoDirectoryExternalRoutes(app: Express) {
             companyId: companyId,
             sstLicenseNumber: lsoData.licenseNumber || null,
             sstLicenseIssuer: lsoData.licenseIssuer || null,
-            sstLicenseExpiresAt: lsoData.licenseExpiry ? new Date(lsoData.licenseExpiry) : null,
+            sstLicenseExpiresAt: lsoData.licenseExpiry ? new Date(lsoData.licenseExpiry).toISOString().split('T')[0] : null,
             sstSignatureUrl: lsoData.signatureUrl || null,
             sstPhone: lsoData.phone || null,
           }).returning();
@@ -373,7 +373,7 @@ export function registerLsoDirectoryExternalRoutes(app: Express) {
             senderName: 'Sistema SST Colombia',
             senderRole: 'superadmin',
             receiverId: lsoUser.id,
-            receiverName: `${lsoUser.firstName || ''} ${lsoUser.lastName || ''}`.trim() || lsoUser.username,
+            receiverName: lsoUser.fullName || lsoUser.username,
             receiverRole: lsoUser.role,
             subject: `Nueva asignación - ${company.name}`,
             content: `Le informamos que ha sido asignado como profesional licenciado responsable del SG-SST para la empresa "${company.name}" (NIT: ${company.nit || 'N/A'}) a partir del ${assignDateStr}. Puede gestionar esta empresa desde la pestaña Empresas de su portal.`,
@@ -535,7 +535,7 @@ export function registerLsoDirectoryExternalRoutes(app: Express) {
             const removalDateStr = new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' });
             const delMsg = await storage.createInternalMessage({
               companyId, senderId: lsoUser.id, senderName: 'Sistema SST Colombia', senderRole: 'superadmin',
-              receiverId: lsoUser.id, receiverName: `${lsoUser.firstName || ''} ${lsoUser.lastName || ''}`.trim() || lsoUser.username,
+              receiverId: lsoUser.id, receiverName: lsoUser.fullName || lsoUser.username,
               receiverRole: lsoUser.role, subject: `Finalización de asignación - ${company.name}`,
               content: `Le informamos que la empresa "${company.name}" (NIT: ${company.nit || 'N/A'}) ha finalizado su asignación como profesional licenciado responsable del SG-SST a partir del ${removalDateStr}. Los documentos que usted firmó durante su gestión permanecen válidos. Puede consultar el historial de sus empresas anteriores en la pestaña Empresas de su portal.`,
               priority: 'urgent', status: 'unread', relatedEntity: 'lso_assignment', relatedEntityId: assignment.id,
@@ -543,7 +543,7 @@ export function registerLsoDirectoryExternalRoutes(app: Express) {
             try { notifyNewMessage(lsoUser.id, lsoUser.id, delMsg.id); } catch (e) { /* ignore */ }
             if (lsoUser.email) {
               await sendLsoRemovalNotificationEmail(lsoUser.email, {
-                lsoName: `${lsoUser.firstName || ''} ${lsoUser.lastName || ''}`.trim() || lsoUser.username,
+                lsoName: lsoUser.fullName || lsoUser.username,
                 companyName: company.name, companyNit: company.nit || 'N/A', removalDate: removalDateStr,
               });
             }

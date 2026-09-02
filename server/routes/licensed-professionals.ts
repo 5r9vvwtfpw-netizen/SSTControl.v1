@@ -50,7 +50,7 @@ async function notifyLsoRemoval(assignment: any, companyId: string) {
       senderName: 'Sistema SST Colombia',
       senderRole: 'superadmin',
       receiverId: lsoUser.id,
-      receiverName: `${lsoUser.firstName || ''} ${lsoUser.lastName || ''}`.trim() || lsoUser.username,
+      receiverName: lsoUser.fullName || lsoUser.username,
       receiverRole: lsoUser.role,
       subject: `Finalización de asignación - ${company.name}`,
       content: `Le informamos que la empresa "${company.name}" (NIT: ${company.nit || 'N/A'}) ha finalizado su asignación como profesional licenciado responsable del SG-SST a partir del ${removalDateStr}. Los documentos que usted firmó durante su gestión permanecen válidos. Puede consultar el historial de sus empresas anteriores en la pestaña Empresas de su portal.`,
@@ -63,7 +63,7 @@ async function notifyLsoRemoval(assignment: any, companyId: string) {
 
     if (lsoUser.email) {
       await sendLsoRemovalNotificationEmail(lsoUser.email, {
-        lsoName: `${lsoUser.firstName || ''} ${lsoUser.lastName || ''}`.trim() || lsoUser.username,
+        lsoName: lsoUser.fullName || lsoUser.username,
         companyName: company.name,
         companyNit: company.nit || 'N/A',
         removalDate: removalDateStr,
@@ -379,7 +379,7 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
               senderName: 'Sistema SST Colombia',
               senderRole: 'superadmin',
               receiverId: professional.id,
-              receiverName: `${professional.firstName || ''} ${professional.lastName || ''}`.trim() || professional.username,
+              receiverName: professional.fullName || professional.username,
               receiverRole: professional.role,
               subject: `Nueva asignación - ${company.name}`,
               content: `Le informamos que ha sido asignado nuevamente como profesional licenciado responsable del SG-SST para la empresa "${company.name}" (NIT: ${company.nit || 'N/A'}) a partir del ${assignDateStr}. Puede gestionar esta empresa desde la pestaña Empresas de su portal.`,
@@ -414,7 +414,7 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
           senderName: 'Sistema SST Colombia',
           senderRole: 'superadmin',
           receiverId: professional.id,
-          receiverName: `${professional.firstName || ''} ${professional.lastName || ''}`.trim() || professional.username,
+          receiverName: professional.fullName || professional.username,
           receiverRole: professional.role,
           subject: `Nueva asignación - ${company.name}`,
           content: `Le informamos que ha sido asignado como profesional licenciado responsable del SG-SST para la empresa "${company.name}" (NIT: ${company.nit || 'N/A'}) a partir del ${assignDateStr}. Puede gestionar esta empresa desde la pestaña Empresas de su portal.`,
@@ -626,13 +626,12 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
 
         try {
           const [sub] = await db.select({
-            status: schema.pricingPluginSubscriptions.subscriptionStatus,
-            blockedAt: schema.pricingPluginSubscriptions.blockedAt,
+             status: schema.subscriptions.status,
           })
-          .from(schema.pricingPluginSubscriptions)
-          .where(eq(schema.pricingPluginSubscriptions.companyId, empresa.id))
+           .from(schema.subscriptions)
+           .where(eq(schema.subscriptions.companyId, empresa.id))
           .limit(1);
-          if (sub && (sub.status === 'blocked' || sub.status === 'past_due') && sub.blockedAt) {
+           if (sub && sub.status === 'past_due') {
             subscriptionBlocked = true;
           }
         } catch {}
@@ -1052,7 +1051,7 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
         return res.status(400).json({ message: "Esta designación ya fue firmada" });
       }
 
-      const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.fullName || user.username;
+       const fullName = user.fullName || user.username;
 
       const [updated] = await db.update(schema.responsibleDesignations)
         .set({

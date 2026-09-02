@@ -107,7 +107,9 @@ SET session_replication_role = 'replica';
     for (const tableName of TABLES) {
       console.log(`📦 Exportando ${tableName}...`);
       
-      const result = await pool.query(`SELECT * FROM ${tableName}`);
+      const result = await (pool as unknown as {
+        query(query: string): Promise<{ rows: Record<string, unknown>[] }>;
+      }).query(`SELECT * FROM ${tableName}`);
       
       if (result.rows.length === 0) {
         console.log(`   ⚠️  Sin datos en ${tableName}`);

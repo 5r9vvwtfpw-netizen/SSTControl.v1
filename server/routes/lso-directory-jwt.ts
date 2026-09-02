@@ -206,7 +206,7 @@ router.post("/assign", requireAuth, async (req: Request, res: Response) => {
           const removalDateStr = new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' });
           const jwtRemovalMsg = await storage.createInternalMessage({
             companyId, senderId: prevLso.id, senderName: 'Sistema SST Colombia', senderRole: 'superadmin',
-            receiverId: prevLso.id, receiverName: `${prevLso.firstName || ''} ${prevLso.lastName || ''}`.trim() || prevLso.username,
+            receiverId: prevLso.id, receiverName: prevLso.fullName || prevLso.username,
             receiverRole: prevLso.role, subject: `Finalización de asignación - ${company.name}`,
             content: `Le informamos que la empresa "${company.name}" (NIT: ${company.nit || 'N/A'}) ha finalizado su asignación como profesional licenciado responsable del SG-SST a partir del ${removalDateStr}. Un nuevo profesional ha sido asignado en su lugar. Los documentos que usted firmó durante su gestión permanecen válidos.`,
             priority: 'urgent', status: 'unread', relatedEntity: 'lso_assignment', relatedEntityId: existing.id,
@@ -214,7 +214,7 @@ router.post("/assign", requireAuth, async (req: Request, res: Response) => {
           try { notifyNewMessage(prevLso.id, prevLso.id, jwtRemovalMsg.id); } catch (e) { /* ignore */ }
           if (prevLso.email) {
             await sendLsoRemovalNotificationEmail(prevLso.email, {
-              lsoName: `${prevLso.firstName || ''} ${prevLso.lastName || ''}`.trim() || prevLso.username,
+              lsoName: prevLso.fullName || prevLso.username,
               companyName: company.name, companyNit: company.nit || 'N/A', removalDate: removalDateStr,
             });
           }
@@ -289,7 +289,7 @@ router.post("/assign", requireAuth, async (req: Request, res: Response) => {
           companyId: companyId,
           sstLicenseNumber: lso.licenseNumber || null,
           sstLicenseIssuer: lso.licenseIssuer || null,
-          sstLicenseExpiresAt: lso.licenseExpiry ? new Date(lso.licenseExpiry) : null,
+          sstLicenseExpiresAt: lso.licenseExpiry ? new Date(lso.licenseExpiry).toISOString().split('T')[0] : null,
           sstSignatureUrl: lso.signatureUrl || null,
           sstPhone: lso.phone || null,
         }).returning();
@@ -346,7 +346,7 @@ router.post("/assign", requireAuth, async (req: Request, res: Response) => {
           senderName: 'Sistema SST Colombia',
           senderRole: 'superadmin',
           receiverId: lsoUser.id,
-          receiverName: `${lsoUser.firstName || ''} ${lsoUser.lastName || ''}`.trim() || lsoUser.username,
+          receiverName: lsoUser.fullName || lsoUser.username,
           receiverRole: lsoUser.role,
           subject: `Nueva asignación - ${company.name}`,
           content: `Le informamos que ha sido asignado como profesional licenciado responsable del SG-SST para la empresa "${company.name}" (NIT: ${company.nit || 'N/A'}) a partir del ${assignDateStr}. Puede gestionar esta empresa desde la pestaña Empresas de su portal.`,
@@ -414,7 +414,7 @@ router.delete("/unassign", requireAuth, async (req: Request, res: Response) => {
           const removalDateStr = new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' });
           const jwtDelMsg = await storage.createInternalMessage({
             companyId, senderId: lsoUser.id, senderName: 'Sistema SST Colombia', senderRole: 'superadmin',
-            receiverId: lsoUser.id, receiverName: `${lsoUser.firstName || ''} ${lsoUser.lastName || ''}`.trim() || lsoUser.username,
+            receiverId: lsoUser.id, receiverName: lsoUser.fullName || lsoUser.username,
             receiverRole: lsoUser.role, subject: `Finalización de asignación - ${company.name}`,
             content: `Le informamos que la empresa "${company.name}" (NIT: ${company.nit || 'N/A'}) ha finalizado su asignación como profesional licenciado responsable del SG-SST a partir del ${removalDateStr}. Los documentos que usted firmó durante su gestión permanecen válidos. Puede consultar el historial de sus empresas anteriores en la pestaña Empresas de su portal.`,
             priority: 'urgent', status: 'unread', relatedEntity: 'lso_assignment', relatedEntityId: assignment.id,
@@ -422,7 +422,7 @@ router.delete("/unassign", requireAuth, async (req: Request, res: Response) => {
           try { notifyNewMessage(lsoUser.id, lsoUser.id, jwtDelMsg.id); } catch (e) { /* ignore */ }
           if (lsoUser.email) {
             await sendLsoRemovalNotificationEmail(lsoUser.email, {
-              lsoName: `${lsoUser.firstName || ''} ${lsoUser.lastName || ''}`.trim() || lsoUser.username,
+              lsoName: lsoUser.fullName || lsoUser.username,
               companyName: company.name, companyNit: company.nit || 'N/A', removalDate: removalDateStr,
             });
           }
@@ -494,7 +494,7 @@ router.get("/current-assignment", requireAuth, async (req: Request, res: Respons
           course50HoursDate = lsoUser.sstCourse50HoursDate || null;
           if (!userLicenseNumber && lsoUser.sstLicenseNumber) userLicenseNumber = lsoUser.sstLicenseNumber;
           if (!userLicenseIssuer && lsoUser.sstLicenseIssuer) userLicenseIssuer = lsoUser.sstLicenseIssuer;
-          if (!userLicenseExpiry && lsoUser.sstLicenseExpiresAt) userLicenseExpiry = lsoUser.sstLicenseExpiresAt;
+          if (!userLicenseExpiry && lsoUser.sstLicenseExpiresAt) userLicenseExpiry = new Date(lsoUser.sstLicenseExpiresAt);
           if (!userSignatureUrl && lsoUser.sstSignatureUrl) userSignatureUrl = lsoUser.sstSignatureUrl;
           if (lsoUser.sstIdentificationNumber) {
             identificationNumber = lsoUser.sstIdentificationNumber;

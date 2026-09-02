@@ -7,6 +7,12 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+/** Conserva la forma del archivo para consumidores históricos sin consultar tablas inexistentes. */
+const historicalTable = (name: string): readonly unknown[] => {
+  console.warn(`⚠️ Tabla histórica omitida de la exportación: ${name}`);
+  return [];
+};
+
 /**
  * Script para exportar todos los datos de la base de datos de desarrollo
  * Los datos se exportan a un archivo JSON que puede ser importado en producción
@@ -47,7 +53,7 @@ async function exportData() {
     
     // 6. Contratos laborales
     console.log('📄 Exportando contratos laborales...');
-    exportData.tables.laborContracts = await db.select().from(schema.laborContracts);
+    exportData.tables.laborContracts = await db.select().from(schema.contracts);
     
     // 7. Exámenes médicos
     console.log('🏥 Exportando exámenes médicos...');
@@ -79,14 +85,14 @@ async function exportData() {
     
     // 14. Inspecciones de seguridad
     console.log('🔍 Exportando inspecciones de seguridad...');
-    exportData.tables.safetyInspections = await db.select().from(schema.safetyInspections);
+    exportData.tables.safetyInspections = await db.select().from(schema.inspections);
     
     // 15. PESV
     console.log('🚗 Exportando datos PESV...');
-    exportData.tables.pesvDrivers = await db.select().from(schema.pesvDrivers);
-    exportData.tables.pesvVehicles = await db.select().from(schema.pesvVehicles);
-    exportData.tables.pesvTrips = await db.select().from(schema.pesvTrips);
-    exportData.tables.pesvIncidents = await db.select().from(schema.pesvIncidents);
+    exportData.tables.pesvDrivers = await db.select().from(schema.drivers);
+    exportData.tables.pesvVehicles = await db.select().from(schema.vehicles);
+    exportData.tables.pesvTrips = historicalTable('pesvTrips');
+    exportData.tables.pesvIncidents = await db.select().from(schema.roadIncidents);
     
     // 16. Actas COPASST
     console.log('📝 Exportando actas COPASST...');
@@ -99,7 +105,7 @@ async function exportData() {
     // 18. Programas de capacitación
     console.log('📖 Exportando programas de capacitación...');
     exportData.tables.programasCapacitacion = await db.select().from(schema.programasCapacitacion);
-    exportData.tables.programasCapacitacionAnual = await db.select().from(schema.programasCapacitacionAnual);
+    exportData.tables.programasCapacitacionAnual = historicalTable('programasCapacitacionAnual');
     
     // 19. Curso 50 horas
     console.log('🎓 Exportando certificados curso 50 horas...');
@@ -115,7 +121,7 @@ async function exportData() {
     
     // 22. Sustancias químicas peligrosas
     console.log('⚗️ Exportando sustancias químicas...');
-    exportData.tables.hazardousChemicals = await db.select().from(schema.hazardousChemicals);
+    exportData.tables.hazardousChemicals = await db.select().from(schema.hazardousSubstances);
     
     // 23. SVE
     console.log('🔬 Exportando datos SVE...');
@@ -134,8 +140,8 @@ async function exportData() {
     
     // 26. Plan anual de trabajo
     console.log('📅 Exportando planes anuales de trabajo...');
-    exportData.tables.planesAnualesTrabajo = await db.select().from(schema.planesAnualesTrabajo);
-    exportData.tables.actividadesPlanAnual = await db.select().from(schema.actividadesPlanAnual);
+    exportData.tables.planesAnualesTrabajo = await db.select().from(schema.planesTrabajoAnual);
+    exportData.tables.actividadesPlanAnual = await db.select().from(schema.actividadesPlanTrabajo);
     
     // 27. Matriz legal
     console.log('⚖️ Exportando matriz legal...');
