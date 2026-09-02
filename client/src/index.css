@@ -2,6 +2,36 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Make the security-session history scrollbar easy to see and grab.
+   The history table is intentionally scrollable on its own because it can
+   contain up to 100 rows and is wider than the modal on smaller screens. */
+.security-session-scroll {
+  scrollbar-gutter: stable;
+  scrollbar-width: auto;
+  scrollbar-color: hsl(var(--muted-foreground)) hsl(var(--muted));
+}
+
+.security-session-scroll::-webkit-scrollbar {
+  width: 14px;
+  height: 14px;
+}
+
+.security-session-scroll::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+  border-left: 1px solid hsl(var(--border));
+}
+
+.security-session-scroll::-webkit-scrollbar-thumb {
+  min-height: 56px;
+  background: hsl(var(--muted-foreground) / 0.72);
+  border: 3px solid hsl(var(--muted));
+  border-radius: 9999px;
+}
+
+.security-session-scroll::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--foreground) / 0.72);
+}
+
 /* LIGHT MODE */
 :root {
   --button-outline: rgba(0,0,0, .10);

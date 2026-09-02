@@ -404,7 +404,7 @@ export default function AdminLoginActivity() {
       </Card>
 
       <Dialog open={!!selectedUser} onOpenChange={(open) => !open && setSelectedUser(null)}>
-        <DialogContent className="max-h-[92vh] w-[calc(100vw-1rem)] max-w-6xl overflow-x-hidden overflow-y-auto p-4 sm:p-6">
+        <DialogContent className="max-h-[96vh] w-[calc(100vw-1rem)] max-w-7xl overflow-x-hidden overflow-y-auto p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Shield className="h-5 w-5" />
@@ -502,7 +502,7 @@ export default function AdminLoginActivity() {
               ) : filteredSessions.length === 0 ? (
                 <div className="rounded-md border py-12 text-center text-muted-foreground">No hay sesiones para este filtro.</div>
               ) : (
-                <div className="max-h-[500px] overflow-auto rounded-md border">
+                <div className="security-session-scroll max-h-[min(68vh,620px)] overflow-x-auto overflow-y-scroll overscroll-contain rounded-md border">
                   <table className="w-full min-w-[860px] text-sm">
                     <thead className="sticky top-0 bg-background">
                       <tr className="border-b">
