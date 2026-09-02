@@ -276,7 +276,7 @@ export default function EvaluacionesPesv() {
     const searchLower = searchTerm.toLowerCase();
     return (
       evaluacion.anio.toString().includes(searchLower) ||
-      evaluacion.responsableNombre.toLowerCase().includes(searchLower) ||
+      (evaluacion.responsableNombre ?? "").toLowerCase().includes(searchLower) ||
       (evaluacion.observaciones?.toLowerCase().includes(searchLower) ?? false)
     );
   });
@@ -320,7 +320,7 @@ export default function EvaluacionesPesv() {
     for (const key of Object.keys(grouped)) {
       const evs = grouped[key].evaluaciones;
       evs.sort((a, b) => b.anio - a.anio || b.mes - a.mes);
-      grouped[key].latestScore = evs[0]?.porcentajeCumplimiento ?? 0;
+      grouped[key].latestScore = Number(evs[0]?.porcentajeCumplimiento ?? 0);
       grouped[key].latestNivel = evs[0]?.nivel || "basico";
       grouped[key].years.sort((a, b) => b - a);
     }
@@ -332,7 +332,7 @@ export default function EvaluacionesPesv() {
     const lower = searchTerm.toLowerCase();
     return companyVaults.filter(v =>
       v.companyName.toLowerCase().includes(lower) ||
-      v.evaluaciones.some(e => e.responsableNombre.toLowerCase().includes(lower))
+       v.evaluaciones.some(e => (e.responsableNombre ?? "").toLowerCase().includes(lower))
     );
   }, [companyVaults, searchTerm]);
 
@@ -354,7 +354,7 @@ export default function EvaluacionesPesv() {
       const lower = searchTerm.toLowerCase();
       evs = evs.filter(e =>
         e.anio.toString().includes(lower) ||
-        e.responsableNombre.toLowerCase().includes(lower) ||
+         (e.responsableNombre ?? "").toLowerCase().includes(lower) ||
         (e.observaciones?.toLowerCase().includes(lower) ?? false)
       );
     }
@@ -500,7 +500,7 @@ export default function EvaluacionesPesv() {
                   render={({ field }) => (
                     <FormItem className="hidden">
                       <FormControl>
-                        <Input type="hidden" {...field} />
+                         <Input type="hidden" {...field} value={field.value ?? undefined} />
                       </FormControl>
                     </FormItem>
                   )}
@@ -511,7 +511,7 @@ export default function EvaluacionesPesv() {
                   render={({ field }) => (
                     <FormItem className="hidden">
                       <FormControl>
-                        <Input type="hidden" {...field} />
+                         <Input type="hidden" {...field} value={field.value ?? undefined} />
                       </FormControl>
                     </FormItem>
                   )}
@@ -578,7 +578,7 @@ export default function EvaluacionesPesv() {
                     <FormItem>
                       <FormLabel>Responsable de la Evaluación</FormLabel>
                       <FormControl>
-                        <Input {...field} data-testid="input-responsable" />
+                         <Input {...field} value={field.value ?? ""} data-testid="input-responsable" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -592,7 +592,7 @@ export default function EvaluacionesPesv() {
                     <FormItem>
                       <FormLabel>Cargo</FormLabel>
                       <FormControl>
-                        <Input {...field} data-testid="input-cargo" />
+                         <Input {...field} value={field.value ?? ""} data-testid="input-cargo" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

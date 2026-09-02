@@ -31,6 +31,7 @@ export const userRoleEnum = pgEnum("user_role", [
   "responsable_sst",    // Responsable SST - Dueño de suscripción, gestiona su empresa
   "coordinador_salud",  // Coordinador de Salud Ocupacional - Datos médicos sensibles (Ley 1581/2012)
   "lso",                // Licenciado en Salud Ocupacional - Revisa y firma documentos SST
+  "lso_externo",        // Licenciado externo con acceso al portal asignado
   "coordinador_sst",    // Coordinador SST - Gestión SST, PESV, auditorías
   "coordinador_rrhh",   // Coordinador RRHH - Gestión trabajadores, capacitaciones
   "jefe_personal",      // Jefe Personal - Consulta y reportes
@@ -699,6 +700,8 @@ export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
 // Type for user roles
+// lso_externo is a portal role managed outside the database enum used for
+// internal users, but it is part of the authenticated request contract.
 export type UserRole = typeof userRoleEnum.enumValues[number];
 
 export const insertWorkerSchema = createInsertSchema(workers)

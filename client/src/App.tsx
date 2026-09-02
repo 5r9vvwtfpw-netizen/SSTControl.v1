@@ -277,7 +277,7 @@ function Router() {
     <Switch>
       <Route path="/" component={HomeGateway} />
       <ProtectedRoute path="/crear-empresa" component={CrearEmpresaCiiuFirst} />
-      <ProtectedRoute path="/dashboard" component={Dashboard} />
+      <ProtectedRoute path="/dashboard" component={() => <Dashboard />} />
       <ProtectedRoute path="/empresas/:id" component={CompanyDetail} />
       <ProtectedRoute path="/empresas" component={CompanyManagement} />
       <ProtectedRoute path="/usuarios" component={GestionUsuarios} />

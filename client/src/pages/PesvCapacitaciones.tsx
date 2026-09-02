@@ -211,6 +211,7 @@ export default function PesvCapacitaciones() {
       return;
     }
     createMutation.mutate({
+      companyId: user?.companyId ?? "",
       title: formData.title,
       description: formData.description || undefined,
       instructor: formData.instructor || undefined,

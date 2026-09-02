@@ -66,6 +66,7 @@ interface TrainingAttendee {
   workerId: string;
   companyId: string;
   createdAt: string;
+  confirmed?: boolean;
 }
 
 /** Auto-inserta ":" después de los primeros 2 dígitos mientras el usuario escribe */

@@ -255,7 +255,7 @@ export default function Trabajadores() {
     
     for (const contract of workerContracts) {
       if (contract.status === "activo") {
-        if (contract.endDate && (contract.contractType === "fijo" || contract.contractType === "temporal" || contract.contractType === "obra_labor" || contract.contractType === "ocasional" || contract.contractType === "aprendizaje")) {
+        if (contract.endDate && contract.contractType !== "indefinido") {
           const endDate = new Date(contract.endDate);
           endDate.setHours(0, 0, 0, 0);
           if (endDate < today) {
@@ -267,7 +267,7 @@ export default function Trabajadores() {
     }
     
     const hasExpiredContract = workerContracts.some(contract => {
-      if (contract.endDate && (contract.contractType === "fijo" || contract.contractType === "temporal" || contract.contractType === "obra_labor" || contract.contractType === "ocasional" || contract.contractType === "aprendizaje")) {
+      if (contract.endDate && contract.contractType !== "indefinido") {
         const endDate = new Date(contract.endDate);
         endDate.setHours(0, 0, 0, 0);
         return endDate < today;
@@ -790,6 +790,15 @@ export default function Trabajadores() {
       identificationNumber: cleanedCedula,
       endDate: formData.endDate || undefined,
       sedeId: formData.sedeId || null,
+      gender: ["masculino", "femenino", "otro", "prefiero_no_decir"].includes(formData.gender || "")
+        ? formData.gender as "masculino" | "femenino" | "otro" | "prefiero_no_decir"
+        : undefined,
+      educationLevel: ["ninguno", "primaria", "secundaria", "tecnico", "tecnologo", "profesional", "especializacion", "maestria", "doctorado"].includes(formData.educationLevel || "")
+        ? formData.educationLevel as "ninguno" | "primaria" | "secundaria" | "tecnico" | "tecnologo" | "profesional" | "especializacion" | "maestria" | "doctorado"
+        : undefined,
+      civilStatus: ["soltero", "casado", "union_libre", "divorciado", "viudo", "separado"].includes(formData.civilStatus || "")
+        ? formData.civilStatus as "soltero" | "casado" | "union_libre" | "divorciado" | "viudo" | "separado"
+        : undefined,
     };
     
     if (editingWorker) {
@@ -1501,7 +1510,7 @@ export default function Trabajadores() {
                           {editingWorker?.photoUrl && !photoLoadError ? (
                             <img 
                               src={`${editingWorker.photoUrl}${editingWorker.photoUrl.includes('?') ? '&' : '?'}t=${Date.now()}`} 
-                              alt={editingWorker.fullName || "Foto del trabajador"}
+                              alt={editingWorker.name || "Foto del trabajador"}
                               className="h-full w-full object-cover"
                               onError={() => setPhotoLoadError(true)}
                             />
@@ -1906,7 +1915,7 @@ export default function Trabajadores() {
                           {editingWorker.photoUrl && !photoLoadError ? (
                             <img 
                               src={`${editingWorker.photoUrl}${editingWorker.photoUrl.includes('?') ? '&' : '?'}t=${Date.now()}`} 
-                              alt={editingWorker.fullName || "Foto del trabajador"}
+                              alt={editingWorker.name || "Foto del trabajador"}
                               className="h-full w-full object-cover"
                               onError={() => setPhotoLoadError(true)}
                               data-testid="img-worker-contract-photo"
@@ -1916,7 +1925,7 @@ export default function Trabajadores() {
                           )}
                         </div>
                         <div className="flex flex-col gap-1">
-                          <p className="font-semibold" data-testid="text-worker-name-contract">{editingWorker.fullName}</p>
+                          <p className="font-semibold" data-testid="text-worker-name-contract">{editingWorker.name}</p>
                           <p className="text-sm text-muted-foreground">{editingWorker.identificationNumber}</p>
                           <p className="text-xs text-muted-foreground">
                             {editingWorker.photoUrl ? "Foto de carnet disponible" : "Sin foto — el trabajador puede subirla desde el Portal de Empleados"}
@@ -2800,8 +2809,9 @@ export default function Trabajadores() {
                 </div>
               ) : (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {filteredWorkers.map((worker) => (
-                    <WorkerCard
+                  {filteredWorkers.map((worker) => {
+                    const workerUserId = (worker as Worker & { userId?: string | null }).userId;
+                    return <WorkerCard
                       key={worker.id}
                       id={worker.id}
                       name={worker.name}
@@ -2810,17 +2820,17 @@ export default function Trabajadores() {
                       contract={worker.contractType}
                       startDate={formatDateShort(worker.startDate)}
                       status={worker.status}
-                      email={worker.email}
+                      email={worker.email ?? undefined}
                       photoUrl={worker.photoUrl}
-                      hasUserAccount={!!worker.userId}
+                      hasUserAccount={!!workerUserId}
                       contractStatus={getContractStatus(worker.id)}
                       sedeName={worker.sedeId ? sedeMap[worker.sedeId] : undefined}
                       onEdit={isAdmin ? () => handleEdit(worker) : undefined}
                       onDelete={isAdmin ? () => handleDelete(worker.id) : undefined}
-                      onCreatePortalAccess={isAdmin && worker.email && !worker.userId ? () => createPortalAccessMutation.mutate(worker.id) : undefined}
-                      onResendPortalCredentials={isAdmin && worker.email && !!worker.userId ? () => resendPortalCredentialsMutation.mutate(worker.id) : undefined}
+                      onCreatePortalAccess={isAdmin && worker.email && !workerUserId ? () => createPortalAccessMutation.mutate(worker.id) : undefined}
+                      onResendPortalCredentials={isAdmin && worker.email && !!workerUserId ? () => resendPortalCredentialsMutation.mutate(worker.id) : undefined}
                     />
-                  ))}
+                  })}
                 </div>
               )}
             </>

@@ -461,7 +461,7 @@ export function PeligroDialog({ open, onOpenChange, matrizId, peligro, prefillVa
                   <FormItem>
                     <FormLabel>Nº Personas Expuestas *</FormLabel>
                     <FormControl>
-                      <Input {...field} type="number" min="1" value={field.value ?? ''} onChange={(e) => field.onChange(e.target.value === '' ? '' : parseInt(e.target.value, 10))} onBlur={() => { if (field.value === '' || field.value == null) field.onChange(1); }} data-testid="input-personas" />
+                       <Input {...field} type="number" min="1" value={field.value ?? ''} onChange={(e) => field.onChange(e.target.value === '' ? undefined : parseInt(e.target.value, 10))} onBlur={() => { if (field.value == null) field.onChange(1); }} data-testid="input-personas" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

@@ -1103,7 +1103,7 @@ export default function ConservacionDocumentos() {
                           {...field} 
                           value={field.value ?? ''}
                           onChange={(e) => field.onChange(e.target.value === '' ? '' : parseInt(e.target.value, 10))}
-                          onBlur={() => { if (field.value === '' || field.value == null) field.onChange(20); }}
+                           onBlur={() => { if (field.value == null) field.onChange(20); }}
                           data-testid="input-retention-years" 
                         />
                       </FormControl>

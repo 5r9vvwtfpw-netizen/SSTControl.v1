@@ -23,6 +23,31 @@ export interface PeligroEspecificoSector {
   medidasControl: string[];
 }
 
+interface PeligroIdentificadoLegacy {
+  codigo: string;
+  nombre: string;
+  categoria: string;
+  descripcion: string;
+  fuenteGeneradora?: string;
+  actividadAsociada?: string;
+  riesgoPotencial: string;
+  efectosPosibles: string;
+  medidasControl: string[];
+}
+
+interface PeligroPorCIIURaw {
+  codigoCIIU: string;
+  descripcionCIIU: string;
+  nivelRiesgo: PeligroPorCIIU['nivelRiesgo'];
+  sector: string;
+  peligrosPrioritarios?: string[];
+  peligrosEspecificos?: PeligroEspecificoSector[];
+  peligrosIdentificados?: PeligroIdentificadoLegacy[];
+  normativaEspecifica?: NormativaEspecifica[];
+  eppRecomendado?: string[];
+  capacitacionesObligatorias?: string[];
+}
+
 export interface NormativaEspecifica {
   codigo: string;
   norma: string;
@@ -32,7 +57,7 @@ export interface NormativaEspecifica {
 
 // ==================== MAPEO CIIU → PELIGROS ====================
 
-export const peligrosPorCIIU: PeligroPorCIIU[] = [
+const peligrosPorCIIURaw: PeligroPorCIIURaw[] = [
   // ==================== SERVICIOS PERSONALES ====================
   {
     codigoCIIU: '9602',
@@ -15650,6 +15675,51 @@ export const peligrosPorCIIU: PeligroPorCIIU[] = [
   },
 
 ];
+
+function normalizarClasificacionPeligro(categoria: string): PeligroEspecificoSector['clasificacion'] {
+  const normalizada = categoria
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+
+  if (normalizada.includes('biolog')) return 'biologico';
+  if (normalizada.includes('fisic')) return 'fisico';
+  if (normalizada.includes('quimic')) return 'quimico';
+  if (normalizada.includes('psicosocial')) return 'psicosocial';
+  if (normalizada.includes('biomecan')) return 'biomecanico';
+  if (normalizada.includes('natural')) return 'fenomenos_naturales';
+  return 'condiciones_seguridad';
+}
+
+/**
+ * Algunos registros históricos usan `peligrosIdentificados` y un modelo de
+ * peligro ligeramente distinto al catálogo actual. Se normalizan aquí para
+ * que los consumidores trabajen con un único contrato.
+ */
+export const peligrosPorCIIU: PeligroPorCIIU[] = peligrosPorCIIURaw.map((entry) => {
+  const peligrosEspecificos = entry.peligrosEspecificos ?? (entry.peligrosIdentificados ?? []).map((peligro) => ({
+    codigo: peligro.codigo,
+    clasificacion: normalizarClasificacionPeligro(peligro.categoria),
+    peligro: peligro.nombre,
+    descripcion: peligro.descripcion,
+    riesgoPotencial: peligro.riesgoPotencial,
+    efectosPosibles: peligro.efectosPosibles,
+    medidasControl: peligro.medidasControl,
+  }));
+
+  return {
+    codigoCIIU: entry.codigoCIIU,
+    descripcionCIIU: entry.descripcionCIIU,
+    nivelRiesgo: entry.nivelRiesgo,
+    sector: entry.sector,
+    peligrosPrioritarios: entry.peligrosPrioritarios
+      ?? (entry.peligrosIdentificados ?? []).map((peligro) => peligro.codigo),
+    peligrosEspecificos,
+    normativaEspecifica: entry.normativaEspecifica ?? [],
+    eppRecomendado: entry.eppRecomendado ?? [],
+    capacitacionesObligatorias: entry.capacitacionesObligatorias ?? [],
+  };
+});
 
 // ==================== FUNCIONES DE BÚSQUEDA ====================
 

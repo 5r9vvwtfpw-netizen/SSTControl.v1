@@ -835,7 +835,7 @@ export default function ConfiguracionInduccion() {
                         type="number"
                         value={contenidoForm.duracionMinutos || ''}
                         onChange={(e) => setContenidoForm({ ...contenidoForm, duracionMinutos: e.target.value === '' ? '' : parseInt(e.target.value, 10) })}
-                        onBlur={(e) => { if (e.target.value === '' || contenidoForm.duracionMinutos === '') setContenidoForm(prev => ({ ...prev, duracionMinutos: 10 })); }}
+                         onBlur={(e) => { if (e.target.value === '' || contenidoForm.duracionMinutos == null) setContenidoForm(prev => ({ ...prev, duracionMinutos: 10 })); }}
                       />
                     </div>
                     <div className="space-y-2">

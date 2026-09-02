@@ -170,6 +170,7 @@ export default function MedicionesAmbientales() {
     
     createMeasurementMutation.mutate({
       ...formData,
+      measurementDate: new Date(formData.measurementDate),
       legalLimit: formData.legalLimit || undefined,
       observations: formData.observations || undefined,
     });

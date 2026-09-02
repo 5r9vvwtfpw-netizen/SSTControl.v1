@@ -10,13 +10,13 @@ import {
 } from "lucide-react";
 
 export default function Pesv() {
-  const { data: vehicles } = useQuery({ queryKey: ["/api/vehicles"] });
-  const { data: drivers } = useQuery({ queryKey: ["/api/drivers"] });
-  const { data: inspections } = useQuery({ queryKey: ["/api/vehicle-inspections"] });
-  const { data: incidents } = useQuery({ queryKey: ["/api/road-incidents"] });
-  const { data: trainings } = useQuery({ queryKey: ["/api/road-safety-trainings"] });
-  const { data: audits } = useQuery({ queryKey: ["/api/pesv-audits"] });
-  const { data: evaluaciones } = useQuery({ queryKey: ["/api/evaluaciones-pesv"] });
+  const { data: vehicles = [] } = useQuery<unknown[]>({ queryKey: ["/api/vehicles"] });
+  const { data: drivers = [] } = useQuery<unknown[]>({ queryKey: ["/api/drivers"] });
+  const { data: inspections = [] } = useQuery<unknown[]>({ queryKey: ["/api/vehicle-inspections"] });
+  const { data: incidents = [] } = useQuery<unknown[]>({ queryKey: ["/api/road-incidents"] });
+  const { data: trainings = [] } = useQuery<unknown[]>({ queryKey: ["/api/road-safety-trainings"] });
+  const { data: audits = [] } = useQuery<unknown[]>({ queryKey: ["/api/pesv-audits"] });
+  const { data: evaluaciones = [] } = useQuery<unknown[]>({ queryKey: ["/api/evaluaciones-pesv"] });
 
   const activeVehicles = vehicles?.filter((v: any) => v.status === "activo").length || 0;
   const activeDrivers = drivers?.filter((d: any) => d.status === "activo").length || 0;

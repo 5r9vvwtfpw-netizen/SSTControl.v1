@@ -865,6 +865,8 @@ export const rolePermissions: Record<UserRole, Permission[]> = {
     "comunicaciones_sst:view",
     "reportes_trabajadores:view",
   ],
+  // LSO externo usa el mismo conjunto de permisos funcionales del portal LSO.
+  lso_externo: [],
 
   // Coordinador SST - Gestión SST completa, PESV, auditorías
   coordinador_sst: [
@@ -1121,6 +1123,8 @@ export const rolePermissions: Record<UserRole, Permission[]> = {
   ],
 };
 
+rolePermissions.lso_externo = rolePermissions.lso;
+
 // Función para verificar si un rol tiene un permiso específico
 export function hasPermission(role: UserRole, permission: Permission): boolean {
   return rolePermissions[role]?.includes(permission) ?? false;
@@ -1165,6 +1169,7 @@ export const roleLabels: Record<UserRole, string> = {
   responsable_sst: "Responsable SST",
   coordinador_salud: "Coordinador de Salud Ocupacional",
   lso: "Licenciado en Salud Ocupacional",
+  lso_externo: "Licenciado en Salud Ocupacional Externo",
   coordinador_sst: "Coordinador SST",
   coordinador_rrhh: "Coordinador RRHH",
   jefe_personal: "Jefe de Personal",
@@ -1184,6 +1189,7 @@ export const roleDescriptions: Record<UserRole, string> = {
   responsable_sst: "Gestión interna de SST y operaciones de la empresa (sin acceso a suscripciones)",
   coordinador_salud: "Gestión de datos médicos, exámenes ocupacionales y reportes a seguridad social",
   lso: "Revisa y firma documentos SST según normatividad colombiana (Res. 0312/2019)",
+  lso_externo: "Revisa y firma documentos SST según normatividad colombiana (Res. 0312/2019)",
   coordinador_sst: "Gestión de SST, PESV, auditorías y evaluaciones",
   coordinador_rrhh: "Gestión de trabajadores, capacitaciones y reportes de personal",
   jefe_personal: "Consulta de información y generación de reportes",

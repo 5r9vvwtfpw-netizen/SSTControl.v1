@@ -109,9 +109,10 @@ interface HelpVideoButtonProps {
   customRoute?: string;
   label?: string;
   testId?: string;
+  moduleKey?: string;
 }
 
-export default function HelpVideoButton({ customRoute, label, testId }: HelpVideoButtonProps = {}) {
+export default function HelpVideoButton({ customRoute, label, testId, moduleKey }: HelpVideoButtonProps = {}) {
   const [location] = useLocation();
   const { user } = useAuth();
   const [modalOpen, setModalOpen] = useState(false);

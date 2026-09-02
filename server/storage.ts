@@ -391,10 +391,21 @@ const poolConfig = {
   connectionTimeoutMillis: 10000, // Timeout after 10s when connecting
 };
 
-// Use 'any' type to avoid TypeScript conflicts between NeonPool and PgPool interfaces
-// Both drivers are functionally compatible at runtime
-let pool: any;
-let db: any;
+// Both drivers expose the same operations used by storage.  Keep the
+// connection/client types explicit so pg query rows and Drizzle callbacks
+// retain their inferred types.
+type QueryRow = Record<string, string | number | boolean | null>;
+type QueryClient = {
+  query<T extends QueryRow = QueryRow>(
+    text: string,
+    values?: readonly unknown[],
+  ): Promise<{ rows: T[]; rowCount: number }>;
+  release(): void;
+};
+type StorageDb = ReturnType<typeof drizzlePg<typeof schema>>;
+
+let pool: PgPool;
+let db: StorageDb;
 
 if (isProduction && hasAwsRds) {
   // Production: AWS RDS PostgreSQL - SSL configured in object, not in connection string
@@ -404,7 +415,7 @@ if (isProduction && hasAwsRds) {
     ...poolConfig,
     ssl: { rejectUnauthorized: false }
   });
-  db = drizzlePg({ client: pool, schema });
+  db = drizzlePg({ client: pool as unknown as PgPool, schema });
   console.log('[Storage] Connected to AWS RDS PostgreSQL (Production, max:', poolConfig.max, 'connections)');
 } else {
   // Development: Neon PostgreSQL with connection pool limits
@@ -412,8 +423,8 @@ if (isProduction && hasAwsRds) {
     connectionString: process.env.DATABASE_URL,
     ...poolConfig,
     ssl: { rejectUnauthorized: false }
-  });
-  db = drizzleNeon(pool, { schema });
+  }) as unknown as PgPool;
+  db = drizzleNeon(pool as unknown as NeonPool, { schema }) as unknown as StorageDb;
   console.log('[Storage] Connected to Neon PostgreSQL (Development, max:', poolConfig.max, 'connections)');
 }
 
@@ -3105,7 +3116,7 @@ export class DbStorage implements IStorage {
     
     // Update worker
     const [updated] = await db.update(schema.workers)
-      .set(worker)
+      .set(worker as never)
       .where(and(
         eq(schema.workers.id, id),
         eq(schema.workers.companyId, companyId)
@@ -3616,7 +3627,7 @@ export class DbStorage implements IStorage {
 
   async updateAccident(id: string, accident: Partial<InsertAccident>, companyId: string): Promise<Accident | undefined> {
     const [updated] = await db.update(schema.accidents)
-      .set(accident)
+      .set(accident as never)
       .where(and(
         eq(schema.accidents.id, id),
         eq(schema.accidents.companyId, companyId)
@@ -5023,7 +5034,7 @@ export class DbStorage implements IStorage {
 
   async updateMedicalExam(id: string, exam: Partial<InsertMedicalExam>, companyId: string): Promise<MedicalExam | undefined> {
     const [updated] = await db.update(schema.medicalExams)
-      .set(exam)
+      .set(exam as never)
       .where(and(
         eq(schema.medicalExams.id, id),
         eq(schema.medicalExams.companyId, companyId)
@@ -6041,7 +6052,7 @@ export class DbStorage implements IStorage {
     }
     
     const [updated] = await db.update(schema.environmentalMeasurements)
-      .set(updateData)
+      .set(updateData as never)
       .where(and(
         eq(schema.environmentalMeasurements.id, id),
         eq(schema.environmentalMeasurements.companyId, companyId)

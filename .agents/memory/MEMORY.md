@@ -20,3 +20,4 @@
 - [PESV induction send policy](pesv-induction-send-policy.md) — enviar sesiones PESV no depende de contenidos ni preguntas; los materiales son opcionales y las preguntas siempre se aíslan por tipo.
 - [PESV vehicle step naming](pesv-vehicle-step-naming.md) — vehículos seguros corresponde a H04; H08 está reservado para rutas seguras.
 - [Production billing data alignment](production-billing-data-alignment.md) — separar registros locales de suscripciones/facturas de pagos confirmados por Stripe o Wompi.
+- [TypeScript cleanup workflow](typescript-cleanup-workflow.md) — las correcciones delegadas deben validarse de inmediato; pueden dejar mejoras parciales pero nunca sustituyen el chequeo global final.

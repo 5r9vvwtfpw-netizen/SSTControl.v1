@@ -22,7 +22,10 @@ import {
 } from "@/data/pesv-normativa-trazabilidad";
 
 interface TrazabilidadPesvBannerProps {
-  codigoPaso: string;
+  codigoPaso?: string;
+  paso?: TrazabilidadPasoPesv;
+  evaluacionId?: string;
+  currentStep?: string;
   mostrarEvidencias?: boolean;
   mostrarRequisitos?: boolean;
   compacto?: boolean;
@@ -30,12 +33,14 @@ interface TrazabilidadPesvBannerProps {
 
 export function TrazabilidadPesvBanner({
   codigoPaso,
+  paso,
+  currentStep,
   mostrarEvidencias = false,
   mostrarRequisitos = false,
   compacto = false
 }: TrazabilidadPesvBannerProps) {
   const [isOpen, setIsOpen] = useState(!compacto);
-  const trazabilidad = getTrazabilidadPaso(codigoPaso);
+  const trazabilidad = paso ?? getTrazabilidadPaso(codigoPaso ?? currentStep ?? "");
 
   if (!trazabilidad) {
     return null;

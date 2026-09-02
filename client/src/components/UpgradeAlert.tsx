@@ -55,7 +55,7 @@ export default function UpgradeAlert({
           {feature}
         </Badge>
         <Button
-          variant="link"
+          variant="ghost"
           size="sm"
           onClick={() => navigate("/mi-cuenta")}
           className="h-auto p-0 text-sm"

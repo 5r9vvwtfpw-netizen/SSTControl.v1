@@ -448,7 +448,7 @@ export default function ExamenesMedicos() {
                               return new Date(dateB).getTime() - new Date(dateA).getTime();
                             })[0];
                           
-                          let suggestedExamType = 'preocupacional';
+                          let suggestedExamType: 'preocupacional' | 'periodico' = 'preocupacional';
                           let suggestionReason = '';
                           
                           if (!lastExam) {

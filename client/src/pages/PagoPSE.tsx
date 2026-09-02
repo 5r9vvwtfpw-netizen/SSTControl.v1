@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import {
   ArrowLeft, Loader2, Building2, Landmark, AlertCircle, ExternalLink,
 } from 'lucide-react';

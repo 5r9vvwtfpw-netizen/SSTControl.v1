@@ -168,6 +168,7 @@ export default function PesvInspecciones() {
     const autoResult = computeResult(formData as Record<ItemKey, number>);
     const data = {
       ...formData,
+      inspector: formData.inspector || user?.name || "",
       result: autoResult,
       observations: formData.observations || undefined,
       correctiveActions: formData.correctiveActions || undefined,
@@ -382,17 +383,17 @@ export default function PesvInspecciones() {
                           className={`flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm transition-colors text-left ${
                             esBien
                               ? "border-green-200 bg-green-50 dark:bg-green-950/30 dark:border-green-800 text-green-800 dark:text-green-300"
-                              : item.critical
+                             : ("critical" in item && item.critical)
                               ? "border-red-200 bg-red-50 dark:bg-red-950/30 dark:border-red-800 text-red-800 dark:text-red-300"
                               : "border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 text-amber-800 dark:text-amber-300"
                           }`}
                         >
                           <span className="flex items-center gap-2">
-                            {item.critical && !esBien && (
+                             {"critical" in item && item.critical && !esBien && (
                               <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
                             )}
                             <span>{item.label}</span>
-                            {item.critical && (
+                             {"critical" in item && item.critical && (
                               <Badge variant="outline" className="text-[10px] px-1 py-0 h-4">Crítico</Badge>
                             )}
                           </span>

@@ -77,6 +77,24 @@ const hazardClassLabels: Record<string, string> = {
   "teratogenica": "Teratogénica",
 };
 
+type HazardClassValue =
+  | "otro"
+  | "cancerígena"
+  | "toxicidad_aguda"
+  | "corrosiva"
+  | "inflamable"
+  | "explosiva"
+  | "oxidante"
+  | "irritante"
+  | "sensibilizante"
+  | "mutagena"
+  | "teratogenica";
+
+const hazardClassValues: readonly HazardClassValue[] = [
+  "otro", "cancerígena", "toxicidad_aguda", "corrosiva", "inflamable",
+  "explosiva", "oxidante", "irritante", "sensibilizante", "mutagena", "teratogenica",
+];
+
 const hazardClassColors: Record<string, string> = {
   "cancerígena": "bg-pink-500/10 text-pink-700 dark:text-pink-300",
   "toxicidad_aguda": "bg-purple-500/10 text-purple-700 dark:text-purple-300",
@@ -297,6 +315,9 @@ export default function SustanciasQuimicas() {
     
     createSubstanceMutation.mutate({
       ...formData,
+      hazardClass: formData.hazardClass.filter(
+        (hazard): hazard is HazardClassValue => hazardClassValues.includes(hazard as HazardClassValue),
+      ),
       chemicalName: formData.chemicalName || undefined,
       casNumber: formData.casNumber || undefined,
       sdsUrl: formData.sdsUrl || undefined,

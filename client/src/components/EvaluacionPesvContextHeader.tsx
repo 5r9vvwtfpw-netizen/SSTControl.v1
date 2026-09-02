@@ -6,8 +6,9 @@ import { Link } from "wouter";
 import { EvaluacionPesv } from "@shared/schema";
 
 interface EvaluacionPesvContextHeaderProps {
-  evaluacion: EvaluacionPesv | undefined;
-  currentModule: string;
+  evaluacion?: EvaluacionPesv;
+  evaluacionId?: string;
+  currentModule?: string;
   currentPhase?: "planear" | "hacer" | "verificar" | "actuar";
   isLoading?: boolean;
 }

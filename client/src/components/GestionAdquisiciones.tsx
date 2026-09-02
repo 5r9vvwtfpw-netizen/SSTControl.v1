@@ -744,7 +744,7 @@ export function GestionAdquisiciones({ open, onOpenChange, embedded = false }: G
                     <FormItem>
                       <FormLabel>Marca</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="Ej: 3M" data-testid="input-marca" />
+                        <Input {...field} value={field.value ?? ""} placeholder="Ej: 3M" data-testid="input-marca" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -758,7 +758,7 @@ export function GestionAdquisiciones({ open, onOpenChange, embedded = false }: G
                     <FormItem>
                       <FormLabel>Modelo</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="Ej: H-700" data-testid="input-modelo" />
+                        <Input {...field} value={field.value ?? ""} placeholder="Ej: H-700" data-testid="input-modelo" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -772,7 +772,7 @@ export function GestionAdquisiciones({ open, onOpenChange, embedded = false }: G
                     <FormItem>
                       <FormLabel>Referencia</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="Código de referencia" data-testid="input-referencia" />
+                        <Input {...field} value={field.value ?? ""} placeholder="Código de referencia" data-testid="input-referencia" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -786,7 +786,7 @@ export function GestionAdquisiciones({ open, onOpenChange, embedded = false }: G
                     <FormItem>
                       <FormLabel>Serial</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="Número de serie" data-testid="input-serial" />
+                        <Input {...field} value={field.value ?? ""} placeholder="Número de serie" data-testid="input-serial" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -806,7 +806,7 @@ export function GestionAdquisiciones({ open, onOpenChange, embedded = false }: G
                           {...field}
                           value={field.value ?? ''}
                           onChange={(e) => field.onChange(e.target.value === '' ? '' : parseInt(e.target.value, 10))}
-                          onBlur={() => { if (field.value === '' || field.value == null) field.onChange(1); }}
+                           onBlur={() => { if (field.value == null) field.onChange(1); }}
                           data-testid="input-cantidad" 
                         />
                       </FormControl>
@@ -822,7 +822,7 @@ export function GestionAdquisiciones({ open, onOpenChange, embedded = false }: G
                     <FormItem>
                       <FormLabel>Unidad</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="unidades" data-testid="input-unidad" />
+                        <Input {...field} value={field.value ?? ""} placeholder="unidades" data-testid="input-unidad" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -942,7 +942,7 @@ export function GestionAdquisiciones({ open, onOpenChange, embedded = false }: G
                     <FormItem>
                       <FormLabel>URL Ficha Técnica</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="https://..." data-testid="input-ficha-tecnica-url" />
+                        <Input {...field} value={field.value ?? ""} placeholder="https://..." data-testid="input-ficha-tecnica-url" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -956,7 +956,7 @@ export function GestionAdquisiciones({ open, onOpenChange, embedded = false }: G
                     <FormItem>
                       <FormLabel>URL Hoja de Seguridad (MSDS)</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="https://..." data-testid="input-hoja-seguridad-url" />
+                        <Input {...field} value={field.value ?? ""} placeholder="https://..." data-testid="input-hoja-seguridad-url" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -970,7 +970,7 @@ export function GestionAdquisiciones({ open, onOpenChange, embedded = false }: G
                     <FormItem className="col-span-2">
                       <FormLabel>Normas Aplicables</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="Ej: NTC-ISO 14001, ANSI Z89.1" data-testid="input-normas" />
+                        <Input {...field} value={field.value ?? ""} placeholder="Ej: NTC-ISO 14001, ANSI Z89.1" data-testid="input-normas" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -985,7 +985,8 @@ export function GestionAdquisiciones({ open, onOpenChange, embedded = false }: G
                       <FormLabel>Especificaciones SST</FormLabel>
                       <FormControl>
                         <Textarea 
-                          {...field} 
+                          {...field}
+                          value={field.value ?? ""}
                           placeholder="Requisitos de seguridad específicos del producto"
                           rows={2}
                           data-testid="textarea-especificaciones-sst" 
@@ -1004,7 +1005,8 @@ export function GestionAdquisiciones({ open, onOpenChange, embedded = false }: G
                       <FormLabel>Observaciones</FormLabel>
                       <FormControl>
                         <Textarea 
-                          {...field} 
+                          {...field}
+                          value={field.value ?? ""}
                           placeholder="Observaciones adicionales"
                           rows={2}
                           data-testid="textarea-observaciones" 

@@ -521,8 +521,8 @@ export default function CapacitacionCopasstInline() {
                 <Input
                   type="number"
                   value={cursoForm.duracionMinutos || ''}
-                  onChange={(e) => setCursoForm({ ...cursoForm, duracionMinutos: e.target.value === '' ? '' : parseInt(e.target.value, 10) })}
-                  onBlur={(e) => { if (e.target.value === '' || cursoForm.duracionMinutos === '') setCursoForm(prev => ({ ...prev, duracionMinutos: 0 })); }}
+                   onChange={(e) => setCursoForm({ ...cursoForm, duracionMinutos: e.target.value === '' ? 0 : parseInt(e.target.value, 10) })}
+                   onBlur={(e) => { if (e.target.value === '' || cursoForm.duracionMinutos === 0) setCursoForm(prev => ({ ...prev, duracionMinutos: 0 })); }}
                   data-testid="input-curso-duracion"
                 />
               </div>
@@ -555,8 +555,8 @@ export default function CapacitacionCopasstInline() {
                 <Input
                   type="number"
                   value={cursoForm.ordenCurso || ''}
-                  onChange={(e) => setCursoForm({ ...cursoForm, ordenCurso: e.target.value === '' ? '' : parseInt(e.target.value, 10) })}
-                  onBlur={(e) => { if (e.target.value === '' || cursoForm.ordenCurso === '') setCursoForm(prev => ({ ...prev, ordenCurso: 1 })); }}
+                   onChange={(e) => setCursoForm({ ...cursoForm, ordenCurso: e.target.value === '' ? 1 : parseInt(e.target.value, 10) })}
+                   onBlur={(e) => { if (e.target.value === '' || cursoForm.ordenCurso === 0) setCursoForm(prev => ({ ...prev, ordenCurso: 1 })); }}
                   data-testid="input-curso-orden"
                 />
               </div>
@@ -565,8 +565,8 @@ export default function CapacitacionCopasstInline() {
                 <Input
                   type="number"
                   value={cursoForm.puntosCompletar || ''}
-                  onChange={(e) => setCursoForm({ ...cursoForm, puntosCompletar: e.target.value === '' ? '' : parseInt(e.target.value, 10) })}
-                  onBlur={(e) => { if (e.target.value === '' || cursoForm.puntosCompletar === '') setCursoForm(prev => ({ ...prev, puntosCompletar: 0 })); }}
+                   onChange={(e) => setCursoForm({ ...cursoForm, puntosCompletar: e.target.value === '' ? 0 : parseInt(e.target.value, 10) })}
+                   onBlur={(e) => { if (e.target.value === '' || cursoForm.puntosCompletar === 0) setCursoForm(prev => ({ ...prev, puntosCompletar: 0 })); }}
                   data-testid="input-curso-puntos"
                 />
               </div>
@@ -665,8 +665,8 @@ export default function CapacitacionCopasstInline() {
                 <Input
                   type="number"
                   value={leccionForm.duracionMinutos || ''}
-                  onChange={(e) => setLeccionForm({ ...leccionForm, duracionMinutos: e.target.value === '' ? '' : parseInt(e.target.value, 10) })}
-                  onBlur={(e) => { if (e.target.value === '' || leccionForm.duracionMinutos === '') setLeccionForm(prev => ({ ...prev, duracionMinutos: 0 })); }}
+                   onChange={(e) => setLeccionForm({ ...leccionForm, duracionMinutos: e.target.value === '' ? 0 : parseInt(e.target.value, 10) })}
+                   onBlur={(e) => { if (e.target.value === '' || leccionForm.duracionMinutos === 0) setLeccionForm(prev => ({ ...prev, duracionMinutos: 0 })); }}
                   data-testid="input-leccion-duracion"
                 />
               </div>
@@ -675,8 +675,8 @@ export default function CapacitacionCopasstInline() {
                 <Input
                   type="number"
                   value={leccionForm.ordenLeccion || ''}
-                  onChange={(e) => setLeccionForm({ ...leccionForm, ordenLeccion: e.target.value === '' ? '' : parseInt(e.target.value, 10) })}
-                  onBlur={(e) => { if (e.target.value === '' || leccionForm.ordenLeccion === '') setLeccionForm(prev => ({ ...prev, ordenLeccion: 1 })); }}
+                   onChange={(e) => setLeccionForm({ ...leccionForm, ordenLeccion: e.target.value === '' ? 1 : parseInt(e.target.value, 10) })}
+                   onBlur={(e) => { if (e.target.value === '' || leccionForm.ordenLeccion === 0) setLeccionForm(prev => ({ ...prev, ordenLeccion: 1 })); }}
                   data-testid="input-leccion-orden"
                 />
               </div>
@@ -685,8 +685,8 @@ export default function CapacitacionCopasstInline() {
                 <Input
                   type="number"
                   value={leccionForm.puntosCompletar || ''}
-                  onChange={(e) => setLeccionForm({ ...leccionForm, puntosCompletar: e.target.value === '' ? '' : parseInt(e.target.value, 10) })}
-                  onBlur={(e) => { if (e.target.value === '' || leccionForm.puntosCompletar === '') setLeccionForm(prev => ({ ...prev, puntosCompletar: 0 })); }}
+                   onChange={(e) => setLeccionForm({ ...leccionForm, puntosCompletar: e.target.value === '' ? 0 : parseInt(e.target.value, 10) })}
+                   onBlur={(e) => { if (e.target.value === '' || leccionForm.puntosCompletar === 0) setLeccionForm(prev => ({ ...prev, puntosCompletar: 0 })); }}
                   data-testid="input-leccion-puntos"
                 />
               </div>

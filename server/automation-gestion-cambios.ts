@@ -285,7 +285,6 @@ async function createRiskMatrixEntries(
   // Verificar si hay evaluaciones de alto impacto
   const tieneImpactoAlto = evaluaciones.some(e => 
     e.nivelRiesgoResultante === "alto" || 
-    e.nivelRiesgoResultante === "muy_alto" ||
     e.nivelRiesgoResultante === "critico"
   );
 
@@ -356,7 +355,7 @@ async function createWorkPlanActivities(
     return { created: 0, ids: [] };
   }
   
-  console.log(`Usando plan de trabajo: ${planActual.titulo || 'Plan ' + planActual.anio} (Año: ${planActual.anio})`);
+  console.log(`Usando plan de trabajo: ${planActual.objetivoGeneral || 'Plan ' + planActual.anio} (Año: ${planActual.anio})`);
 
   // Crear actividad de implementación del cambio
   try {
@@ -496,7 +495,6 @@ async function createCopasstApprovalRequest(
 
     const acta = await storage.createCopasstActa({
       fecha: fechaProxima.toISOString().split('T')[0],
-      tipo: "ordinaria",
       numero: 0, // Se asignará automáticamente
       horaInicio: "08:00",
       horaFin: "10:00",

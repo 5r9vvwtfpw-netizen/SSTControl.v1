@@ -14,7 +14,7 @@
 
 
 // FRESH BUILD TRIGGER
-import type { Express } from "express";
+import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { eq, and, sql, desc, ne, inArray, ilike, or } from "drizzle-orm";
 import { initializeWebSocket, notifyNewMessage, notifyMessageRead, setSessionParser, broadcastToSupportAgents, getOnlineSupportUserIds } from "./websocket";
@@ -25,6 +25,7 @@ import { storage } from "./storage";
 import { db } from "./db";
 import { users } from "@shared/schema";
 import { getAuditContext } from "./lib/audit-logger";
+import { logger } from "./lib/logger";
 import { registerBillingRoutes } from "./routes/billing";
 import { registerStripeRoutes } from "./routes/stripe";
 import { registerWompiRoutes } from "./routes/wompi";
@@ -1492,9 +1493,9 @@ async function assertLsoAssignedToCompany(userId: string, companyId: string): Pr
  * @param req - Express request object
  * @returns The effective company ID or null
  */
-function getEffectiveCompanyId(req: Request): string | null {
+function getEffectiveCompanyId(req: Request): string {
   const user = req.user;
-  if (!user) return null;
+  if (!user) return null as unknown as string;
   
   // For superadmins and LSO professionals (both internal and external), check for X-Company-Id header first
   if (user.role === 'superadmin' || user.role === 'lso' || user.role === 'lso_externo') {
@@ -1928,7 +1929,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Filtrar solo planes activos y ordenar por sortOrder
       const activePlans = plans
         .filter(p => p.status === 'active')
-        .sort((a, b) => a.sortOrder - b.sortOrder);
+        .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
       
       // Transformar precios de centavos a pesos para el frontend
       const plansWithPrices = activePlans.map(plan => ({
@@ -3744,7 +3745,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const isAdmin = hasGlobalAccess(userRole);
     
     if (!isAdmin) {
-      const companyId = getEffectiveCompanyId(req);
+      const companyId = getEffectiveCompanyId(req)!;
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -3828,7 +3829,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       Promise.all([
         storage.createContract({
           workerId: worker.id,
-          contractType: contractTypeMap[validatedData.contractType] || 'indefinido',
+          contractType: (contractTypeMap[validatedData.contractType] || 'indefinido') as "indefinido" | "fijo" | "aprendizaje" | "obra_labor" | "ocasional" | "servicios",
           startDate: validatedData.startDate,
           endDate: validatedData.endDate || null,
           position: validatedData.position,
@@ -4172,9 +4173,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           deleted++;
         } catch (error: any) {
           if (error.code === '23503') {
-            errors.push(`${designeeInfo.name}: Tiene registros asociados (contratos, capacitaciones, etc.)`);
+            errors.push(`Trabajador ${worker.id}: Tiene registros asociados (contratos, capacitaciones, etc.)`);
           } else {
-            errors.push(`${designeeInfo.name}: Error desconocido`);
+            errors.push(`Trabajador ${worker.id}: Error desconocido`);
           }
         }
       }
@@ -4670,7 +4671,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/workers/import", requirePermission("workers:create"), excelUpload.single('file'), async (req, res) => {
     try {
-      const companyId = getEffectiveCompanyId(req);
+      const companyId = getEffectiveCompanyId(req)!;
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -5126,7 +5127,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Health Conditions routes (multi-tenant isolated)
   app.get("/api/health-conditions", requireAuth, async (req, res) => {
     try {
-      const companyId = getEffectiveCompanyId(req);
+      const companyId = getEffectiveCompanyId(req)!;
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -5148,7 +5149,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/health-conditions", requirePermission("diseases:create"), async (req, res) => {
     try {
-      const companyId = getEffectiveCompanyId(req);
+      const companyId = getEffectiveCompanyId(req)!;
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -5191,7 +5192,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Sociodemographic Diagnosis Cycle routes (Standard 3.1.1)
   app.get("/api/sociodemographic-diagnosis", requireAuth, async (req, res) => {
     try {
-      const companyId = getEffectiveCompanyId(req);
+      const companyId = getEffectiveCompanyId(req)!;
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -5204,7 +5205,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/sociodemographic-diagnosis/current", requireAuth, async (req, res) => {
     try {
-      const companyId = getEffectiveCompanyId(req);
+      const companyId = getEffectiveCompanyId(req)!;
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -5217,7 +5218,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/sociodemographic-diagnosis", requirePermission("diseases:create"), async (req, res) => {
     try {
-      const companyId = getEffectiveCompanyId(req);
+      const companyId = getEffectiveCompanyId(req)!;
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -5241,7 +5242,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/sociodemographic-diagnosis/:id/close", requirePermission("diseases:edit"), async (req, res) => {
     try {
-      const companyId = getEffectiveCompanyId(req);
+      const companyId = getEffectiveCompanyId(req)!;
       const userId = req.user!.id;
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
@@ -5481,7 +5482,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           eps: (worker as any).epsNombre || null,
           arl: (worker as any).arlNombre || null,
           tiempoLaborado,
-          salarioBase: worker.salary ? `$${worker.salary.toLocaleString("es-CO")} COP` : null,
+          salarioBase: null,
         },
         accidente: {
           fecha: accident.date ? new Date(accident.date).toLocaleDateString("es-CO") : "No registrada",
@@ -5706,12 +5707,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           // Investigation Header
           doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e7e34');
-          doc.text(`${index + 1}. ${inv.accidentType === 'trabajo' ? 'Accidente de Trabajo' : 'Casi Accidente'}`, margin);
+           doc.text(`${index + 1}. ${inv.eventType}`, margin);
 
           doc.fontSize(8).font('Helvetica').fillColor('#000000');
-          doc.text(`Afectado: ${inv.affectedPerson}`, margin + 10);
-          doc.text(`Fecha del evento: ${inv.accidentDate ? new Date(inv.accidentDate).toLocaleDateString('es-CO') : 'No especificada'}`, margin + 10);
-          doc.text(`Fecha de investigación: ${inv.investigationDate ? new Date(inv.investigationDate).toLocaleDateString('es-CO') : 'No especificada'}`, margin + 10);
+           doc.text(`Accidente relacionado: ${inv.accidentId}`, margin + 10);
+           doc.text(`Fecha del evento: ${inv.eventDate ? new Date(inv.eventDate).toLocaleDateString('es-CO') : 'No especificada'}`, margin + 10);
+           doc.text(`Fecha de investigación: ${inv.investigationStartDate ? new Date(inv.investigationStartDate).toLocaleDateString('es-CO') : 'No especificada'}`, margin + 10);
 
           // Status badge
           const statusLabels: Record<string, string> = {
@@ -5721,22 +5722,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
           doc.text(`Estado: ${statusLabels[inv.status] || inv.status}`, margin + 10);
 
-          if (inv.description) {
+           if (inv.eventDescription) {
             doc.moveDown(0.3);
             doc.fontSize(8).font('Helvetica-Bold');
             doc.text('Descripción:', margin + 10);
             doc.font('Helvetica');
-            doc.text(inv.description.substring(0, 300) + (inv.description.length > 300 ? '...' : ''), margin + 20, doc.y, {
+             doc.text(inv.eventDescription.substring(0, 300) + (inv.eventDescription.length > 300 ? '...' : ''), margin + 20, doc.y, {
               width: pageWidth - margin * 2 - 20
             });
           }
 
-          if (inv.immediateCauses) {
+           const immediateCauses = [
+             ...(inv.immediateActCauses ?? []),
+             ...(inv.immediateConditionCauses ?? []),
+           ].join('; ');
+           if (immediateCauses) {
             doc.moveDown(0.3);
             doc.fontSize(8).font('Helvetica-Bold');
             doc.text('Causas Inmediatas:', margin + 10);
             doc.font('Helvetica');
-            doc.text(inv.immediateCauses.substring(0, 200) + (inv.immediateCauses.length > 200 ? '...' : ''), margin + 20, doc.y, {
+             doc.text(immediateCauses.substring(0, 200) + (immediateCauses.length > 200 ? '...' : ''), margin + 20, doc.y, {
               width: pageWidth - margin * 2 - 20
             });
           }
@@ -7195,8 +7200,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const worker = await storage.getWorkerById(a.workerId);
         return {
           ...a,
-          workerName: worker?.fullName || 'Trabajador desconocido',
-          workerDocument: worker?.documentNumber || '',
+          workerName: worker?.name || 'Trabajador desconocido',
+          workerDocument: worker?.identificationNumber || '',
           workerPosition: worker?.position || '',
         };
       }));
@@ -7397,8 +7402,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             receiverId: workerUser.id,
             receiverName: workerUser.fullName || workerUser.username,
             receiverRole: workerUser.role,
-            subject: `Invitación a capacitación: ${training.topic || training.title || 'Capacitación programada'}`,
-            content: `Has sido invitado(a) a la capacitación "${training.topic || training.title || 'Capacitación programada'}" programada para el ${fechaStr}. Por favor confirma tu asistencia desde el Portal de Empleados.`,
+            subject: `Invitación a capacitación: ${training.title || 'Capacitación programada'}`,
+            content: `Has sido invitado(a) a la capacitación "${training.title || 'Capacitación programada'}" programada para el ${fechaStr}. Por favor confirma tu asistencia desde el Portal de Empleados.`,
             priority: 'normal',
             status: 'unread',
             relatedEntity: 'training',
@@ -7467,8 +7472,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               receiverId: workerUser.id,
               receiverName: workerUser.fullName || workerUser.username,
               receiverRole: workerUser.role,
-              subject: `Invitación a capacitación: ${training.topic || training.title || 'Capacitación programada'}`,
-              content: `Has sido invitado(a) a la capacitación "${training.topic || training.title || 'Capacitación programada'}" programada para el ${fechaStr}. Por favor confirma tu asistencia desde el Portal de Empleados.`,
+              subject: `Invitación a capacitación: ${training.title || 'Capacitación programada'}`,
+              content: `Has sido invitado(a) a la capacitación "${training.title || 'Capacitación programada'}" programada para el ${fechaStr}. Por favor confirma tu asistencia desde el Portal de Empleados.`,
               priority: 'normal',
               status: 'unread',
               relatedEntity: 'training',
@@ -7803,7 +7808,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/preventive-measures", requirePermission("measures:create"), async (req, res) => {
     try {
-      const companyId = getEffectiveCompanyId(req);
+      const companyId = getEffectiveCompanyId(req)!;
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -7817,7 +7822,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/preventive-measures/:id", requirePermission("measures:edit"), async (req, res) => {
     try {
-      const companyId = getEffectiveCompanyId(req);
+      const companyId = getEffectiveCompanyId(req)!;
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -7844,7 +7849,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Generate PDF for Preventive Measure (Hallazgo)
   app.get("/api/preventive-measures/:id/pdf", requireAuth, async (req, res) => {
     try {
-      const companyId = getEffectiveCompanyId(req);
+      const companyId = getEffectiveCompanyId(req)!;
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -7975,7 +7980,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/recomendaciones-arl", requireAuth, async (req, res) => {
     try {
-      const companyId = getEffectiveCompanyId(req);
+      const companyId = getEffectiveCompanyId(req)!;
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -7989,7 +7994,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/recomendaciones-arl/:id", requireAuth, async (req, res) => {
     try {
-      const companyId = getEffectiveCompanyId(req);
+      const companyId = getEffectiveCompanyId(req)!;
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -8016,7 +8021,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // POST /api/recomendaciones-arl/generar-plan - Genera acciones de mejora automáticamente desde recomendaciones pendientes
   app.post("/api/recomendaciones-arl/generar-plan", requireAuth, requirePermission('sst_management:create'), async (req, res) => {
     try {
-      const companyId = getEffectiveCompanyId(req);
+      const companyId = getEffectiveCompanyId(req)!;
       if (!companyId) return res.status(403).json({ error: "Usuario no asociado a empresa" });
 
       // Obtener recomendaciones pendientes / en progreso
@@ -8069,7 +8074,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/recomendaciones-arl/pdf-con-plan - PDF unificado: recomendaciones ARL + Plan de Mejoramiento
   app.get("/api/recomendaciones-arl/pdf-con-plan", requireAuth, async (req, res) => {
     try {
-      const companyId = getEffectiveCompanyId(req);
+      const companyId = getEffectiveCompanyId(req)!;
       if (!companyId) return res.status(403).send("Usuario no asociado a empresa");
 
       const [company] = await db.select().from(schema.companies).where(eq(companies.id, companyId));
@@ -8399,7 +8404,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/recomendaciones-arl/:id/seguimientos", requireAuth, async (req, res) => {
     try {
-      const companyId = getEffectiveCompanyId(req);
+      const companyId = getEffectiveCompanyId(req)!;
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -8442,7 +8447,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/occupational-diseases", requirePermission("diseases:create"), async (req, res) => {
     try {
-      const companyId = getEffectiveCompanyId(req);
+      const companyId = getEffectiveCompanyId(req)!;
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -8456,7 +8461,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/occupational-diseases/:id", requirePermission("diseases:edit"), async (req, res) => {
     try {
-      const companyId = getEffectiveCompanyId(req);
+      const companyId = getEffectiveCompanyId(req)!;
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -8483,7 +8488,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // GET /api/occupational-diseases/:id/furel-pdf - Generate FUREL PDF (Resolution 156/2005)
   app.get("/api/occupational-diseases/:id/furel-pdf", requireAuth, async (req, res) => {
     try {
-      const companyId = getEffectiveCompanyId(req);
+      const companyId = getEffectiveCompanyId(req)!;
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -8532,7 +8537,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         documentTitle: 'FORMATO ÚNICO DE REPORTE DE ENFERMEDAD LABORAL (FUREL)',
         documentCode: getDocumentCode('furel'),
         version: '2.0',
-        date: disease.diagnosticDate ? new Date(disease.diagnosticDate) : new Date(),
+        date: disease.diagnosisDate ? new Date(disease.diagnosisDate) : new Date(),
         logoBuffer,
       });
       
@@ -9022,7 +9027,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/sst-evaluations", requirePermission("sst_evaluations:create"), async (req, res) => {
     try {
-      const companyId = getEffectiveCompanyId(req);
+      const companyId = getEffectiveCompanyId(req)!;
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -9036,7 +9041,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/sst-evaluations/:id", requirePermission("sst_evaluations:edit"), async (req, res) => {
     try {
-      const companyId = getEffectiveCompanyId(req);
+      const companyId = getEffectiveCompanyId(req)!;
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -9072,7 +9077,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/sst-evaluation-items", requirePermission("sst_evaluations:create"), async (req, res) => {
     try {
-      const companyId = getEffectiveCompanyId(req);
+      const companyId = getEffectiveCompanyId(req)!;
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -9087,7 +9092,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/sst-evaluation-items/:id", requirePermission("sst_evaluations:edit"), async (req, res) => {
     try {
-      const companyId = getEffectiveCompanyId(req);
+      const companyId = getEffectiveCompanyId(req)!;
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -9124,7 +9129,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Upload evidence file
   app.post("/api/sst-evidence/upload", requirePermission("sst_evaluations:create"), upload.single('file'), async (req, res) => {
     try {
-      const companyId = getEffectiveCompanyId(req);
+      const companyId = getEffectiveCompanyId(req)!;
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -9187,7 +9192,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Generate PDF report for evaluation (multi-tenant isolated)
   app.get("/api/sst-evaluations/:id/report", requireAuth, async (req, res) => {
     try {
-      const companyId = getEffectiveCompanyId(req);
+      const companyId = getEffectiveCompanyId(req)!;
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -9218,7 +9223,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (evaluation.autorizadoPorId) {
         const worker = await storage.getWorker(evaluation.autorizadoPorId, companyId);
         if (worker && worker.companyId === companyId) {
-          autorizoName = `${designeeInfo.name} - ${worker.position}`;
+           autorizoName = `${worker.name} - ${worker.position}`;
         }
       }
 
@@ -9227,7 +9232,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else if (evaluation.aprobadoPorId) {
         const worker = await storage.getWorker(evaluation.aprobadoPorId, companyId);
         if (worker && worker.companyId === companyId) {
-          aproboName = `${worker.name || worker.firstName + ' ' + worker.lastName} - ${worker.position}`;
+          aproboName = `${worker.name} - ${worker.position}`;
         }
       }
       
@@ -9568,7 +9573,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/vehicles/import", requirePermission("vehicles:create"), vehicleExcelUpload.single("file"), async (req, res) => {
     try {
-      const companyId = getEffectiveCompanyId(req);
+      const companyId = getEffectiveCompanyId(req)!;
       if (!companyId) {
         return res.status(403).json({ error: "Usuario no asociado a una empresa o no hay una empresa seleccionada" });
       }
@@ -10660,7 +10665,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/road-safety-trainings", requirePermission("road_safety_trainings:create"), async (req, res) => {
     try {
-      const companyId = getEffectiveCompanyId(req);
+      const companyId = getEffectiveCompanyId(req)!;
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -10674,7 +10679,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/road-safety-trainings/:id", requirePermission("road_safety_trainings:edit"), async (req, res) => {
     try {
-      const companyId = getEffectiveCompanyId(req);
+      const companyId = getEffectiveCompanyId(req)!;
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -10862,7 +10867,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/road-safety-attendees", requirePermission("road_safety_trainings:create"), async (req, res) => {
     try {
-      const companyId = getEffectiveCompanyId(req);
+      const companyId = getEffectiveCompanyId(req)!;
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -10876,7 +10881,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/road-safety-attendees/:trainingId/:driverId", requirePermission("road_safety_trainings:edit"), async (req, res) => {
     try {
-      const companyId = getEffectiveCompanyId(req);
+      const companyId = getEffectiveCompanyId(req)!;
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -10898,7 +10903,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/road-safety-attendees/bulk", requirePermission("road_safety_trainings:create"), async (req, res) => {
     try {
-      const companyId = getEffectiveCompanyId(req);
+      const companyId = getEffectiveCompanyId(req)!;
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
@@ -11679,7 +11684,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           // Verify worker belongs to same company as profile
           if (worker.companyId !== profile.companyId) {
-            errors.push(`Trabajador ${designeeInfo.name} no pertenece a la misma empresa del perfil`);
+            errors.push(`Trabajador ${worker.name} no pertenece a la misma empresa del perfil`);
             continue;
           }
           
@@ -11884,7 +11889,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           await storage.updateWorker(worker.id, { jobProfileId: matchingProfile.id }, companyId);
           totalAssigned++;
         } catch (err: any) {
-          errors.push(`Error vinculando ${designeeInfo.name}: ${err.message}`);
+          errors.push(`Error vinculando ${worker.name}: ${err.message}`);
         }
       }
       
@@ -12516,7 +12521,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const activeContract = workerContracts.find(c => c.status === "activo");
           if (activeContract) {
             results.failed++;
-            results.errors.push({ workerId, error: `${designeeInfo.name} ya tiene un contrato activo (${activeContract.contractNumber})` });
+            results.errors.push({ workerId, error: `${worker.name} ya tiene un contrato activo (${activeContract.contractNumber})` });
             continue;
           }
 
@@ -13952,7 +13957,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } catch (e: any) {
           console.error('[PDF-Designacion] Error loading sig buffer:', e.message);
         }
-        return null;
+    return null as unknown as string;
       };
       
       // Load LSO digital signature image if signed
@@ -14090,6 +14095,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create PDF document
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
+      const margin = 35;
+      const pageWidth = doc.page.width;
       
       // Add trial watermark if subscription is in trial period
       const budget_subscription = await storage.getSubscriptionByCompany(companyId);
@@ -14326,7 +14333,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (allocation.autorizadoPorId) {
         const worker = await storage.getWorker(allocation.autorizadoPorId, companyId);
         if (worker && worker.companyId === companyId) {
-          autorizoName = `${worker.name || (worker.firstName + ' ' + worker.lastName)} - ${worker.position}`;
+          autorizoName = `${worker.name} - ${worker.position}`;
         }
       }
 
@@ -14335,7 +14342,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else if (allocation.aprobadoPorId) {
         const worker = await storage.getWorker(allocation.aprobadoPorId, companyId);
         if (worker && worker.companyId === companyId) {
-          aproboName = `${worker.name || worker.firstName + ' ' + worker.lastName} - ${worker.position}`;
+          aproboName = `${worker.name} - ${worker.position}`;
         }
       }
 
@@ -15878,8 +15885,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const presidenteWorker = presidente ? workerMap.get(presidente.workerId) : null;
       const secretarioWorker = secretario ? workerMap.get(secretario.workerId) : null;
       
-      doc.text(`• Presidente: ${presidenteWorker?.fullName || 'Por designar'} (designado por el empleador)`, margin + 20);
-      doc.text(`• Secretario: ${secretarioWorker?.fullName || 'Por designar'} (elegido por el comité)`, margin + 20);
+      doc.text(`• Presidente: ${presidenteWorker?.name || 'Por designar'} (designado por el empleador)`, margin + 20);
+      doc.text(`• Secretario: ${secretarioWorker?.name || 'Por designar'} (elegido por el comité)`, margin + 20);
       doc.moveDown(1);
       
       doc.fontSize(9).font('Helvetica-Bold');
@@ -15922,7 +15929,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         row.forEach((m, idx) => {
           const worker = workerMap.get(m.workerId);
           const xPos = margin + (sigWidth + 40) * idx;
-          doc.text(worker?.fullName || 'N/A', xPos, doc.y, { width: sigWidth });
+          doc.text(worker?.name || 'N/A', xPos, doc.y, { width: sigWidth });
         });
         doc.moveDown(0.1);
         row.forEach((m, idx) => {
@@ -20804,7 +20811,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Worker Header
           doc.fontSize(9).font('Helvetica-Bold')
             .fillColor('#1e7e34')
-            .text(`${index + 1}. ${designeeInfo.name}`, margin, doc.y, { continued: true })
+            .text(`${index + 1}. ${worker.name}`, margin, doc.y, { continued: true })
             .fillColor('#000000')
             .font('Helvetica')
             .text(` (${worker.identificationNumber || 'Sin cédula'})`);
@@ -21688,7 +21695,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Worker name and identification
           doc.fontSize(9).font('Helvetica-Bold')
             .fillColor('#1e7e34')
-            .text(`${i + 1}. ${designeeInfo.name}`, { underline: true });
+            .text(`${i + 1}. ${worker.name}`, { underline: true });
           doc.fillColor('#000000');
           doc.moveDown(0.2);
 
@@ -22296,7 +22303,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             doc.text(new Date(training.trainingDate).toLocaleDateString('es-CO'), colX[1] + 2, rowY + 7, { width: colWidths[1] - 4, align: 'center' });
             doc.text((training.title || 'Sin tema').substring(0, 35), colX[2] + 2, rowY + 7, { width: colWidths[2] - 4 });
             doc.text((typeLabels[training.type || ''] || training.type || 'N/A').substring(0, 12), colX[3] + 2, rowY + 7, { width: colWidths[3] - 4, align: 'center' });
-            doc.text(String(4 || 0), colX[4] + 2, rowY + 7, { width: colWidths[4] - 4, align: 'center' });
+             doc.text(String(4), colX[4] + 2, rowY + 7, { width: colWidths[4] - 4, align: 'center' });
             doc.text(String(training.attendeesCount || 0), colX[5] + 2, rowY + 7, { width: colWidths[5] - 4, align: 'center' });
             doc.text((statusLabels[training.status || ''] || training.status || 'N/A').substring(0, 12), colX[6] + 2, rowY + 7, { width: colWidths[6] - 4, align: 'center' });
             
@@ -23174,7 +23181,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       for (const { exam, worker } of upcomingExams) {
         if (!worker.email) {
-          console.log(`Worker ${designeeInfo.name} has no email, skipping exam notification`);
+          console.log(`Worker ${worker.name} has no email, skipping exam notification`);
           continue;
         }
 
@@ -23250,7 +23257,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const { training, attendees } of upcomingTrainings) {
         for (const { worker, completedDate } of attendees) {
           if (!worker.email) {
-            console.log(`Worker ${designeeInfo.name} has no email, skipping training notification`);
+            console.log(`Worker ${worker.name} has no email, skipping training notification`);
             continue;
           }
 
@@ -37942,7 +37949,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
               horaFin: null,
               lugar: training.location || null,
               instructor: training.instructor || null,
-              duracionHoras: 4 || null,
+               duracionHoras: 4,
               normativa: 'Resolución 40595/2022 - Plan Estratégico de Seguridad Vial',
               estado: myAttendance.attended === 1 ? 'asistio' : 'invitado',
               asistenciaId: myAttendance.id,
@@ -46505,7 +46512,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         environment: process.env.NODE_ENV || 'development',
         database: {
           status: 'error',
-          error: formatZodErrorForBulkImport(error),
+          error: error instanceof Error ? error.message : 'Error desconocido',
           responseTime: `${responseTime}ms`
         },
         version: '1.0.0'

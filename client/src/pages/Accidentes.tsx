@@ -706,7 +706,7 @@ function EstadisticasATELTab({ accidents, workers }: { accidents: Accident[]; wo
                       <td className="text-right py-2 px-2">{stat.indicadorILI ? parseFloat(stat.indicadorILI).toFixed(4) : "-"}</td>
                       <td className="text-right py-2 px-2">
                         <Badge variant={stat.status === "aprobado" ? "default" : "secondary"}>
-                          {stat.status === "aprobado" ? "Aprobado" : stat.status === "en_revision" ? "En revisión" : "Borrador"}
+                          {stat.status === "aprobado" ? "Aprobado" : "Borrador"}
                         </Badge>
                       </td>
                       {isAdmin && (

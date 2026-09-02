@@ -607,11 +607,11 @@ export default function InvestigacionAccidentes() {
     });
     const payload = {
       ...sanitized,
-      isSevere: data.isSevere ? 1 : 0,
-      isFatal: data.isFatal ? 1 : 0,
-      copasstParticipation: data.copasstParticipation ? 1 : 0,
-      requiresLicensedProfessional: data.isSevere || data.isFatal ? 1 : 0,
-      requiresMinistryReport: data.isFatal ? 1 : 0,
+      isSevere: data.isSevere,
+      isFatal: data.isFatal,
+      copasstParticipation: data.copasstParticipation,
+      requiresLicensedProfessional: data.isSevere || data.isFatal,
+      requiresMinistryReport: data.isFatal,
     };
     if (editingInvestigation) {
       updateInvestigationMutation.mutate({ id: editingInvestigation.id, data: payload });
