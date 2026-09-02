@@ -3376,8 +3376,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "No se proporcionó datos de imagen (data, mimeType requeridos)" });
       }
 
-      if (!mimeType.startsWith('image/')) {
-        return res.status(400).json({ error: "Tipo de archivo no permitido. Solo se permiten imágenes." });
+      const normalizedMimeType = mimeType.toLowerCase().split(";")[0].trim();
+      const allowedLogoMimeTypes = new Set([
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+        "image/webp",
+        "image/gif",
+        "image/svg+xml",
+      ]);
+
+      if (!allowedLogoMimeTypes.has(normalizedMimeType)) {
+        return res.status(400).json({
+          code: "INVALID_LOGO_FORMAT",
+          error: "Formato de logo no válido. Solo se permiten imágenes JPG, PNG, WebP, GIF o SVG.",
+          receivedType: mimeType,
+        });
       }
 
       const companyId = req.params.id;
@@ -3392,8 +3406,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const fileBuffer = Buffer.from(base64Data, 'base64');
 
       // Validate size (5MB max)
+      if (fileBuffer.length === 0) {
+        return res.status(400).json({
+          code: "EMPTY_LOGO_FILE",
+          error: "El archivo del logo está vacío o dañado. Seleccione otra imagen.",
+        });
+      }
+
       if (fileBuffer.length > 5 * 1024 * 1024) {
-        return res.status(400).json({ error: "El archivo es demasiado grande. Máximo 5MB." });
+        return res.status(400).json({
+          code: "LOGO_TOO_LARGE",
+          error: "El logo supera el máximo permitido de 5 MB. Reduzca el tamaño del archivo e inténtelo nuevamente.",
+        });
       }
 
       const storageService = new ObjectStorageService();
@@ -3401,13 +3425,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'image/jpeg': '.jpg', 'image/jpg': '.jpg', 'image/png': '.png',
         'image/webp': '.webp', 'image/gif': '.gif', 'image/svg+xml': '.svg',
       };
-      const ext = mimeToExt[mimeType] || (fileName ? path.extname(fileName) : '') || '.png';
+      const ext = mimeToExt[normalizedMimeType] || (fileName ? path.extname(fileName) : '') || '.png';
       const uniqueId = crypto.randomUUID();
       const objectPath = `logos/${uniqueId}${ext}`;
 
       console.log(`[S3-LOGO] Uploading via JSON/base64. Size: ${fileBuffer.length} bytes, Type: ${mimeType}`);
 
-      await storageService.uploadObject(objectPath, fileBuffer, mimeType);
+      await storageService.uploadObject(objectPath, fileBuffer, normalizedMimeType);
 
       const logoUrl = `/objects/${objectPath}`;
       const company = await storage.updateCompany(companyId, { logoUrl });
@@ -56247,6 +56271,17 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     
     if (res.headersSent) {
       return next(err);
+    }
+
+    if (
+      req.path.startsWith("/api/companies/") &&
+      req.path.endsWith("/logo") &&
+      (err?.status === 413 || err?.statusCode === 413 || err?.type === "entity.too.large")
+    ) {
+      return res.status(413).json({
+        code: "LOGO_REQUEST_TOO_LARGE",
+        error: "El logo supera el tamaño permitido. Use una imagen JPG, PNG, WebP, GIF o SVG de máximo 5 MB.",
+      });
     }
     
     // Detectar errores técnicos que no deben exponerse

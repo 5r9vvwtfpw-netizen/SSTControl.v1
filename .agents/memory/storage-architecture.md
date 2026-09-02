@@ -17,6 +17,14 @@ All file uploads (logos, legal rep signatures, LSO signatures, evidence files) M
 - Buffer for PDFs: `objectStorageService.getObjectBuffer(sigUrl)` 
 - For backward compat only: keep GCS fallback in `getSignatureBuffer` and `loadCompanyLogoBuffer` for pre-existing legacy paths (`/replit-objstore-...`)
 
+## Base64 upload sizing
+
+Routes that receive files as JSON/base64 need parser capacity above the decoded file limit because base64 adds roughly 33% overhead. Preserve a specific HTTP 413 response through every error sanitizer so users see the real size restriction instead of a generic server error.
+
+**Why:** A valid logo repeatedly failed before reaching storage because the default JSON parser rejected its expanded base64 body, and the global sanitizer hid the payload-size error.
+
+**How to apply:** Size the route-specific parser for encoded payloads, validate the decoded bytes separately, and return a user-facing format/size message for parser and endpoint validation failures.
+
 ## What was done
 - `uploadLogo` multer: changed from `diskStorage` → `memoryStorage`
 - `uploadSignature` multer: changed from `diskStorage` → `memoryStorage`  

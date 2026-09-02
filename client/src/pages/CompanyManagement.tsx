@@ -30,6 +30,35 @@ import { CIIU_CODES, CIIU_SECTIONS, getCiiuLabel } from "@/lib/ciiu-codes";
 import { compressLogoImage, compressSignatureImage } from "@/lib/imageCompression";
 import { AnimatedWarningIcon } from "@/components/animated-warning-icon";
 
+const LOGO_MAX_SIZE_BYTES = 5 * 1024 * 1024;
+const LOGO_ALLOWED_TYPES = new Set([
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "image/svg+xml",
+]);
+
+function getLogoValidationError(file: File): string | null {
+  const normalizedType = file.type.toLowerCase();
+
+  if (!LOGO_ALLOWED_TYPES.has(normalizedType)) {
+    return "Formato de logo no válido. Seleccione una imagen JPG, PNG, WebP, GIF o SVG.";
+  }
+
+  if (file.size > LOGO_MAX_SIZE_BYTES) {
+    const sizeInMb = (file.size / 1024 / 1024).toFixed(2);
+    return `El logo pesa ${sizeInMb} MB y supera el máximo permitido de 5 MB. Reduzca el tamaño del archivo e inténtelo nuevamente.`;
+  }
+
+  if (file.size === 0) {
+    return "El archivo del logo está vacío o dañado. Seleccione otra imagen.";
+  }
+
+  return null;
+}
+
 // Tipo para estadísticas de empresas (solo visible para superadmin)
 type CompanyStats = {
   companyId: string;
@@ -574,6 +603,8 @@ export default function CompanyManagement() {
         if (logoFile) {
           try {
             const compressedLogo = await compressLogoImage(logoFile);
+            const validationError = getLogoValidationError(compressedLogo);
+            if (validationError) throw new Error(validationError);
             await uploadLogoMutation.mutateAsync({ id: editingCompany.id, file: compressedLogo });
           } catch (logoError: any) {
             console.error('Logo upload failed:', logoError);
@@ -642,6 +673,8 @@ export default function CompanyManagement() {
         if (logoFile && newCompany) {
           try {
             const compressedLogo = await compressLogoImage(logoFile);
+            const validationError = getLogoValidationError(compressedLogo);
+            if (validationError) throw new Error(validationError);
             await uploadLogoMutation.mutateAsync({ id: newCompany.id, file: compressedLogo });
           } catch (logoError: any) {
             console.error('Logo upload failed:', logoError);
@@ -772,6 +805,17 @@ export default function CompanyManagement() {
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      const validationError = getLogoValidationError(file);
+      if (validationError) {
+        e.target.value = "";
+        toast({
+          title: "Logo no válido",
+          description: validationError,
+          variant: "destructive",
+        });
+        return;
+      }
+
       setLogoFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {

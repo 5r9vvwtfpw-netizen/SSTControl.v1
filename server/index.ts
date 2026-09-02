@@ -840,6 +840,11 @@ app.post(
   handlePromotionsWebhook
 );
 
+// Logo uploads use JSON/base64. Keep their parser limit aligned with the
+// decoded 5MB logo limit so oversized files can receive a useful validation
+// response instead of failing with the generic body-parser error.
+app.use('/api/companies/:id/logo', express.json({ limit: '8mb' }));
+
 // Now apply JSON middleware for all other routes
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -1147,6 +1152,17 @@ app.use((req, res, next) => {
       url: req.path,
       statusCode: status,
     }, `Unhandled error: ${message}`);
+
+    if (
+      req.path.startsWith("/api/companies/") &&
+      req.path.endsWith("/logo") &&
+      (status === 413 || err.type === "entity.too.large")
+    ) {
+      return res.status(413).json({
+        code: "LOGO_REQUEST_TOO_LARGE",
+        error: "El logo supera el tamaño permitido. Use una imagen JPG, PNG, WebP, GIF o SVG de máximo 5 MB.",
+      });
+    }
 
     // PROTECCIÓN AUTOMÁTICA PARA ENDPOINTS PDF
     // Detecta si es una ruta PDF y sanitiza errores técnicos (SSL, certificados, etc.)
