@@ -19,3 +19,4 @@
 - [Storage architecture](storage-architecture.md) — uploads use AWS S3; base64 logo routes need encoded-size parser headroom and explicit 413 messages.
 - [PESV induction send policy](pesv-induction-send-policy.md) — enviar sesiones PESV no depende de contenidos ni preguntas; los materiales son opcionales y las preguntas siempre se aíslan por tipo.
 - [PESV vehicle step naming](pesv-vehicle-step-naming.md) — vehículos seguros corresponde a H04; H08 está reservado para rutas seguras.
+- [Production billing data alignment](production-billing-data-alignment.md) — separar registros locales de suscripciones/facturas de pagos confirmados por Stripe o Wompi.
