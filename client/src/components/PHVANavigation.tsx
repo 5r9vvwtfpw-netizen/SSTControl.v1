@@ -436,8 +436,8 @@ export function PHVANavigation() {
                     <Shield className="h-6 w-6" />
                   </div>
                   <div>
-                    <h1 className="text-lg font-bold leading-tight">SG-SST</h1>
-                    <p className="text-[10px] opacity-80">Portal del Profesional SST</p>
+                    <h1 className="text-lg font-bold leading-tight">SST Colombia</h1>
+                    <p className="text-[10px] opacity-80">Gestión SST</p>
                   </div>
                 </div>
               </Link>
@@ -586,8 +586,8 @@ export function PHVANavigation() {
                 <Shield className="h-7 w-7" />
               </div>
               <div>
-                <h1 className="text-xl font-bold">SG-SST</h1>
-                <p className="text-xs opacity-90">Sistema de Gestión</p>
+                <h1 className="text-xl font-bold">SST Colombia</h1>
+                <p className="text-xs opacity-90">Gestión SST</p>
                 <p className="text-[10px] opacity-70" data-testid="text-system-version">Sistema {SYSTEM_VERSION}</p>
               </div>
             </div>

@@ -1,7 +1,7 @@
 {
-  "name": "SST Colombia - Portal de Empleados",
+  "name": "SST Colombia",
   "short_name": "SST Colombia",
-  "description": "Portal de empleados para gestión de seguridad y salud en el trabajo",
+  "description": "Gestión de Seguridad y Salud en el Trabajo",
   "start_url": "/portal-empleados",
   "display": "standalone",
   "background_color": "#ffffff",
