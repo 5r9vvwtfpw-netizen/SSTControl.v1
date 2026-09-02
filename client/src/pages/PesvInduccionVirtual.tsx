@@ -286,7 +286,7 @@ export default function PesvInduccionVirtual() {
       setPlantillaDialogOpen(false);
       toast({
         title: "Plantilla cargada exitosamente",
-        description: `Se crearon ${plantilla.contenidos.length} contenidos y ${plantilla.preguntas.length} preguntas PESV. Revise y publique los contenidos antes de enviar inducciones.`,
+        description: `Se crearon ${plantilla.contenidos.length} contenidos y ${plantilla.preguntas.length} preguntas PESV para uso opcional.`,
       });
       setActiveTab("contenidos");
     },
@@ -363,9 +363,6 @@ export default function PesvInduccionVirtual() {
   const sesionesConActiva = (sesiones as any[]).filter(s => s.estado === "pendiente" || s.estado === "en_progreso");
   const activosIds = new Set(sesionesConActiva.map((s: any) => s.workerId));
   const availableWorkers = (workers as any[]).filter(w => !activosIds.has(w.id));
-  const publishedContents = contenidos.filter(c => c.estado === "publicado").length;
-  const activeQuestions = preguntas.filter(p => p.activa === 1).length;
-  const isPesvConfigured = publishedContents > 0 && activeQuestions > 0;
 
   // ── Render ───────────────────────────────────────────────────────────────
   return (
@@ -399,7 +396,7 @@ export default function PesvInduccionVirtual() {
           {/* Enviar individual */}
           <Dialog open={enviarIndividualOpen} onOpenChange={open => { setEnviarIndividualOpen(open); if (!open) setSelectedWorker(""); }}>
             <DialogTrigger asChild>
-              <Button variant="outline" disabled={!isPesvConfigured} title={!isPesvConfigured ? "Publique contenido y configure preguntas antes de enviar" : undefined}>
+              <Button variant="outline">
                 <Send className="h-4 w-4 mr-2" />
                 Enviar a trabajador
               </Button>
@@ -444,7 +441,7 @@ export default function PesvInduccionVirtual() {
           {/* Enviar masivo */}
           <Dialog open={enviarDialogOpen} onOpenChange={setEnviarDialogOpen}>
             <DialogTrigger asChild>
-              <Button disabled={!isPesvConfigured} title={!isPesvConfigured ? "Publique contenido y configure preguntas antes de enviar" : undefined}>
+              <Button>
                 <Send className="h-4 w-4 mr-2" />
                 Enviar Inducción
               </Button>
@@ -479,24 +476,6 @@ export default function PesvInduccionVirtual() {
           </Dialog>
         </div>
       </div>
-
-      {!isPesvConfigured && !loadingContenidos && !loadingPreguntas && (
-        <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 mt-0.5 shrink-0" />
-            <div>
-              <p className="font-semibold">Complete la configuración antes de enviar inducciones</p>
-              <p className="text-sm mt-1">
-                Se requiere al menos un contenido publicado y una pregunta activa.
-                Actualmente hay {publishedContents} contenido{publishedContents === 1 ? "" : "s"} publicado{publishedContents === 1 ? "" : "s"} y {activeQuestions} pregunta{activeQuestions === 1 ? "" : "s"} activa{activeQuestions === 1 ? "" : "s"}.
-              </p>
-              {contenidos.length === 0 && preguntas.length === 0 && (
-                <p className="text-sm mt-2">Use “Cargar Plantilla PESV”, revise los materiales y publique al menos uno antes de asignarla.</p>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">

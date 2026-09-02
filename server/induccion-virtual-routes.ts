@@ -34,42 +34,6 @@ export function registerInduccionVirtualRoutes(app: Express) {
   }
   console.log("[Inducción Virtual Plugin] Habilitado");
 
-  async function getPesvConfigurationStatus(companyId: string) {
-    const [publishedContent, activeQuestions] = await Promise.all([
-      db.select({ count: sql<number>`count(*)::int` })
-        .from(schema.contenidosInduccion)
-        .where(and(
-          eq(schema.contenidosInduccion.companyId, companyId),
-          eq(schema.contenidosInduccion.tipoInduccion, "pesv"),
-          eq(schema.contenidosInduccion.estado, "publicado"),
-        )),
-      db.select({ count: sql<number>`count(*)::int` })
-        .from(schema.preguntasInduccion)
-        .where(and(
-          eq(schema.preguntasInduccion.companyId, companyId),
-          eq(schema.preguntasInduccion.tipoInduccion, "pesv"),
-          eq(schema.preguntasInduccion.activa, 1),
-        )),
-    ]);
-
-    return {
-      publishedContent: publishedContent[0]?.count || 0,
-      activeQuestions: activeQuestions[0]?.count || 0,
-    };
-  }
-
-  async function rejectIfPesvNotConfigured(companyId: string, res: Response) {
-    const status = await getPesvConfigurationStatus(companyId);
-    if (status.publishedContent > 0 && status.activeQuestions > 0) return false;
-
-    res.status(409).json({
-      code: "PESV_NOT_CONFIGURED",
-      error: "No se puede enviar la inducción PESV: publique al menos un contenido y configure al menos una pregunta activa.",
-      ...status,
-    });
-    return true;
-  }
-  
   // ============================================================================
   // CONTENIDOS DE INDUCCIÓN - CRUD para administradores
   // ============================================================================
@@ -846,7 +810,8 @@ export function registerInduccionVirtualRoutes(app: Express) {
         .from(schema.preguntasInduccion)
         .where(and(
           eq(schema.preguntasInduccion.companyId, sesion.companyId),
-          eq(schema.preguntasInduccion.activa, 1)
+          eq(schema.preguntasInduccion.activa, 1),
+          eq(schema.preguntasInduccion.tipoInduccion, sesion.tipoInduccion)
         ));
 
       let correctas = 0;
@@ -954,7 +919,10 @@ export function registerInduccionVirtualRoutes(app: Express) {
 
       const preguntas = await db.select()
         .from(schema.preguntasInduccion)
-        .where(eq(schema.preguntasInduccion.companyId, companyId))
+        .where(and(
+          eq(schema.preguntasInduccion.companyId, companyId),
+          eq(schema.preguntasInduccion.tipoInduccion, sesion.tipoInduccion)
+        ))
         .orderBy(schema.preguntasInduccion.orden);
 
       // ── Firma del LSO (misma lógica de prioridad que pdf-standardizer) ──
@@ -1242,7 +1210,6 @@ export function registerInduccionVirtualRoutes(app: Express) {
       if (!req.isAuthenticated()) return res.status(401).send("No autorizado");
       const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).send("No autorizado");
-      if (await rejectIfPesvNotConfigured(companyId, res)) return;
 
       const { workerIds, cargo } = req.body as { workerIds?: string[]; cargo?: string };
 
@@ -1309,7 +1276,6 @@ export function registerInduccionVirtualRoutes(app: Express) {
       if (!req.isAuthenticated()) return res.status(401).send("No autorizado");
       const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).send("No autorizado");
-      if (await rejectIfPesvNotConfigured(companyId, res)) return;
 
       const sesionesActivas = await db.select({ workerId: schema.sesionesInduccionVirtual.workerId })
         .from(schema.sesionesInduccionVirtual)

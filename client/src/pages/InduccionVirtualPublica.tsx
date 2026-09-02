@@ -301,6 +301,8 @@ export default function InduccionVirtualPublica() {
   const progresoTotal = data.contenidos.length + data.preguntas.length + 1;
   const progresoActual = contenidosVistos.length + Object.keys(respuestas).length + (step === "firma" || step === "completado" ? 1 : 0);
   const porcentajeProgreso = Math.round((progresoActual / progresoTotal) * 100);
+  const isPesv = data.sesion.tipoInduccion === "pesv";
+  const noHayMaterial = data.contenidos.length === 0 && data.preguntas.length === 0;
 
   const renderContenido = (contenido: Contenido) => {
     const iconMap = {
@@ -405,7 +407,7 @@ export default function InduccionVirtualPublica() {
                 <p className="text-sm"><strong>Identificación:</strong> {data.worker.identificacion}</p>
                 <p className="text-sm"><strong>Cargo:</strong> {data.worker.cargo}</p>
               </div>
-              {data.contenidos.length === 0 && data.preguntas.length === 0 ? (
+              {noHayMaterial && !isPesv ? (
                 <div className="bg-orange-50 border border-orange-200 p-4 rounded-lg">
                   <div className="flex items-start gap-3">
                     <AlertCircle className="h-5 w-5 text-orange-500 mt-0.5 flex-shrink-0" />
@@ -440,7 +442,7 @@ export default function InduccionVirtualPublica() {
               <Button 
                 className="w-full" 
                 size="lg"
-                disabled={data.contenidos.length === 0 && data.preguntas.length === 0}
+                disabled={noHayMaterial && !isPesv}
                 onClick={() => setStep(data.contenidos.length > 0 ? "contenido" : "evaluacion")}
                 data-testid="button-comenzar-induccion"
               >

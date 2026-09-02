@@ -17,3 +17,4 @@
 - [Committee actas document policy](committee-actas-document-policy.md) — COPASST y Convivencia se redactan dentro del sistema; los PDF cargados no son requisito.
 - [Driver–vehicle assignment policy](driver-vehicle-assignment-policy.md) — relación PESV muchos-a-muchos con vigencia e historial; finalizar no borra y el fallback de flota solo aplica antes de la primera asignación.
 - [Storage architecture](storage-architecture.md) — uploads use AWS S3; base64 logo routes need encoded-size parser headroom and explicit 413 messages.
+- [PESV induction send policy](pesv-induction-send-policy.md) — enviar sesiones PESV no depende de contenidos ni preguntas; los materiales son opcionales y las preguntas siempre se aíslan por tipo.
