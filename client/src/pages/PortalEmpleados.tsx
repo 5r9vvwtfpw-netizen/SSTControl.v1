@@ -49,6 +49,7 @@ import { es } from "date-fns/locale";
 import { useAuth } from "@/hooks/use-auth";
 import type { UserRole } from "@shared/schema";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
+import { PwaInstallCard } from "@/components/PwaInstallCard";
 
 // Roles administrativos que ven el dashboard de gestión
 const ADMIN_ROLES: UserRole[] = [
@@ -1142,6 +1143,8 @@ function WorkerPortal() {
           </p>
         </div>
       </div>
+
+      <PwaInstallCard />
 
       {/* Navegación Profesional con Menús Desplegables — escritorio */}
       <Card className="border-0 shadow-sm bg-card/50 hidden sm:block">
