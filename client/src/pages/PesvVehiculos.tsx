@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Pencil, Trash2, ArrowLeft, FileDown, AlertTriangle, CheckCircle2, Clock } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, ArrowLeft, FileDown, FileSpreadsheet, Download, Upload, AlertTriangle, CheckCircle2, Clock, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Vehicle, insertVehicleSchema } from "@shared/schema";
@@ -21,6 +21,34 @@ import { Link } from "wouter";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
 import { BackToPesvEvaluationButton } from "@/components/BackToPesvEvaluationButton";
 
+type VehicleImportResults = {
+  total: number;
+  successful: number;
+  failed: number;
+  errors: Array<{ row: number; error: string; data: Record<string, unknown> }>;
+};
+
+type VehicleFormData = {
+  companyId: string;
+  plate: string;
+  brand: string;
+  model: string;
+  year: number;
+  type: Vehicle["type"];
+  ownership: Vehicle["ownership"];
+  capacity: number | string;
+  mileage: number | string;
+  color: string;
+  vin: string;
+  insurancePolicy: string;
+  insuranceExpiry: string;
+  soatExpiry: string;
+  technicalReviewExpiry: string;
+  status: Vehicle["status"];
+  defaultMaxSpeed: number | string;
+  observations: string;
+};
+
 export default function PesvVehiculos() {
   const { user } = useAuth();
   const { selectedCompany: currentCompany } = useCompanyContext();
@@ -28,8 +56,11 @@ export default function PesvVehiculos() {
   const isAdmin = user?.role ? canWrite(user.role, 'vehicles') : false;
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [importResults, setImportResults] = useState<VehicleImportResults | null>(null);
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<VehicleFormData>({
     companyId: "",
     plate: "",
     brand: "",
@@ -127,6 +158,47 @@ export default function PesvVehiculos() {
     },
   });
 
+  const importVehiclesMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      const headers: Record<string, string> = {};
+      if (currentCompany?.id) {
+        headers["X-Company-Id"] = currentCompany.id;
+      }
+
+      const response = await fetch("/api/vehicles/import", {
+        method: "POST",
+        headers,
+        credentials: "include",
+        body: formData,
+      });
+      const responseText = await response.text();
+      let responseData: any;
+      try {
+        responseData = JSON.parse(responseText);
+      } catch {
+        responseData = { error: responseText };
+      }
+      if (!response.ok) {
+        throw new Error(responseData.error || "Error al importar vehículos");
+      }
+      return responseData as VehicleImportResults;
+    },
+    onSuccess: (data) => {
+      setImportResults(data);
+      queryClient.invalidateQueries({ queryKey: ["/api/vehicles"] });
+      toast({
+        title: data.failed === 0 ? "Importación exitosa" : "Importación completada con errores",
+        description: `${data.successful} vehículos creados${data.failed > 0 ? `, ${data.failed} con errores` : ""}.`,
+        variant: data.failed === 0 ? "default" : "destructive",
+      });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error al importar vehículos", description: error.message, variant: "destructive" });
+    },
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -196,6 +268,26 @@ export default function PesvVehiculos() {
     if (confirm("¿Está seguro de eliminar este vehículo?")) {
       deleteVehicleMutation.mutate(id);
     }
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] || null;
+    setSelectedFile(file);
+    setImportResults(null);
+  };
+
+  const handleImport = () => {
+    if (!selectedFile) {
+      toast({ title: "Archivo requerido", description: "Seleccione un archivo Excel o CSV.", variant: "destructive" });
+      return;
+    }
+    importVehiclesMutation.mutate(selectedFile);
+  };
+
+  const resetImport = () => {
+    setSelectedFile(null);
+    setImportResults(null);
+    setImportDialogOpen(false);
   };
 
   const resetForm = () => {
@@ -301,6 +393,105 @@ export default function PesvVehiculos() {
         </div>
         <div className="flex gap-2 flex-wrap">
           <HelpVideoButton customRoute="/pesv/vehiculos" testId="button-help-video-pesv-vehiculos" />
+          {isAdmin && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.location.assign("/api/vehicles/template/download")}
+                data-testid="button-download-vehicle-template"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Descargar plantilla
+              </Button>
+              <Dialog open={importDialogOpen} onOpenChange={(open) => {
+                setImportDialogOpen(open);
+                if (!open) {
+                  setSelectedFile(null);
+                  setImportResults(null);
+                }
+              }}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" data-testid="button-import-vehicles">
+                    <Upload className="h-4 w-4 mr-2" />
+                    Importar Excel
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Importar vehículos PESV</DialogTitle>
+                    <DialogDescription>
+                      Cargue la plantilla de vehículos para crear varios registros de una sola vez. Los duplicados no se sobrescriben.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="rounded-lg border bg-muted/40 p-4 text-sm">
+                      <div className="flex items-start gap-3">
+                        <FileSpreadsheet className="h-5 w-5 text-green-600 mt-0.5 shrink-0" />
+                        <div>
+                          <p className="font-medium">Use la hoja “Vehículos”</p>
+                          <p className="text-muted-foreground mt-1">
+                            La plantilla incluye una hoja de instrucciones. Se aceptan archivos .xlsx, .xls o .csv de hasta 2.000 filas.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="vehicle-import-file">Archivo Excel</Label>
+                      <Input
+                        id="vehicle-import-file"
+                        type="file"
+                        accept=".xlsx,.xls,.csv"
+                        onChange={handleFileSelect}
+                        data-testid="input-vehicle-import-file"
+                      />
+                      {selectedFile && (
+                        <p className="text-sm text-muted-foreground">Archivo: {selectedFile.name}</p>
+                      )}
+                    </div>
+                    {importResults && (
+                      <div className="space-y-2">
+                        <div className={`rounded-lg border p-3 text-sm ${importResults.failed === 0 ? "border-green-300 bg-green-50" : "border-amber-300 bg-amber-50"}`}>
+                          <p className="font-medium">Resultado de la importación</p>
+                          <p className="text-green-700">Vehículos creados: {importResults.successful}</p>
+                          {importResults.failed > 0 && (
+                            <p className="text-red-700">Filas con errores: {importResults.failed}</p>
+                          )}
+                          <p className="text-muted-foreground">Total de filas procesadas: {importResults.total}</p>
+                        </div>
+                        {importResults.errors.length > 0 && (
+                          <div className="max-h-48 overflow-y-auto rounded border p-3 text-sm space-y-1">
+                            {importResults.errors.map((item) => (
+                              <p key={`${item.row}-${item.error}`} className="text-red-600">
+                                <strong>Fila {item.row}:</strong> {item.error}
+                              </p>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <DialogFooter>
+                    {importResults ? (
+                      <Button onClick={resetImport} data-testid="button-close-vehicle-import">Cerrar</Button>
+                    ) : (
+                      <>
+                        <Button variant="outline" onClick={() => setImportDialogOpen(false)}>Cancelar</Button>
+                        <Button
+                          onClick={handleImport}
+                          disabled={!selectedFile || importVehiclesMutation.isPending}
+                          data-testid="button-submit-vehicle-import"
+                        >
+                          {importVehiclesMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                          {importVehiclesMutation.isPending ? "Importando..." : "Importar vehículos"}
+                        </Button>
+                      </>
+                    )}
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </>
+          )}
           <Button
             variant="outline"
             size="sm"
@@ -313,7 +504,7 @@ export default function PesvVehiculos() {
         </div>
       </div>
       
-      <TrazabilidadPesvBanner codigoPaso="H08" compacto />
+      <TrazabilidadPesvBanner codigoPaso="H04" compacto />
       
       <div className="flex flex-wrap items-center justify-between gap-4">
         {isAdmin && (

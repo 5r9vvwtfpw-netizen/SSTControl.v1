@@ -9477,6 +9477,272 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ==================== PESV Routes (multi-tenant isolated, admin can access all companies) ====================
 
   // Vehicles routes
+  const vehicleExcelUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+      const allowedMimeTypes = [
+        "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/octet-stream",
+        "text/csv",
+      ];
+      const allowedExtensions = [".xls", ".xlsx", ".csv"];
+      const extension = path.extname(file.originalname).toLowerCase();
+
+      if (allowedExtensions.includes(extension) && allowedMimeTypes.includes(file.mimetype)) {
+        cb(null, true);
+      } else {
+        cb(new Error("Tipo de archivo no permitido. Use un archivo Excel (.xlsx, .xls) o CSV."));
+      }
+    },
+  });
+
+  app.get("/api/vehicles/template/download", requirePermission("vehicles:create"), async (req, res) => {
+    try {
+      const XLSX = await import("xlsx");
+      const headers = [
+        "Placa",
+        "Marca",
+        "Modelo",
+        "Año",
+        "Tipo",
+        "Propiedad",
+        "Capacidad",
+        "Kilometraje",
+        "Color",
+        "VIN",
+        "Póliza Seguro",
+        "Vencimiento Seguro",
+        "Vencimiento SOAT",
+        "Vencimiento Tecnicomecánica",
+        "Estado",
+        "Velocidad Máxima Permitida",
+        "Observaciones",
+      ];
+      const worksheet = XLSX.utils.aoa_to_sheet([headers]);
+      worksheet["!cols"] = [
+        { wch: 14 }, { wch: 18 }, { wch: 18 }, { wch: 10 }, { wch: 16 },
+        { wch: 14 }, { wch: 12 }, { wch: 14 }, { wch: 14 }, { wch: 22 },
+        { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 28 }, { wch: 18 },
+        { wch: 24 }, { wch: 40 },
+      ];
+
+      const instructions = [
+        { Campo: "Placa", Descripción: "Placa única del vehículo. Se normaliza a mayúsculas y se eliminan espacios o guiones.", Requerido: "Sí", "Valores válidos": "Texto alfanumérico", Ejemplo: "ABC123" },
+        { Campo: "Marca", Descripción: "Marca comercial del vehículo.", Requerido: "Sí", "Valores válidos": "Texto libre", Ejemplo: "Toyota" },
+        { Campo: "Modelo", Descripción: "Modelo o referencia del vehículo.", Requerido: "Sí", "Valores válidos": "Texto libre", Ejemplo: "Hilux" },
+        { Campo: "Año", Descripción: "Año del vehículo.", Requerido: "Sí", "Valores válidos": "Número entero entre 1900 y el año siguiente", Ejemplo: "2024" },
+        { Campo: "Tipo", Descripción: "Tipo de vehículo.", Requerido: "Sí", "Valores válidos": "automovil, camioneta, camion, motocicleta, bus, otro", Ejemplo: "camioneta" },
+        { Campo: "Propiedad", Descripción: "Forma de tenencia del vehículo.", Requerido: "Sí", "Valores válidos": "propio, arrendado, contratado", Ejemplo: "propio" },
+        { Campo: "Capacidad", Descripción: "Número de pasajeros.", Requerido: "No", "Valores válidos": "Número entero mayor o igual a cero", Ejemplo: "5" },
+        { Campo: "Kilometraje", Descripción: "Kilometraje actual del vehículo.", Requerido: "No", "Valores válidos": "Número entero mayor o igual a cero", Ejemplo: "50000" },
+        { Campo: "Color", Descripción: "Color del vehículo.", Requerido: "No", "Valores válidos": "Texto libre", Ejemplo: "Blanco" },
+        { Campo: "VIN", Descripción: "Número de identificación vehicular.", Requerido: "No", "Valores válidos": "Texto libre", Ejemplo: "9BWZZZ..." },
+        { Campo: "Póliza Seguro", Descripción: "Número de la póliza de seguro.", Requerido: "No", "Valores válidos": "Texto libre", Ejemplo: "POL-12345" },
+        { Campo: "Vencimiento Seguro", Descripción: "Fecha de vencimiento del seguro.", Requerido: "Sí", "Valores válidos": "AAAA-MM-DD o DD/MM/AAAA", Ejemplo: "2026-12-31" },
+        { Campo: "Vencimiento SOAT", Descripción: "Fecha de vencimiento del SOAT.", Requerido: "Sí", "Valores válidos": "AAAA-MM-DD o DD/MM/AAAA", Ejemplo: "2026-10-15" },
+        { Campo: "Vencimiento Tecnicomecánica", Descripción: "Fecha de vencimiento de la revisión tecnicomecánica.", Requerido: "Sí", "Valores válidos": "AAAA-MM-DD o DD/MM/AAAA", Ejemplo: "2026-08-20" },
+        { Campo: "Estado", Descripción: "Estado operativo del vehículo.", Requerido: "Sí", "Valores válidos": "activo, mantenimiento, inactivo, dado-de-baja", Ejemplo: "activo" },
+        { Campo: "Velocidad Máxima Permitida", Descripción: "Velocidad máxima configurada para el vehículo en km/h.", Requerido: "No", "Valores válidos": "Número entero entre 0 y 200", Ejemplo: "80" },
+        { Campo: "Observaciones", Descripción: "Notas adicionales.", Requerido: "No", "Valores válidos": "Texto libre", Ejemplo: "Vehículo asignado a operación norte" },
+      ];
+      const instructionsSheet = XLSX.utils.json_to_sheet(instructions);
+      instructionsSheet["!cols"] = [
+        { wch: 32 }, { wch: 58 }, { wch: 12 }, { wch: 55 }, { wch: 32 },
+      ];
+
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Vehículos");
+      XLSX.utils.book_append_sheet(workbook, instructionsSheet, "Instrucciones");
+      const buffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
+
+      res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+      res.setHeader("Content-Disposition", "attachment; filename=plantilla_vehiculos_pesv.xlsx");
+      res.send(buffer);
+    } catch (error: any) {
+      console.error("Error generating vehicle template:", error);
+      res.status(500).send("Error al generar la plantilla de vehículos: " + error.message);
+    }
+  });
+
+  app.post("/api/vehicles/import", requirePermission("vehicles:create"), vehicleExcelUpload.single("file"), async (req, res) => {
+    try {
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa o no hay una empresa seleccionada" });
+      }
+      if (!req.file) {
+        return res.status(400).json({ error: "No se proporcionó ningún archivo" });
+      }
+
+      const XLSX = await import("xlsx");
+      const workbook = XLSX.read(req.file.buffer, { type: "buffer", cellDates: false });
+      const sheetName = workbook.SheetNames[0];
+      if (!sheetName) {
+        return res.status(400).json({ error: "El archivo no contiene ninguna hoja" });
+      }
+      const worksheet = workbook.Sheets[sheetName];
+      const data = XLSX.utils.sheet_to_json<Record<string, any>>(worksheet, { defval: "" });
+
+      if (data.length === 0) {
+        return res.status(400).json({ error: "El archivo está vacío" });
+      }
+      if (data.length > 2000) {
+        return res.status(400).json({ error: "El archivo supera el máximo de 2.000 vehículos por importación" });
+      }
+
+      const removeAccents = (value: string) =>
+        value.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const readValue = (row: Record<string, any>, ...keys: string[]) => {
+        for (const key of keys) {
+          if (row[key] !== undefined && row[key] !== null && String(row[key]).trim() !== "") {
+            return row[key];
+          }
+        }
+        return "";
+      };
+      const textValue = (row: Record<string, any>, ...keys: string[]) =>
+        String(readValue(row, ...keys)).trim();
+
+      const parseDate = (value: any, label: string, required = false): string | undefined => {
+        if (value === undefined || value === null || String(value).trim() === "") {
+          if (required) throw new Error(`El campo '${label}' es requerido`);
+          return undefined;
+        }
+        if (typeof value === "number" && Number.isFinite(value)) {
+          const date = new Date(Date.UTC(1899, 11, 30) + value * 86400000);
+          if (!Number.isNaN(date.getTime())) {
+            return date.toISOString().slice(0, 10);
+          }
+        }
+        const raw = String(value).trim();
+        let match = raw.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
+        if (match) {
+          const [, day, month, year] = match;
+          const date = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
+          if (date.getUTCFullYear() === Number(year) && date.getUTCMonth() === Number(month) - 1 && date.getUTCDate() === Number(day)) {
+            return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+          }
+        }
+        match = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+        if (match) {
+          const [, year, month, day] = match;
+          const date = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
+          if (date.getUTCFullYear() === Number(year) && date.getUTCMonth() === Number(month) - 1 && date.getUTCDate() === Number(day)) {
+            return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+          }
+        }
+        throw new Error(`El campo '${label}' tiene una fecha inválida. Use AAAA-MM-DD o DD/MM/AAAA`);
+      };
+
+      const parseInteger = (value: any, label: string, required = false, min = 0, max?: number): number | undefined => {
+        if (value === undefined || value === null || String(value).trim() === "") {
+          if (required) throw new Error(`El campo '${label}' es requerido`);
+          return undefined;
+        }
+        const normalized = typeof value === "number" ? value : Number(String(value).trim().replace(/,/g, ""));
+        if (!Number.isInteger(normalized) || normalized < min || (max !== undefined && normalized > max)) {
+          const range = max !== undefined ? ` entre ${min} y ${max}` : ` mayor o igual a ${min}`;
+          throw new Error(`El campo '${label}' debe ser un número entero${range}`);
+        }
+        return normalized;
+      };
+
+      const normalizeEnum = (value: string, label: string, values: Record<string, string>): string => {
+        const normalized = removeAccents(value.toLowerCase().trim()).replace(/[_-]+/g, " ").replace(/\s+/g, " ");
+        const result = values[normalized];
+        if (!result) {
+          throw new Error(`El campo '${label}' tiene un valor no válido: '${value}'. Valores permitidos: ${[...new Set(Object.values(values))].join(", ")}`);
+        }
+        return result;
+      };
+
+      const typeValues: Record<string, string> = {
+        automovil: "automovil", auto: "automovil", carro: "automovil", automóvil: "automovil",
+        camioneta: "camioneta", suv: "camioneta",
+        camion: "camion", camión: "camion",
+        motocicleta: "motocicleta", moto: "motocicleta",
+        bus: "bus", otro: "otro",
+      };
+      const ownershipValues: Record<string, string> = {
+        propio: "propio", propia: "propio",
+        arrendado: "arrendado", arrendada: "arrendado", alquilado: "arrendado", alquilada: "arrendado",
+        contratado: "contratado", contratada: "contratado",
+      };
+      const statusValues: Record<string, string> = {
+        activo: "activo", activa: "activo",
+        mantenimiento: "mantenimiento",
+        inactivo: "inactivo", inactiva: "inactivo",
+        "dado de baja": "dado-de-baja", baja: "dado-de-baja",
+      };
+
+      const results = {
+        total: data.length,
+        successful: 0,
+        failed: 0,
+        errors: [] as Array<{ row: number; error: string; data: Record<string, any> }>,
+      };
+      const platesInFile = new Set<string>();
+
+      for (let i = 0; i < data.length; i++) {
+        const row = data[i];
+        const rowNumber = i + 2;
+        try {
+          const rawPlate = textValue(row, "Placa");
+          const plate = rawPlate.toUpperCase().replace(/[\s-]/g, "");
+          if (!plate) throw new Error("El campo 'Placa' es requerido");
+          if (!/^[A-Z0-9]{3,8}$/.test(plate)) {
+            throw new Error("El campo 'Placa' debe tener entre 3 y 8 caracteres alfanuméricos");
+          }
+          if (platesInFile.has(plate)) {
+            throw new Error(`La placa '${plate}' está repetida dentro del archivo`);
+          }
+          platesInFile.add(plate);
+
+          const vehicleData = {
+            plate,
+            brand: textValue(row, "Marca"),
+            model: textValue(row, "Modelo"),
+            year: parseInteger(readValue(row, "Año", "Ano"), "Año", true, 1900, new Date().getFullYear() + 1),
+            type: normalizeEnum(textValue(row, "Tipo"), "Tipo", typeValues),
+            ownership: normalizeEnum(textValue(row, "Propiedad"), "Propiedad", ownershipValues),
+            capacity: parseInteger(readValue(row, "Capacidad"), "Capacidad"),
+            mileage: parseInteger(readValue(row, "Kilometraje"), "Kilometraje"),
+            color: textValue(row, "Color") || undefined,
+            vin: textValue(row, "VIN") || undefined,
+            insurancePolicy: textValue(row, "Póliza Seguro", "Poliza Seguro", "Póliza") || undefined,
+            insuranceExpiry: parseDate(readValue(row, "Vencimiento Seguro"), "Vencimiento Seguro", true),
+            soatExpiry: parseDate(readValue(row, "Vencimiento SOAT"), "Vencimiento SOAT", true),
+            technicalReviewExpiry: parseDate(readValue(row, "Vencimiento Tecnicomecánica", "Vencimiento Tecnicomecanica"), "Vencimiento Tecnicomecánica", true),
+            status: normalizeEnum(textValue(row, "Estado"), "Estado", statusValues),
+            defaultMaxSpeed: parseInteger(readValue(row, "Velocidad Máxima Permitida", "Velocidad Maxima Permitida", "Velocidad Máxima"), "Velocidad Máxima Permitida", false, 0, 200),
+            observations: textValue(row, "Observaciones") || undefined,
+          };
+
+          if (!vehicleData.brand) throw new Error("El campo 'Marca' es requerido");
+          if (!vehicleData.model) throw new Error("El campo 'Modelo' es requerido");
+          const existingVehicle = await storage.getVehicleByPlate(plate);
+          if (existingVehicle) {
+            throw new Error(`La placa '${plate}' ya existe en el sistema`);
+          }
+
+          const validatedData = insertVehicleSchema.parse(vehicleData);
+          await storage.createVehicle(validatedData, companyId);
+          results.successful++;
+        } catch (error: any) {
+          results.failed++;
+          results.errors.push({ row: rowNumber, error: error.message || "Error de validación", data: row });
+        }
+      }
+
+      res.status(201).json(results);
+    } catch (error: any) {
+      console.error("Error importing vehicles:", error);
+      res.status(400).json({ error: error.message || "Error al importar vehículos" });
+    }
+  });
+
   app.get("/api/vehicles", requireAuth, async (req, res) => {
     const userCompanyId = getEffectiveCompanyId(req);
     const isAdmin = hasGlobalAccess(req.user!.role);
