@@ -9,7 +9,7 @@ interface InspectionCardProps {
   date: string;
   findings: number;
   compliance: number;
-  status: "aprobada" | "pendiente" | "rechazada";
+  status: "aprobada" | "pendiente" | "rechazada" | "completada" | "requiere_accion";
   onEdit?: (id: string) => void;
   onDelete?: (id: string) => void;
   onPrint?: (id: string) => void;
@@ -20,6 +20,8 @@ const statusConfig = {
   aprobada: { label: "Aprobada", variant: "default" as const, icon: CheckCircle },
   pendiente: { label: "Pendiente", variant: "secondary" as const, icon: AlertCircle },
   rechazada: { label: "Rechazada", variant: "destructive" as const, icon: AlertCircle },
+  completada: { label: "Completada", variant: "default" as const, icon: CheckCircle },
+  requiere_accion: { label: "Requiere Acción", variant: "destructive" as const, icon: AlertCircle },
 };
 
 export function InspectionCard({ 

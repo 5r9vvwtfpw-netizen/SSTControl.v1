@@ -391,9 +391,7 @@ export default function Inspecciones() {
               date={formatDate(inspection.date)}
               findings={inspection.findings}
               compliance={inspection.compliance}
-              status={inspection.status === "completada" || inspection.status === "requiere_accion"
-                ? "pendiente"
-                : inspection.status}
+              status={inspection.status}
               onEdit={handleEdit}
               onDelete={handleDelete}
               onPrint={handlePrint}

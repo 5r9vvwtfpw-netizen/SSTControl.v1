@@ -154,7 +154,7 @@ const getNewSolicitudDefaultValues = () => ({
   solicitante: "",
   departamento: "",
   fechaSolicitud: new Date(),
-  presupuestoEstimado: 0,
+  presupuestoEstimado: undefined,
   proveedorNombre: "",
   requiereEvaluacion: 1,
   cantidad: 1,
@@ -526,7 +526,7 @@ function SolicitudesTab({ pendingPlantillaData, onPlantillaApplied }: Solicitude
       queryClient.invalidateQueries({ queryKey: ["/api/adquisiciones-sst"] });
       toast({ title: "Solicitud creada exitosamente", className: "bg-yellow-50 border-yellow-200" });
       setDialogOpen(false);
-      form.reset();
+      form.reset(getNewSolicitudDefaultValues());
     },
   });
 
@@ -618,7 +618,7 @@ function SolicitudesTab({ pendingPlantillaData, onPlantillaApplied }: Solicitude
               if (!open) {
                 setEditingItem(null);
                 setSelectedPredefEpp("");
-                form.reset();
+                form.reset(getNewSolicitudDefaultValues());
               }
             }}>
               <DialogTrigger asChild>
@@ -681,7 +681,7 @@ function SolicitudesTab({ pendingPlantillaData, onPlantillaApplied }: Solicitude
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Tipo de Adquisición</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <Select onValueChange={field.onChange} value={field.value || ""}>
                               <FormControl>
                                 <SelectTrigger data-testid="select-tipo-adquisicion">
                                   <SelectValue placeholder="Seleccione..." />
@@ -710,7 +710,7 @@ function SolicitudesTab({ pendingPlantillaData, onPlantillaApplied }: Solicitude
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Nivel de Riesgo</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <Select onValueChange={field.onChange} value={field.value || ""}>
                               <FormControl>
                                 <SelectTrigger data-testid="select-nivel-riesgo">
                                   <SelectValue placeholder="Seleccione..." />
@@ -814,7 +814,7 @@ function SolicitudesTab({ pendingPlantillaData, onPlantillaApplied }: Solicitude
                             <FormControl>
                               <CurrencyInput 
                                 value={field.value}
-                                onChange={(val) => field.onChange(val ?? 0)}
+                                onChange={(val) => field.onChange(val ?? undefined)}
                                 data-testid="input-presupuesto"
                               />
                             </FormControl>
