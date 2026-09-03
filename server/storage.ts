@@ -1376,16 +1376,13 @@ export interface IStorage {
     entidadId: string;
     accion: string;
     descripcion: string;
-    userId?: string;
-    nombreUsuario: string;
-    rolUsuario?: string;
+    userId: string;
     campoModificado?: string;
     valorAnterior?: string;
     valorNuevo?: string;
     ipAddress?: string;
     userAgent?: string;
-    companyId: string;
-  }): Promise<void>;
+  }, companyId: string): Promise<void>;
   
   // ========================================
   // Auditorías Internas SST methods (company-scoped) - ISO 45001:2018 / Res. 0312/2019
@@ -3061,7 +3058,7 @@ export class DbStorage implements IStorage {
           ...worker,
           companyId,
           contractNumber,
-        }).returning();
+        } as typeof schema.workers.$inferInsert).returning();
         
         // Audit logging (Bloque 2: Legal Compliance)
         if (userId) {
@@ -3518,13 +3515,13 @@ export class DbStorage implements IStorage {
   }
 
   async createHealthCondition(data: InsertHealthCondition): Promise<HealthCondition> {
-    const [newCondition] = await db.insert(schema.healthConditions).values(data).returning();
+    const [newCondition] = await db.insert(schema.healthConditions).values(data as typeof schema.healthConditions.$inferInsert).returning();
     return newCondition;
   }
 
   async updateHealthCondition(id: string, data: Partial<InsertHealthCondition>): Promise<HealthCondition | undefined> {
     const [updated] = await db.update(schema.healthConditions)
-      .set({ ...data, updatedAt: new Date() })
+      .set({ ...data, updatedAt: new Date() } as Partial<typeof schema.healthConditions.$inferInsert>)
       .where(eq(schema.healthConditions.id, id))
       .returning();
     return updated;
@@ -3621,7 +3618,7 @@ export class DbStorage implements IStorage {
     const [newAccident] = await db.insert(schema.accidents).values({
       ...accident,
       companyId,
-    }).returning();
+    } as typeof schema.accidents.$inferInsert).returning();
     return newAccident;
   }
 
@@ -5028,7 +5025,7 @@ export class DbStorage implements IStorage {
     const [newExam] = await db.insert(schema.medicalExams).values({
       ...exam,
       companyId,
-    }).returning();
+    } as typeof schema.medicalExams.$inferInsert).returning();
     return newExam;
   }
 
@@ -5078,7 +5075,7 @@ export class DbStorage implements IStorage {
       .from(schema.users)
       .where(and(
         eq(schema.users.companyId, companyId),
-        inArray(schema.users.role, adminRoles),
+        inArray(schema.users.role, adminRoles as Array<typeof schema.users.role.enumValues[number]>),
         isNotNull(schema.users.email)
       ));
     
@@ -8820,7 +8817,7 @@ export class DbStorage implements IStorage {
       .values({
         ...aprobacion,
         companyId
-      })
+      } as typeof schema.aprobacionesCambios.$inferInsert)
       .returning();
     return newAprobacion;
   }
@@ -8830,7 +8827,7 @@ export class DbStorage implements IStorage {
       .set({
         ...aprobacion,
         updatedAt: sql`now()`
-      })
+      } as Partial<typeof schema.aprobacionesCambios.$inferInsert>)
       .where(and(
         eq(schema.aprobacionesCambios.id, id),
         eq(schema.aprobacionesCambios.companyId, companyId)
@@ -8981,7 +8978,7 @@ export class DbStorage implements IStorage {
         ...solicitud,
         companyId,
         numeroSolicitud
-      })
+      } as typeof schema.solicitudesAdquisicion.$inferInsert)
       .returning();
     return newSolicitud;
   }
@@ -8991,7 +8988,7 @@ export class DbStorage implements IStorage {
       .set({
         ...solicitud,
         updatedAt: sql`now()`
-      })
+      } as Partial<typeof schema.solicitudesAdquisicion.$inferInsert>)
       .where(and(
         eq(schema.solicitudesAdquisicion.id, id),
         eq(schema.solicitudesAdquisicion.companyId, companyId)
@@ -9051,7 +9048,7 @@ export class DbStorage implements IStorage {
       .values({
         ...evaluacion,
         companyId
-      })
+      } as typeof schema.evaluacionesAdquisicion.$inferInsert)
       .returning();
     return newEvaluacion;
   }
@@ -9061,7 +9058,7 @@ export class DbStorage implements IStorage {
       .set({
         ...evaluacion,
         updatedAt: sql`now()`
-      })
+      } as Partial<typeof schema.evaluacionesAdquisicion.$inferInsert>)
       .where(and(
         eq(schema.evaluacionesAdquisicion.id, id),
         eq(schema.evaluacionesAdquisicion.companyId, companyId)
@@ -9161,7 +9158,7 @@ export class DbStorage implements IStorage {
       .values({
         ...hoja,
         companyId
-      })
+      } as typeof schema.hojasSeguridad.$inferInsert)
       .returning();
     return newHoja;
   }
@@ -9171,7 +9168,7 @@ export class DbStorage implements IStorage {
       .set({
         ...hoja,
         updatedAt: sql`now()`
-      })
+      } as Partial<typeof schema.hojasSeguridad.$inferInsert>)
       .where(and(
         eq(schema.hojasSeguridad.id, id),
         eq(schema.hojasSeguridad.companyId, companyId)
@@ -9225,7 +9222,7 @@ export class DbStorage implements IStorage {
         ...item,
         precioTotal,
         companyId
-      })
+      } as typeof schema.adquisicionItems.$inferInsert)
       .returning();
     return newItem;
   }
@@ -9408,14 +9405,14 @@ export class DbStorage implements IStorage {
       .values({
         ...verificacion,
         companyId
-      })
+      } as typeof schema.verificacionesAdquisicion.$inferInsert)
       .returning();
     return newVerificacion;
   }
 
   async updateVerificacionAdquisicion(id: string, verificacion: Partial<InsertVerificacionAdquisicion>, companyId: string): Promise<VerificacionAdquisicion | undefined> {
     const [updated] = await db.update(schema.verificacionesAdquisicion)
-      .set(verificacion)
+      .set(verificacion as Partial<typeof schema.verificacionesAdquisicion.$inferInsert>)
       .where(and(
         eq(schema.verificacionesAdquisicion.id, id),
         eq(schema.verificacionesAdquisicion.companyId, companyId)
@@ -9708,7 +9705,7 @@ export class DbStorage implements IStorage {
     };
 
     const auditoriasCompletadas = allAuditorias.filter(a => 
-      a.estado === 'completada' || a.estado === 'aprobada'
+      (a.estado as string) === 'completada' || (a.estado as string) === 'aprobada'
     );
     
     // Promedio del porcentaje de cumplimiento de auditorías completadas
@@ -9722,7 +9719,7 @@ export class DbStorage implements IStorage {
     const auditorias = {
       totalAnio: allAuditorias.length,
       completadas: auditoriasCompletadas.length,
-      enCurso: allAuditorias.filter(a => a.estado === 'en_progreso').length,
+      enCurso: allAuditorias.filter(a => (a.estado as string) === 'en_progreso').length,
       programadas: allAuditorias.filter(a => a.estado === 'programada').length,
       hallazgosPorSeveridad,
       porcentajeConformidad: promedioCumplimiento
@@ -10226,7 +10223,7 @@ export class DbStorage implements IStorage {
         enviadoPor: userId,
         totalDestinatarios: destinatarios.length,
         totalLecturas: 0
-      })
+      } as typeof schema.comunicacionesSst.$inferInsert)
       .returning();
     
     // Crear registros de lectura para cada trabajador destinatario
@@ -10256,7 +10253,7 @@ export class DbStorage implements IStorage {
 
   async updateComunicacionSst(id: string, comunicacion: Partial<InsertComunicacionSst>, companyId: string, userId: string): Promise<ComunicacionSst | undefined> {
     const [updated] = await db.update(schema.comunicacionesSst)
-      .set(comunicacion)
+      .set(comunicacion as Partial<typeof schema.comunicacionesSst.$inferInsert>)
       .where(and(
         eq(schema.comunicacionesSst.id, id),
         eq(schema.comunicacionesSst.companyId, companyId)
@@ -10322,7 +10319,7 @@ export class DbStorage implements IStorage {
       .values({
         ...lectura,
         companyId,
-        trabajadorId: userId
+        userId,
       })
       .returning();
     
@@ -10610,13 +10607,13 @@ export class DbStorage implements IStorage {
         accion: params.accion as any,
         descripcion: params.descripcion,
         userId: params.userId,
-        nombreUsuario: user.fullName || user.email,
+        nombreUsuario: user.fullName || user.email || user.username,
         rolUsuario: user.role,
-        campoModificado: params.campoModificado || null,
-        valorAnterior: params.valorAnterior || null,
-        valorNuevo: params.valorNuevo || null,
-        ipAddress: params.ipAddress || null,
-        userAgent: params.userAgent || null,
+        campoModificado: params.campoModificado,
+        valorAnterior: params.valorAnterior,
+        valorNuevo: params.valorNuevo,
+        ipAddress: params.ipAddress,
+        userAgent: params.userAgent,
         companyId,
       });
     } catch (error) {
@@ -11782,7 +11779,7 @@ export class DbStorage implements IStorage {
           entityType: 'arco_request',
           entityId: created.id,
           action: 'create',
-          dataSubjectId: request.workerId || null,
+          dataSubjectId: request.workerId || undefined,
           dataSubjectName: request.requesterName,
           newValues: JSON.stringify(created),
           description: `Solicitud ARCO ${request.requestType} recibida de ${request.requesterName}. Plazo legal: 10 días`,
@@ -11838,7 +11835,7 @@ export class DbStorage implements IStorage {
           entityType: 'arco_request',
           entityId: id,
           action: 'update',
-          dataSubjectId: existing.workerId || null,
+          dataSubjectId: existing.workerId || undefined,
           dataSubjectName: existing.requesterName,
           oldValues: JSON.stringify(existing),
           newValues: JSON.stringify(updated),
@@ -11899,7 +11896,7 @@ export class DbStorage implements IStorage {
           entityType: 'arco_request',
           entityId: id,
           action: 'update',
-          dataSubjectId: existing.workerId || null,
+          dataSubjectId: existing.workerId || undefined,
           dataSubjectName: existing.requesterName,
           oldValues: JSON.stringify(existing),
           newValues: JSON.stringify(assigned),
@@ -11959,7 +11956,7 @@ export class DbStorage implements IStorage {
           entityType: 'arco_request',
           entityId: id,
           action: 'update',
-          dataSubjectId: existing.workerId || null,
+          dataSubjectId: existing.workerId || undefined,
           dataSubjectName: existing.requesterName,
           oldValues: JSON.stringify(existing),
           newValues: JSON.stringify(escalated),
@@ -12026,7 +12023,7 @@ export class DbStorage implements IStorage {
           entityType: 'arco_request',
           entityId: id,
           action: 'update',
-          dataSubjectId: existing.workerId || null,
+          dataSubjectId: existing.workerId || undefined,
           dataSubjectName: existing.requesterName,
           oldValues: JSON.stringify(existing),
           newValues: JSON.stringify(completed),
@@ -12095,7 +12092,7 @@ export class DbStorage implements IStorage {
         totalEstandares: estandares.length,
         estandaresCumplidos: estandares.filter(e => e.respuesta.cumple === 1).length,
         estandaresCriticosNoCumplidos: estandares.filter(e => 
-          e.critico === 1 && e.respuesta.cumple === 0
+          e.respuesta.cumple === 0
         ).length
       });
     }
@@ -12802,7 +12799,7 @@ export class DbStorage implements IStorage {
     const [updated] = await db
       .update(schema.paymentTransactions)
       .set({
-        status: 'approved',
+        status: 'APPROVED',
         paidAt
       })
       .where(eq(schema.paymentTransactions.id, id))
@@ -12814,7 +12811,7 @@ export class DbStorage implements IStorage {
     const [updated] = await db
       .update(schema.paymentTransactions)
       .set({
-        status: 'declined',
+        status: 'DECLINED',
         failedAt,
         ...(failureCode && { failureCode }),
         ...(failureMessage && { failureMessage })
@@ -13052,10 +13049,10 @@ export class DbStorage implements IStorage {
       planName: r.plan?.name || 'N/A',
       planPrice: r.plan?.priceMonthly || 0,
       companyNit: r.company?.nit || '',
-      companyAddress: r.company?.address,
-      companyCity: r.company?.city,
-      companyEmail: r.company?.contactEmail,
-      companyPhone: r.company?.phone
+      companyAddress: r.company?.address ?? undefined,
+      companyCity: r.company?.city ?? undefined,
+      companyEmail: r.company?.contactEmail ?? undefined,
+      companyPhone: r.company?.contactPhone ?? undefined
     }));
   }
 
@@ -13447,7 +13444,7 @@ export class DbStorage implements IStorage {
     await db
       .update(schema.planChangeHistory)
       .set({ 
-        status,
+         status: status as typeof schema.planChangeHistory.$inferInsert.status,
         completedAt: status === 'completed' ? new Date() : undefined
       })
       .where(eq(schema.planChangeHistory.id, planChangeId));
@@ -13797,7 +13794,7 @@ export class DbStorage implements IStorage {
         )
       );
 
-    return admins.map(admin => admin.email).filter(email => !!email);
+    return admins.map(admin => admin.email).filter((email): email is string => email !== null);
   }
 
   // ============================================================================
@@ -13834,7 +13831,7 @@ export class DbStorage implements IStorage {
     const [newDoc] = await db.insert(schema.sstDocuments).values({
       ...doc,
       companyId,
-    }).returning();
+    } as typeof schema.sstDocuments.$inferInsert).returning();
     return newDoc;
   }
 
@@ -13843,7 +13840,7 @@ export class DbStorage implements IStorage {
       .set({
         ...doc,
         updatedAt: new Date(),
-      })
+      } as Partial<typeof schema.sstDocuments.$inferInsert>)
       .where(and(
         eq(schema.sstDocuments.id, id),
         eq(schema.sstDocuments.companyId, companyId)
@@ -13963,7 +13960,7 @@ export class DbStorage implements IStorage {
     const [newPlan] = await db.insert(schema.planesEmergencia).values({
       ...plan,
       companyId,
-    }).returning();
+    } as typeof schema.planesEmergencia.$inferInsert).returning();
     return newPlan;
   }
 
@@ -13972,7 +13969,7 @@ export class DbStorage implements IStorage {
       .set({
         ...plan,
         updatedAt: new Date(),
-      })
+      } as Partial<typeof schema.planesEmergencia.$inferInsert>)
       .where(and(
         eq(schema.planesEmergencia.id, id),
         eq(schema.planesEmergencia.companyId, companyId)
@@ -14044,13 +14041,13 @@ export class DbStorage implements IStorage {
     const [newBrigada] = await db.insert(schema.brigadasEmergencia).values({
       ...brigada,
       companyId,
-    }).returning();
+    } as typeof schema.brigadasEmergencia.$inferInsert).returning();
     return newBrigada;
   }
 
   async updateBrigadaEmergencia(id: string, brigada: Partial<InsertBrigadaEmergencia>, companyId: string): Promise<BrigadaEmergencia | undefined> {
     const [updated] = await db.update(schema.brigadasEmergencia)
-      .set(brigada)
+      .set(brigada as Partial<typeof schema.brigadasEmergencia.$inferInsert>)
       .where(and(
         eq(schema.brigadasEmergencia.id, id),
         eq(schema.brigadasEmergencia.companyId, companyId)
@@ -14081,13 +14078,13 @@ export class DbStorage implements IStorage {
   }
 
   async createMiembroBrigada(miembro: InsertMiembroBrigada): Promise<MiembroBrigada> {
-    const [newMiembro] = await db.insert(schema.miembrosBrigada).values(miembro).returning();
+    const [newMiembro] = await db.insert(schema.miembrosBrigada).values(miembro as typeof schema.miembrosBrigada.$inferInsert).returning();
     return newMiembro;
   }
 
   async updateMiembroBrigada(id: string, miembro: Partial<InsertMiembroBrigada>): Promise<MiembroBrigada | undefined> {
     const [updated] = await db.update(schema.miembrosBrigada)
-      .set(miembro)
+      .set(miembro as Partial<typeof schema.miembrosBrigada.$inferInsert>)
       .where(eq(schema.miembrosBrigada.id, id))
       .returning();
     return updated;
@@ -14129,13 +14126,13 @@ export class DbStorage implements IStorage {
     const [newAnalisis] = await db.insert(schema.analisisVulnerabilidad).values({
       ...analisis,
       companyId,
-    }).returning();
+    } as typeof schema.analisisVulnerabilidad.$inferInsert).returning();
     return newAnalisis;
   }
 
   async updateAnalisisVulnerabilidad(id: string, analisis: Partial<InsertAnalisisVulnerabilidad>, companyId: string): Promise<AnalisisVulnerabilidad | undefined> {
     const [updated] = await db.update(schema.analisisVulnerabilidad)
-      .set(analisis)
+      .set(analisis as Partial<typeof schema.analisisVulnerabilidad.$inferInsert>)
       .where(and(
         eq(schema.analisisVulnerabilidad.id, id),
         eq(schema.analisisVulnerabilidad.companyId, companyId)
@@ -14183,7 +14180,7 @@ export class DbStorage implements IStorage {
     const [newRecurso] = await db.insert(schema.recursosEmergencia).values({
       ...recurso,
       companyId,
-    }).returning();
+    } as typeof schema.recursosEmergencia.$inferInsert).returning();
     return newRecurso;
   }
 
@@ -14192,7 +14189,7 @@ export class DbStorage implements IStorage {
       .set({
         ...recurso,
         updatedAt: new Date(),
-      })
+      } as Partial<typeof schema.recursosEmergencia.$inferInsert>)
       .where(and(
         eq(schema.recursosEmergencia.id, id),
         eq(schema.recursosEmergencia.companyId, companyId)
@@ -14223,13 +14220,13 @@ export class DbStorage implements IStorage {
   }
 
   async createInspeccionRecursoEmergencia(inspeccion: InsertInspeccionRecursoEmergencia): Promise<InspeccionRecursoEmergencia> {
-    const [newInspeccion] = await db.insert(schema.inspeccionesRecursosEmergencia).values(inspeccion).returning();
+    const [newInspeccion] = await db.insert(schema.inspeccionesRecursosEmergencia).values(inspeccion as typeof schema.inspeccionesRecursosEmergencia.$inferInsert).returning();
     return newInspeccion;
   }
 
   async updateInspeccionRecursoEmergencia(id: string, inspeccion: Partial<InsertInspeccionRecursoEmergencia>): Promise<InspeccionRecursoEmergencia | undefined> {
     const [updated] = await db.update(schema.inspeccionesRecursosEmergencia)
-      .set(inspeccion)
+      .set(inspeccion as Partial<typeof schema.inspeccionesRecursosEmergencia.$inferInsert>)
       .where(eq(schema.inspeccionesRecursosEmergencia.id, id))
       .returning();
     return updated;
@@ -14271,7 +14268,7 @@ export class DbStorage implements IStorage {
     const [newSimulacro] = await db.insert(schema.simulacros).values({
       ...simulacro,
       companyId,
-    }).returning();
+    } as typeof schema.simulacros.$inferInsert).returning();
     return newSimulacro;
   }
 
@@ -14280,7 +14277,7 @@ export class DbStorage implements IStorage {
       .set({
         ...simulacro,
         updatedAt: new Date(),
-      })
+      } as Partial<typeof schema.simulacros.$inferInsert>)
       .where(and(
         eq(schema.simulacros.id, id),
         eq(schema.simulacros.companyId, companyId)
@@ -14563,9 +14560,9 @@ export class DbStorage implements IStorage {
     }
     
     if (data.workerId) {
-      const worker = await this.getWorker(data.workerId);
+      const worker = await this.getWorkerById(data.workerId);
       if (worker) {
-        workerName = worker.fullName;
+        workerName = worker.name;
       }
     }
     
@@ -15171,7 +15168,7 @@ export class DbStorage implements IStorage {
   async getCopasstRegistrosVotacion(eleccionId: string): Promise<CopasstRegistroVotacion[]> {
     return await db.select().from(schema.copasstRegistroVotacion)
       .where(eq(schema.copasstRegistroVotacion.eleccionId, eleccionId))
-      .orderBy(desc(schema.copasstRegistroVotacion.fechaHoraVoto));
+      .orderBy(desc(schema.copasstRegistroVotacion.fechaVoto));
   }
 
   async hasVoted(eleccionId: string, workerId: string): Promise<boolean> {
@@ -15186,17 +15183,17 @@ export class DbStorage implements IStorage {
     return !!registro;
   }
 
-  async registrarVoto(eleccionId: string, workerId: string, candidatoIds: string[]): Promise<void> {
+  async registrarVoto(eleccionId: string, workerId: string, candidatoIds: string | string[]): Promise<void> {
+    const candidateIds = Array.isArray(candidatoIds) ? candidatoIds : [candidatoIds];
     await db.transaction(async (tx) => {
       // Registrar que el trabajador votó (sin revelar por quién - voto secreto)
       await tx.insert(schema.copasstRegistroVotacion).values({
         eleccionId,
         workerId,
-        fechaHoraVoto: new Date(),
       });
 
       // Registrar cada voto individual en copasst_votos (anónimo)
-      for (const candidatoId of candidatoIds) {
+      for (const candidatoId of candidateIds) {
         await tx.insert(schema.copasstVotos).values({
           eleccionId,
           candidatoId,
@@ -17156,7 +17153,7 @@ export class DbStorage implements IStorage {
   }
 
   async updateEvsParticipant(id: string, data: Partial<InsertEvsParticipant>): Promise<EvsParticipant | undefined> {
-    const [updated] = await db.update(schema.evsParticipants).set({ ...data, updatedAt: new Date() }).where(eq(schema.evsParticipants.id, id)).returning();
+    const [updated] = await db.update(schema.evsParticipants).set(data as Partial<typeof schema.evsParticipants.$inferInsert>).where(eq(schema.evsParticipants.id, id)).returning();
     return updated;
   }
 
@@ -17709,14 +17706,14 @@ export class DbStorage implements IStorage {
 
   async createVehicleMaintenance(data: schema.InsertVehicleMaintenance, companyId: string): Promise<schema.VehicleMaintenance> {
     const [created] = await db.insert(schema.vehicleMaintenances)
-      .values({ ...data, companyId })
+      .values({ ...data, companyId } as typeof schema.vehicleMaintenances.$inferInsert)
       .returning();
     return created;
   }
 
   async updateVehicleMaintenance(id: string, data: Partial<schema.InsertVehicleMaintenance>): Promise<schema.VehicleMaintenance> {
     const [updated] = await db.update(schema.vehicleMaintenances)
-      .set(data)
+      .set(data as Partial<typeof schema.vehicleMaintenances.$inferInsert>)
       .where(eq(schema.vehicleMaintenances.id, id))
       .returning();
     return updated;
@@ -17745,7 +17742,7 @@ export class DbStorage implements IStorage {
 
   async createVehicleGpsTracking(data: schema.InsertVehicleGpsTracking, companyId: string): Promise<schema.VehicleGpsTracking> {
     const [created] = await db.insert(schema.vehicleGpsTracking)
-      .values({ ...data, companyId })
+      .values({ ...data, companyId } as typeof schema.safeRoutes.$inferInsert)
       .returning();
     return created;
   }
@@ -17780,7 +17777,7 @@ export class DbStorage implements IStorage {
 
   async updateSstSpeedAlert(id: string, data: Partial<schema.InsertSstSpeedAlert>): Promise<schema.SstSpeedAlert> {
     const [updated] = await db.update(schema.sstSpeedAlerts)
-      .set(data)
+      .set(data as Partial<typeof schema.safeRoutes.$inferInsert>)
       .where(eq(schema.sstSpeedAlerts.id, id))
       .returning();
     return updated;

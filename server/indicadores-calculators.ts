@@ -23,6 +23,11 @@ function isInDateRange(dateStr: string | Date | null | undefined, range: DateRan
   return date >= range.startDate && date <= range.endDate;
 }
 
+async function getActiveWorkers(companyId: string): Promise<Worker[]> {
+  const workers = await storage.getWorkers(companyId);
+  return workers.filter(worker => worker.status === "activo");
+}
+
 export function parsePeriodoToDateRange(periodo: string): DateRange {
   if (periodo.includes("Q")) {
     const [year, quarter] = periodo.split("-Q");
@@ -50,7 +55,7 @@ export function parsePeriodoToDateRange(periodo: string): DateRange {
 }
 
 async function calcularIE01(companyId: string, dateRange: DateRange): Promise<CalculationResult> {
-  const workers = await storage.getActiveWorkers(companyId);
+  const workers = await getActiveWorkers(companyId);
   const totalWorkers = workers.length;
   const workersInSGSST = totalWorkers;
   const valor = safeDiv(workersInSGSST, totalWorkers) * 100;
@@ -91,7 +96,7 @@ async function calcularIE03(companyId: string, dateRange: DateRange): Promise<Ca
   
   if (periodoActivo) {
     requisitosCumplidos++;
-    const miembros = await storage.getCopasstMiembros(companyId, periodoActivo.id);
+    const miembros = await storage.getCopasstMiembros(periodoActivo.id);
     if (miembros.length >= 4) requisitosCumplidos++;
     const actas = await storage.getCopasstActas(companyId);
     const actasEnPeriodo = actas.filter(a => isInDateRange(a.fecha, dateRange));
@@ -118,7 +123,6 @@ async function calcularIE04(companyId: string, dateRange: DateRange): Promise<Ca
   const totalPerfiles = perfiles.length || 1;
   const perfilesConResponsabilidadSST = perfiles.filter(p => 
     p.name?.toLowerCase().includes("sst") || 
-    p.responsabilitiesSST ||
     p.id
   ).length;
   const valor = safeDiv(perfilesConResponsabilidadSST, totalPerfiles) * 100;
@@ -141,8 +145,8 @@ async function calcularIP01(companyId: string, dateRange: DateRange): Promise<Ca
       detallesCalculo: { error: "No hay plan de trabajo anual para el período", actividadesEjecutadas: 0, actividadesPlanificadas: 0 }
     };
   }
-  const actividades = await storage.getActividadesPlanTrabajo(companyId, planActual.id);
-  const actividadesEnPeriodo = actividades.filter(a => isInDateRange(a.fechaProgramada, dateRange));
+  const actividades = await storage.getActividadesPlanTrabajo(planActual.id, companyId);
+  const actividadesEnPeriodo = actividades.filter(a => isInDateRange(a.fechaInicio ?? a.fechaFin, dateRange));
   const actividadesCompletadas = actividadesEnPeriodo.filter(a => a.estado === "completada").length;
   const totalActividades = actividadesEnPeriodo.length || 1;
   const valor = safeDiv(actividadesCompletadas, totalActividades) * 100;
@@ -157,12 +161,12 @@ async function calcularIP01(companyId: string, dateRange: DateRange): Promise<Ca
 }
 
 async function calcularIP02(companyId: string, dateRange: DateRange): Promise<CalculationResult> {
-  const workers = await storage.getActiveWorkers(companyId);
+  const workers = await getActiveWorkers(companyId);
   const trainings = await storage.getTrainings(companyId);
   const trainingsEnPeriodo = trainings.filter(t => isInDateRange(t.date, dateRange) && t.status === "completada");
   const workersCapacitados = new Set<string>();
   for (const training of trainingsEnPeriodo) {
-    const attendees = await storage.getTrainingAttendees(training.id);
+    const attendees = await storage.getTrainingAttendees(training.id, companyId);
     attendees.filter(a => a.attended === 1).forEach(a => workersCapacitados.add(a.workerId));
   }
   const totalWorkers = workers.length || 1;
@@ -186,7 +190,7 @@ async function calcularIP03(companyId: string, dateRange: DateRange): Promise<Ca
   const planActual = planes.find(p => p.anio === dateRange.startDate.getFullYear());
   let inspeccionesProgramadas = inspeccionesRealizadas || 1;
   if (planActual) {
-    const actividades = await storage.getActividadesPlanTrabajo(companyId, planActual.id);
+    const actividades = await storage.getActividadesPlanTrabajo(planActual.id, companyId);
     const actInspecciones = actividades.filter(a => 
       a.actividad?.toLowerCase().includes("inspección") || 
       a.actividad?.toLowerCase().includes("inspeccion")
@@ -208,9 +212,9 @@ async function calcularIP03(companyId: string, dateRange: DateRange): Promise<Ca
 
 async function calcularIP04(companyId: string, dateRange: DateRange): Promise<CalculationResult> {
   const exams = await storage.getMedicalExams(companyId);
-  const examsEnPeriodo = exams.filter(e => isInDateRange(e.examDate, dateRange));
+  const examsEnPeriodo = exams.filter(e => isInDateRange(e.performedDate ?? e.scheduledDate, dateRange));
   const examsRealizados = examsEnPeriodo.length;
-  const workers = await storage.getActiveWorkers(companyId);
+  const workers = await getActiveWorkers(companyId);
   const examsProgramados = workers.length || 1;
   const valor = safeDiv(examsRealizados, examsProgramados) * 100;
   return {
@@ -259,7 +263,7 @@ async function calcularIP06(companyId: string, dateRange: DateRange): Promise<Ca
 }
 
 async function calcularIP07(companyId: string, dateRange: DateRange): Promise<CalculationResult> {
-  const workers = await storage.getActiveWorkers(companyId);
+  const workers = await getActiveWorkers(companyId);
   const totalWorkers = workers.length || 1;
   const workersConEPP = totalWorkers;
   const valor = safeDiv(workersConEPP, totalWorkers) * 100;
@@ -278,7 +282,7 @@ async function calcularIR01(companyId: string, dateRange: DateRange): Promise<Ca
   const accidents = await storage.getAccidents(companyId);
   const accidentsEnPeriodo = accidents.filter(a => isInDateRange(a.date, dateRange));
   const numeroAT = accidentsEnPeriodo.length;
-  const workers = await storage.getActiveWorkers(companyId);
+  const workers = await getActiveWorkers(companyId);
   const numeroTrabajadores = workers.length || 1;
   const valor = safeDiv(numeroAT, numeroTrabajadores) * 100;
   return {
@@ -297,7 +301,7 @@ async function calcularIR02(companyId: string, dateRange: DateRange): Promise<Ca
     companyId
   );
   const diasPerdidos = datosCalculo?.diasPerdidos || 0;
-  const workers = await storage.getActiveWorkers(companyId);
+  const workers = await getActiveWorkers(companyId);
   const numeroTrabajadores = workers.length || 1;
   const valor = safeDiv(diasPerdidos, numeroTrabajadores) * 100;
   return {
@@ -328,7 +332,7 @@ async function calcularIR04(companyId: string, dateRange: DateRange): Promise<Ca
   const diseases = await storage.getOccupationalDiseases(companyId);
   const diseasesEnPeriodo = diseases.filter(d => isInDateRange(d.diagnosisDate, dateRange));
   const diasPerdidosEL = diseasesEnPeriodo.reduce((sum, d) => sum + (d.incapacityDays || 0), 0);
-  const workers = await storage.getActiveWorkers(companyId);
+  const workers = await getActiveWorkers(companyId);
   const numeroTrabajadores = workers.length || 1;
   const diasLaborables = 22 * 3;
   const valor = safeDiv(diasPerdidosEL, numeroTrabajadores * diasLaborables) * 100;
@@ -347,7 +351,7 @@ async function calcularIR05(companyId: string, dateRange: DateRange): Promise<Ca
   const diseases = await storage.getOccupationalDiseases(companyId);
   const diseasesEnPeriodo = diseases.filter(d => isInDateRange(d.diagnosisDate, dateRange));
   const casosEL = diseasesEnPeriodo.length;
-  const workers = await storage.getActiveWorkers(companyId);
+  const workers = await getActiveWorkers(companyId);
   const numeroTrabajadores = workers.length || 1;
   const valor = safeDiv(casosEL, numeroTrabajadores) * 100;
   return {
@@ -405,7 +409,7 @@ async function calcularIR08(companyId: string, dateRange: DateRange): Promise<Ca
     `${dateRange.startDate.getFullYear()}-Q${Math.ceil((dateRange.startDate.getMonth() + 1) / 3)}`,
     companyId
   );
-  const workers = await storage.getActiveWorkers(companyId);
+  const workers = await getActiveWorkers(companyId);
   const horasTrabajadas = datosCalculo?.horasTrabajadas || (workers.length * 8 * 22 * 3);
   const valor = safeDiv(numeroAT * 240000, horasTrabajadas);
   return {
@@ -424,7 +428,7 @@ async function calcularIR09(companyId: string, dateRange: DateRange): Promise<Ca
     isInDateRange(a.date, dateRange) && a.severity === "leve"
   );
   const numeroIncidentes = incidentes.length;
-  const workers = await storage.getActiveWorkers(companyId);
+  const workers = await getActiveWorkers(companyId);
   const numeroTrabajadores = workers.length || 1;
   const valor = safeDiv(numeroIncidentes, numeroTrabajadores) * 100;
   return {

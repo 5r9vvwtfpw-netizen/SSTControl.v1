@@ -1,7 +1,12 @@
 import { pool } from "../db";
 
+interface MigrationClient {
+  query(query: string): Promise<{ rows: Array<Record<string, unknown>> }>;
+  release(): void;
+}
+
 export async function syncPcaTables() {
-  const client = await pool.connect();
+  const client = await pool.connect() as unknown as MigrationClient;
   try {
     console.log("[Migration] Sincronizando tablas PCA (Conservación Auditiva)...");
 
@@ -160,7 +165,7 @@ export async function syncPcaTables() {
 }
 
 async function syncAudiometryRecordsTable() {
-  const client = await pool.connect();
+  const client = await pool.connect() as unknown as MigrationClient;
   try {
     const audiometryCheck = await client.query(`
       SELECT table_name FROM information_schema.tables

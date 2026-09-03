@@ -495,10 +495,6 @@ async function createCopasstApprovalRequest(
 
     const acta = await storage.createCopasstActa({
       fecha: fechaProxima.toISOString().split('T')[0],
-      numero: 0, // Se asignará automáticamente
-      horaInicio: "08:00",
-      horaFin: "10:00",
-      lugar: "Sala de reuniones",
       notas: `SOLICITUD DE APROBACIÓN DE CAMBIO SST
 
 CAMBIO: ${cambio.titulo}
@@ -521,30 +517,6 @@ ${cambio.justificacion || "Ver documentación del cambio"}
 
 ACCIÓN REQUERIDA:
 El Comité COPASST debe revisar y emitir concepto sobre este cambio según Decreto 1072/2015 Art. 2.2.4.6.26.`,
-      temas: `APROBACIÓN DE CAMBIO SST: ${cambio.titulo}
-
-DETALLES DEL CAMBIO:
-- Tipo: ${cambio.tipo}
-- Categoría: ${cambio.categoria}
-- Área Afectada: ${cambio.areaAfectada || "No especificada"}
-- Proceso Afectado: ${cambio.procesoAfectado || "No especificado"}
-- Trabajadores Afectados: ${cambio.numeroTrabajadoresAfectados || 0}
-- Fecha de Implementación Planificada: ${cambio.fechaImplementacionPlanificada || "Por definir"}
-- Responsable: ${cambio.responsableImplementacion || "Por asignar"}
-
-EVALUACIONES DE IMPACTO:
-${resumenEvaluaciones || "No hay evaluaciones registradas"}
-
-JUSTIFICACIÓN:
-${cambio.justificacion || "Ver documentación del cambio"}
-
-ACCIÓN REQUERIDA:
-El Comité COPASST debe revisar y aprobar/rechazar este cambio según Decreto 1072/2015.`,
-      acuerdos: `Pendiente de discusión en reunión COPASST.
-Se requiere decisión sobre el cambio ID: ${cambio.id}`,
-      observaciones: `Acta generada automáticamente por el Sistema de Gestión de Cambios SST.
-Este cambio requiere aprobación del COPASST antes de su implementación.`,
-      estado: "pendiente"
     }, companyId);
 
     created.push(acta.id);
@@ -577,7 +549,6 @@ async function updateLegalMatrix(
   const afectaCumplimientoLegal = tiposQuePuedenAfectarLegal.includes(cambio.tipo) ||
     evaluaciones.some(e => 
       e.nivelRiesgoResultante === "alto" || 
-      e.nivelRiesgoResultante === "muy_alto" ||
       e.nivelRiesgoResultante === "critico"
     );
 
@@ -638,15 +609,11 @@ async function evaluatePolicyUpdates(
   if (requiresUpdate) {
     suggestions.push(`Revisar y actualizar la Política SST considerando el cambio: ${cambio.titulo}`);
     
-    if (cambio.tipo === "sustancias_quimicas") {
-      suggestions.push("Actualizar la sección de gestión de sustancias químicas en las políticas");
-    }
-    
-    if (cambio.tipo === "organizacional") {
+    if (cambio.categoria === "organizacional") {
       suggestions.push("Revisar responsabilidades y roles en la Política SST");
     }
 
-    if (cambio.tipo === "proceso") {
+    if (cambio.categoria === "proceso") {
       suggestions.push("Actualizar procedimientos documentados en el Sistema de Gestión");
     }
   }
@@ -654,7 +621,6 @@ async function evaluatePolicyUpdates(
   // Verificar impacto alto en evaluaciones
   const impactoAlto = evaluaciones.some(e => 
     e.nivelRiesgoResultante === "alto" || 
-    e.nivelRiesgoResultante === "muy_alto" ||
     e.nivelRiesgoResultante === "critico"
   );
 
@@ -787,6 +753,8 @@ async function notifyStakeholders(
           publicoObjetivo: "todos",
           mediosUtilizados: ["aplicacion"],
           requiereConfirmacionLectura: 0,
+          esExterna: 0,
+          respuestaRecibida: 0,
           fechaEnvio: new Date()
         }, companyId, senderId, workerIds);
         

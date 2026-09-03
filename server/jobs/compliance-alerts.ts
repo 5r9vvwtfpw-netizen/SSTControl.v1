@@ -102,7 +102,7 @@ export async function alertarEstandaresIncompletos(): Promise<number> {
         .slice(0, 10)
         .map(r => {
           const est = estandaresMap.get(r.estandarId);
-          return est ? `• [${est.codigo ?? 'S/C'}] ${est.nombre}` : `• Estándar ID: ${r.estandarId}`;
+          return est ? `• [${est.numeroEstandar}] ${est.nombre}` : `• Estándar ID: ${r.estandarId}`;
         })
         .join('\n');
 
@@ -217,7 +217,7 @@ export async function alertarAccionesMejoraVencidas(): Promise<number> {
 
       const listaTexto = accionesProblema
         .slice(0, 8)
-        .map(a => `• [${a.estado}] ${a.descripcionAccion.substring(0, 80)}${a.descripcionAccion.length > 80 ? '...' : ''} — Fecha: ${a.fechaCompromiso}`)
+        .map(a => `• [${a.estado}] ${a.descripcion.substring(0, 80)}${a.descripcion.length > 80 ? '...' : ''} — Fecha: ${a.fechaCompromiso}`)
         .join('\n');
 
       const resto = accionesProblema.length > 8 ? `\n... y ${accionesProblema.length - 8} más.` : '';
@@ -304,7 +304,7 @@ export async function alertarVencimientosPesv(): Promise<number> {
       // Verificar vehículos
       const vehiculos = await storage.getVehicles(company.id);
       for (const v of vehiculos) {
-        if (v.status === 'inactivo' || v.status === 'dado_de_baja') continue;
+        if (v.status === 'inactivo' || v.status === 'dado-de-baja') continue;
 
         if (v.soatExpiry) {
           const d = new Date(v.soatExpiry);

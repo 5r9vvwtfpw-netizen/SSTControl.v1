@@ -1024,8 +1024,8 @@ export function registerInduccionVirtualRoutes(app: Express) {
       // ── Datos del trabajador y sesión ────────────────────────────────────
       const rows = [
         ['Trabajador:', worker?.name || '-'],
-        ['Cédula:', worker?.cedula || worker?.documentNumber || '-'],
-        ['Cargo:', worker?.position || worker?.cargo || '-'],
+        ['Cédula:', worker?.identificationNumber || '-'],
+        ['Cargo:', worker?.position || '-'],
         ['Tipo de inducción:', sesion.tipoInduccion === 'reinduccion' ? 'Reinducción' : 'Inducción'],
         ['Fecha de envío:', formatDate(sesion.fechaEnvio)],
         ['Fecha de finalización:', formatDate(sesion.fechaFinalizacion)],
@@ -1464,8 +1464,8 @@ export function registerInduccionVirtualRoutes(app: Express) {
       // ── Datos del trabajador y sesión ────────────────────────────────────
       const rows = [
         ['Trabajador:', worker?.name || '-'],
-        ['Cédula:', worker?.cedula || worker?.documentNumber || '-'],
-        ['Cargo:', worker?.position || worker?.cargo || '-'],
+        ['Cédula:', worker?.identificationNumber || '-'],
+        ['Cargo:', worker?.position || '-'],
         ['Tipo de inducción:', 'Inducción PESV'],
         ['Fecha de envío:', formatDate(sesion.fechaEnvio)],
         ['Fecha de finalización:', formatDate(sesion.fechaFinalizacion)],
