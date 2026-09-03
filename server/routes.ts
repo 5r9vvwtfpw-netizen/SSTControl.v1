@@ -9863,6 +9863,261 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Drivers routes
+  const driverExcelUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+      const allowedMimeTypes = [
+        "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/octet-stream",
+        "text/csv",
+      ];
+      const allowedExtensions = [".xls", ".xlsx", ".csv"];
+      const extension = path.extname(file.originalname).toLowerCase();
+
+      if (allowedExtensions.includes(extension) && allowedMimeTypes.includes(file.mimetype)) {
+        cb(null, true);
+      } else {
+        cb(new Error("Tipo de archivo no permitido. Use un archivo Excel (.xlsx, .xls) o CSV."));
+      }
+    },
+  });
+
+  app.get("/api/drivers/template/download", requirePermission("drivers:create"), async (req, res) => {
+    try {
+      const XLSX = await import("xlsx");
+      const headers = [
+        "Identificación Trabajador",
+        "Nombre Completo",
+        "Número de Identificación",
+        "Número de Licencia",
+        "Categoría Licencia",
+        "Vencimiento Licencia",
+        "Tipo de Sangre",
+        "Contacto de Emergencia",
+        "Teléfono de Emergencia",
+        "Vencimiento Examen Médico",
+        "Estado",
+        "Observaciones",
+      ];
+      const worksheet = XLSX.utils.aoa_to_sheet([headers]);
+      worksheet["!cols"] = [
+        { wch: 24 }, { wch: 28 }, { wch: 24 }, { wch: 22 },
+        { wch: 20 }, { wch: 22 }, { wch: 16 }, { wch: 26 },
+        { wch: 22 }, { wch: 28 }, { wch: 16 }, { wch: 44 },
+      ];
+
+      const instructions = [
+        { Campo: "Identificación Trabajador", Descripción: "Opcional. Cédula de un trabajador ya registrado en SST para vincularlo automáticamente.", Requerido: "No", "Valores válidos": "Cédula existente en la empresa", Ejemplo: "1020304050" },
+        { Campo: "Nombre Completo", Descripción: "Nombre completo del conductor. Si se vincula un trabajador, puede repetir su nombre.", Requerido: "Sí", "Valores válidos": "Texto libre", Ejemplo: "Carlos Pérez" },
+        { Campo: "Número de Identificación", Descripción: "Documento de identificación del conductor.", Requerido: "Sí", "Valores válidos": "Texto libre y único", Ejemplo: "1020304050" },
+        { Campo: "Número de Licencia", Descripción: "Número de la licencia de conducción.", Requerido: "Sí", "Valores válidos": "Texto libre y único", Ejemplo: "L12345678" },
+        { Campo: "Categoría Licencia", Descripción: "Categoría de la licencia.", Requerido: "Sí", "Valores válidos": "A1, A2, B1, B2, B3, C1, C2, C3", Ejemplo: "C2" },
+        { Campo: "Vencimiento Licencia", Descripción: "Fecha de vencimiento de la licencia.", Requerido: "Sí", "Valores válidos": "AAAA-MM-DD, DD/MM/AAAA o fecha Excel", Ejemplo: "2027-12-31" },
+        { Campo: "Tipo de Sangre", Descripción: "Tipo de sangre del conductor.", Requerido: "No", "Valores válidos": "O+, O-, A+, A-, B+, B-, AB+, AB-", Ejemplo: "O+" },
+        { Campo: "Contacto de Emergencia", Descripción: "Nombre del contacto de emergencia.", Requerido: "No", "Valores válidos": "Texto libre", Ejemplo: "Ana Pérez" },
+        { Campo: "Teléfono de Emergencia", Descripción: "Teléfono del contacto de emergencia.", Requerido: "No", "Valores válidos": "Texto libre", Ejemplo: "3001234567" },
+        { Campo: "Vencimiento Examen Médico", Descripción: "Fecha de vencimiento del examen médico ocupacional.", Requerido: "Sí", "Valores válidos": "AAAA-MM-DD, DD/MM/AAAA o fecha Excel", Ejemplo: "2027-06-30" },
+        { Campo: "Estado", Descripción: "Estado del conductor.", Requerido: "Sí", "Valores válidos": "activo, inactivo, suspendido, retirado", Ejemplo: "activo" },
+        { Campo: "Observaciones", Descripción: "Notas adicionales sobre el conductor.", Requerido: "No", "Valores válidos": "Texto libre", Ejemplo: "Conductor de operación nacional" },
+      ];
+      const instructionsSheet = XLSX.utils.json_to_sheet(instructions);
+      instructionsSheet["!cols"] = [
+        { wch: 30 }, { wch: 68 }, { wch: 12 }, { wch: 48 }, { wch: 32 },
+      ];
+
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Conductores");
+      XLSX.utils.book_append_sheet(workbook, instructionsSheet, "Instrucciones");
+      const buffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
+
+      res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+      res.setHeader("Content-Disposition", "attachment; filename=plantilla_conductores_pesv.xlsx");
+      res.send(buffer);
+    } catch (error: any) {
+      console.error("Error generating driver template:", error);
+      res.status(500).send("Error al generar la plantilla de conductores: " + error.message);
+    }
+  });
+
+  app.post("/api/drivers/import", requirePermission("drivers:create"), driverExcelUpload.single("file"), async (req, res) => {
+    try {
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) {
+        return res.status(403).json({ error: "Usuario no asociado a una empresa o no hay una empresa seleccionada" });
+      }
+      if (!req.file) {
+        return res.status(400).json({ error: "No se proporcionó ningún archivo" });
+      }
+
+      const XLSX = await import("xlsx");
+      const workbook = XLSX.read(req.file.buffer, { type: "buffer", cellDates: false });
+      const sheetName = workbook.SheetNames[0];
+      if (!sheetName) {
+        return res.status(400).json({ error: "El archivo no contiene ninguna hoja" });
+      }
+      const worksheet = workbook.Sheets[sheetName];
+      const data = XLSX.utils.sheet_to_json<Record<string, any>>(worksheet, { defval: "" });
+      if (data.length === 0) {
+        return res.status(400).json({ error: "El archivo está vacío" });
+      }
+      if (data.length > 2000) {
+        return res.status(400).json({ error: "El archivo supera el máximo de 2.000 conductores por importación" });
+      }
+
+      const readValue = (row: Record<string, any>, ...keys: string[]) => {
+        for (const key of keys) {
+          if (row[key] !== undefined && row[key] !== null && String(row[key]).trim() !== "") {
+            return row[key];
+          }
+        }
+        return "";
+      };
+      const textValue = (row: Record<string, any>, ...keys: string[]) =>
+        String(readValue(row, ...keys)).trim();
+      const removeAccents = (value: string) =>
+        value.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+      const parseDate = (value: any, label: string, required = false): string | undefined => {
+        if (value === undefined || value === null || String(value).trim() === "") {
+          if (required) throw new Error(`El campo '${label}' es requerido`);
+          return undefined;
+        }
+        if (typeof value === "number" && Number.isFinite(value)) {
+          const date = new Date(Date.UTC(1899, 11, 30) + value * 86400000);
+          if (!Number.isNaN(date.getTime())) return date.toISOString().slice(0, 10);
+        }
+        const raw = String(value).trim();
+        let match = raw.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
+        if (match) {
+          const [, day, month, year] = match;
+          const date = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
+          if (date.getUTCFullYear() === Number(year) && date.getUTCMonth() === Number(month) - 1 && date.getUTCDate() === Number(day)) {
+            return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+          }
+        }
+        match = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+        if (match) {
+          const [, year, month, day] = match;
+          const date = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
+          if (date.getUTCFullYear() === Number(year) && date.getUTCMonth() === Number(month) - 1 && date.getUTCDate() === Number(day)) {
+            return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+          }
+        }
+        throw new Error(`El campo '${label}' tiene una fecha inválida. Use AAAA-MM-DD o DD/MM/AAAA`);
+      };
+
+      const normalizeEnum = (value: string, label: string, values: Record<string, string>): string => {
+        const normalized = removeAccents(value.toLowerCase().trim()).replace(/[_-]+/g, " ").replace(/\s+/g, " ");
+        const result = values[normalized];
+        if (!result) {
+          throw new Error(`El campo '${label}' tiene un valor no válido: '${value}'. Valores permitidos: ${[...new Set(Object.values(values))].join(", ")}`);
+        }
+        return result;
+      };
+      const licenseTypeValues: Record<string, string> = {
+        a1: "A1", a2: "A2", b1: "B1", b2: "B2", b3: "B3", c1: "C1", c2: "C2", c3: "C3",
+      };
+      const statusValues: Record<string, string> = {
+        activo: "activo", activa: "activo", inactivo: "inactivo", inactiva: "inactivo",
+        suspendido: "suspendido", suspendida: "suspendido", retirado: "retirado", retirada: "retirado",
+      };
+
+      const existingDrivers = await storage.getAllDrivers();
+      const existingIdentificationNumbers = new Set(existingDrivers.map(driver => driver.identificationNumber.trim()));
+      const existingLicenseNumbers = new Set(existingDrivers.map(driver => driver.licenseNumber.trim()));
+      const workers = await storage.getWorkers(companyId);
+      const workerByIdentification = new Map(workers.map(worker => [worker.identificationNumber.trim(), worker]));
+      const identificationNumbersInFile = new Set<string>();
+      const licenseNumbersInFile = new Set<string>();
+      const results = {
+        total: data.length,
+        successful: 0,
+        failed: 0,
+        errors: [] as Array<{ row: number; error: string }>,
+      };
+
+      for (let i = 0; i < data.length; i++) {
+        const row = data[i];
+        const rowNumber = i + 2;
+        try {
+          const workerIdentification = textValue(row, "Identificación Trabajador", "Identificacion Trabajador", "Cédula Trabajador", "Cedula Trabajador");
+          const name = textValue(row, "Nombre Completo", "Nombre");
+          const identificationNumber = textValue(row, "Número de Identificación", "Numero de Identificacion", "Identificación", "Identificacion", "Cédula", "Cedula");
+          const licenseNumber = textValue(row, "Número de Licencia", "Numero de Licencia", "Licencia");
+          const licenseType = normalizeEnum(textValue(row, "Categoría Licencia", "Categoria Licencia", "Tipo de Licencia", "Tipo Licencia"), "Categoría Licencia", licenseTypeValues);
+          const licenseExpiry = parseDate(readValue(row, "Vencimiento Licencia", "Fecha Vencimiento Licencia"), "Vencimiento Licencia", true);
+          const medicalExamExpiry = parseDate(readValue(row, "Vencimiento Examen Médico", "Vencimiento Examen Medico", "Fecha Examen Médico", "Fecha Examen Medico"), "Vencimiento Examen Médico", true);
+          const status = normalizeEnum(textValue(row, "Estado"), "Estado", statusValues);
+
+          if (!name) throw new Error("El campo 'Nombre Completo' es requerido");
+          if (!identificationNumber) throw new Error("El campo 'Número de Identificación' es requerido");
+          if (!licenseNumber) throw new Error("El campo 'Número de Licencia' es requerido");
+          if (identificationNumbersInFile.has(identificationNumber)) throw new Error(`La identificación '${identificationNumber}' está repetida dentro del archivo`);
+          if (licenseNumbersInFile.has(licenseNumber)) throw new Error(`La licencia '${licenseNumber}' está repetida dentro del archivo`);
+          if (existingIdentificationNumbers.has(identificationNumber)) throw new Error(`La identificación '${identificationNumber}' ya existe en el sistema`);
+          if (existingLicenseNumbers.has(licenseNumber)) throw new Error(`La licencia '${licenseNumber}' ya existe en el sistema`);
+          identificationNumbersInFile.add(identificationNumber);
+          licenseNumbersInFile.add(licenseNumber);
+
+          let workerId: string | undefined;
+          if (workerIdentification) {
+            const worker = workerByIdentification.get(workerIdentification);
+            if (!worker) throw new Error(`No se encontró un trabajador de SST con identificación '${workerIdentification}' en la empresa`);
+            workerId = worker.id;
+          }
+
+          const driverData = {
+            workerId,
+            name,
+            identificationNumber,
+            licenseNumber,
+            licenseType,
+            licenseExpiry,
+            bloodType: textValue(row, "Tipo de Sangre", "Tipo Sangre") || undefined,
+            emergencyContact: textValue(row, "Contacto de Emergencia") || undefined,
+            emergencyPhone: textValue(row, "Teléfono de Emergencia", "Telefono de Emergencia") || undefined,
+            medicalExamExpiry,
+            status,
+            observations: textValue(row, "Observaciones") || undefined,
+          };
+          const validatedData = insertDriverSchema.parse(driverData);
+          const driver = await storage.createDriver(validatedData, companyId);
+
+          if (driver.workerId && driver.medicalExamExpiry) {
+            try {
+              const existingExams = await storage.getMedicalExamsByWorker(driver.workerId, companyId);
+              const pesvExam = existingExams.find(exam => exam.recommendations?.includes("[PESV-CONDUCTOR]"));
+              if (!pesvExam) {
+                await storage.createMedicalExam({
+                  workerId: driver.workerId,
+                  examType: "periodico",
+                  scheduledDate: driver.medicalExamExpiry,
+                  status: "programado",
+                  recommendations: "[PESV-CONDUCTOR] Examen médico ocupacional para conductor - Resolución 40595/2022",
+                }, companyId);
+              }
+            } catch (syncError) {
+              console.error("[PESV-SST] Error sincronizando examen médico durante importación:", syncError);
+            }
+          }
+          results.successful++;
+          existingIdentificationNumbers.add(identificationNumber);
+          existingLicenseNumbers.add(licenseNumber);
+        } catch (error: any) {
+          results.failed++;
+          results.errors.push({ row: rowNumber, error: error.message || "Error de validación" });
+        }
+      }
+
+      res.status(201).json(results);
+    } catch (error: any) {
+      console.error("Error importing drivers:", error);
+      res.status(400).json({ error: error.message || "Error al importar conductores" });
+    }
+  });
+
   app.get("/api/drivers", requireAuth, async (req, res) => {
     const userCompanyId = getEffectiveCompanyId(req);
     const isAdmin = hasGlobalAccess(req.user!.role);
