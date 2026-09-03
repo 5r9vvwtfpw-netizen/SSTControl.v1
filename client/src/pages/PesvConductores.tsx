@@ -4,10 +4,11 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Search, Pencil, Trash2, ArrowLeft, FileDown, AlertTriangle, Truck, Link2Off } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, ArrowLeft, FileDown, AlertTriangle, Truck, Link2Off, Download, Upload } from "lucide-react";
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
@@ -45,6 +46,14 @@ export default function PesvConductores() {
   const [editingDriver, setEditingDriver] = useState<Driver | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [deletingDriverId, setDeletingDriverId] = useState<string | null>(null);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [selectedImportFile, setSelectedImportFile] = useState<File | null>(null);
+  const [importResults, setImportResults] = useState<{
+    total: number;
+    successful: number;
+    failed: number;
+    errors: Array<{ row: number; error: string }>;
+  } | null>(null);
   const [assignmentDriverId, setAssignmentDriverId] = useState<string | null>(null);
   const [assignmentDriverName, setAssignmentDriverName] = useState("");
   const [assignmentDialogOpen, setAssignmentDialogOpen] = useState(false);
@@ -481,6 +490,97 @@ export default function PesvConductores() {
     document.body.removeChild(link);
   };
 
+  const handleDownloadTemplate = async () => {
+    try {
+      const url = user?.companyId
+        ? `/api/drivers/template/download?companyId=${encodeURIComponent(user.companyId)}`
+        : "/api/drivers/template/download";
+      const response = await fetch(url, { credentials: "include" });
+      if (!response.ok) {
+        throw new Error(await response.text() || "Error al descargar la plantilla");
+      }
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = "plantilla_conductores_pesv.xlsx";
+      document.body.appendChild(link);
+      link.click();
+      window.URL.revokeObjectURL(downloadUrl);
+      document.body.removeChild(link);
+      toast({
+        title: "Plantilla descargada",
+        description: "La plantilla Excel de conductores se descargó exitosamente.",
+        className: "bg-yellow-50 border-yellow-200",
+      });
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message || "No se pudo descargar la plantilla", variant: "destructive" });
+    }
+  };
+
+  const driverImportMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formDataUpload = new FormData();
+      formDataUpload.append("file", file);
+      const query = user?.companyId ? `?companyId=${encodeURIComponent(user.companyId)}` : "";
+      const response = await fetch(`/api/drivers/import${query}`, {
+        method: "POST",
+        credentials: "include",
+        body: formDataUpload,
+      });
+      if (!response.ok) {
+        let message = "Error al importar conductores";
+        try {
+          const error = await response.json();
+          message = error.error || message;
+        } catch {
+          message = await response.text() || message;
+        }
+        throw new Error(message);
+      }
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setImportResults(data);
+      queryClient.invalidateQueries({ queryKey: ["/api/drivers"] });
+      if (data.failed === 0) {
+        toast({
+          title: "Importación exitosa",
+          description: `Se importaron ${data.successful} conductores correctamente.`,
+          className: "bg-yellow-50 border-yellow-200",
+        });
+      } else {
+        toast({
+          title: "Importación completada con errores",
+          description: `${data.successful} exitosos, ${data.failed} con errores.`,
+        });
+      }
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const handleImportFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] || null;
+    setSelectedImportFile(file);
+    setImportResults(null);
+  };
+
+  const handleImport = () => {
+    if (!selectedImportFile) {
+      toast({ title: "Archivo requerido", description: "Seleccione un archivo Excel para importar.", variant: "destructive" });
+      return;
+    }
+    driverImportMutation.mutate(selectedImportFile);
+  };
+
+  const resetImport = () => {
+    setSelectedImportFile(null);
+    setImportResults(null);
+    setImportDialogOpen(false);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2 flex-wrap mb-4">
@@ -502,6 +602,97 @@ export default function PesvConductores() {
             <FileDown className="h-4 w-4 mr-2" />
             Descargar PDF
           </Button>
+          {isAdmin && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDownloadTemplate}
+                data-testid="button-download-template"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Descargar Plantilla
+              </Button>
+              <Dialog open={importDialogOpen} onOpenChange={(open) => {
+                setImportDialogOpen(open);
+                if (!open) {
+                  setSelectedImportFile(null);
+                  setImportResults(null);
+                }
+              }}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" data-testid="button-import-excel">
+                    <Upload className="h-4 w-4 mr-2" />
+                    Importar Excel
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Importar Conductores PESV</DialogTitle>
+                    <DialogDescription>
+                      Seleccione la plantilla diligenciada con los datos de los conductores.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="driverImportFile">Archivo Excel</Label>
+                      <Input
+                        id="driverImportFile"
+                        type="file"
+                        accept=".xlsx,.xls,.csv"
+                        onChange={handleImportFileSelect}
+                        data-testid="input-import-file"
+                      />
+                      {selectedImportFile && (
+                        <p className="text-sm text-muted-foreground">
+                          Archivo: {selectedImportFile.name}
+                        </p>
+                      )}
+                    </div>
+                    {importResults && (
+                      <div className="space-y-2">
+                        <Alert className={importResults.failed === 0 ? "border-green-500" : "border-yellow-500"}>
+                          <AlertDescription>
+                            <div className="space-y-1">
+                              <p className="font-medium">Resultados de la importación:</p>
+                              <p className="text-green-600">Exitosos: {importResults.successful}</p>
+                              {importResults.failed > 0 && (
+                                <p className="text-red-600">Con errores: {importResults.failed}</p>
+                              )}
+                            </div>
+                          </AlertDescription>
+                        </Alert>
+                        {importResults.errors.length > 0 && (
+                          <div className="max-h-40 overflow-y-auto text-sm space-y-1">
+                            {importResults.errors.map((error, index) => (
+                              <p key={`${error.row}-${index}`} className="text-red-500">
+                                Fila {error.row}: {error.error}
+                              </p>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <DialogFooter>
+                    {importResults ? (
+                      <Button onClick={resetImport} data-testid="button-close-import">
+                        Cerrar
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={handleImport}
+                        disabled={!selectedImportFile || driverImportMutation.isPending}
+                        data-testid="button-submit-import"
+                      >
+                        {driverImportMutation.isPending ? "Importando..." : "Importar"}
+                      </Button>
+                    )}
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </>
+          )}
         </div>
       </div>
       
