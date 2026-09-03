@@ -3139,10 +3139,12 @@ export class DbStorage implements IStorage {
       .returning();
     
     if (updated) {
-      const contractSyncFields: Partial<{ position: string; department: string; jobProfileId: string | null }> = {};
+      const contractSyncFields: Partial<Pick<InsertContract, "position" | "department" | "jobProfileId" | "startDate" | "endDate">> = {};
       if (worker.position) contractSyncFields.position = worker.position;
       if (worker.department !== undefined) contractSyncFields.department = worker.department ?? undefined;
       if (worker.jobProfileId !== undefined) contractSyncFields.jobProfileId = worker.jobProfileId;
+      if (worker.startDate !== undefined) contractSyncFields.startDate = worker.startDate;
+      if (worker.endDate !== undefined) contractSyncFields.endDate = worker.endDate;
 
       if (Object.keys(contractSyncFields).length > 0) {
         try {
@@ -4976,10 +4978,12 @@ export class DbStorage implements IStorage {
       .returning();
 
     if (updated && updated.status === 'activo' && updated.workerId) {
-      const syncFields: Record<string, any> = {};
+      const syncFields: Partial<Pick<InsertWorker, "position" | "department" | "jobProfileId" | "startDate" | "endDate">> = {};
       if (contract.position !== undefined) syncFields.position = contract.position;
-      if (contract.department !== undefined) syncFields.department = contract.department;
+      if (contract.department !== undefined) syncFields.department = contract.department ?? undefined;
       if (contract.jobProfileId !== undefined) syncFields.jobProfileId = contract.jobProfileId;
+      if (contract.startDate !== undefined) syncFields.startDate = contract.startDate;
+      if (contract.endDate !== undefined) syncFields.endDate = contract.endDate;
 
       if (Object.keys(syncFields).length > 0) {
         try {
