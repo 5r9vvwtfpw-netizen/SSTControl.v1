@@ -1,0 +1,89 @@
+Eso verifica que todo el código vuelve a compilar y que no quedaron errores de tipos. No sustituye una prueba manual de cada proceso de negocio, así que te recomiendo revisar estos puntos concretos:
+
+1. Prueba principal: fecha del contrato
+
+Usa el trabajador de prueba de las capturas.
+
+Desde “Datos del Trabajador”
+
+Abre el trabajador.
+Cambia Fecha de Inicio a una fecha claramente diferente, por ejemplo 15/01/2026.
+Pulsa Actualizar.
+Cierra y vuelve a abrir el trabajador.
+Entra a la pestaña Contrato.
+Verifica que aparezca 15/01/2026.
+Regresa a la lista y confirma que la fecha del trabajador también sea la nueva.
+Desde la pestaña “Contrato”
+
+Pulsa Actualizar Contrato.
+Cambia la fecha a otra, por ejemplo 20/02/2026.
+Pulsa Guardar Cambios.
+Cierra y vuelve a abrir el trabajador.
+Verifica la nueva fecha tanto en Contrato como en Datos del Trabajador.
+La fecha debe mantenerse después de cerrar, abrir y actualizar la página.
+
+2. Datos básicos del trabajador
+
+En el mismo trabajador:
+
+Cambiar nombre o departamento.
+Cambiar cargo.
+Modificar salario.
+Dejar email, sede o campos opcionales vacíos.
+Guardar, cerrar y volver a abrir.
+Confirmar que los datos siguen correctos.
+3. Contrato
+
+Verificar:
+
+Tipo de contrato.
+Estado activo.
+Fecha de inicio.
+Fecha de fin, si aplica.
+Salario.
+Horario.
+Número de contrato.
+Después de guardar, volver a abrir el registro para comprobar persistencia.
+
+4. PDFs e informes
+
+Generar al menos:
+
+Un PDF de perfil de cargo.
+Un informe SST.
+Un informe PESV, si tienes una evaluación disponible.
+Confirmar que:
+
+El PDF se descarga.
+No queda en blanco.
+Incluye empresa, trabajador y fechas correctas.
+No aparece un error de firmas o logo.
+5. Módulos afectados
+
+Hacer una prueba sencilla de:
+
+Trabajadores.
+Capacitaciones.
+Adquisiciones SST.
+Inspecciones.
+Accidentes o investigaciones.
+Evaluaciones PESV.
+Actas de COPASST o Convivencia.
+Portal del trabajador, si tienes usuario de prueba.
+En cada uno: abrir, consultar un registro y guardar una modificación no crítica.
+
+6. Permisos y roles
+
+Con usuarios de prueba, confirmar:
+
+admin puede editar.
+responsable_sst puede acceder a sus módulos.
+lso puede acceder a las empresas correspondientes.
+lso_externo conserva los permisos esperados.
+Un usuario sin permiso no puede editar ni eliminar.
+Un usuario sin sesión es enviado al inicio de sesión.
+Importante
+
+La corrección sincroniza la fecha únicamente con el contrato activo. No modifica contratos históricos, vencidos o terminados.
+
+Si estas pruebas pasan, la corrección de la fecha queda confirmada funcionalmente. El sistema ya está listo para seguir probándose en desarrollo, pero todavía no se ha publicado.
