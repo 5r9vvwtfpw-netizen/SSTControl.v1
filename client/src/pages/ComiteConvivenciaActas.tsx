@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import {
   ConvivenciaPeriodo, InsertConvivenciaPeriodo, insertConvivenciaPeriodoSchema,
@@ -185,31 +186,34 @@ export default function ComiteConvivenciaActas() {
   const isExpiringSoon = daysUntilExpiry !== null && daysUntilExpiry <= 90 && daysUntilExpiry > 0;
   const isExpired = daysUntilExpiry !== null && daysUntilExpiry <= 0;
 
-  const periodoFormSchema = insertConvivenciaPeriodoSchema.omit({ companyId: true });
+  const periodoFormSchema = insertConvivenciaPeriodoSchema.omit({ companyId: true }).extend({
+    fechaInicio: z.string().min(1, "Seleccione la fecha de inicio"),
+    fechaFin: z.string().min(1, "Seleccione la fecha de fin"),
+  });
   const eleccionFormSchema = insertConvivenciaEleccionSchema.omit({ companyId: true });
 
   const periodoForm = useForm<Omit<InsertConvivenciaPeriodo, 'companyId'>>({
     resolver: zodResolver(periodoFormSchema),
     defaultValues: {
-      fechaInicio: format(new Date(), "yyyy-MM-dd"),
-      fechaFin: format(addYears(new Date(), 2), "yyyy-MM-dd"),
-      estado: 'activo',
+      fechaInicio: "",
+      fechaFin: "",
+      estado: '',
     },
   });
 
   const eleccionForm = useForm<Omit<InsertConvivenciaEleccion, 'companyId'>>({
     resolver: zodResolver(eleccionFormSchema),
     defaultValues: {
-      fechaConvocatoria: format(new Date(), "yyyy-MM-dd"),
+      fechaConvocatoria: "",
       fechaInicioInscripcion: "",
       fechaFinInscripcion: "",
       fechaVotacion: "",
-      horaInicioVotacion: "08:00",
-      horaFinVotacion: "16:00",
-      estado: 'convocatoria',
-      modalidadVotacion: 'presencial',
-      principalesRequeridos: 2,
-      suplentesRequeridos: 2,
+      horaInicioVotacion: "",
+      horaFinVotacion: "",
+      estado: '',
+      modalidadVotacion: '',
+      principalesRequeridos: undefined as unknown as number,
+      suplentesRequeridos: undefined as unknown as number,
     },
   });
 
@@ -218,10 +222,10 @@ export default function ComiteConvivenciaActas() {
     defaultValues: {
       workerId: "",
       periodoId: "",
-      representacion: 'empleador',
-      cargo: 'miembro_principal',
-      fechaDesignacion: format(new Date(), "yyyy-MM-dd"),
-      estado: 'activo',
+      representacion: '',
+      cargo: '',
+      fechaDesignacion: "",
+      estado: '',
     },
   });
 
@@ -230,10 +234,10 @@ export default function ComiteConvivenciaActas() {
     defaultValues: {
       workerId: "",
       eleccionId: "",
-      fechaInscripcion: format(new Date(), "yyyy-MM-dd"),
+      fechaInscripcion: "",
       propuestaLaboral: "",
-      estado: 'inscrito',
-      votosRecibidos: 0,
+      estado: '',
+      votosRecibidos: undefined,
     },
   });
 
@@ -241,9 +245,9 @@ export default function ComiteConvivenciaActas() {
     resolver: zodResolver(insertConvivenciaActaSchema),
     defaultValues: {
       companyId: "",
-      tipo: "sesion",
-      numero: 1,
-      fecha: format(new Date(), "yyyy-MM-dd"),
+      tipo: "",
+      numero: undefined as unknown as number,
+      fecha: "",
       asunto: "",
       contenido: "",
       asistentes: [],

@@ -23,3 +23,4 @@
 - [TypeScript cleanup workflow](typescript-cleanup-workflow.md) — las correcciones delegadas deben validarse de inmediato; pueden dejar mejoras parciales pero nunca sustituyen el chequeo global final.
 - [Worker and contract date synchronization](worker-contract-date-sync.md) — workers y contracts duplican fechas laborales; sincronizar solo el contrato activo en ambas direcciones.
 - [Development module access](development-module-access.md) — en desarrollo se omiten gates comerciales para probar módulos; producción conserva capítulo, suscripción y menú.
+- [Blank form validation](blank-form-validation.md) — los campos de negocio empiezan vacíos y los obligatorios requieren validación explícita antes de mutar.

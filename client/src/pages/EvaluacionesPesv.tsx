@@ -77,15 +77,15 @@ export default function EvaluacionesPesv() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      anio: new Date().getFullYear(),
-      mes: new Date().getMonth() + 1,
-      nivel: "basico",
-      responsableNombre: user?.fullName || user?.username || "",
-      responsableCargo: "Responsable PESV",
-      numeroVehiculos: 0,
-      numeroConductores: 0,
+      anio: undefined as unknown as number,
+      mes: undefined as unknown as number,
+      nivel: "",
+      responsableNombre: "",
+      responsableCargo: "",
+      numeroVehiculos: undefined as unknown as number,
+      numeroConductores: undefined as unknown as number,
       observaciones: "",
-      estado: "en-progreso",
+      estado: "",
     },
   });
 

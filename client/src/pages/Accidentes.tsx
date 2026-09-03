@@ -785,12 +785,12 @@ export default function Accidentes() {
   const [formData, setFormData] = useState({
     companyId: "",
     workerId: "",
-    type: "caida",
+    type: "",
     customType: "",
     description: "",
-    severity: "leve" as const,
-    date: format(new Date(), "yyyy-MM-dd"),
-    time: format(new Date(), "HH:mm"),
+    severity: "" as "",
+    date: "",
+    time: "",
     location: "",
     customLocation: "",
     actionsTaken: "",
@@ -801,8 +801,6 @@ export default function Accidentes() {
     if (dialogOpen) {
       setFormData(prev => ({
         ...prev,
-        date: format(new Date(), "yyyy-MM-dd"),
-        time: format(new Date(), "HH:mm"),
         companyId: user?.companyId || "",
       }));
     }
@@ -839,12 +837,12 @@ export default function Accidentes() {
       setFormData({
         companyId: "",
         workerId: "",
-        type: "caida",
+        type: "",
         customType: "",
         description: "",
-        severity: "leve",
-        date: format(new Date(), "yyyy-MM-dd"),
-        time: format(new Date(), "HH:mm"),
+        severity: "",
+        date: "",
+        time: "",
         location: "",
         customLocation: "",
         actionsTaken: "",
@@ -1085,7 +1083,7 @@ export default function Accidentes() {
                       onValueChange={(value) => setFormData({ ...formData, type: value })}
                     >
                       <SelectTrigger id="type" data-testid="select-type">
-                        <SelectValue />
+                        <SelectValue placeholder="Seleccione el tipo de accidente" />
                       </SelectTrigger>
                       <SelectContent>
                         {ACCIDENT_TYPES.map((type) => (
@@ -1116,7 +1114,7 @@ export default function Accidentes() {
                       onValueChange={(value: any) => setFormData({ ...formData, severity: value })}
                     >
                       <SelectTrigger id="severity" data-testid="select-severity">
-                        <SelectValue />
+                        <SelectValue placeholder="Seleccione la gravedad" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="leve">Leve</SelectItem>

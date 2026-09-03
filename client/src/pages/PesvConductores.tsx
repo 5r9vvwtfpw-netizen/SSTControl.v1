@@ -75,26 +75,26 @@ export default function PesvConductores() {
     name: string;
     identificationNumber: string;
     licenseNumber: string;
-    licenseType: "A1" | "A2" | "B1" | "B2" | "B3" | "C1" | "C2" | "C3";
+    licenseType: "" | "A1" | "A2" | "B1" | "B2" | "B3" | "C1" | "C2" | "C3";
     licenseExpiry: string;
     bloodType: string;
     emergencyContact: string;
     emergencyPhone: string;
     medicalExamExpiry: string;
-    status: "activo" | "inactivo" | "retirado" | "suspendido";
+    status: "" | "activo" | "inactivo" | "retirado" | "suspendido";
     observations: string;
   }>({
     workerId: "",
     name: "",
     identificationNumber: "",
     licenseNumber: "",
-    licenseType: "B1",
+    licenseType: "",
     licenseExpiry: "",
     bloodType: "",
     emergencyContact: "",
     emergencyPhone: "",
     medicalExamExpiry: "",
-    status: "activo",
+    status: "",
     observations: "",
   });
 
@@ -383,6 +383,10 @@ export default function PesvConductores() {
       toast({ title: "Campo requerido", description: "Ingrese la fecha de vencimiento de la licencia de conducción.", variant: "destructive" });
       return;
     }
+    if (!formData.licenseType) {
+      toast({ title: "Campo requerido", description: "Seleccione la categoría de la licencia de conducción.", variant: "destructive" });
+      return;
+    }
     if (!formData.medicalExamExpiry) {
       toast({ title: "Campo requerido", description: "Ingrese la fecha de vencimiento del examen médico.", variant: "destructive" });
       return;
@@ -390,6 +394,8 @@ export default function PesvConductores() {
 
     const data = {
       ...formData,
+      licenseType: formData.licenseType as "A1" | "A2" | "B1" | "B2" | "B3" | "C1" | "C2" | "C3",
+      status: formData.status || undefined,
       workerId: formData.workerId || undefined,
       bloodType: formData.bloodType || undefined,
       emergencyContact: formData.emergencyContact || undefined,
@@ -435,13 +441,13 @@ export default function PesvConductores() {
       name: "",
       identificationNumber: "",
       licenseNumber: "",
-      licenseType: "B1",
+      licenseType: "",
       licenseExpiry: "",
       bloodType: "",
       emergencyContact: "",
       emergencyPhone: "",
       medicalExamExpiry: "",
-      status: "activo",
+      status: "",
       observations: "",
     });
   };
@@ -588,7 +594,7 @@ export default function PesvConductores() {
                       onValueChange={(value: any) => setFormData({ ...formData, licenseType: value })}
                     >
                       <SelectTrigger id="licenseType" data-testid="select-license-type">
-                        <SelectValue />
+                        <SelectValue placeholder="Seleccione categoría de licencia" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="A1">A1 - Motocicletas hasta 125cc</SelectItem>
@@ -670,7 +676,7 @@ export default function PesvConductores() {
                       onValueChange={(value: any) => setFormData({ ...formData, status: value })}
                     >
                       <SelectTrigger id="status" data-testid="select-status">
-                        <SelectValue />
+                        <SelectValue placeholder="Seleccione el estado" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="activo">Activo</SelectItem>

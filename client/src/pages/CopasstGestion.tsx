@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import {
   CopasstPeriodo, InsertCopasstPeriodo, insertCopasstPeriodoSchema,
@@ -218,32 +219,36 @@ export default function CopasstGestion() {
   const isExpired = daysUntilExpiry !== null && daysUntilExpiry <= 0;
 
   // Schema for client-side validation (companyId added on submit)
-  const periodoFormSchema = insertCopasstPeriodoSchema.omit({ companyId: true });
+  const periodoFormSchema = insertCopasstPeriodoSchema.omit({ companyId: true }).extend({
+    tipoComite: z.string().min(1, "Seleccione el tipo de comité"),
+    fechaInicio: z.string().min(1, "Seleccione la fecha de inicio"),
+    fechaFin: z.string().min(1, "Seleccione la fecha de fin"),
+  });
   const eleccionFormSchema = insertCopasstEleccionSchema.omit({ companyId: true });
 
   const periodoForm = useForm<Omit<InsertCopasstPeriodo, 'companyId'>>({
     resolver: zodResolver(periodoFormSchema),
     defaultValues: {
-      tipoComite: 'copasst',
-      fechaInicio: format(new Date(), "yyyy-MM-dd"),
-      fechaFin: format(addYears(new Date(), 2), "yyyy-MM-dd"),
-      estado: 'activo',
+      tipoComite: '',
+      fechaInicio: "",
+      fechaFin: "",
+      estado: '',
     },
   });
 
   const eleccionForm = useForm<Omit<InsertCopasstEleccion, 'companyId'>>({
     resolver: zodResolver(eleccionFormSchema),
     defaultValues: {
-      fechaConvocatoria: format(new Date(), "yyyy-MM-dd"),
+      fechaConvocatoria: "",
       fechaInicioInscripcion: "",
       fechaFinInscripcion: "",
       fechaVotacion: "",
-      horaInicioVotacion: "08:00",
-      horaFinVotacion: "16:00",
-      estado: 'convocatoria',
-      totalTrabajadores: workers.length || 1,
-      principalesRequeridos: 1,
-      suplentesRequeridos: 1,
+      horaInicioVotacion: "",
+      horaFinVotacion: "",
+      estado: '',
+      totalTrabajadores: undefined as unknown as number,
+      principalesRequeridos: undefined as unknown as number,
+      suplentesRequeridos: undefined as unknown as number,
     },
   });
 
@@ -252,11 +257,11 @@ export default function CopasstGestion() {
     defaultValues: {
       workerId: "",
       periodoId: "",
-      tipoRepresentante: 'empleador',
-      rolMiembro: 'principal',
-      cargo: 'miembro',
-      fechaDesignacion: format(new Date(), "yyyy-MM-dd"),
-      activo: true,
+      tipoRepresentante: '',
+      rolMiembro: '',
+      cargo: '',
+      fechaDesignacion: "",
+      activo: false,
       capacitado: false,
     },
   });
@@ -266,11 +271,11 @@ export default function CopasstGestion() {
     defaultValues: {
       workerId: "",
       eleccionId: "",
-      fechaInscripcion: format(new Date(), "yyyy-MM-dd"),
+      fechaInscripcion: "",
       propuestas: "",
-      aceptaCandidatura: true,
-      estado: 'inscrito',
-      votosObtenidos: 0,
+      aceptaCandidatura: false,
+      estado: '',
+      votosObtenidos: undefined,
     },
   });
 
@@ -278,7 +283,7 @@ export default function CopasstGestion() {
   const actaCreateForm = useForm<InsertCopasstActa>({
     resolver: zodResolver(insertCopasstActaSchema),
     defaultValues: {
-      fecha: format(new Date(), "yyyy-MM-dd"),
+      fecha: "",
       notas: "",
       presidenteWorkerId: null,
       presidente: null,

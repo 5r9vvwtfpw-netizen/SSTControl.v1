@@ -129,11 +129,11 @@ export default function Trabajadores() {
     email?: string;
     position: string;
     department: string;
-    contractType: "indefinido" | "fijo" | "temporal" | "obra-labor" | "aprendizaje";
+    contractType: "" | "indefinido" | "fijo" | "temporal" | "obra-labor" | "aprendizaje";
     contractNumber?: string;
     startDate: string;
     endDate: string;
-    status: "activo" | "inactivo" | "retirado";
+    status: "" | "activo" | "inactivo" | "retirado";
     jobProfileId?: string;
     gender?: string;
     birthDate?: string;
@@ -147,10 +147,10 @@ export default function Trabajadores() {
     email: "",
     position: "",
     department: "",
-    contractType: "indefinido",
+    contractType: "",
     startDate: "",
     endDate: "",
-    status: "activo",
+    status: "",
     jobProfileId: "",
     gender: "",
     birthDate: "",
@@ -306,14 +306,14 @@ export default function Trabajadores() {
     workSchedule: string;
     status: string;
   }>({
-    contractType: "indefinido",
+    contractType: "",
     startDate: "",
     endDate: "",
     position: "",
     department: "",
     salary: "",
     workSchedule: "",
-    status: "activo",
+    status: "",
   });
 
   // Query para obtener contrato del trabajador cuando está en modo edición
@@ -455,14 +455,14 @@ export default function Trabajadores() {
   const handleStartCreateContract = () => {
     if (!editingWorker) return;
     setContractFormData({
-      contractType: "indefinido",
-      startDate: getTodayDateString(),
+      contractType: "",
+      startDate: "",
       endDate: "",
-      position: editingWorker.position,
-      department: editingWorker.department,
+      position: "",
+      department: "",
       salary: "",
       workSchedule: "",
-      status: "activo",
+      status: "",
     });
     setIsEditingContract(true);
   };
@@ -513,10 +513,10 @@ export default function Trabajadores() {
         email: "",
         position: "",
         department: "",
-        contractType: "indefinido",
+        contractType: "",
         startDate: "",
         endDate: "",
-        status: "activo",
+        status: "",
         jobProfileId: "",
         gender: "",
         birthDate: "",
@@ -564,10 +564,10 @@ export default function Trabajadores() {
         email: "",
         position: "",
         department: "",
-        contractType: "indefinido",
+        contractType: "",
         startDate: "",
         endDate: "",
-        status: "activo",
+        status: "",
         jobProfileId: "",
         gender: "",
         birthDate: "",
@@ -725,6 +725,24 @@ export default function Trabajadores() {
       });
       return;
     }
+
+    if (!formData.contractType) {
+      toast({
+        title: "Error",
+        description: "Debe seleccionar el tipo de contrato",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.startDate) {
+      toast({
+        title: "Error",
+        description: "Debe seleccionar la fecha de inicio",
+        variant: "destructive",
+      });
+      return;
+    }
     
     // Validar consentimiento para nuevos trabajadores (Ley 1581/2012)
     if (!editingWorker && !hasConsent) {
@@ -787,6 +805,8 @@ export default function Trabajadores() {
     
     const cleanedFormData = {
       ...formData,
+      contractType: formData.contractType,
+      status: formData.status || undefined,
       identificationNumber: cleanedCedula,
       endDate: formData.endDate || undefined,
       sedeId: formData.sedeId || null,
@@ -872,11 +892,11 @@ export default function Trabajadores() {
       email: "",
       position: "",
       department: "",
-      contractType: "indefinido",
+      contractType: "",
       contractNumber: "",
       startDate: "",
       endDate: "",
-      status: "activo",
+      status: "",
       jobProfileId: "",
       gender: "",
       birthDate: "",
@@ -1729,7 +1749,7 @@ export default function Trabajadores() {
                             onValueChange={(value: any) => setFormData({ ...formData, contractType: value })}
                           >
                             <SelectTrigger id="contractType" data-testid="select-contract-type">
-                              <SelectValue />
+                                  <SelectValue placeholder="Seleccione el tipo de contrato" />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="indefinido">Término Indefinido (CST Art. 47)</SelectItem>
@@ -1780,7 +1800,7 @@ export default function Trabajadores() {
                             onValueChange={(value: any) => setFormData({ ...formData, status: value })}
                           >
                             <SelectTrigger id="status" data-testid="select-status">
-                              <SelectValue />
+                                  <SelectValue placeholder="Seleccione el estado" />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="activo">Activo</SelectItem>

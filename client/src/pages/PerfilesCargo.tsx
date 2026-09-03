@@ -62,13 +62,13 @@ export default function PerfilesCargo() {
     companyId: "",
     name: "",
     description: "",
-    riskClass: "I" as "I" | "II" | "III" | "IV" | "V",
+    riskClass: "" as "" | "I" | "II" | "III" | "IV" | "V",
     riskFactors: [] as string[],
     physicalDemands: "",
     mentalDemands: "",
     requiredPpe: [] as string[],
     requiredExams: [] as string[],
-    examFrequencyMonths: 24 as number | string,
+    examFrequencyMonths: "" as number | string,
     requiredTrainings: [] as string[],
     isActive: 1,
   });
@@ -270,13 +270,13 @@ export default function PerfilesCargo() {
       companyId: defaultCompanyId,
       name: "",
       description: "",
-      riskClass: "I",
+      riskClass: "",
       riskFactors: [],
       physicalDemands: "",
       mentalDemands: "",
       requiredPpe: [],
       requiredExams: [],
-      examFrequencyMonths: 24,
+      examFrequencyMonths: "",
       requiredTrainings: [],
       isActive: 1,
     });
@@ -534,12 +534,25 @@ export default function PerfilesCargo() {
       });
       return;
     }
+
+    if (!formData.riskClass) {
+      toast({
+        title: "Error",
+        description: "Debe seleccionar la clase de riesgo ARL",
+        variant: "destructive",
+      });
+      return;
+    }
     
     // Store the worker IDs to assign after profile creation
     const workersToAssign = [...selectedWorkerIds];
     
-    const examFrequencyValue = formData.examFrequencyMonths === '' ? 24 : Number(formData.examFrequencyMonths);
-    const submissionData = { ...formData, examFrequencyMonths: examFrequencyValue };
+    const examFrequencyValue = formData.examFrequencyMonths === '' ? undefined : Number(formData.examFrequencyMonths);
+    const submissionData = {
+      ...formData,
+      riskClass: formData.riskClass as "I" | "II" | "III" | "IV" | "V",
+      examFrequencyMonths: examFrequencyValue,
+    };
     
     if (editingProfile) {
       // For editing, update profile and assign workers if needed
@@ -664,7 +677,13 @@ export default function PerfilesCargo() {
                 <div className="space-y-2 col-span-2">
                   <Label htmlFor="name">Nombre del Cargo *</Label>
                   <Select
-                    value={formData.name in PREDEFINED_PROFILES ? formData.name : "__custom__"}
+                    value={
+                      !formData.name
+                        ? ""
+                        : formData.name in PREDEFINED_PROFILES
+                          ? formData.name
+                          : "__custom__"
+                    }
                     onValueChange={(value) => {
                       if (value === "__custom__") {
                         // No hacer nada, el usuario ingresará el nombre manualmente
@@ -1039,7 +1058,7 @@ export default function PerfilesCargo() {
                     }}
                   >
                     <SelectTrigger id="riskClass" data-testid="select-risk-class">
-                      <SelectValue />
+                      <SelectValue placeholder="Seleccione la clase de riesgo" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="I">Clase I - Riesgo Mínimo ({getArlRate("I").initialRate}%)</SelectItem>
@@ -1050,7 +1069,7 @@ export default function PerfilesCargo() {
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">
-                    {getArlRate(formData.riskClass).description}
+                    {formData.riskClass ? getArlRate(formData.riskClass).description : "Seleccione la clase de riesgo para calcular la tasa ARL"}
                   </p>
                 </div>
                 <div className="space-y-2">
