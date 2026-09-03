@@ -351,17 +351,27 @@ async function createLoginVerificationChallenge(user: SelectUser, channel: "main
     ? configuredTestCode
     : randomInt(100000, 1000000).toString();
   const expiresAt = new Date(Date.now() + LOGIN_CODE_MINUTES * 60 * 1000);
-  const result = await db.execute(sql`
-    UPDATE login_verification_challenges
-    SET used_at = now()
-    WHERE user_id = ${user.id} AND channel = ${channel} AND used_at IS NULL
-  `);
-  void result;
-  const insertResult = await db.execute(sql`
-    INSERT INTO login_verification_challenges (user_id, channel, code_hash, expires_at)
-    VALUES (${user.id}, ${channel}, ${hashLoginCode(code)}, ${expiresAt})
-    RETURNING id
-  `);
+  let insertResult: any;
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const result = await db.execute(sql`
+        UPDATE login_verification_challenges
+        SET used_at = now()
+        WHERE user_id = ${user.id} AND channel = ${channel} AND used_at IS NULL
+      `);
+      void result;
+      insertResult = await db.execute(sql`
+        INSERT INTO login_verification_challenges (user_id, channel, code_hash, expires_at)
+        VALUES (${user.id}, ${channel}, ${hashLoginCode(code)}, ${expiresAt})
+        RETURNING id
+      `);
+      break;
+    } catch (error) {
+      if (attempt === 2) throw error;
+      logger.warn({ err: error, userId: user.id, channel }, "[MFA] Reintentando crear verificación tras error de base de datos");
+      await new Promise(resolve => setTimeout(resolve, 250));
+    }
+  }
   const challengeId = (insertResult as any).rows?.[0]?.id;
   if (!challengeId) return { error: "No se pudo crear la verificación de seguridad." };
 
@@ -790,7 +800,16 @@ export function setupAuth(app: Express) {
       }
 
       if (requiresTwoFactor(user.role, user.companyId)) {
-        const challenge = await createLoginVerificationChallenge(user, "main");
+        let challenge;
+        try {
+          challenge = await createLoginVerificationChallenge(user, "main");
+        } catch (error) {
+          logger.error({ err: error, userId: user.id, channel: "main" }, "[MFA] Error creando verificación de login");
+          return res.status(503).json({
+            error: "El servicio de verificación está temporalmente no disponible. Intenta nuevamente en unos segundos.",
+            code: "MFA_TEMPORARILY_UNAVAILABLE",
+          });
+        }
         if ("error" in challenge) {
           return res.status(400).json({ error: challenge.error, code: "MFA_EMAIL_REQUIRED" });
         }
@@ -846,7 +865,16 @@ export function setupAuth(app: Express) {
       }
 
       if (requiresTwoFactor(user.role, user.companyId)) {
-        const challenge = await createLoginVerificationChallenge(user, "support");
+        let challenge;
+        try {
+          challenge = await createLoginVerificationChallenge(user, "support");
+        } catch (error) {
+          logger.error({ err: error, userId: user.id, channel: "support" }, "[MFA] Error creando verificación de soporte");
+          return res.status(503).json({
+            error: "El servicio de verificación está temporalmente no disponible. Intenta nuevamente en unos segundos.",
+            code: "MFA_TEMPORARILY_UNAVAILABLE",
+          });
+        }
         if ("error" in challenge) {
           return res.status(400).json({ error: challenge.error, code: "MFA_EMAIL_REQUIRED" });
         }
