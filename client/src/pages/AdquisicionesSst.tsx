@@ -621,12 +621,10 @@ function SolicitudesTab({ pendingPlantillaData, onPlantillaApplied }: Solicitude
                 form.reset(getNewSolicitudDefaultValues());
               }
             }}>
-              <DialogTrigger asChild>
-                <Button data-testid="button-nueva-solicitud" onClick={handleNewSolicitud}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Nueva Solicitud
-                </Button>
-              </DialogTrigger>
+              <Button data-testid="button-nueva-solicitud" onClick={handleNewSolicitud}>
+                <Plus className="h-4 w-4 mr-2" />
+                Nueva Solicitud
+              </Button>
               <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>
