@@ -343,7 +343,7 @@ export default function RegistrosInduccionPage() {
     setEditingRecord(record);
     setFormData({
       workerId: record.workerId,
-      tipo: record.tipo,
+      tipo: record.tipo === "pesv" ? "induccion" : record.tipo,
       fecha: record.fecha,
       horaInicio: record.horaInicio,
       duracionMinutos: record.duracionMinutos || undefined,

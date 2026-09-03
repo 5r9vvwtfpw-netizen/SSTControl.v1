@@ -42,7 +42,7 @@ export default function PesvSiniestros() {
     incidentDate: "",
     incidentTime: "",
     location: "",
-    type: "colision" as const,
+    type: "colision" as "colision" | "volcamiento" | "atropello" | "salida-via" | "choque-objeto" | "otro",
     customType: "",
     severity: "solo-danos" as const,
     description: "",

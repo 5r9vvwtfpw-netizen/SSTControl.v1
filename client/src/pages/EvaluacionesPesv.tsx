@@ -565,7 +565,7 @@ export default function EvaluacionesPesv() {
                   render={({ field }) => (
                     <FormItem className="hidden">
                       <FormControl>
-                        <Input type="hidden" {...field} />
+                        <Input type="hidden" {...field} value={field.value ?? ''} />
                       </FormControl>
                     </FormItem>
                   )}

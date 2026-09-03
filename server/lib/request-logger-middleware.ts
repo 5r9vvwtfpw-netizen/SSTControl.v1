@@ -28,7 +28,7 @@ export function requestLoggerMiddleware(req: Request, res: Response, next: NextF
   const reqLogger = createRequestLogger({
     requestId,
     userId,
-    companyId,
+    companyId: companyId ?? undefined,
     method: req.method,
     url: req.path,
   });

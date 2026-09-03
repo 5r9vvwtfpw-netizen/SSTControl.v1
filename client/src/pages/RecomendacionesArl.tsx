@@ -883,7 +883,7 @@ export default function RecomendacionesArl() {
                               {...field}
                               value={field.value ?? ''}
                               onChange={(e) => field.onChange(e.target.value === '' ? '' : parseInt(e.target.value, 10))}
-                              onBlur={() => { if (field.value === '' || field.value == null) field.onChange(0); }}
+                              onBlur={() => { if (field.value == null) field.onChange(0); }}
                             />
                           </FormControl>
                           <FormMessage />
@@ -1234,7 +1234,7 @@ export default function RecomendacionesArl() {
                             {...field}
                             value={field.value ?? ''}
                             onChange={(e) => field.onChange(e.target.value === '' ? '' : parseInt(e.target.value, 10))}
-                            onBlur={() => { if (field.value === '' || field.value == null) field.onChange(0); }}
+                            onBlur={() => { if (field.value == null) field.onChange(0); }}
                           />
                         </FormControl>
                         <FormMessage />

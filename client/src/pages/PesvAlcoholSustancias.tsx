@@ -19,7 +19,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { PesvAlcoholRegistro, Driver, User } from "@shared/schema";
-import { PASOS_PESV } from "@/data/pasos-pesv";
+import { getTrazabilidadPaso } from "@/data/pesv-normativa-trazabilidad";
 
 const TIPO_PRUEBA_OPTIONS = [
   { value: "preventiva", label: "Preventiva" },
@@ -57,7 +57,7 @@ function getLabelFromOptions(options: { value: string; label: string }[], val: s
   return options.find(o => o.value === val)?.label ?? val ?? "N/A";
 }
 
-const PASO_H10 = PASOS_PESV.find(p => p.codigo === "H10");
+const PASO_H10 = getTrazabilidadPaso("H10");
 
 interface AlcoholFormData {
   evaluacionId: string | null;

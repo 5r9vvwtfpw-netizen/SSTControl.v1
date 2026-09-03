@@ -1442,7 +1442,7 @@ export default function ComiteConvivenciaActas() {
                           {...field}
                           value={field.value ?? ''}
                           onChange={e => field.onChange(e.target.value === '' ? '' : parseInt(e.target.value, 10))}
-                          onBlur={() => { if (field.value === '' || field.value == null) field.onChange(2); }}
+                          onBlur={() => { if (field.value == null) field.onChange(2); }}
                           data-testid="input-suplentes-requeridos"
                         />
                       </FormControl>
@@ -1669,7 +1669,7 @@ export default function ComiteConvivenciaActas() {
                           {...field}
                           value={field.value ?? ''}
                           onChange={(e) => field.onChange(e.target.value === '' ? '' : parseInt(e.target.value, 10))}
-                          onBlur={() => { if (field.value === '' || field.value == null) field.onChange(1); }}
+                          onBlur={() => { if (field.value == null) field.onChange(1); }}
                           data-testid="input-numero-acta" 
                         />
                       </FormControl>

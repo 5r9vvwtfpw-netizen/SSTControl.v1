@@ -273,6 +273,7 @@ import {
   addProviderContactFooter,
   addLabeledField,
   addParagraph,
+  type PdfSigners,
 } from "./services/pdf-standardizer";
 import { withPdfSemaphore } from "./services/pdf-semaphore";
 import { validatePdfContext } from "./lib/pdf-context-validator";
@@ -1509,11 +1510,11 @@ function getEffectiveCompanyId(req: Request): string {
       return queryCompanyId;
     }
     // Fallback to user's companyId if no header or query
-    return user.companyId || null;
+    return user.companyId || "";
   }
   
   // For regular users, use their assigned companyId
-  return user.companyId || null;
+  return user.companyId || "";
 }
 
 /**
@@ -5056,18 +5057,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Auto-create contract for the worker
           try {
             // Map worker contract type to contract table contract type
-            const contractTypeMap: Record<string, string> = {
-              'indefinido': 'indefinido',
-              'fijo': 'fijo',
-              'temporal': 'fijo',  // Temporal maps to 'fijo' in contracts v2 enum
-              'obra-labor': 'obra_labor',
-              'aprendizaje': 'aprendizaje',
-              'ocasional': 'ocasional',
-              'servicios': 'servicios',
-              'prestacion_servicios': 'servicios'
+            type ContractType = "indefinido" | "fijo" | "aprendizaje" | "obra_labor" | "ocasional" | "servicios";
+            const contractTypeMap: Record<string, ContractType> = {
+              indefinido: 'indefinido', fijo: 'fijo', temporal: 'fijo',
+              'obra-labor': 'obra_labor', aprendizaje: 'aprendizaje',
+              ocasional: 'ocasional', servicios: 'servicios',
+              prestacion_servicios: 'servicios',
             };
-            
-            const contractData = {
+            const contractData: Parameters<typeof storage.createContract>[0] = {
               workerId: newWorker.id,
               contractType: contractTypeMap[workerData.contractType] || 'indefinido',
               startDate: workerData.startDate,
@@ -5394,7 +5391,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.pipe(res);
       
       // Add standard corporate header (ISO 45001:2018)
-      const logoBuffer = await loadCompanyLogo(company.logoUrl);
+      const logoBuffer = await loadCompanyLogo(company.logoUrl || undefined);
       await addStandardHeader({
         doc,
         company: {
@@ -5641,7 +5638,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.pipe(res);
 
       // Preload company logo
-      const logo = await loadCompanyLogo(company.logoUrl);
+      const logo = await loadCompanyLogo(company.logoUrl || undefined);
       const signers = await getSignersForCompany(effectiveCompanyId, true);
 
       // Standard Header
@@ -6409,7 +6406,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Add signature footer with LSO for severe/fatal cases (ISO 45001:2018)
-      const requiresLSO = investigation.isSevere || investigation.isFatal;
+       const requiresLSO = investigation.isSevere === 1 || investigation.isFatal === 1;
       const signers = await getSignersForCompany(investigation.companyId, requiresLSO);
       if (requiresLSO && investigation.licensedProfessionalName && investigation.licensedProfessionalSignatureUrl) {
         signers.lso = {
@@ -6767,7 +6764,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Get worker info
-      const worker = await storage.getWorker(absence.workerId);
+       const worker = await storage.getWorker(absence.workerId, effectiveCompanyId);
       
       res.json({
         ...absence,
@@ -7884,7 +7881,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           logoUrl: company?.logoUrl,
         },
         documentTitle: "HALLAZGO / MEDIDA PREVENTIVA",
-        documentCode: getDocumentCode("SST-HAL", new Date().getFullYear()),
+         documentCode: getDocumentCode("SST-HAL", new Date().getFullYear().toString()),
         version: "1.0",
         date: new Date(),
         logoBuffer,
@@ -8026,7 +8023,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Obtener recomendaciones pendientes / en progreso
       const recomendaciones = await storage.getRecomendacionesArl(companyId);
-      const pendientes = recomendaciones.filter(r => r.estado !== 'completada');
+       const pendientes = recomendaciones.filter(r => r.estado !== 'verificada' && r.estado !== 'cerrada');
 
       // Acciones existentes para dedup
       const accionesExistentes = await db.select({ accion: accionesMejoraContexto.accion })
@@ -8047,7 +8044,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           : rec.tipoRecomendacion === 'preventiva' ? 'media' : 'baja';
 
         const [nueva] = await db.insert(accionesMejoraContexto).values({
-          accion: textoAccion,
+           companyId,
+           accion: textoAccion,
           descripcion: rec.descripcion || '',
           origenHallazgo: 'arl_autoridad',
           hallazgoDescripcion: `Recomendación ${rec.tipoRecomendacion} de ${rec.nombreEntidad || rec.origen} — ${rec.codigo || ''}. ${rec.fundamentoLegal ? 'Base legal: ' + rec.fundamentoLegal : ''}`.trim(),
@@ -8055,8 +8053,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           prioridad,
           estado: 'pendiente',
           porcentajeAvance: 0,
-          fechaIdentificacion: rec.fechaRecepcion ? new Date(rec.fechaRecepcion) : new Date(),
-          fechaLimite: rec.fechaLimite ? new Date(rec.fechaLimite) : fechaLimite,
+          fechaIdentificacion: rec.fechaRecepcion ? new Date(rec.fechaRecepcion).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
+          fechaLimite: rec.fechaLimite ? new Date(rec.fechaLimite).toISOString().slice(0, 10) : fechaLimite.toISOString().slice(0, 10),
         }).returning();
 
         creadas.push(nueva);
@@ -8157,8 +8155,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // ── 1. Resumen ────────────────────────────────────────────────
       const pendRec  = recomendaciones.filter(r => r.estado === 'pendiente').length;
-      const progrRec = recomendaciones.filter(r => r.estado === 'en-proceso').length;
-      const cumpRec  = recomendaciones.filter(r => r.estado === 'completada').length;
+       const progrRec = recomendaciones.filter(r => r.estado === 'en_proceso').length;
+       const cumpRec  = recomendaciones.filter(r => r.estado === 'verificada' || r.estado === 'cerrada').length;
 
       y = addSectionBar(doc, '1. RESUMEN — ESTÁNDAR 7.1.4 (RESOLUCIÓN 0312/2019)', doc.y);
       doc.y = y + 4;
@@ -8208,7 +8206,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // ── 3. Próximas a vencer ──────────────────────────────────────
       const hoy = new Date();
       const porVencer = recomendaciones.filter(r => {
-        if (r.estado === 'completada') return false;
+         if (r.estado === 'verificada' || r.estado === 'cerrada') return false;
         if (!r.fechaLimite) return false;
         const diff = (new Date(r.fechaLimite).getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24);
         return diff <= 30;
@@ -10668,8 +10666,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
-      const validatedData = insertRoadSafetyTrainingSchema.omit({ companyId: true }).parse(req.body);
-      const training = await storage.createRoadSafetyTraining(validatedData, companyId);
+       const validatedData = insertRoadSafetyTrainingSchema.omit({ companyId: true }).parse(req.body);
+       const training = await storage.createRoadSafetyTraining({ ...validatedData, companyId }, companyId);
       res.status(201).json(training);
     } catch (error: any) {
       res.status(400).send(error.message);
@@ -11802,7 +11800,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (workersToAssign.length > 0) {
             for (const worker of workersToAssign) {
               try {
-                await storage.updateWorker(worker.id, { jobProfileId: profile.id });
+                 await storage.updateWorker(worker.id, { jobProfileId: profile.id }, companyId);
                 totalWorkersAssigned++;
               } catch (assignErr: any) {
                 console.warn(`Could not auto-assign worker ${worker.id} to profile ${profile.id}: ${assignErr.message}`);
@@ -12030,7 +12028,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.pipe(res);
       
       // Preload company logo and signers from Object Storage
-      const logo = await loadCompanyLogo(company.logoUrl);
+      const logo = await loadCompanyLogo(company.logoUrl || undefined);
       const signers = await getSignersForCompany(profile.companyId, true);
       
       // Setup standard header
@@ -13549,8 +13547,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (!existingDesignation) {
             return res.status(404).send("Designación no encontrada");
           }
-          const worker = await storage.getWorkerById(existingDesignation.workerId);
-          companyId = worker?.companyId || "";
+           if (!existingDesignation.workerId) return res.status(404).send("Trabajador no asociado");
+           const worker = await storage.getWorkerById(existingDesignation.workerId);
+           if (!worker) return res.status(404).send("Trabajador no encontrado");
+           companyId = worker.companyId;
         }
       } else {
         // Non-admin: Use user's companyId
@@ -13610,13 +13610,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/responsible-designations/:id/acta-pdf", requirePermission("companies:view"), async (req, res) => {
     try {
       const isAdmin = hasGlobalAccess(req.user!.role);
-      let companyId: string;
-      
       // Get designation
       const designation = await storage.getResponsibleDesignationById(req.params.id);
       if (!designation) {
         return res.status(404).send("Designación no encontrada");
       }
+      let companyId: string = designation.companyId;
       
       // Get worker (optional - may be null for external LSO designations)
       let worker: any = null;
@@ -13956,7 +13955,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } catch (e: any) {
           console.error('[PDF-Designacion] Error loading sig buffer:', e.message);
         }
-    return null as unknown as string;
+    return null;
       };
       
       // Load LSO digital signature image if signed
@@ -14771,7 +14770,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const periodoActivo = await storage.getCopasstPeriodoActivo(companyId);
       const miembros = periodoActivo ? await storage.getCopasstMiembros(periodoActivo.id) : [];
       const miembrosConWorker = await Promise.all(miembros.map(async (m: any) => {
-        const worker = await storage.getWorker(m.workerId);
+       const worker = await storage.getWorker(m.workerId, companyId);
         return { ...m, workerName: worker?.name || "—" };
       }));
       const actas = await storage.getCopasstActas(companyId);
@@ -16316,7 +16315,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               cursoId: req.params.cursoId,
               codigoCertificado: certCode,
               nombreCompleto: user.fullName || user.username,
-              identificacion: user.documentNumber || 'N/A',
+               identificacion: user.sstIdentificationNumber || 'N/A',
               tituloCurso: curso.titulo,
               duracionHoras: (curso.duracionMinutos / 60).toFixed(1),
               puntajeObtenido,
@@ -18499,7 +18498,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               receiverName: workerUser.fullName || workerUser.username,
               receiverRole: workerUser.role,
               subject: 'Registro de Inducción Asignado',
-              content: `Se ha registrado una ${tipoInduccion.toLowerCase()} para usted.\n\nTipo: ${tipoInduccion}\nFecha: ${fechaFormateada}\nResponsable: ${parsed.responsable || 'Por asignar'}\n\nPor favor, complete los requisitos correspondientes.`,
+               content: `Se ha registrado una ${tipoInduccion.toLowerCase()} para usted.\n\nTipo: ${tipoInduccion}\nFecha: ${fechaFormateada}\nResponsable: ${parsed.responsableNombre || 'Por asignar'}\n\nPor favor, complete los requisitos correspondientes.`,
               priority: 'normal',
               status: 'unread',
               relatedEntity: 'registro_induccion',
@@ -21331,8 +21330,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (workerAfiliaciones.length > 0) {
         drawSectionHeader(`${sectionNum}. AFILIACIONES SEGURIDAD SOCIAL`);
         const af = workerAfiliaciones[0];
-        drawTwoColumns('EPS', af.epsNombre, 'ARL', af.arlNombre);
-        drawTwoColumns('AFP', af.afpNombre, 'CCF', af.ccfNombre);
+        drawTwoColumns('EPS', af.epsNombre ?? 'No registrado', 'ARL', af.arlNombre ?? 'No registrado');
+        drawTwoColumns('AFP', af.afpNombre ?? 'No registrado', 'CCF', af.ccfNombre ?? 'No registrado');
         sectionNum++;
       }
 
@@ -24786,7 +24785,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const company = await storage.getCompany(companyId);
 
       // Load company logo and signers for standardized PDF
-      const logoBuffer = await loadCompanyLogo(company?.logoUrl);
+      const logoBuffer = await loadCompanyLogo(company?.logoUrl || undefined);
       const signers = await getSignersForCompany(companyId, true);
 
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
@@ -26989,7 +26988,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         nombre: e.nombre,
         descripcion: e.descripcion,
         puntaje: e[puntajeField],
-        cicloPhva: e.cicloPhva
       }));
       
       // Respuesta con metadatos
@@ -27306,7 +27304,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update company
       const updatedCompany = await storage.updateCompany(companyId, {
         calculatedChapter: correctChapter
-      });
+      } as Partial<schema.InsertCompany>);
+      if (!updatedCompany) {
+        return res.status(404).send("Empresa no encontrada");
+      }
 
       res.json({
         mensaje: `Empresa corregida exitosamente`,
@@ -27349,7 +27350,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (company.calculatedChapter !== correctChapter) {
             await storage.updateCompany(company.id, {
               calculatedChapter: correctChapter
-            });
+            } as Partial<schema.InsertCompany>);
             corregidas++;
           }
         } catch (e: any) {
@@ -27881,11 +27882,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`[AutoAccion] Acción de mejora creada automáticamente para estándar ${estandar.numeroEstandar} (evaluación ${evaluacionId})`);
       }
 
-      if (isCumple && accionToComplete && accionToComplete.estado !== 'completada' && accionToComplete.estado !== 'verificada') {
+      if (isCumple && accionToComplete && accionToComplete.estado !== 'completada') {
         await storage.updateAccionMejora(accionToComplete.id, {
           estado: 'completada',
           porcentajeAvance: 100,
-          fechaCierre: new Date(),
           resultadoObtenido: 'Estándar cumplido - verificado en evaluación SST',
         }, companyId);
 
@@ -28377,7 +28377,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).send("Evaluación no encontrada");
         }
         companyId = evaluacion.companyId;
-      } else if (userRole === 'lso') {
+      } else if (String(userRole) === 'lso') {
         evaluacion = await storage.getEvaluacionSstById(req.params.id);
         if (!evaluacion) {
           return res.status(404).send("Evaluación no encontrada");
@@ -28587,7 +28587,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).send("Evaluación no encontrada");
         }
         companyId = evaluacion.companyId;
-      } else if (userRole === 'lso') {
+      } else if (String(userRole) === 'lso') {
         evaluacion = await storage.getEvaluacionSstById(req.params.id);
         if (!evaluacion) {
           return res.status(404).send("Evaluación no encontrada");
@@ -29575,10 +29575,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Obtener peligros de matrices IPERC activas
       let totalPeligros = 0;
       let peligrosControlados = 0;
-      for (const matriz of matrices.filter(m => m.estado === 'activa')) {
+      for (const matriz of matrices.filter(m => String(m.estado) === 'activa')) {
         const peligros = await storage.getPeligrosIperc(matriz.id, companyId);
         totalPeligros += peligros.length;
-        peligrosControlados += peligros.filter(p => p.estado === 'controlado').length;
+         peligrosControlados += peligros.filter(p => p.estadoImplementacion === 'implementado').length;
       }
 
       // Obtener miembros COPASST del período más reciente
@@ -29612,38 +29612,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const trabajadoresActivos = workers.filter(w => w.status === 'activo').length;
       
       // Afiliaciones al día
-      const afiliacionesAlDia = afiliaciones.filter(a => {
-        if (!a.fechaVencimientoArl) return false;
-        return new Date(a.fechaVencimientoArl) > fechaActual;
-      }).length;
+       const afiliacionesAlDia = afiliaciones.length;
       const porcentajeAfiliaciones = trabajadoresActivos > 0 ? Math.round((afiliacionesAlDia / trabajadoresActivos) * 100) : 0;
 
       // Capacitaciones del año
       const capacitacionesAno = trainings.filter(t => new Date(t.date).getFullYear() === currentYear).length;
 
       // Inducciones del año
-      const induccionesAno = registrosInduccion.filter(i => new Date(i.fechaInduccion).getFullYear() === currentYear);
-      const totalInducciones = induccionesAno.filter(i => i.tipoInduccion === 'induccion').length;
-      const totalReinducciones = induccionesAno.filter(i => i.tipoInduccion === 'reinduccion').length;
+       const induccionesAno = registrosInduccion.filter(i => new Date(i.fecha).getFullYear() === currentYear);
+       const totalInducciones = induccionesAno.filter(i => i.tipo === 'induccion').length;
+       const totalReinducciones = induccionesAno.filter(i => i.tipo === 'reinduccion').length;
 
       // Accidentes del año
       const accidentesAno = accidents.filter(a => new Date(a.date).getFullYear() === currentYear).length;
 
       // Enfermedades laborales
-      const enfermedadesActivas = occupationalDiseases.filter(e => e.status === 'active').length;
+      const enfermedadesActivas = occupationalDiseases.filter(e => String(e.status) === 'active').length;
 
       // Inspecciones
-      const inspeccionesCompletadas = inspections.filter(i => i.status === 'completed').length;
-      const inspeccionesPendientes = inspections.filter(i => i.status !== 'completed').length;
+      const inspeccionesCompletadas = inspections.filter(i => String(i.status) === 'completed').length;
+      const inspeccionesPendientes = inspections.filter(i => String(i.status) !== 'completed').length;
 
       // Simulacros del año
       const simulacrosAno = simulacros.filter(s => new Date(s.fechaProgramada).getFullYear() === currentYear).length;
 
       // Auditorías del año
-      const auditoriasAno = auditorias.filter(a => new Date(a.fechaInicio).getFullYear() === currentYear).length;
+      const auditoriasAno = auditorias.filter(a => a.fechaInicio && new Date(a.fechaInicio).getFullYear() === currentYear).length;
 
       // Revisiones por la dirección
-      const revisionesAno = revisiones.filter(r => new Date(r.fechaRevision).getFullYear() === currentYear).length;
+      const revisionesAno = revisiones.filter(r => r.fechaRevision && new Date(r.fechaRevision).getFullYear() === currentYear).length;
 
       // ============================================================
       // ANÁLISIS DE BRECHAS Y RECOMENDACIONES
@@ -29869,7 +29866,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // ============================================================
       // Load company logo and get signers for standardized PDF (with fallback on errors)
       let logo: Buffer | null = null;
-      let signers: any[] = [];
+      let signers: PdfSigners | undefined;
       try {
         logo = await loadCompanyLogo(company?.logoUrl);
       } catch (logoError) {
@@ -30045,15 +30042,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const estandaresComp = estandares.filter(e => e.componenteId === comp.id);
         for (const est of estandaresComp.slice(0, 5)) {
           const respuesta = respuestas.find(r => r.estandarId === est.id);
-          const estado = respuesta?.calificacion === 'cumple' ? 'Cumple' : 
-                        respuesta?.calificacion === 'no_cumple' ? 'No Cumple' : 
-                        respuesta?.calificacion === 'parcial' ? 'Parcial' : 'Sin evaluar';
+           const estado = respuesta?.cumple === 1 ? 'Cumple' :
+                         respuesta?.cumple === 0 ? 'No Cumple' : 'Sin evaluar';
           const estadoColor = estado === 'Cumple' ? colorAceptable : 
                              estado === 'No Cumple' ? colorCritico : 
-                             estado === 'Parcial' ? colorModerado : '#666666';
+                             '#666666';
 
           doc.fontSize(7).font('Helvetica').fillColor('#000000')
-            .text(`  • ${est.codigo || ''} - ${est.nombre?.substring(0, 50) || 'Estándar'}... `, margin, currentY, { continued: true });
+             .text(`  • ${est.numeroEstandar || ''} - ${est.nombre?.substring(0, 50) || 'Estándar'}... `, margin, currentY, { continued: true });
           doc.fillColor(estadoColor).text(`[${estado}]`);
           currentY = doc.y + 2;
         }
@@ -30462,7 +30458,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const porcentajeCronograma = totalAct > 0 ? Math.round((actEjecutadas / totalAct) * 100) : 0;
 
         doc.fontSize(8).font('Helvetica').fillColor('#333333')
-          .text('Plan de Trabajo: ' + (planActivoHD.nombre || 'Plan ' + planActivoHD.anio) + '  |  A\u00f1o: ' + planActivoHD.anio, margin, currentY);
+          .text('Plan de Trabajo: ' + ('Plan ' + planActivoHD.anio) + '  |  A\u00f1o: ' + planActivoHD.anio, margin, currentY);
         currentY = doc.y + 8;
 
         const cronBoxW = contentWidth / 4;
@@ -30642,7 +30638,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .text(`Documento generado automáticamente por SGSSTN v1.0 el ${fechaActual.toLocaleDateString('es-CO')} a las ${fechaActual.toLocaleTimeString('es-CO')}`, margin, currentY, { width: contentWidth, align: 'center' });
 
       // Add signature footer (no LSO required for management reports)
-      await addSignatureFooter(doc, signers, false);
+      if (signers) await addSignatureFooter(doc, signers, false);
 
       // Esperar a que el PDF esté completo y enviarlo
       doc.on('end', () => {
@@ -31396,7 +31392,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const createdActividades = [];
       for (const template of actividadesTemplate) {
         // Filtrar actividades según capítulo de la empresa
-        if (template.minChapter > companyChapter) {
+        if (template.minChapter > Number(companyChapter)) {
           continue; // Saltar actividades que no aplican a este capítulo
         }
         // Crear una actividad por cada mes programado
@@ -31641,7 +31637,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const actividades = await storage.getActividadesPlanTrabajo(req.params.id, companyId);
       
       const matrices = await storage.getMatricesIperc(companyId);
-      const activeMatriz = matrices.find(m => m.estado === 'aprobada' || m.estado === 'en-revision') || matrices[0];
+      const activeMatriz = matrices.find(m => String(m.estado) === 'aprobada' || String(m.estado) === 'en-revision') || matrices[0];
       let peligros: any[] = [];
       if (activeMatriz) {
         peligros = await storage.getPeligrosIperc(activeMatriz.id, companyId);
@@ -31680,7 +31676,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
         documentTitle: 'PLAN DE TRABAJO ANUAL SG-SST',
         documentCode: `SST-PTA-${plan.anio}`,
-        version: plan.version || '1.0',
+        version: '1.0',
         date: new Date(plan.fechaElaboracion),
         logoBuffer: logo
       });
@@ -31829,7 +31825,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           },
           documentTitle: 'PLAN DE TRABAJO ANUAL SG-SST',
           documentCode: `SST-PTA-${plan.anio}`,
-          version: plan.version || '1.0',
+          version: '1.0',
           date: new Date(plan.fechaElaboracion),
           logoBuffer: logo,
         });
@@ -32557,7 +32553,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const medicion = await storage.createMedicionIndicador({
         indicadorId: id,
         periodo,
-        fechaMedicion: new Date().toISOString().split('T')[0],
+        fechaMedicion: new Date(),
         valorMedido: resultado.valorCalculado.toString(),
         valorNumerico: Math.round(resultado.valorCalculado),
         cumpleMeta,
@@ -34239,7 +34235,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         const evalData = evaluaciones.slice(0, 1).map(evaluacion => [
           { label: 'Evaluador', value: evaluacion.evaluador },
-          { label: 'Fecha', value: new Date(evaluacion.anio, (evaluacion.mes || 12) - 1, 1).toLocaleDateString('es-CO') },
+          { label: 'Fecha', value: new Date(evaluacion.fechaEvaluacion).toLocaleDateString('es-CO') },
           { label: 'Nivel de Riesgo', value: impactoMap[evaluacion.nivelRiesgoResultante] || evaluacion.nivelRiesgoResultante },
           { label: 'Probabilidad', value: `${evaluacion.probabilidadOcurrencia}/5` },
           { label: 'Severidad', value: `${evaluacion.severidadConsecuencia}/5` },
@@ -34374,7 +34370,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         documentTitle: 'EVALUACIÓN DE IMPACTO DE CAMBIO',
         documentCode: `SST-GC-${cambio.codigo}`,
         version: '1.0',
-        date: new Date(evaluacion.anio, (evaluacion.mes || 12) - 1, 1),
+         date: new Date(evaluacion.fechaEvaluacion),
         logoBuffer: logo
       });
 
@@ -34403,7 +34399,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.font('Helvetica').text(evaluacion.evaluador);
       
       doc.font('Helvetica-Bold').text('Fecha de Evaluación: ', { continued: true });
-      doc.font('Helvetica').text(new Date(evaluacion.anio, (evaluacion.mes || 12) - 1, 1).toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' }));
+       doc.font('Helvetica').text(new Date(evaluacion.fechaEvaluacion).toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' }));
       
       doc.moveDown();
       
@@ -34900,7 +34896,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           doc.text(`${prov.ultimaCalificacion || 0}%`, xPos, rowY, { width: topColWidths[2], lineBreak: false });
           xPos += topColWidths[2];
 
-          doc.text(estadoLabels[prov.estadoEvaluacion || 'pendiente'] || prov.estadoEvaluacion || 'Pendiente', xPos, rowY, { width: topColWidths[3], lineBreak: false });
+          doc.text(estadoLabels[prov.estado || 'pendiente'] || prov.estado || 'Pendiente', xPos, rowY, { width: topColWidths[3], lineBreak: false });
 
           doc.moveDown(0.5);
         }
@@ -35260,14 +35256,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const latestEval = data[0];
       const company = latestEval.company || { name: 'N/A', nit: 'N/A', address: null, logoUrl: null };
+      const reportCompanyId = companyId ?? latestEval.company?.id;
+      if (!reportCompanyId) {
+        return res.status(404).json({ error: "La evaluación no tiene empresa asociada" });
+      }
       const logo = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId, true);
+      const signers = await getSignersForCompany(reportCompanyId, true);
       // Worker photo not needed for muestreo PDF
 
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
       
       // Add trial watermark if subscription is in trial period
-      const pdf28184_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf28184_subscription = await storage.getSubscriptionByCompany(reportCompanyId);
       const pdf28184_trialStatus = getTrialStatus(pdf28184_subscription?.status || 'trial', pdf28184_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, pdf28184_trialStatus.requiresWatermark);
       const margin = 35;
@@ -35277,7 +35277,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       let currentY = await addStandardHeader({
         doc,
-        company: { id: companyId, name: company.name || 'N/A', nit: company.nit || 'N/A', address: company.address, logoUrl: company.logoUrl },
+        company: { id: reportCompanyId, name: company.name || 'N/A', nit: company.nit || 'N/A', address: company.address, logoUrl: company.logoUrl || undefined },
         documentTitle: 'REPORTE CONSOLIDADO DE EVALUACIONES SST',
         documentCode: `SST-REV-${new Date().getFullYear()}`,
         version: '1.0',
@@ -35443,7 +35443,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
       
       // Add trial watermark if subscription is in trial period
-      const pdf28364_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf28364_subscription = await storage.getSubscriptionByCompany(firstAudit.auditoria.companyId);
       const pdf28364_trialStatus = getTrialStatus(pdf28364_subscription?.status || 'trial', pdf28364_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, pdf28364_trialStatus.requiresWatermark);
       const margin = 35;
@@ -35574,7 +35574,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const doc = new PDFDocument({ margin: 35, size: 'LETTER', bufferPages: true });
       
       // Add trial watermark if subscription is in trial period
-      const pdf28494_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf28494_subscription = await storage.getSubscriptionByCompany(userCompanyId ?? data[0].revision.companyId);
       const pdf28494_trialStatus = getTrialStatus(pdf28494_subscription?.status || 'trial', pdf28494_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, pdf28494_trialStatus.requiresWatermark);
       const margin = 35;
@@ -35690,7 +35690,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const doc = new PDFDocument({ margin: 35, size: 'LETTER', bufferPages: true });
       
       // Add trial watermark if subscription is in trial period
-      const pdf28609_subscription = await storage.getSubscriptionByCompany(companyId);
+      const pdf28609_subscription = await storage.getSubscriptionByCompany(userCompanyId ?? data.objetivos[0].objetivo.companyId);
       const pdf28609_trialStatus = getTrialStatus(pdf28609_subscription?.status || 'trial', pdf28609_subscription?.trialEnd || null, true, true);
       setupTrialWatermarkOnAllPages(doc, pdf28609_trialStatus.requiresWatermark);
       const margin = 35;
@@ -35772,7 +35772,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             if (ind.mediciones.length > 0) {
               const latestMedicion = ind.mediciones[0];
-              doc.text(`  Última medición: ${latestMedicion.valor} ${ind.indicador.unidadMedida || ''} (${latestMedicion.fecha})`, margin + 25, currentY);
+              doc.text(`  Última medición: ${latestMedicion.valorMedido} ${ind.indicador.unidadMedida || ''} (${latestMedicion.fechaMedicion})`, margin + 25, currentY);
               currentY = doc.y + 4;
             } else {
               doc.text(`  Sin mediciones registradas`, margin + 25, currentY);
@@ -36845,7 +36845,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     receiverName: workerUser.fullName || workerUser.username,
                     receiverRole: workerUser.role,
                     subject: 'Nueva Comunicación SST',
-                    content: 'Se le ha enviado una nueva comunicacion de Seguridad y Salud en el Trabajo.' + '\n\nTitulo: ' + (validatedData.titulo || 'Sin titulo') + '\nTipo: ' + (validatedData.tipoComunicacion || 'General') + '\nFecha: ' + fechaFormateada + '\n\nPor favor, revise la comunicacion en el portal.',
+                    content: 'Se le ha enviado una nueva comunicacion de Seguridad y Salud en el Trabajo.' + '\n\nAsunto: ' + (validatedData.asunto || 'Sin asunto') + '\nTipo: ' + (validatedData.tipo || 'General') + '\nFecha: ' + fechaFormateada + '\n\nPor favor, revise la comunicacion en el portal.',
                     priority: 'normal',
                     status: 'unread',
                     relatedEntity: 'comunicacion_sst',
@@ -37263,13 +37263,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             companyId,
             senderId: effectiveSenderId,
             senderName,
-            senderRole: isAnon ? "system" : req.user!.role,
+            senderRole: isAnon ? "admin" : req.user!.role,
             receiverId: admin.id,
             receiverName: admin.fullName || admin.username,
             receiverRole: admin.role,
             subject: `Nuevo reporte SST: ${reporte.asunto}`,
             content: `Se ha recibido un nuevo reporte ${isAnon ? 'anónimo ' : ''}(${reporte.codigo}) de tipo "${reporte.categoria}" con prioridad "${reporte.prioridad}". Requiere revisión.`,
-            priority: reporte.prioridad === 'urgente' || reporte.prioridad === 'alta' ? 'high' : 'normal',
+            priority: reporte.prioridad === 'urgente' || reporte.prioridad === 'alta' ? 'urgent' : 'normal',
             status: 'unread',
             relatedEntity: 'reporte_trabajador',
             relatedEntityId: reporte.id,
@@ -37575,13 +37575,13 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
             companyId,
             senderId: effectiveSenderId,
             senderName,
-            senderRole: isAnon ? "system" : req.user!.role,
+            senderRole: isAnon ? "admin" : req.user!.role,
             receiverId: admin.id,
             receiverName: admin.fullName || admin.username,
             receiverRole: admin.role,
             subject: `Nuevo reporte SST: ${reporte.asunto}`,
             content: `Se ha recibido un nuevo reporte ${isAnon ? 'anónimo ' : ''}(${reporte.codigo}) de tipo "${reporte.categoria}" con prioridad "${reporte.prioridad}". Requiere revisión.`,
-            priority: reporte.prioridad === 'urgente' || reporte.prioridad === 'alta' ? 'high' : 'normal',
+            priority: reporte.prioridad === 'urgente' || reporte.prioridad === 'alta' ? 'urgent' : 'normal',
             status: 'unread',
             relatedEntity: 'reporte_trabajador',
             relatedEntityId: reporte.id,
@@ -37914,9 +37914,6 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
             estado: attendee.attended ? 'asistio' : (attendee.confirmed ? 'confirmado' : 'invitado'),
             asistenciaId: attendee.id,
             source: 'legacy',
-            contentType: (training as any).contentType ?? 'presencial',
-            contentUrl: (training as any).contentUrl ?? null,
-            contentText: (training as any).contentText ?? null,
           });
         }
       }
@@ -37951,9 +37948,6 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
               estado: myAttendance.attended === 1 ? 'asistio' : 'invitado',
               asistenciaId: myAttendance.id,
               source: 'programa',
-              contentType: (training as any).contentType ?? 'presencial',
-              contentUrl: (training as any).contentUrl ?? null,
-              contentText: (training as any).contentText ?? null,
             });
           }
         }
@@ -38002,9 +37996,6 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
               estado: inv.attended ? 'asistio' : (inv.confirmedAt ? 'confirmado' : 'invitado'),
               asistenciaId: inv.id,
               source: 'programa',
-              contentType: (training as any).contentType ?? 'presencial',
-              contentUrl: (training as any).contentUrl ?? null,
-              contentText: (training as any).contentText ?? null,
             });
             existingTrainingIds.add(training.id);
           }
@@ -38129,7 +38120,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
             adminUser = fallback;
           }
           if (adminUser && worker && training) {
-            const trainingTopic = training.topic || training.title || 'Capacitación';
+            const trainingTopic = training.title || 'Capacitación';
             const fechaStr = training.date
               ? new Date(training.date).toLocaleDateString('es-CO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
               : 'fecha programada';
@@ -38901,7 +38892,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         const worker = convWorkersMap.get(c.workerId);
         return {
           ...c,
-          votosObtenidos: c.votosObtenidos || 0,
+          votosObtenidos: c.votosRecibidos || 0,
           worker: worker ? {
             id: worker.id,
             name: worker.name,
@@ -39140,7 +39131,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       res.setHeader('Content-Disposition', `attachment; filename="matriz-iperc-${matriz.id}.pdf"`);
       doc.pipe(res);
 
-      if (trialStatus.isInTrial) {
+      if (trialStatus.isTrial) {
         doc.save();
         doc.fontSize(60).fillColor('#cccccc').opacity(0.3)
           .translate(400, 300).rotate(-45).text('PRUEBA', -150, -30);
@@ -39193,7 +39184,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         doc.fontSize(6).font('Helvetica-Bold').fillColor('#FFFFFF');
         let xPos = margin;
         headers.forEach((h, i) => {
-          doc.rect(xPos, tableY, colWidths[i], 14).fill(PDF_COLORS.PRIMARY);
+          doc.rect(xPos, tableY, colWidths[i], 14).fill(PDF_COLORS.GREEN_PRIMARY);
           doc.fillColor('#FFFFFF').text(h, xPos + 2, tableY + 3, { width: colWidths[i] - 4, align: 'center' });
           xPos += colWidths[i];
         });
@@ -39997,7 +39988,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   // PUT /api/decisiones-revision/:id - Actualizar decisión
-  app.put('/api/decisiones-revision/:id', requireAuth, requirePermission('sst_management:update'), async (req, res) => {
+  app.put('/api/decisiones-revision/:id', requireAuth, requirePermission('sst_management:edit'), async (req, res) => {
     try {
       const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(403).json({ error: "Requiere pertenecer a una empresa" });
@@ -40057,7 +40048,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   // PUT /api/acciones-revision/:id - Actualizar acción
-  app.put('/api/acciones-revision/:id', requireAuth, requirePermission('sst_management:update'), async (req, res) => {
+  app.put('/api/acciones-revision/:id', requireAuth, requirePermission('sst_management:edit'), async (req, res) => {
     try {
       const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(403).json({ error: "Requiere pertenecer a una empresa" });
@@ -43140,6 +43131,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
       // Create acknowledgment
       const acknowledgment = await storage.createDocumentAcknowledgment({
+        companyId,
         documentId,
         workerId,
         assignmentId: assignment?.id || null,
@@ -43443,7 +43435,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       );
 
       if (esConductorPorCargo) {
-        const worker = await storage.getWorker(workerId);
+         const worker = await storage.getWorker(workerId, user.companyId || "");
         const conductorNombre = worker?.name || user.username;
         return res.json({ esConductor: true, conductorNombre, origen: 'cargo' });
       }
@@ -43478,8 +43470,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
       let conductorNombre = driverRecord?.nombre;
       if (!conductorNombre) {
-        const worker = await storage.getWorker(workerId);
-        conductorNombre = worker?.name;
+         const worker = await storage.getWorker(workerId, companyId);
+        conductorNombre = worker?.name ?? '';
       }
       if (!conductorNombre) return res.json({ encuestas: [], conductorNombre: null });
 
@@ -43523,7 +43515,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
       let conductorNombre = driverRecord?.nombre;
       if (!conductorNombre) {
-        const worker = await storage.getWorker(workerId);
+         const worker = await storage.getWorker(workerId, companyId);
         if (!worker) return res.status(403).json({ error: "Trabajador no encontrado" });
         const [contrato] = await db
           .select({ profileName: schema.jobProfiles.name, position: schema.contracts.position })
@@ -43959,6 +43951,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         if (existingWorkerIds.has(workerId)) continue; // Skip if already assigned
         
         const assignment = await storage.createDocumentWorkerAssignment({
+          companyId: effectiveCompanyId,
           documentId,
           workerId,
           assignedBy: user.id,
@@ -44694,12 +44687,12 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         for (const supportUser of supportUsers) {
           // Create internal message for each support staff member
           const message = await storage.createInternalMessage({
-            companyId: supportUser.companyId || user.companyId,
+            companyId: supportUser.companyId ?? user.companyId!,
             senderId: user.id,
             senderName: user.fullName || user.username,
             senderRole: user.role,
             receiverId: supportUser.id,
-            receiverName: supportUser.fullName || supportUser.username,
+            receiverName: supportUser.fullName || supportUser.username || "Usuario",
             receiverRole: supportUser.role,
             subject: `Nuevo Ticket: ${ticket.ticketNumber} - ${ticket.subject}`,
             content: `Se ha creado un nuevo ticket de soporte.\n\nNúmero: ${ticket.ticketNumber}\nAsunto: ${ticket.subject}\nPrioridad: ${ticket.priority || 'media'}\nEmpresa: ${company?.name || 'Sin empresa'}\nUsuario: ${user.fullName || user.username}\n\nAcceda a la sección de Soporte para revisar este ticket.`,
@@ -44971,6 +44964,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         assignedToName: targetName,
         status: ticket.status === 'abierto' ? 'en_progreso' : ticket.status,
       });
+      if (!updatedTicket) return res.status(404).send("No se pudo actualizar el ticket");
 
       await storage.createTicketStatusHistory({
         ticketId: ticket.id,
@@ -45511,7 +45505,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       });
 
       // Send notification to support staff about approval
-      const supportUser = await storage.getUser(session.requestedBy);
+      const supportUser = await storage.getUser(session.supportUserId);
       if (supportUser) {
         const company = await storage.getCompany(session.companyId);
         try {
@@ -45579,7 +45573,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       });
 
       // Send notification to support staff about denial
-      const supportUserDeny = await storage.getUser(session.requestedBy);
+      const supportUserDeny = await storage.getUser(session.supportUserId);
       if (supportUserDeny) {
         const companyDeny = await storage.getCompany(session.companyId);
         try {
@@ -45648,7 +45642,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       });
 
       // Send notification to support staff about revocation
-      const supportUserRevoke = await storage.getUser(session.requestedBy);
+      const supportUserRevoke = await storage.getUser(session.supportUserId);
       if (supportUserRevoke) {
         const companyRevoke = await storage.getCompany(session.companyId);
         try {
@@ -45763,14 +45757,16 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       await storage.createSupportAccessEvent({
         sessionId: session.id,
         actorId: user.id,
+        actorName: user.fullName || user.username,
+        actorRole: user.role,
         eventType: eventType as 'data_accessed' | 'data_modified',
-        payload: {
+        details: JSON.stringify({
           resourceType: resourceType || 'unknown',
           resourceId: resourceId || null,
           details: details || {},
           timestamp: new Date().toISOString(),
-          ipAddress: req.ip || 'unknown',
-        },
+        }),
+        ipAddress: req.ip || 'unknown',
       });
 
       res.json({ success: true, eventType });
@@ -45808,13 +45804,16 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       await storage.createSupportAccessEvent({
         sessionId: session.id,
         actorId: user.id,
+        actorName: user.fullName || user.username,
+        actorRole: user.role,
         eventType: 'access_started',
-        payload: {
+        details: JSON.stringify({
           companyId,
           startedAt: new Date().toISOString(),
-          ipAddress: req.ip || 'unknown',
           userAgent: req.headers['user-agent'] || 'unknown',
-        },
+        }),
+        ipAddress: req.ip || 'unknown',
+        userAgent: req.headers['user-agent'] || 'unknown',
       });
 
       // Get company name for response
@@ -46016,11 +46015,13 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       await storage.createSupportAccessEvent({
         sessionId: session.id,
         actorId: user.id,
+        actorName: user.fullName || user.username,
+        actorRole: user.role,
         eventType: 'access_ended',
-        payload: {
+        details: JSON.stringify({
           endedAt: new Date().toISOString(),
-          ipAddress: req.ip || 'unknown',
-        },
+        }),
+        ipAddress: req.ip || 'unknown',
       });
 
       res.json({ success: true, message: "Sesión de acceso finalizada" });
@@ -46134,8 +46135,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         const activeCompanyIds = [...new Set(activeSessions
           .filter(s => 
             s.status === 'approved' && 
-            (!s.startedAt || new Date(s.startedAt) <= now) &&
-            (!s.endedAt || new Date(s.endedAt) > now)
+            (!s.approvedAt || new Date(s.approvedAt) <= now) &&
+            (!s.expiresAt || new Date(s.expiresAt) > now)
           )
           .map(s => s.companyId))];
         
@@ -46269,8 +46270,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         const now = new Date();
         if (!activeSession || 
             activeSession.status !== 'approved' ||
-            (activeSession.startedAt && new Date(activeSession.startedAt) > now) ||
-            (activeSession.endedAt && new Date(activeSession.endedAt) <= now)) {
+            (activeSession.approvedAt && new Date(activeSession.approvedAt) > now) ||
+            (activeSession.expiresAt && new Date(activeSession.expiresAt) <= now)) {
           return res.status(403).send("Debe tener una sesión de acceso activa a la empresa del destinatario para enviar mensajes");
         }
       }
@@ -46304,13 +46305,14 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         }
       }
       
+      if (!messageCompanyId) return res.status(400).send("No hay empresa asociada al mensaje");
       const message = await storage.createInternalMessage({
         companyId: messageCompanyId,
         senderId: user.id,
         senderName: effectiveSenderName,
         senderRole: user.role,
         receiverId,
-        receiverName: receiver.fullName || receiver.username,
+        receiverName: receiver.fullName || receiver.username || "Usuario",
         receiverRole: receiver.role,
         subject,
         content,
@@ -46848,7 +46850,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const updated = await storage.advanceConvivenciaEleccionPhase(req.params.id);
       
       // Send notification when votacion phase opens
-      if (updated.fase === 'votacion' && eleccion.fase !== 'votacion') {
+        if (updated?.estado === 'votacion' && eleccion.estado !== 'votacion') {
         try {
           const workers = await storage.getWorkers(companyId);
           for (const worker of workers) {
@@ -48456,7 +48458,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       doc.fontSize(10).font('Helvetica-Bold').text('Listado de Programas EVS', 50, currentY);
       currentY += 20;
       if (programs.length === 0) { doc.fontSize(10).font('Helvetica').text('No hay programas registrados.', 50, currentY); }
-      else { programs.forEach((prog, idx) => { if (currentY > doc.page.height - 80) { doc.addPage(); currentY = 50; } doc.fontSize(9).font('Helvetica-Bold').text(`${idx + 1}. ${prog.name}`, 50, currentY); currentY += 14; doc.font('Helvetica').text(`Año: ${prog.year} | Categoría: ${prog.category} | Estado: ${prog.status}`, 60, currentY); currentY += 12; doc.text(`Responsable: ${prog.responsibleName || 'N/A'}`, 60, currentY); currentY += 18; }); }
+       else { programs.forEach((prog, idx) => { if (currentY > doc.page.height - 80) { doc.addPage(); currentY = 50; } doc.fontSize(9).font('Helvetica-Bold').text(`${idx + 1}. ${prog.name}`, 50, currentY); currentY += 14; doc.font('Helvetica').text(`Año: ${prog.year} | Áreas prioritarias: ${prog.priorityAreas?.join(', ') || 'N/A'} | Estado: ${prog.status}`, 60, currentY); currentY += 12; doc.text(`Responsable: ${prog.responsibleName || 'N/A'}`, 60, currentY); currentY += 18; }); }
       await addSignatureFooter(doc, signers, true);
       doc.end();
     } catch (error: any) {
@@ -48538,7 +48540,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       doc.fontSize(10).font('Helvetica-Bold').text('Listado de Actividades EVS', 50, currentY);
       currentY += 20;
       if (activities.length === 0) { doc.fontSize(10).font('Helvetica').text('No hay actividades registradas.', 50, currentY); }
-      else { activities.forEach((act, idx) => { if (currentY > doc.page.height - 80) { doc.addPage(); currentY = 50; } doc.fontSize(9).font('Helvetica-Bold').text(`${idx + 1}. ${act.title}`, 50, currentY); currentY += 14; doc.font('Helvetica').text(`Categoría: ${act.category} | Tipo: ${act.activityType} | Modalidad: ${act.modality}`, 60, currentY); currentY += 12; doc.text(`Fecha: ${act.scheduledDate ? new Date(act.scheduledDate).toLocaleDateString('es-CO') : 'N/A'} | Estado: ${act.status}`, 60, currentY); currentY += 18; }); }
+       else { activities.forEach((act, idx) => { if (currentY > doc.page.height - 80) { doc.addPage(); currentY = 50; } doc.fontSize(9).font('Helvetica-Bold').text(`${idx + 1}. ${act.title}`, 50, currentY); currentY += 14; doc.font('Helvetica').text(`Categoría: ${act.category} | Modalidad: ${act.modality}`, 60, currentY); currentY += 12; doc.text(`Fecha: ${act.scheduledDate ? new Date(act.scheduledDate).toLocaleDateString('es-CO') : 'N/A'} | Estado: ${act.status}`, 60, currentY); currentY += 18; }); }
       await addSignatureFooter(doc, signers, true);
       doc.end();
     } catch (error: any) {
@@ -48701,7 +48703,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       doc.fontSize(10).font('Helvetica-Bold').text('Listado de Incidentes EVS', 50, currentY);
       currentY += 20;
       if (incidents.length === 0) { doc.fontSize(10).font('Helvetica').text('No hay incidentes registrados.', 50, currentY); }
-      else { incidents.forEach((inc, idx) => { if (currentY > doc.page.height - 80) { doc.addPage(); currentY = 50; } doc.fontSize(9).font('Helvetica-Bold').text(`${idx + 1}. ${getWorkerName(inc.workerId)}`, 50, currentY); currentY += 14; doc.font('Helvetica').text(`Tipo: ${inc.incidentType} | Severidad: ${inc.severity} | Fecha: ${inc.incidentDate ? new Date(inc.incidentDate).toLocaleDateString('es-CO') : 'N/A'}`, 60, currentY); currentY += 12; doc.text(`Estado: ${inc.status}`, 60, currentY); currentY += 18; }); }
+       else { incidents.forEach((inc, idx) => { if (currentY > doc.page.height - 80) { doc.addPage(); currentY = 50; } doc.fontSize(9).font('Helvetica-Bold').text(`${idx + 1}. ${getWorkerName(inc.workerId)}`, 50, currentY); currentY += 14; doc.font('Helvetica').text(`Tipo: ${inc.incidentType} | Categoría: ${inc.category} | Fecha: ${inc.incidentDate ? new Date(inc.incidentDate).toLocaleDateString('es-CO') : 'N/A'}`, 60, currentY); currentY += 12; doc.text(`Estado: ${inc.status}`, 60, currentY); currentY += 18; }); }
       await addSignatureFooter(doc, signers, true);
       doc.end();
     } catch (error: any) {
@@ -48803,9 +48805,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const riskLabels: Record<string, string> = { bajo: 'Bajo', medio: 'Medio', alto: 'Alto', critico: 'Crítico' };
       
       const totalCases = followups.length;
-      const activeCases = followups.filter(f => f.status === 'activo' || f.status === 'en_seguimiento').length;
+      const activeCases = followups.filter(f => f.status === 'activo' || String(f.status) === 'en_seguimiento').length;
       const closedCases = followups.filter(f => f.status === 'cerrado').length;
-      const remittedCases = followups.filter(f => f.status === 'remitido').length;
+      const remittedCases = followups.filter(f => String(f.status) === 'remitido').length;
       
       doc.fontSize(10).font('Helvetica-Bold').text('Total de casos:', margin, currentY);
       doc.font('Helvetica').text(String(totalCases), margin + 120, currentY);
@@ -48967,9 +48969,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         doc.font('Helvetica').text(worker.position, margin + 80, currentY);
         currentY += 14;
       }
-      if (worker?.area) {
+      if (worker?.department) {
         doc.font('Helvetica-Bold').text('Área:', margin, currentY);
-        doc.font('Helvetica').text(worker.area, margin + 80, currentY);
+        doc.font('Helvetica').text(worker.department, margin + 80, currentY);
         currentY += 14;
       }
       currentY += 10;
@@ -49134,7 +49136,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       try {
         const activity = await storage.getEvsActivity(data.activityId, companyId);
         if (activity && activity.meetingLink) {
-          const worker = await storage.getWorkerById(data.workerId);
+          const worker = data.workerId ? await storage.getWorkerById(data.workerId) : undefined;
           if (worker) {
             const workerUser = await storage.getUserByWorkerId(worker.id);
             if (workerUser) {
@@ -49143,7 +49145,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
                 ? new Date(activity.scheduledDate).toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' })
                 : 'Por definir';
               
-              const isVirtualCourse = activity.type === 'capacitacion' || activity.type === 'curso';
+           const isVirtualCourse = String(activity.category) === 'capacitacion' || String(activity.category) === 'curso';
               const subject = isVirtualCourse ? 'Curso Virtual Asignado' : 'Actividad de Bienestar Programada';
               
               await storage.createInternalMessage({
@@ -49155,7 +49157,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
                 receiverName: workerUser.fullName || workerUser.username,
                 receiverRole: workerUser.role,
                 subject,
-                content: 'Se le ha asignado a una actividad virtual.' + '\n\nPrograma: ' + (program?.name || 'No especificado') + '\nActividad: ' + (activity.name || 'Sin nombre') + '\nTipo: ' + (activity.type || 'General') + '\nFecha: ' + fechaFormateada + '\n\nAcceda al portal para ver los detalles y el enlace de la reunion.',
+                 content: 'Se le ha asignado a una actividad virtual.' + '\n\nPrograma: ' + (program?.name || 'No especificado') + '\nActividad: ' + (activity.title || 'Sin nombre') + '\nTipo: ' + (activity.category || 'General') + '\nFecha: ' + fechaFormateada + '\n\nAcceda al portal para ver los detalles y el enlace de la reunion.',
                 priority: 'normal',
                 status: 'unread',
                 relatedEntity: 'evs_activity',
@@ -49205,7 +49207,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const logoBuffer = await loadCompanyLogo(company.logoUrl);
       const signers = await getSignersForCompany(companyId);
       const pdfBuffer = await legalDocsPdfService.generateProteccionesLegalesPdf({
-        company: { id: company.id, name: company.name, nit: company.nit, address: company.address, logoUrl: company.logoUrl },
+        company: { id: company.id, name: company.name, nit: company.nit, address: company.address ?? '', logoUrl: company.logoUrl },
         signers,
         logoBuffer
       });
@@ -49232,7 +49234,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const logoBuffer = await loadCompanyLogo(company.logoUrl);
       const signers = await getSignersForCompany(companyId);
       const pdfBuffer = await legalDocsPdfService.generateProteccionDatosPdf({
-        company: { id: company.id, name: company.name, nit: company.nit, address: company.address, logoUrl: company.logoUrl },
+        company: { id: company.id, name: company.name, nit: company.nit, address: company.address ?? '', logoUrl: company.logoUrl },
         signers,
         logoBuffer
       });
@@ -49262,7 +49264,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const logoBuffer = await loadCompanyLogo(company.logoUrl);
       const signers = await getSignersForCompany(companyId);
       const pdfBuffer = await legalDocsPdfService.generateMedidasSeguridadPdf({
-        company: { id: company.id, name: company.name, nit: company.nit, address: company.address, logoUrl: company.logoUrl },
+        company: { id: company.id, name: company.name, nit: company.nit, address: company.address ?? '', logoUrl: company.logoUrl },
         signers,
         logoBuffer
       });
@@ -49589,8 +49591,14 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         deliveredBy: req.user!.username || "admin",
       });
       
+      const { deliveryDate, expirationDate, returnDate, ...deliveryFields } = validatedData;
       const [newDelivery] = await db.insert(eppDeliveries)
-        .values(validatedData)
+        .values({
+          ...deliveryFields,
+          deliveryDate: deliveryDate instanceof Date ? deliveryDate.toISOString().slice(0, 10) : deliveryDate,
+          expirationDate: expirationDate instanceof Date ? expirationDate.toISOString().slice(0, 10) : expirationDate,
+          returnDate: returnDate instanceof Date ? returnDate.toISOString().slice(0, 10) : returnDate,
+        })
         .returning();
       
       res.status(201).json(newDelivery);
@@ -49625,7 +49633,14 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       }
       
       // Validate partial data
-      const validatedData = insertEppDeliverySchema.partial().parse(req.body);
+      const parsedDelivery = insertEppDeliverySchema.partial().parse(req.body);
+      const { deliveryDate, expirationDate, returnDate, ...deliveryFields } = parsedDelivery;
+      const validatedData = {
+        ...deliveryFields,
+        deliveryDate: deliveryDate instanceof Date ? deliveryDate.toISOString().slice(0, 10) : deliveryDate,
+        expirationDate: expirationDate instanceof Date ? expirationDate.toISOString().slice(0, 10) : expirationDate,
+        returnDate: returnDate instanceof Date ? returnDate.toISOString().slice(0, 10) : returnDate,
+      };
       
       const [updatedDelivery] = await db.update(eppDeliveries)
         .set(validatedData)
@@ -50321,7 +50336,18 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       if (!companyId) return res.status(403).send("Usuario no asociado a empresa");
       const data = insertAccionMejoraContextoSchema.parse(req.body);
       const [accion] = await db.insert(accionesMejoraContexto)
-        .values(data)
+        .values({
+          ...data,
+          companyId,
+          fechaIdentificacion: data.fechaIdentificacion instanceof Date
+            ? data.fechaIdentificacion.toISOString().slice(0, 10) : data.fechaIdentificacion,
+          fechaInicio: data.fechaInicio instanceof Date
+            ? data.fechaInicio.toISOString().slice(0, 10) : data.fechaInicio,
+          fechaLimite: data.fechaLimite instanceof Date
+            ? data.fechaLimite.toISOString().slice(0, 10) : data.fechaLimite,
+          fechaCierre: data.fechaCierre instanceof Date
+            ? data.fechaCierre.toISOString().slice(0, 10) : data.fechaCierre,
+        })
         .returning();
       res.status(201).json(accion);
     } catch (error: any) {
@@ -50446,6 +50472,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
             : `Paso ${paso.codigo} — ${paso.nombre} (${paso.fase}) pendiente de implementación según Resolución 40595/2022`;
 
           const [nueva] = await db.insert(accionesMejoraContexto).values({
+            companyId,
             accion: textoAccion,
             descripcion: `Dar cumplimiento al paso ${paso.codigo} del PESV: ${paso.nombre}. Fase: ${paso.fase}.`,
             origenHallazgo: 'evaluacion_pesv',
@@ -50454,8 +50481,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
             prioridad: paso.prioridad,
             estado: 'pendiente',
             porcentajeAvance: 0,
-            fechaIdentificacion: new Date(),
-            fechaLimite,
+            fechaIdentificacion: new Date().toISOString().slice(0, 10),
+            fechaLimite: fechaLimite.toISOString().slice(0, 10),
           }).returning();
 
           creadasPesv.push(nueva);
@@ -50509,6 +50536,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
               : `Estándar ${estandar.numeroEstandar} — ${estandar.nombre} incumplido según Resolución 0312/2019`;
 
             const [nueva] = await db.insert(accionesMejoraContexto).values({
+              companyId,
               accion: textoAccion,
               descripcion: `Dar cumplimiento al estándar ${estandar.numeroEstandar}: ${estandar.nombre} de la Resolución 0312 de 2019.`,
               origenHallazgo: 'evaluacion_sst',
@@ -50517,8 +50545,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
               prioridad: 'media',
               estado: 'pendiente',
               porcentajeAvance: 0,
-              fechaIdentificacion: new Date(),
-              fechaLimite,
+              fechaIdentificacion: new Date().toISOString().slice(0, 10),
+              fechaLimite: fechaLimite.toISOString().slice(0, 10),
             }).returning();
 
             creadasSst.push(nueva);
@@ -51177,11 +51205,17 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       
       const validatedData = insertAccionMejoraPesvSchema.parse({
         ...req.body,
-        evaluacionId: req.params.id
+        evaluacionId: req.params.id,
+        companyId: evaluacion.companyId,
       });
+      const { fechaLimite, fechaCierre, ...accionFields } = validatedData;
       
       const [accion] = await db.insert(accionesMejoraPesv)
-        .values(validatedData)
+        .values({
+          ...accionFields,
+          ...(fechaLimite !== undefined && { fechaLimite: fechaLimite instanceof Date ? fechaLimite.toISOString().slice(0, 10) : fechaLimite }),
+          ...(fechaCierre != null && { fechaCierre }),
+        })
         .returning();
       
       res.status(201).json(accion);
@@ -51346,7 +51380,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
         const prioridad: 'alta' | 'media' = ['P01','P02','P03','P04','H01','H02','H03','H04','H07','H09','H10','H11'].includes(paso.codigo) ? 'alta' : 'media';
 
-        const [nueva] = await db.insert(accionesMejoraContexto).values({
+          const [nueva] = await db.insert(accionesMejoraContexto).values({
+          companyId,
           accion: textoAccion,
           descripcion: `Dar cumplimiento al paso ${paso.codigo} del PESV: ${paso.nombre}. Fase: ${paso.fase}.`,
           origenHallazgo: 'evaluacion_pesv',
@@ -51355,8 +51390,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
           prioridad,
           estado: 'pendiente',
           porcentajeAvance: 0,
-          fechaIdentificacion: new Date(),
-          fechaLimite,
+          fechaIdentificacion: new Date().toISOString().slice(0, 10),
+          fechaLimite: fechaLimite.toISOString().slice(0, 10),
         }).returning();
 
         creadas.push(nueva);
@@ -51591,7 +51626,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         pdfVisualTitle = 'INFORME DE AUTOEVALUACIÓN PESV — SUPERTRANSPORTE';
         pdfFilename = `reporte-supertransporte-pesv-${evaluacion.anio}.pdf`;
       } else if (destinatarioPesv === 'arl') {
-        const arlName = (company.arl || 'ARL').toUpperCase();
+        const arlName = (company.arlNombreEmpresa || 'ARL').toUpperCase();
         pdfMetaTitle = `Informe PESV — ${arlName}`;
         pdfVisualTitle = `INFORME PESV — ${arlName}`;
         pdfFilename = `reporte-arl-pesv-${evaluacion.anio}.pdf`;
@@ -51682,7 +51717,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         .text('RESUMEN DE CUMPLIMIENTO', margin + 8, currentY + 4);
       currentY += 25;
 
-      const porcentaje = evaluacion.porcentajeCumplimiento || 0;
+      const porcentaje = Number(evaluacion.porcentajeCumplimiento || 0);
       const nivelColor = porcentaje >= 80 ? '#28a745' : porcentaje >= 60 ? '#ffc107' : '#dc3545';
       const nivelCumplimiento = porcentaje >= 80 ? 'SATISFACTORIO' : porcentaje >= 60 ? 'EN PROCESO' : 'REQUIERE MEJORA';
 
@@ -54081,7 +54116,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       });
       
       const [result] = await db.insert(schema.hallazgosAuditoriaPesv)
-        .values(validatedData)
+        .values({ ...validatedData, companyId: effectiveCompanyId! })
         .returning();
       
       res.status(201).json(result);
@@ -56175,7 +56210,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         );
 
       const capacitacionesPorEstado = {
-        realizadas: capacitaciones.filter(c => c.status === 'realizada' || c.status === 'completada').length,
+        realizadas: capacitaciones.filter(c => String(c.status) === 'realizada' || c.status === 'completada').length,
         programadas: capacitaciones.filter(c => c.status === 'programada').length,
         canceladas: capacitaciones.filter(c => c.status === 'cancelada').length,
         total: capacitaciones.length,
@@ -56356,7 +56391,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         if (!lsoChk6) return res.status(403).send("No tienes acceso a esta empresa");
       }
       
-      const revisionPatchSchema = insertRevisionDireccionPesvSchema.partial().omit({ evaluacionPesvId: true, companyId: true });
+      const revisionPatchSchema = insertRevisionDireccionPesvSchema.partial();
       const validatedBody = revisionPatchSchema.parse(req.body);
 
       const updateData: any = { updatedAt: new Date() };
@@ -56446,7 +56481,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
           evaluacionId: revision.evaluacionPesvId,
           companyId: revision.companyId,
           descripcion: `[A02→A01] ${validated.descripcion}`,
-          tipoAccion: tipoMap[validated.tipo] || 'mejora',
+          tipoAccion: validated.tipo ? (tipoMap[validated.tipo] || 'mejora') : 'mejora',
           prioridad: validated.prioridad || 'media',
           fuenteHallazgo: 'revision_direccion',
           responsable: validated.responsable || null,

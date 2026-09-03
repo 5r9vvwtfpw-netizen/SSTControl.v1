@@ -834,7 +834,7 @@ export default function ConfiguracionInduccion() {
                       <Input
                         type="number"
                         value={contenidoForm.duracionMinutos || ''}
-                        onChange={(e) => setContenidoForm({ ...contenidoForm, duracionMinutos: e.target.value === '' ? '' : parseInt(e.target.value, 10) })}
+                        onChange={(e) => setContenidoForm({ ...contenidoForm, duracionMinutos: e.target.value === '' ? 0 : parseInt(e.target.value, 10) })}
                          onBlur={(e) => { if (e.target.value === '' || contenidoForm.duracionMinutos == null) setContenidoForm(prev => ({ ...prev, duracionMinutos: 10 })); }}
                       />
                     </div>

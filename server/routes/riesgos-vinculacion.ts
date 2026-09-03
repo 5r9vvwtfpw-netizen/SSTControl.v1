@@ -207,11 +207,13 @@ export function registerRiesgosVinculacionRoutes(app: Express, requireAuth: any)
               companyId: effectiveCompanyId,
               codigo: "IPERC-PESV-001",
               nombre: "Matriz IPERC - Riesgos PESV Sincronizados",
-              estado: "activa",
+              area: "Seguridad vial",
+              responsableEvaluacion: "Responsable SST",
+              responsableEvaluacionId: req.user?.id,
+              fechaEvaluacion: new Date().toISOString().split("T")[0],
+              estado: "vigente",
               version: 1,
-              fechaElaboracion: new Date().toISOString().split("T")[0],
               alcance: "Riesgos viales sincronizados desde módulo PESV",
-              responsableSstId: req.user?.id,
             })
             .returning();
           matrizIpercId = nuevaMatriz.id;

@@ -1,7 +1,8 @@
 import { pool } from "../db";
+import type { PoolClient } from "pg";
 
 export async function syncActividadAccionMejoraLink() {
-  const client = await pool.connect();
+  const client = await pool.connect() as PoolClient;
   try {
     const colCheck = await client.query(`
       SELECT column_name FROM information_schema.columns

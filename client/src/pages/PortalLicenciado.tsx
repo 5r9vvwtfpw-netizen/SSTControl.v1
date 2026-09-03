@@ -42,6 +42,7 @@ import {
   FileText,
   ExternalLink,
   Users,
+  User,
   Shield,
   CheckCircle2,
   XCircle,
@@ -341,7 +342,7 @@ function SoporteTab() {
       toast({ title: "Campos requeridos", description: "Complete el asunto y la descripción.", variant: "destructive" });
       return;
     }
-    createTicketMutation.mutate({ subject: newSubject, description: newDescription, category: newCategory });
+    createTicketMutation.mutate({ subject: newSubject, description: newDescription, category: newCategory, priority: newPriority });
   };
 
   const handleReply = () => {
@@ -791,7 +792,7 @@ function DashboardTab() {
             <div className="flex items-center gap-2">
               <LicenseStatusBadge status={stats?.licenseStatus ?? 'sin_licencia'} />
             </div>
-            {stats?.daysUntilExpiry !== null && stats?.daysUntilExpiry > 0 && (
+            {stats?.daysUntilExpiry != null && stats.daysUntilExpiry > 0 && (
               <p className="text-xs text-muted-foreground mt-1">
                 Vence en {stats.daysUntilExpiry} días
               </p>
@@ -2515,6 +2516,7 @@ function DocumentosTab() {
           vault={selectedVault}
           onBack={() => { setSelectedCompanyId(null); setConfirmSign(null); }}
           isSigning={isSigning}
+          signingId={signingId}
           hasValidSignature={!!hasSignature}
           onSign={(type, id, name) => setConfirmSign({ type, id, name })}
           onMessage={() => {

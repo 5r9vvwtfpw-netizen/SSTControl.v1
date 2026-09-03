@@ -303,8 +303,8 @@ function RespuestaDialog({ open, onClose, paso, evaluacionId, evaluacion, respue
     const existing = respuestas.find(r => r.pasoId === paso.codigo);
 
     if (existing) {
-      setFormCumple(existing.cumple);
-      setFormNoAplica(existing.noAplica);
+       setFormCumple(existing.cumple ?? 0);
+       setFormNoAplica(existing.noAplica ?? 0);
       respuestaForm.reset({
         evaluacionId: evaluacionId || "",
         pasoId: paso.codigo,
@@ -790,7 +790,7 @@ function RespuestaDialog({ open, onClose, paso, evaluacionId, evaluacion, respue
                 <div className="flex flex-col gap-2">
                   {paso.modulosSstUrls.map((modulo: ModuloSstUrl) => {
                     const IconComponent = modulo.icono ? ICONO_MAP[modulo.icono] : ExternalLink;
-                    const moduleAllowed = !companyChapter || isModuleAllowedForChapter(modulo.url, companyChapter as ChapterType);
+                    const moduleAllowed = !companyChapter || isModuleAllowedForChapter(modulo.url, companyChapter as unknown as ChapterType);
                     if (!moduleAllowed) {
                       return null;
                     }
@@ -1201,7 +1201,7 @@ function DetalleEvaluacionPesvInner() {
       verificar: CheckSquare,
       actuar: RefreshCcw,
     };
-    return icons[fase];
+    return icons[fase as Exclude<FasePHVA, "resumen">];
   };
 
   if (loadingEvaluacion) {
@@ -1654,7 +1654,7 @@ function DetalleEvaluacionPesvInner() {
                       </Card>
                       <Card>
                         <CardContent className="p-3 text-center">
-                          <p className="text-2xl font-bold" style={{ color: (evaluacion?.porcentajeCumplimiento || 0) >= 80 ? '#28a745' : (evaluacion?.porcentajeCumplimiento || 0) >= 60 ? '#FF9800' : '#D32F2F' }}>
+                          <p className="text-2xl font-bold" style={{ color: Number(evaluacion?.porcentajeCumplimiento || 0) >= 80 ? '#28a745' : Number(evaluacion?.porcentajeCumplimiento || 0) >= 60 ? '#FF9800' : '#D32F2F' }}>
                             {evaluacion?.porcentajeCumplimiento || 0}%
                           </p>
                           <p className="text-xs text-muted-foreground">Cumplimiento</p>
@@ -1765,8 +1765,12 @@ function DetalleEvaluacionPesvInner() {
         evaluacionId={id || ""}
         evaluacion={evaluacion}
         respuestas={respuestas}
-        companyChapter={companyChapter || ""}
-        onSaved={setSelectedFase}
+        companyChapter={String(companyChapter || "")}
+        onSaved={(fase) => {
+          if (["planear", "hacer", "verificar", "actuar", "resumen"].includes(fase)) {
+            setSelectedFase(fase as FasePHVA);
+          }
+        }}
         toast={toast}
       />
 

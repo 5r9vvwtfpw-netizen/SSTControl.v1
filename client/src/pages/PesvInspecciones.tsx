@@ -168,7 +168,7 @@ export default function PesvInspecciones() {
     const autoResult = computeResult(formData as Record<ItemKey, number>);
     const data = {
       ...formData,
-      inspector: formData.inspector || user?.name || "",
+      inspector: user?.fullName || user?.username || "",
       result: autoResult,
       observations: formData.observations || undefined,
       correctiveActions: formData.correctiveActions || undefined,

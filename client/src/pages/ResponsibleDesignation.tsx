@@ -281,7 +281,7 @@ export default function ResponsibleDesignationPage() {
   });
 
   // Query para obtener la asignación actual de LSO (usando endpoint JWT unificado)
-  const { data: lsoAssignmentData } = useQuery<{ ok: boolean; data: { type: string; name: string; email?: string; phone?: string; city?: string; licenseNumber?: string; licenseIssuer?: string; licenseExpiry?: string; professionType?: string; identificationNumber?: string; assignedAt: string; } | null }>({
+  const { data: lsoAssignmentData } = useQuery<{ ok: boolean; data: { type: string; name: string; email?: string; phone?: string; city?: string; licenseNumber?: string; licenseIssuer?: string; licenseExpiry?: string; professionType?: string; identificationNumber?: string; course50Hours?: boolean; course50HoursDate?: string; assignedAt: string; } | null }>({
     queryKey: ["/api/lso-directory-jwt/current-assignment"],
   });
   const lsoAssignment = lsoAssignmentData?.data;

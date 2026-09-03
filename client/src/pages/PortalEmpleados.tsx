@@ -879,7 +879,7 @@ function PortalAccessLogsTab() {
                       <td className="p-3">
                         <div className="flex items-center gap-2">
                           <User className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">{log.workerName || log.userName || "Usuario sin perfil"}</span>
+                          <span className="font-medium">{log.workerName || "Usuario sin perfil"}</span>
                         </div>
                       </td>
                       <td className="p-3 text-sm">
@@ -4683,7 +4683,7 @@ function MisExamenesMedicosTab() {
     const now = new Date();
     const scheduledDate = exam.scheduledDate ? new Date(exam.scheduledDate) : null;
     
-    if (exam.completedDate) {
+    if (exam.performedDate) {
       return { label: "Realizado", color: "bg-green-600" };
     }
     if (scheduledDate && scheduledDate < now) {
@@ -4692,8 +4692,8 @@ function MisExamenesMedicosTab() {
     return { label: "Programado", color: "bg-blue-600" };
   };
   
-  const programados = examenes.filter(e => !e.completedDate);
-  const completados = examenes.filter(e => e.completedDate);
+  const programados = examenes.filter(e => !e.performedDate);
+  const completados = examenes.filter(e => e.performedDate);
   
   return (
     <div className="space-y-6">
@@ -4768,11 +4768,11 @@ function MisExamenesMedicosTab() {
                     </CardHeader>
                     <CardContent className="pt-0">
                       <div className="grid sm:grid-cols-2 gap-3 text-sm">
-                        {(exam.medicalCenter || exam.centroMedico) && (
+                        {exam.medicalCenter && (
                           <div className="flex items-center gap-2 text-muted-foreground">
                             <Building2 className="h-4 w-4" />
                             <span data-testid={`text-centro-medico-${exam.id}`}>
-                              {exam.medicalCenter || exam.centroMedico}
+                              {exam.medicalCenter}
                             </span>
                           </div>
                         )}
@@ -4815,7 +4815,7 @@ function MisExamenesMedicosTab() {
             <div className="space-y-3">
               {completados.map((exam) => {
                 const estadoInfo = getEstadoInfo(exam);
-                const fechaCompletado = exam.completedDate ? new Date(exam.completedDate) : null;
+                const fechaCompletado = exam.performedDate ? new Date(exam.performedDate) : null;
                 const tipoLabel = tipoExamenLabels[exam.examType || ''] || exam.examType || "Examen Médico";
                 
                 return (
@@ -4837,9 +4837,9 @@ function MisExamenesMedicosTab() {
                             Realizado el {format(fechaCompletado, "d 'de' MMMM, yyyy", { locale: es })}
                           </p>
                         )}
-                        {(exam.medicalCenter || exam.centroMedico) && (
+                        {exam.medicalCenter && (
                           <p className="text-xs text-muted-foreground">
-                            {exam.medicalCenter || exam.centroMedico}
+                            {exam.medicalCenter}
                           </p>
                         )}
                       </div>

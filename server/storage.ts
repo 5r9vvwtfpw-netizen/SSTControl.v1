@@ -404,6 +404,24 @@ type QueryClient = {
 };
 type StorageDb = ReturnType<typeof drizzlePg<typeof schema>>;
 
+function toDateString(value: Date | string): string;
+function toDateString(value: Date | string | null | undefined): string | null | undefined;
+function toDateString(value: Date | string | null | undefined): string | null | undefined {
+  return value instanceof Date ? value.toISOString().slice(0, 10) : value;
+}
+const parseRouteType = (value: string): typeof schema.routeTypeEnum.enumValues[number] => {
+  if (!schema.routeTypeEnum.enumValues.includes(value as typeof schema.routeTypeEnum.enumValues[number])) {
+    throw new Error(`Tipo de ruta no válido: ${value}`);
+  }
+  return value as typeof schema.routeTypeEnum.enumValues[number];
+};
+const parseSafeRouteRiskLevel = (value: string): typeof schema.safeRouteRiskLevelEnum.enumValues[number] => {
+  if (!schema.safeRouteRiskLevelEnum.enumValues.includes(value as typeof schema.safeRouteRiskLevelEnum.enumValues[number])) {
+    throw new Error(`Nivel de riesgo de ruta no válido: ${value}`);
+  }
+  return value as typeof schema.safeRouteRiskLevelEnum.enumValues[number];
+};
+
 let pool: PgPool;
 let db: StorageDb;
 
@@ -8813,21 +8831,25 @@ export class DbStorage implements IStorage {
   }
 
   async createAprobacionCambio(aprobacion: InsertAprobacionCambio, companyId: string): Promise<AprobacionCambio> {
+    const { fechaAprobacion, ...aprobacionFields } = aprobacion;
     const [newAprobacion] = await db.insert(schema.aprobacionesCambios)
       .values({
-        ...aprobacion,
+        ...aprobacionFields,
+        ...(fechaAprobacion !== undefined && { fechaAprobacion: toDateString(fechaAprobacion) }),
         companyId
-      } as typeof schema.aprobacionesCambios.$inferInsert)
+      })
       .returning();
     return newAprobacion;
   }
 
   async updateAprobacionCambio(id: string, aprobacion: Partial<InsertAprobacionCambio>, companyId: string): Promise<AprobacionCambio | undefined> {
+    const { fechaAprobacion, ...aprobacionFields } = aprobacion;
     const [updated] = await db.update(schema.aprobacionesCambios)
       .set({
-        ...aprobacion,
+        ...aprobacionFields,
+        ...(fechaAprobacion !== undefined && { fechaAprobacion: toDateString(fechaAprobacion) }),
         updatedAt: sql`now()`
-      } as Partial<typeof schema.aprobacionesCambios.$inferInsert>)
+      })
       .where(and(
         eq(schema.aprobacionesCambios.id, id),
         eq(schema.aprobacionesCambios.companyId, companyId)
@@ -8976,19 +8998,28 @@ export class DbStorage implements IStorage {
     const [newSolicitud] = await db.insert(schema.solicitudesAdquisicion)
       .values({
         ...solicitud,
+         fechaSolicitud: toDateString(solicitud.fechaSolicitud),
+         fechaEvaluacion: toDateString(solicitud.fechaEvaluacion),
+         fechaCompra: toDateString(solicitud.fechaCompra),
+         fechaRecepcion: toDateString(solicitud.fechaRecepcion),
         companyId,
         numeroSolicitud
-      } as typeof schema.solicitudesAdquisicion.$inferInsert)
+       })
       .returning();
     return newSolicitud;
   }
 
   async updateSolicitudAdquisicion(id: string, solicitud: Partial<InsertSolicitudAdquisicion>, companyId: string): Promise<SolicitudAdquisicion | undefined> {
+    const { fechaSolicitud, fechaEvaluacion, fechaCompra, fechaRecepcion, ...solicitudFields } = solicitud;
     const [updated] = await db.update(schema.solicitudesAdquisicion)
       .set({
-        ...solicitud,
+        ...solicitudFields,
+         ...(fechaSolicitud !== undefined && { fechaSolicitud: toDateString(fechaSolicitud) }),
+         ...(fechaEvaluacion !== undefined && { fechaEvaluacion: toDateString(fechaEvaluacion) }),
+         ...(fechaCompra !== undefined && { fechaCompra: toDateString(fechaCompra) }),
+         ...(fechaRecepcion !== undefined && { fechaRecepcion: toDateString(fechaRecepcion) }),
         updatedAt: sql`now()`
-      } as Partial<typeof schema.solicitudesAdquisicion.$inferInsert>)
+       })
       .where(and(
         eq(schema.solicitudesAdquisicion.id, id),
         eq(schema.solicitudesAdquisicion.companyId, companyId)
@@ -9047,18 +9078,21 @@ export class DbStorage implements IStorage {
     const [newEvaluacion] = await db.insert(schema.evaluacionesAdquisicion)
       .values({
         ...evaluacion,
+        fechaEvaluacion: toDateString(evaluacion.fechaEvaluacion),
         companyId
-      } as typeof schema.evaluacionesAdquisicion.$inferInsert)
+      })
       .returning();
     return newEvaluacion;
   }
 
   async updateEvaluacionAdquisicion(id: string, evaluacion: Partial<InsertEvaluacionAdquisicion>, companyId: string): Promise<EvaluacionAdquisicion | undefined> {
+    const { fechaEvaluacion, ...evaluacionFields } = evaluacion;
     const [updated] = await db.update(schema.evaluacionesAdquisicion)
       .set({
-        ...evaluacion,
+        ...evaluacionFields,
+        ...(fechaEvaluacion !== undefined && { fechaEvaluacion: toDateString(fechaEvaluacion) }),
         updatedAt: sql`now()`
-      } as Partial<typeof schema.evaluacionesAdquisicion.$inferInsert>)
+      })
       .where(and(
         eq(schema.evaluacionesAdquisicion.id, id),
         eq(schema.evaluacionesAdquisicion.companyId, companyId)
@@ -9154,21 +9188,27 @@ export class DbStorage implements IStorage {
   }
 
   async createHojaSeguridad(hoja: InsertHojaSeguridad, companyId: string): Promise<HojaSeguridad> {
+    const { fechaEmision, fechaRevision, ...hojaFields } = hoja;
     const [newHoja] = await db.insert(schema.hojasSeguridad)
       .values({
-        ...hoja,
+        ...hojaFields,
+        ...(fechaEmision !== undefined && { fechaEmision: toDateString(fechaEmision) }),
+        ...(fechaRevision !== undefined && { fechaRevision: toDateString(fechaRevision) }),
         companyId
-      } as typeof schema.hojasSeguridad.$inferInsert)
+      })
       .returning();
     return newHoja;
   }
 
   async updateHojaSeguridad(id: string, hoja: Partial<InsertHojaSeguridad>, companyId: string): Promise<HojaSeguridad | undefined> {
+    const { fechaEmision, fechaRevision, ...hojaFields } = hoja;
     const [updated] = await db.update(schema.hojasSeguridad)
       .set({
-        ...hoja,
+        ...hojaFields,
+        ...(fechaEmision !== undefined && { fechaEmision: toDateString(fechaEmision) }),
+        ...(fechaRevision !== undefined && { fechaRevision: toDateString(fechaRevision) }),
         updatedAt: sql`now()`
-      } as Partial<typeof schema.hojasSeguridad.$inferInsert>)
+      })
       .where(and(
         eq(schema.hojasSeguridad.id, id),
         eq(schema.hojasSeguridad.companyId, companyId)
@@ -9404,8 +9444,9 @@ export class DbStorage implements IStorage {
     const [newVerificacion] = await db.insert(schema.verificacionesAdquisicion)
       .values({
         ...verificacion,
+        fechaVerificacion: toDateString(verificacion.fechaVerificacion),
         companyId
-      } as typeof schema.verificacionesAdquisicion.$inferInsert)
+      })
       .returning();
     return newVerificacion;
   }
@@ -10110,9 +10151,12 @@ export class DbStorage implements IStorage {
   }
 
   async createPlanComunicacionSst(plan: InsertPlanComunicacionSst, companyId: string, userId: string): Promise<PlanComunicacionSst> {
+    const { fechaElaboracion, fechaRevision, ...planFields } = plan;
     const [newPlan] = await db.insert(schema.planComunicacionSst)
       .values({
-        ...plan,
+        ...planFields,
+        fechaElaboracion: toDateString(fechaElaboracion),
+        ...(fechaRevision !== undefined && { fechaRevision: toDateString(fechaRevision) }),
         companyId
       })
       .returning();
@@ -10131,9 +10175,12 @@ export class DbStorage implements IStorage {
   }
 
   async updatePlanComunicacionSst(id: string, plan: Partial<InsertPlanComunicacionSst>, companyId: string, userId: string): Promise<PlanComunicacionSst | undefined> {
+    const { fechaElaboracion, fechaRevision, ...planFields } = plan;
     const [updated] = await db.update(schema.planComunicacionSst)
       .set({
-        ...plan,
+        ...planFields,
+        ...(fechaElaboracion !== undefined && { fechaElaboracion: toDateString(fechaElaboracion) }),
+        ...(fechaRevision !== undefined && { fechaRevision: toDateString(fechaRevision) }),
         updatedAt: sql`now()`
       })
       .where(and(
@@ -12980,6 +13027,8 @@ export class DbStorage implements IStorage {
     companyName: string; 
     planName: string;
     planPrice: number;
+    numberOfWorkers: number;
+    quoteBaseMonthlyPrice: number | null;
   }>> {
     const results = await db
       .select({
@@ -13959,17 +14008,26 @@ export class DbStorage implements IStorage {
   async createPlanEmergencia(plan: InsertPlanEmergencia, companyId: string): Promise<PlanEmergencia> {
     const [newPlan] = await db.insert(schema.planesEmergencia).values({
       ...plan,
+      fechaElaboracion: toDateString(plan.fechaElaboracion),
+      fechaAprobacion: toDateString(plan.fechaAprobacion),
+      fechaVigencia: toDateString(plan.fechaVigencia),
+      fechaProximaRevision: toDateString(plan.fechaProximaRevision),
       companyId,
-    } as typeof schema.planesEmergencia.$inferInsert).returning();
+    }).returning();
     return newPlan;
   }
 
   async updatePlanEmergencia(id: string, plan: Partial<InsertPlanEmergencia>, companyId: string): Promise<PlanEmergencia | undefined> {
+    const { fechaElaboracion, fechaAprobacion, fechaVigencia, fechaProximaRevision, ...planFields } = plan;
     const [updated] = await db.update(schema.planesEmergencia)
       .set({
-        ...plan,
+        ...planFields,
+        ...(fechaElaboracion !== undefined && { fechaElaboracion: toDateString(fechaElaboracion) }),
+        ...(fechaAprobacion !== undefined && { fechaAprobacion: toDateString(fechaAprobacion) }),
+        ...(fechaVigencia !== undefined && { fechaVigencia: toDateString(fechaVigencia) }),
+        ...(fechaProximaRevision !== undefined && { fechaProximaRevision: toDateString(fechaProximaRevision) }),
         updatedAt: new Date(),
-      } as Partial<typeof schema.planesEmergencia.$inferInsert>)
+      })
       .where(and(
         eq(schema.planesEmergencia.id, id),
         eq(schema.planesEmergencia.companyId, companyId)
@@ -14078,13 +14136,26 @@ export class DbStorage implements IStorage {
   }
 
   async createMiembroBrigada(miembro: InsertMiembroBrigada): Promise<MiembroBrigada> {
-    const [newMiembro] = await db.insert(schema.miembrosBrigada).values(miembro as typeof schema.miembrosBrigada.$inferInsert).returning();
+    const [newMiembro] = await db.insert(schema.miembrosBrigada).values({
+      ...miembro,
+      fechaIngreso: toDateString(miembro.fechaIngreso),
+      fechaRetiro: toDateString(miembro.fechaRetiro),
+      fechaUltimaCapacitacion: toDateString(miembro.fechaUltimaCapacitacion),
+      fechaProximaCapacitacion: toDateString(miembro.fechaProximaCapacitacion),
+    }).returning();
     return newMiembro;
   }
 
   async updateMiembroBrigada(id: string, miembro: Partial<InsertMiembroBrigada>): Promise<MiembroBrigada | undefined> {
+    const { fechaIngreso, fechaRetiro, fechaUltimaCapacitacion, fechaProximaCapacitacion, ...miembroFields } = miembro;
     const [updated] = await db.update(schema.miembrosBrigada)
-      .set(miembro as Partial<typeof schema.miembrosBrigada.$inferInsert>)
+      .set({
+        ...miembroFields,
+        ...(fechaIngreso !== undefined && { fechaIngreso: toDateString(fechaIngreso) }),
+        ...(fechaRetiro !== undefined && { fechaRetiro: toDateString(fechaRetiro) }),
+        ...(fechaUltimaCapacitacion !== undefined && { fechaUltimaCapacitacion: toDateString(fechaUltimaCapacitacion) }),
+        ...(fechaProximaCapacitacion !== undefined && { fechaProximaCapacitacion: toDateString(fechaProximaCapacitacion) }),
+      })
       .where(eq(schema.miembrosBrigada.id, id))
       .returning();
     return updated;
@@ -14125,8 +14196,9 @@ export class DbStorage implements IStorage {
   async createAnalisisVulnerabilidad(analisis: InsertAnalisisVulnerabilidad, companyId: string): Promise<AnalisisVulnerabilidad> {
     const [newAnalisis] = await db.insert(schema.analisisVulnerabilidad).values({
       ...analisis,
+      fechaAnalisis: toDateString(analisis.fechaAnalisis),
       companyId,
-    } as typeof schema.analisisVulnerabilidad.$inferInsert).returning();
+    }).returning();
     return newAnalisis;
   }
 
@@ -14220,7 +14292,11 @@ export class DbStorage implements IStorage {
   }
 
   async createInspeccionRecursoEmergencia(inspeccion: InsertInspeccionRecursoEmergencia): Promise<InspeccionRecursoEmergencia> {
-    const [newInspeccion] = await db.insert(schema.inspeccionesRecursosEmergencia).values(inspeccion as typeof schema.inspeccionesRecursosEmergencia.$inferInsert).returning();
+    const [newInspeccion] = await db.insert(schema.inspeccionesRecursosEmergencia).values({
+      ...inspeccion,
+      fechaInspeccion: toDateString(inspeccion.fechaInspeccion),
+      fechaAccionRequerida: toDateString(inspeccion.fechaAccionRequerida),
+    }).returning();
     return newInspeccion;
   }
 
@@ -14265,10 +14341,14 @@ export class DbStorage implements IStorage {
   }
 
   async createSimulacro(simulacro: InsertSimulacro, companyId: string): Promise<Simulacro> {
+    const { fechaProgramada, fechaEjecucion, fechaSeguimiento, ...simulacroFields } = simulacro;
     const [newSimulacro] = await db.insert(schema.simulacros).values({
-      ...simulacro,
+      ...simulacroFields,
+      fechaProgramada: toDateString(fechaProgramada),
+      fechaEjecucion: toDateString(fechaEjecucion),
+      fechaSeguimiento: toDateString(fechaSeguimiento),
       companyId,
-    } as typeof schema.simulacros.$inferInsert).returning();
+    }).returning();
     return newSimulacro;
   }
 
@@ -17742,7 +17822,7 @@ export class DbStorage implements IStorage {
 
   async createVehicleGpsTracking(data: schema.InsertVehicleGpsTracking, companyId: string): Promise<schema.VehicleGpsTracking> {
     const [created] = await db.insert(schema.vehicleGpsTracking)
-      .values({ ...data, companyId } as typeof schema.safeRoutes.$inferInsert)
+      .values({ ...data, companyId })
       .returning();
     return created;
   }
@@ -17777,7 +17857,7 @@ export class DbStorage implements IStorage {
 
   async updateSstSpeedAlert(id: string, data: Partial<schema.InsertSstSpeedAlert>): Promise<schema.SstSpeedAlert> {
     const [updated] = await db.update(schema.sstSpeedAlerts)
-      .set(data as Partial<typeof schema.safeRoutes.$inferInsert>)
+      .set(data)
       .where(eq(schema.sstSpeedAlerts.id, id))
       .returning();
     return updated;
@@ -17800,15 +17880,20 @@ export class DbStorage implements IStorage {
   }
 
   async createSafeRoute(data: schema.InsertSafeRoute, companyId: string): Promise<schema.SafeRoute> {
+    const routeType = parseRouteType(data.routeType);
+    const riskLevel = parseSafeRouteRiskLevel(data.riskLevel);
     const [created] = await db.insert(schema.safeRoutes)
-      .values({ ...data, companyId })
+      .values({ ...data, companyId, routeType, riskLevel })
       .returning();
     return created;
   }
 
   async updateSafeRoute(id: string, data: Partial<schema.InsertSafeRoute>): Promise<schema.SafeRoute> {
+    const { routeType: rawRouteType, riskLevel: rawRiskLevel, ...routeFields } = data;
+    const routeType = rawRouteType === undefined ? undefined : parseRouteType(rawRouteType);
+    const riskLevel = rawRiskLevel === undefined ? undefined : parseSafeRouteRiskLevel(rawRiskLevel);
     const [updated] = await db.update(schema.safeRoutes)
-      .set(data)
+      .set({ ...routeFields, ...(routeType !== undefined && { routeType }), ...(riskLevel !== undefined && { riskLevel }) })
       .where(eq(schema.safeRoutes.id, id))
       .returning();
     return updated;

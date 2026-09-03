@@ -19,7 +19,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { PesvFatigaRegistro, Driver, User } from "@shared/schema";
-import { PASOS_PESV } from "@/data/pasos-pesv";
+import { getTrazabilidadPaso } from "@/data/pesv-normativa-trazabilidad";
 
 const TIPO_CONTROL_OPTIONS = [
   { value: "sensibilizacion", label: "Sensibilización" },
@@ -51,7 +51,7 @@ function getResultadoBadge(val: string | null) {
   return <Badge variant="outline">{val ?? "N/A"}</Badge>;
 }
 
-const PASO_H09 = PASOS_PESV.find(p => p.codigo === "H09");
+const PASO_H09 = getTrazabilidadPaso("H09");
 
 interface FatigaFormData {
   evaluacionId: string | null;

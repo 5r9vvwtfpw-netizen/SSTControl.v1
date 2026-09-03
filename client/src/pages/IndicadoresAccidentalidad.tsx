@@ -566,7 +566,7 @@ export default function IndicadoresAccidentalidad() {
                   <FormField control={form.control} name="totalWorkers" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Número de Trabajadores *</FormLabel>
-                      <FormControl><Input type="number" min="0" {...field} value={field.value ?? ''} onChange={(e) => { const v = e.target.value; if (v === '') { field.onChange(''); return; } const n = parseInt(v, 10); field.onChange(isNaN(n) || n < 0 ? '' : n); }} onBlur={() => { if (field.value === '' || field.value == null || isNaN(field.value as number) || (field.value as number) < 0) field.onChange(0); }} data-testid="input-workers" /></FormControl>
+                  <FormControl><Input type="number" min="0" {...field} value={field.value ?? ''} onChange={(e) => { const v = e.target.value; field.onChange(v === '' ? 0 : Math.max(0, parseInt(v, 10) || 0)); }} data-testid="input-workers" /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
@@ -581,28 +581,28 @@ export default function IndicadoresAccidentalidad() {
                   <FormField control={form.control} name="totalAccidents" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Total Accidentes de Trabajo</FormLabel>
-                      <FormControl><Input type="number" min="0" {...field} value={field.value ?? ''} onChange={(e) => { const v = e.target.value; if (v === '') { field.onChange(''); return; } const n = parseInt(v, 10); field.onChange(isNaN(n) || n < 0 ? '' : n); }} onBlur={() => { if (field.value === '' || field.value == null || isNaN(field.value as number) || (field.value as number) < 0) field.onChange(0); }} data-testid="input-accidents" /></FormControl>
+                      <FormControl><Input type="number" min="0" {...field} value={field.value ?? ''} onChange={(e) => { const v = e.target.value; field.onChange(v === '' ? 0 : Math.max(0, parseInt(v, 10) || 0)); }} data-testid="input-accidents" /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
                   <FormField control={form.control} name="fatalAccidents" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Accidentes Mortales</FormLabel>
-                      <FormControl><Input type="number" min="0" {...field} value={field.value ?? ''} onChange={(e) => { const v = e.target.value; if (v === '') { field.onChange(''); return; } const n = parseInt(v, 10); field.onChange(isNaN(n) || n < 0 ? '' : n); }} onBlur={() => { if (field.value === '' || field.value == null || isNaN(field.value as number) || (field.value as number) < 0) field.onChange(0); }} data-testid="input-fatal" /></FormControl>
+                      <FormControl><Input type="number" min="0" {...field} value={field.value ?? ''} onChange={(e) => { const v = e.target.value; field.onChange(v === '' ? 0 : Math.max(0, parseInt(v, 10) || 0)); }} data-testid="input-fatal" /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
                   <FormField control={form.control} name="lostDays" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Días Perdidos</FormLabel>
-                      <FormControl><Input type="number" min="0" {...field} value={field.value ?? ''} onChange={(e) => { const v = e.target.value; if (v === '') { field.onChange(''); return; } const n = parseInt(v, 10); field.onChange(isNaN(n) || n < 0 ? '' : n); }} onBlur={() => { if (field.value === '' || field.value == null || isNaN(field.value as number) || (field.value as number) < 0) field.onChange(0); }} data-testid="input-lost-days" /></FormControl>
+                      <FormControl><Input type="number" min="0" {...field} value={field.value ?? ''} onChange={(e) => { const v = e.target.value; field.onChange(v === '' ? 0 : Math.max(0, parseInt(v, 10) || 0)); }} data-testid="input-lost-days" /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
                   <FormField control={form.control} name="totalOccupationalDiseases" render={({ field }) => (
                     <FormItem>
                       <FormLabel>Enfermedades Laborales</FormLabel>
-                      <FormControl><Input type="number" min="0" {...field} value={field.value ?? ''} onChange={(e) => { const v = e.target.value; if (v === '') { field.onChange(''); return; } const n = parseInt(v, 10); field.onChange(isNaN(n) || n < 0 ? '' : n); }} onBlur={() => { if (field.value === '' || field.value == null || isNaN(field.value as number) || (field.value as number) < 0) field.onChange(0); }} data-testid="input-diseases" /></FormControl>
+                      <FormControl><Input type="number" min="0" {...field} value={field.value ?? ''} onChange={(e) => { const v = e.target.value; field.onChange(v === '' ? 0 : Math.max(0, parseInt(v, 10) || 0)); }} data-testid="input-diseases" /></FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />

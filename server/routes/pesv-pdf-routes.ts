@@ -692,7 +692,7 @@ export function registerPesvPdfRoutes(app: Express) {
           const pageWidth = doc.page.width - margin * 2;
           const headerH = 26;
           const safeY = checkPageBreak(doc, headerH + 4, y);
-          doc.rect(margin, safeY, pageWidth, headerH).fill(PDF_COLORS.PRIMARY || '#1a6b3c');
+          doc.rect(margin, safeY, pageWidth, headerH).fill(PDF_COLORS.GREEN_PRIMARY || '#1a6b3c');
           doc.fontSize(11).font('Helvetica-Bold').fillColor('#FFFFFF')
             .text(`CONDUCTOR: ${c.name.toUpperCase()}`, margin + 8, safeY + 8, { width: pageWidth - 16 });
           doc.fillColor(PDF_COLORS.BLACK || '#000000');
@@ -2225,7 +2225,7 @@ export function registerPesvPdfRoutes(app: Express) {
         const participanteRows = participantes.map(p => [
           p.nombre,
           p.cargo,
-          p.tipo === 'interno' ? 'Interno' : p.tipo === 'externo' ? 'Externo' : p.tipo,
+          p.tipo,
           p.asistio === 1 ? 'Asistió' : 'No asistió',
         ]);
         y = addSimpleTable(doc, ['Nombre', 'Cargo', 'Tipo', 'Asistencia'], participanteRows, { y });

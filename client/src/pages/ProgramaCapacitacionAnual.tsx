@@ -447,7 +447,7 @@ function CreateProgramDialog({
   const defaultMethodology = `Presencial / Virtual - Sesiones teórico-prácticas, talleres, simulacros, evaluaciones escritas y prácticas. Frecuencia según cronograma anual establecido.`;
 
   const form = useForm<InsertTrainingProgram>({
-    resolver: zodResolver(insertTrainingProgramSchema.omit({ id: true, companyId: true })),
+    resolver: zodResolver(insertTrainingProgramSchema),
     defaultValues: {
       year: currentYear,
       title: initialValues?.title || `Programa de Capacitación y Prevención SST ${currentYear}`,
@@ -723,7 +723,7 @@ function EditProgramDialog({
   isPending: boolean;
 }) {
   const form = useForm<InsertTrainingProgram>({
-    resolver: zodResolver(insertTrainingProgramSchema.omit({ id: true, companyId: true }).partial()),
+    resolver: zodResolver(insertTrainingProgramSchema),
     defaultValues: {
       year: program.year,
       title: program.title,

@@ -1456,7 +1456,7 @@ export default function DetalleEvaluacionSst() {
           {(() => {
             // Función para determinar el estado de vencimiento
             const getEstadoVencimiento = (accion: AccionMejora) => {
-              if (accion.estado === 'completada' || accion.estado === 'verificada') {
+              if (accion.estado === 'completada') {
                 return { tipo: 'completada', clase: 'border-green-500 bg-green-50 dark:bg-green-950/20', icono: '✓' };
               }
               const hoy = new Date();
@@ -1478,8 +1478,8 @@ export default function DetalleEvaluacionSst() {
               const diasA = Math.ceil((new Date(a.fechaCompromiso).getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24));
               const diasB = Math.ceil((new Date(b.fechaCompromiso).getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24));
               // Ordenar: completadas al final, luego por días restantes (menor primero)
-              if (a.estado === 'completada' || a.estado === 'verificada') return 1;
-              if (b.estado === 'completada' || b.estado === 'verificada') return -1;
+              if (a.estado === 'completada') return 1;
+              if (b.estado === 'completada') return -1;
               return diasA - diasB;
             });
             

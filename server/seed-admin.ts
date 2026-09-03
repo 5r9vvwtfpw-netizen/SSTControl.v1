@@ -198,8 +198,8 @@ async function seedLsoUser() {
         sstProfessionType: "profesional_sst",
         sstLicenseNumber: "LSO-2024-001",
         sstLicenseIssuer: "Ministerio de Trabajo Colombia",
-        sstLicenseIssuedAt: new Date("2024-01-15"),
-        sstLicenseExpiresAt: new Date("2029-01-15"),
+        sstLicenseIssuedAt: "2024-01-15",
+        sstLicenseExpiresAt: "2029-01-15",
         sstLicenseStatus: "vigente",
       });
 

@@ -1834,15 +1834,15 @@ export default function CopasstCms() {
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="leccion-duracion">Duración (min)</Label>
-                <Input id="leccion-duracion" type="number" value={leccionForm.duracionMinutos || ''} onChange={(e) => setLeccionForm({ ...leccionForm, duracionMinutos: e.target.value === '' ? '' : parseInt(e.target.value, 10) })} onBlur={(e) => { if (e.target.value === '' || leccionForm.duracionMinutos === '') setLeccionForm(prev => ({ ...prev, duracionMinutos: 5 })); }} data-testid="input-leccion-duracion" />
+                <Input id="leccion-duracion" type="number" value={leccionForm.duracionMinutos || ''} onChange={(e) => setLeccionForm({ ...leccionForm, duracionMinutos: e.target.value === '' ? 0 : parseInt(e.target.value, 10) })} onBlur={(e) => { if (e.target.value === '' || leccionForm.duracionMinutos === 0) setLeccionForm(prev => ({ ...prev, duracionMinutos: 5 })); }} data-testid="input-leccion-duracion" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="leccion-orden">Orden</Label>
-                <Input id="leccion-orden" type="number" value={leccionForm.ordenLeccion || ''} onChange={(e) => setLeccionForm({ ...leccionForm, ordenLeccion: e.target.value === '' ? '' : parseInt(e.target.value, 10) })} onBlur={(e) => { if (e.target.value === '' || leccionForm.ordenLeccion === '') setLeccionForm(prev => ({ ...prev, ordenLeccion: 1 })); }} data-testid="input-leccion-orden" />
+                <Input id="leccion-orden" type="number" value={leccionForm.ordenLeccion || ''} onChange={(e) => setLeccionForm({ ...leccionForm, ordenLeccion: e.target.value === '' ? 0 : parseInt(e.target.value, 10) })} onBlur={(e) => { if (e.target.value === '' || leccionForm.ordenLeccion === 0) setLeccionForm(prev => ({ ...prev, ordenLeccion: 1 })); }} data-testid="input-leccion-orden" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="leccion-puntos">Puntos</Label>
-                <Input id="leccion-puntos" type="number" value={leccionForm.puntosCompletar || ''} onChange={(e) => setLeccionForm({ ...leccionForm, puntosCompletar: e.target.value === '' ? '' : parseInt(e.target.value, 10) })} onBlur={(e) => { if (e.target.value === '' || leccionForm.puntosCompletar === '') setLeccionForm(prev => ({ ...prev, puntosCompletar: 10 })); }} data-testid="input-leccion-puntos" />
+                <Input id="leccion-puntos" type="number" value={leccionForm.puntosCompletar || ''} onChange={(e) => setLeccionForm({ ...leccionForm, puntosCompletar: e.target.value === '' ? 0 : parseInt(e.target.value, 10) })} onBlur={(e) => { if (e.target.value === '' || leccionForm.puntosCompletar === 0) setLeccionForm(prev => ({ ...prev, puntosCompletar: 10 })); }} data-testid="input-leccion-puntos" />
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -2048,7 +2048,7 @@ export default function CopasstCms() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="pregunta-puntos">Puntos</Label>
-                <Input id="pregunta-puntos" type="number" value={preguntaForm.puntos || ''} onChange={(e) => setPreguntaForm({ ...preguntaForm, puntos: e.target.value === '' ? '' : parseInt(e.target.value, 10) })} onBlur={(e) => { if (e.target.value === '' || preguntaForm.puntos === '') setPreguntaForm(prev => ({ ...prev, puntos: 10 })); }} data-testid="input-pregunta-puntos" />
+                <Input id="pregunta-puntos" type="number" value={preguntaForm.puntos || ''} onChange={(e) => setPreguntaForm({ ...preguntaForm, puntos: e.target.value === '' ? 0 : parseInt(e.target.value, 10) })} onBlur={(e) => { if (e.target.value === '' || preguntaForm.puntos === 0) setPreguntaForm(prev => ({ ...prev, puntos: 10 })); }} data-testid="input-pregunta-puntos" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="pregunta-etiquetas">Etiquetas</Label>
@@ -2180,7 +2180,7 @@ export default function CopasstCms() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="categoria-orden">Orden</Label>
-                <Input id="categoria-orden" type="number" value={categoriaForm.orden || ''} onChange={(e) => setCategoriaForm({ ...categoriaForm, orden: e.target.value === '' ? '' : parseInt(e.target.value, 10) })} onBlur={(e) => { if (e.target.value === '' || categoriaForm.orden === '') setCategoriaForm(prev => ({ ...prev, orden: 1 })); }} data-testid="input-categoria-orden" />
+                <Input id="categoria-orden" type="number" value={categoriaForm.orden || ''} onChange={(e) => setCategoriaForm({ ...categoriaForm, orden: e.target.value === '' ? 0 : parseInt(e.target.value, 10) })} onBlur={(e) => { if (e.target.value === '' || categoriaForm.orden === 0) setCategoriaForm(prev => ({ ...prev, orden: 1 })); }} data-testid="input-categoria-orden" />
               </div>
               <div className="flex items-center gap-2 pt-6">
                 <Checkbox id="categoria-activo" checked={categoriaForm.activo} onCheckedChange={(checked) => setCategoriaForm({ ...categoriaForm, activo: !!checked })} data-testid="checkbox-categoria-activo" />

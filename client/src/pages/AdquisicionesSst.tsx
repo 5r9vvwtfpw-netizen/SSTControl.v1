@@ -558,7 +558,6 @@ function SolicitudesTab({ pendingPlantillaData, onPlantillaApplied }: Solicitude
   const handleSubmit = (data: InsertSolicitudAdquisicion) => {
     const payload = {
       ...data,
-      fechaSolicitud: data.fechaSolicitud instanceof Date ? data.fechaSolicitud.toISOString() : data.fechaSolicitud,
       requiereEvaluacion: data.requiereEvaluacion ?? 1,
     };
     
@@ -574,7 +573,9 @@ function SolicitudesTab({ pendingPlantillaData, onPlantillaApplied }: Solicitude
     form.reset({
       ...item,
       fechaSolicitud: new Date(item.fechaSolicitud),
-    });
+      fechaEvaluacion: item.fechaEvaluacion ? new Date(item.fechaEvaluacion) : null,
+      fechaCompra: item.fechaCompra ? new Date(item.fechaCompra) : null,
+    } as InsertSolicitudAdquisicion);
     setDialogOpen(true);
   };
 
@@ -1133,9 +1134,6 @@ function EvaluacionesTab() {
   const handleSubmit = (data: InsertEvaluacionAdquisicion) => {
     const payload = {
       ...data,
-      fechaEvaluacion: data.fechaEvaluacion instanceof Date 
-        ? data.fechaEvaluacion.toISOString() 
-        : data.fechaEvaluacion,
     };
     if (editingEvaluacion) {
       updateMutation.mutate({ id: editingEvaluacion.id, updates: payload });

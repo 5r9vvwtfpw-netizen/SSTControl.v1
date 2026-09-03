@@ -398,13 +398,16 @@ export function registerBillingRoutes(app: Express) {
       // Log audit event
       const auditContext = getAuditContext(req);
       await logAuditEvent({
+        companyId: company.id,
         userId: req.user!.id,
+        userRole: req.user!.role,
+        username: req.user!.username,
         action: 'create',
-        resource: 'subscription',
-        resourceId: subscription.id,
-        oldValue: null,
-        newValue: { companyId: company.id, planId: plan.id, trialDays: validatedData.trialDays },
-        ...auditContext
+        entityType: 'subscription',
+        entityId: subscription.id,
+        oldValues: null,
+        newValues: { companyId: company.id, planId: plan.id, trialDays: validatedData.trialDays },
+        context: auditContext
       });
 
       res.status(201).json({

@@ -8,3 +8,9 @@ Las correcciones de tipos deben agruparse por dominio y validarse con un chequeo
 **Why:** En este proyecto conviven esquemas actuales con nombres históricos y contratos de DTO antiguos; una edición que elimina errores en un archivo puede descubrir incompatibilidades en otro.
 
 **How to apply:** Mantener `strict: true`, preferir conversiones explícitas y nombres reales del esquema, y no declarar terminada la limpieza hasta que el chequeo global, build y preview estén limpios.
+
+Cuando `pool` es una unión entre los clientes Neon y `pg`, sus overloads de `query` pueden volverse incompatibles aunque ambos acepten SQL; encapsular la llamada en un adaptador estructural explícito evita relajar todo el archivo a `any`.
+
+**Why:** TypeScript no puede resolver de forma segura las sobrecargas divergentes de ambos drivers en una unión, y los casts genéricos directos fallan o dejan las filas como `unknown`.
+
+**How to apply:** Mantener el narrowing localizado en scripts/migraciones y tipar la forma mínima de `query` y `rows`, sin modificar el tipo global del pool.

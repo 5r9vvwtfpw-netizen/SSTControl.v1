@@ -18,7 +18,7 @@ import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { PesvVictimasRegistro, RoadIncident } from "@shared/schema";
-import { PASOS_PESV } from "@/data/pasos-pesv";
+import { getTrazabilidadPaso } from "@/data/pesv-normativa-trazabilidad";
 
 const TIPO_VICTIMA_OPTIONS = [
   { value: "conductor", label: "Conductor" },
@@ -48,7 +48,7 @@ function getLabelFromOptions(options: { value: string; label: string }[], val: s
   return options.find(o => o.value === val)?.label ?? val ?? "N/A";
 }
 
-const PASO_H11 = PASOS_PESV.find(p => p.codigo === "H11");
+const PASO_H11 = getTrazabilidadPaso("H11");
 
 interface VictimaFormData {
   evaluacionId: string | null;

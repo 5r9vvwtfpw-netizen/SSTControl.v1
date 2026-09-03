@@ -2,7 +2,7 @@ import { pool } from "../db";
 
 export async function syncConvivenciaActasAttachmentColumns(): Promise<void> {
   try {
-    await pool.query(`
+    await (pool as unknown as { query(query: string): Promise<unknown> }).query(`
       ALTER TABLE convivencia_actas
       ADD COLUMN IF NOT EXISTS archivo_adjunto_url TEXT,
       ADD COLUMN IF NOT EXISTS archivo_adjunto_nombre TEXT
