@@ -22,3 +22,4 @@
 - [Production billing data alignment](production-billing-data-alignment.md) — separar registros locales de suscripciones/facturas de pagos confirmados por Stripe o Wompi.
 - [TypeScript cleanup workflow](typescript-cleanup-workflow.md) — las correcciones delegadas deben validarse de inmediato; pueden dejar mejoras parciales pero nunca sustituyen el chequeo global final.
 - [Worker and contract date synchronization](worker-contract-date-sync.md) — workers y contracts duplican fechas laborales; sincronizar solo el contrato activo en ambas direcciones.
+- [Development module access](development-module-access.md) — en desarrollo se omiten gates comerciales para probar módulos; producción conserva capítulo, suscripción y menú.

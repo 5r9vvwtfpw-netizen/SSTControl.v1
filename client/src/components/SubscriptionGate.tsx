@@ -31,7 +31,7 @@ export function SubscriptionGate({ feature, featureName, children }: Subscriptio
   const { user } = useAuth();
   const { data: features, isLoading } = useSubscriptionFeatures();
 
-  if (user?.role && GLOBAL_ACCESS_ROLES.includes(user.role)) {
+  if (import.meta.env.DEV || (user?.role && GLOBAL_ACCESS_ROLES.includes(user.role))) {
     return <>{children}</>;
   }
 

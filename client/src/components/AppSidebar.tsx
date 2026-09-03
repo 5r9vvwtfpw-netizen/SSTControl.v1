@@ -145,7 +145,7 @@ export function AppSidebar() {
     if (item.pesvOnly && !hasPesv) return false;
 
     // Filter by subscription features (skip for global access roles)
-    if (!isGlobalRole && subscriptionFeatures) {
+    if (!import.meta.env.DEV && !isGlobalRole && subscriptionFeatures) {
       const requiredFeature = SUBSCRIPTION_FEATURE_MAP[item.url];
       if (requiredFeature && !subscriptionFeatures[requiredFeature]) {
         return false;
