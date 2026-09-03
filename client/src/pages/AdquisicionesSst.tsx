@@ -146,6 +146,25 @@ const plantillasAdquisiciones: PlantillaInfo[] = [
 
 type TipoAdquisicion = "epp" | "maquinaria" | "herramientas" | "sustancias_quimicas" | "equipos_emergencia" | "mobiliario" | "software" | "servicios" | "otros";
 
+const getNewSolicitudDefaultValues = () => ({
+  tipoAdquisicion: undefined,
+  descripcion: "",
+  justificacion: "",
+  area: "",
+  solicitante: "",
+  departamento: "",
+  fechaSolicitud: new Date(),
+  presupuestoEstimado: 0,
+  proveedorNombre: "",
+  requiereEvaluacion: 1,
+  cantidad: 1,
+  nivelRiesgo: undefined,
+  estado: "solicitud" as const,
+  aprobado: undefined,
+  observaciones: "",
+  recursoFinancieroId: undefined,
+});
+
 interface PlantillaData {
   tipoAdquisicion: TipoAdquisicion;
   justificacion: string;
@@ -469,24 +488,7 @@ function SolicitudesTab({ pendingPlantillaData, onPlantillaApplied }: Solicitude
 
   const form = useForm<InsertSolicitudAdquisicion>({
     resolver: zodResolver(insertSolicitudAdquisicionSchema),
-    defaultValues: {
-      tipoAdquisicion: "epp",
-      descripcion: "",
-      justificacion: "",
-      area: "",
-      solicitante: "",
-      departamento: "",
-      fechaSolicitud: new Date(),
-      presupuestoEstimado: 0,
-      proveedorNombre: "",
-      requiereEvaluacion: 1,
-      cantidad: 1,
-      nivelRiesgo: "medio",
-      estado: "solicitud",
-      aprobado: undefined,
-      observaciones: "",
-      recursoFinancieroId: undefined,
-    },
+    defaultValues: getNewSolicitudDefaultValues(),
   });
 
   const selectedRecursoFinancieroId = form.watch("recursoFinancieroId");
@@ -499,22 +501,9 @@ function SolicitudesTab({ pendingPlantillaData, onPlantillaApplied }: Solicitude
   useEffect(() => {
     if (pendingPlantillaData) {
       form.reset({
+        ...getNewSolicitudDefaultValues(),
         tipoAdquisicion: pendingPlantillaData.tipoAdquisicion,
-        descripcion: "",
         justificacion: pendingPlantillaData.justificacion,
-        area: "",
-        solicitante: "",
-        departamento: "",
-        fechaSolicitud: new Date(),
-        presupuestoEstimado: 0,
-        proveedorNombre: "",
-        requiereEvaluacion: 1,
-        cantidad: 1,
-        nivelRiesgo: "medio",
-        estado: "solicitud",
-        aprobado: undefined,
-        observaciones: "",
-        recursoFinancieroId: undefined,
       });
       setEditingItem(null);
       setSelectedPredefEpp("");
@@ -522,6 +511,13 @@ function SolicitudesTab({ pendingPlantillaData, onPlantillaApplied }: Solicitude
       onPlantillaApplied();
     }
   }, [pendingPlantillaData, form, onPlantillaApplied]);
+
+  const handleNewSolicitud = () => {
+    setEditingItem(null);
+    setSelectedPredefEpp("");
+    form.reset(getNewSolicitudDefaultValues());
+    setDialogOpen(true);
+  };
 
   const createMutation = useMutation({
     mutationFn: (data: InsertSolicitudAdquisicion) =>
@@ -626,7 +622,7 @@ function SolicitudesTab({ pendingPlantillaData, onPlantillaApplied }: Solicitude
               }
             }}>
               <DialogTrigger asChild>
-                <Button data-testid="button-nueva-solicitud">
+                <Button data-testid="button-nueva-solicitud" onClick={handleNewSolicitud}>
                   <Plus className="h-4 w-4 mr-2" />
                   Nueva Solicitud
                 </Button>
