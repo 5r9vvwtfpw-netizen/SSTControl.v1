@@ -58,6 +58,7 @@ import { syncSubscriptionExpiryWarningColumn } from './migrations/sync-subscript
 import { createLoginVerificationChallenges } from './migrations/create-login-verification-challenges';
 import { syncConvivenciaActasAttachmentColumns } from './migrations/sync-convivencia-actas-attachment-columns';
 import { createDriverVehicleAssignmentsTable } from './migrations/create-driver-vehicle-assignments';
+import { createMechanicCompanyAccessTable } from './migrations/create-mechanic-company-access';
 
 /**
  * Ejecuta migraciones de base de datos automáticamente
@@ -127,6 +128,7 @@ export async function runMigrations() {
     await createLoginVerificationChallenges();
     await syncConvivenciaActasAttachmentColumns();
     await createDriverVehicleAssignmentsTable();
+    await createMechanicCompanyAccessTable();
     console.log('✅ Migraciones completadas exitosamente');
   } catch (error: any) {
     console.error('⚠️ Error en migraciones:', error.message);

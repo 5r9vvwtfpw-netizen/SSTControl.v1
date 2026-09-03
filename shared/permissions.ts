@@ -14,6 +14,7 @@ export type Permission =
   | "users:edit"
   | "users:delete"
   | "users:manage_roles"
+  | "mechanic_access:manage"
   
   // Gestión de trabajadores
   | "workers:view"
@@ -407,6 +408,7 @@ export const rolePermissions: Record<UserRole, Permission[]> = {
     "users:edit",
     "users:delete",
     "users:manage_roles",
+    "mechanic_access:manage",
     "workers:view",
     "workers:create",
     "workers:edit",

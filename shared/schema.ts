@@ -166,6 +166,28 @@ export const users = pgTable("users", {
   // Se accede vía SQL crudo en server/cron/session-monitor.ts
 });
 
+// Acceso operativo de un técnico mecánico a una empresa distinta de su empleadora.
+// No crea trabajador ni contrato: únicamente habilita módulos operativos por vigencia.
+export const mechanicCompanyAccess = pgTable("mechanic_company_access", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  mechanicUserId: varchar("mechanic_user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  employerCompanyId: varchar("employer_company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+  authorizedCompanyId: varchar("authorized_company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+  scope: text("scope").array().notNull().default(sql`ARRAY['maintenance']::text[]`),
+  startDate: date("start_date").notNull(),
+  endDate: date("end_date"),
+  isActive: boolean("is_active").notNull().default(true),
+  grantedByUserId: varchar("granted_by_user_id").notNull().references(() => users.id),
+  revokedByUserId: varchar("revoked_by_user_id").references(() => users.id),
+  revokedAt: timestamp("revoked_at"),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+});
+
+export const insertMechanicCompanyAccessSchema = createInsertSchema(mechanicCompanyAccess)
+  .omit({ id: true, createdAt: true, revokedAt: true, revokedByUserId: true, isActive: true });
+export type InsertMechanicCompanyAccess = z.infer<typeof insertMechanicCompanyAccessSchema>;
+export type MechanicCompanyAccess = typeof mechanicCompanyAccess.$inferSelect;
+
 // Tabla de asignación de Licenciados a Empresas (relación muchos a muchos)
 export const licensedProfessionalAssignments = pgTable("licensed_professional_assignments", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
