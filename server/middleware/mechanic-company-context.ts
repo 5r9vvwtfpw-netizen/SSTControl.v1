@@ -74,6 +74,7 @@ export async function mechanicCompanyContextMiddleware(req: Request, res: Respon
         eq(schema.mechanicCompanyAccess.employerCompanyId, req.user.companyId || ""),
         eq(schema.mechanicCompanyAccess.authorizedCompanyId, requestedCompanyId),
         eq(schema.mechanicCompanyAccess.isActive, true),
+        eq(schema.mechanicCompanyAccess.status, "accepted"),
         sql`${schema.mechanicCompanyAccess.startDate} <= ${today}`,
         or(isNull(schema.mechanicCompanyAccess.endDate), gte(schema.mechanicCompanyAccess.endDate, today)),
       ))

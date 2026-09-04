@@ -130,6 +130,7 @@ export const users = pgTable("users", {
   role: userRoleEnum("role").notNull().default("trabajador"),
   fullName: text("full_name"),
   email: text("email"),
+  identificationNumber: text("identification_number").unique(),
   department: text("department"),
   companyId: varchar("company_id").references(() => companies.id),
   workerId: varchar("worker_id"), // Reference to worker if role is trabajador
@@ -177,6 +178,11 @@ export const mechanicCompanyAccess = pgTable("mechanic_company_access", {
   startDate: date("start_date").notNull(),
   endDate: date("end_date"),
   isActive: boolean("is_active").notNull().default(true),
+  status: text("status", { enum: ["pending", "accepted", "rejected", "revoked", "expired"] }).notNull().default("pending"),
+  invitedAt: timestamp("invited_at").notNull().default(sql`now()`),
+  respondedAt: timestamp("responded_at"),
+  respondedByUserId: varchar("responded_by_user_id").references(() => users.id),
+  rejectionReason: text("rejection_reason"),
   grantedByUserId: varchar("granted_by_user_id").notNull().references(() => users.id),
   revokedByUserId: varchar("revoked_by_user_id").references(() => users.id),
   revokedAt: timestamp("revoked_at"),
@@ -184,7 +190,7 @@ export const mechanicCompanyAccess = pgTable("mechanic_company_access", {
 });
 
 export const insertMechanicCompanyAccessSchema = createInsertSchema(mechanicCompanyAccess)
-  .omit({ id: true, createdAt: true, revokedAt: true, revokedByUserId: true, isActive: true });
+  .omit({ id: true, createdAt: true, invitedAt: true, respondedAt: true, respondedByUserId: true, revokedAt: true, revokedByUserId: true, isActive: true, status: true });
 export type InsertMechanicCompanyAccess = z.infer<typeof insertMechanicCompanyAccessSchema>;
 export type MechanicCompanyAccess = typeof mechanicCompanyAccess.$inferSelect;
 

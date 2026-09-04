@@ -117,6 +117,7 @@ import PesvLiderazgo from "@/pages/PesvLiderazgo";
 import CompanyManagement from "@/pages/CompanyManagement";
 import CompanyDetail from "@/pages/CompanyDetail";
 import GestionUsuarios from "@/pages/GestionUsuarios";
+import InvitacionesMecanico from "@/pages/InvitacionesMecanico";
 import ProfesionalesLicenciados from "@/pages/ProfesionalesLicenciados";
 import PortalLicenciado from "@/pages/PortalLicenciado";
 import DetalleInvestigacionLSO from "@/pages/DetalleInvestigacionLSO";
@@ -302,6 +303,7 @@ function Router() {
       <ProtectedRoute path="/empresas/:id" component={CompanyDetail} />
       <ProtectedRoute path="/empresas" component={CompanyManagement} />
       <ProtectedRoute path="/usuarios" component={GestionUsuarios} />
+      <ProtectedRoute path="/invitaciones-mecanico" component={InvitacionesMecanico} />
       <ProtectedRoute path="/profesionales-licenciados" component={ProfesionalesLicenciados} />
       <ProtectedRoute path="/portal-licenciado/investigacion/:id" component={DetalleInvestigacionLSO} />
       <ProtectedRoute path="/portal-licenciado" component={PortalLicenciado} />

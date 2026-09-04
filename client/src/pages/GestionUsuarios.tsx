@@ -152,9 +152,7 @@ type UserWithoutPassword = Omit<User, "password">;
 
 type MechanicSearchResult = {
   id: string;
-  username: string;
   fullName: string | null;
-  email: string | null;
   employerCompanyName: string | null;
 };
 
@@ -171,6 +169,7 @@ type MechanicAccessGrant = {
   startDate: string;
   endDate: string | null;
   isActive: boolean;
+  status: "pending" | "accepted" | "rejected" | "revoked" | "expired";
 };
 
 const MECHANIC_SCOPES = [
@@ -189,9 +188,9 @@ function MechanicAccessPanel() {
   const trimmedSearch = search.trim();
   const { data: results = [], isFetching: searching } = useQuery<MechanicSearchResult[]>({
     queryKey: ["/api/mechanic-access/search", trimmedSearch],
-    enabled: trimmedSearch.length >= 3,
+    enabled: trimmedSearch.length >= 1,
     queryFn: async () => {
-      const response = await apiRequest("GET", `/api/mechanic-access/search?q=${encodeURIComponent(trimmedSearch)}`);
+      const response = await apiRequest("GET", `/api/mechanic-access/search?cedula=${encodeURIComponent(trimmedSearch)}`);
       return response.json();
     },
   });
@@ -214,9 +213,9 @@ function MechanicAccessPanel() {
       setSearch("");
       setEndDate("");
       setScope(["maintenance"]);
-      toast({ title: "Acceso autorizado", description: "La autorización del técnico fue creada." });
+      toast({ title: "Invitación enviada", description: "El técnico debe aceptarla desde su cuenta." });
     },
-    onError: (error: Error) => toast({ title: "No se pudo autorizar", description: error.message, variant: "destructive" }),
+    onError: (error: Error) => toast({ title: "No se pudo enviar la invitación", description: error.message, variant: "destructive" }),
   });
   const revokeGrant = useMutation({
     mutationFn: (id: string) => apiRequest("PATCH", `/api/mechanic-access/${id}/revoke`),
@@ -239,22 +238,21 @@ function MechanicAccessPanel() {
       <CardContent className="space-y-5">
         <div className="grid gap-4 lg:grid-cols-2">
           <div className="space-y-2">
-            <label className="text-sm font-medium" htmlFor="mechanic-search">Buscar técnico</label>
+            <label className="text-sm font-medium" htmlFor="mechanic-search">Cédula del técnico</label>
             <Input id="mechanic-search" value={search} onChange={event => { setSearch(event.target.value); setSelectedMechanic(null); }}
-              placeholder="Usuario, nombre, correo o identificación (mínimo 3 caracteres)" data-testid="input-mechanic-search" />
-            {trimmedSearch.length > 0 && trimmedSearch.length < 3 && <p className="text-xs text-muted-foreground">Ingresa al menos 3 caracteres para buscar.</p>}
-            {trimmedSearch.length >= 3 && !selectedMechanic && (
+              placeholder="Ej.: 1.234.567.890" data-testid="input-mechanic-search" />
+            {trimmedSearch.length >= 1 && !selectedMechanic && (
               <div className="rounded-md border divide-y" data-testid="mechanic-search-results">
                 {searching ? <p className="p-3 text-sm text-muted-foreground">Buscando…</p> : results.length === 0 ? <p className="p-3 text-sm text-muted-foreground">No se encontraron técnicos.</p> :
                   results.map(mechanic => <button type="button" key={mechanic.id} className="block w-full p-3 text-left text-sm hover:bg-muted"
                     onClick={() => setSelectedMechanic(mechanic)} data-testid={`button-select-mechanic-${mechanic.id}`}>
-                    <span className="font-medium">{mechanic.fullName || mechanic.username}</span>
-                    <span className="block text-xs text-muted-foreground">{mechanic.email || mechanic.username} · {mechanic.employerCompanyName || "Sin empresa"}</span>
+                    <span className="font-medium">{mechanic.fullName || "Técnico mecánico"}</span>
+                    <span className="block text-xs text-muted-foreground">{mechanic.employerCompanyName || "Sin empresa"}</span>
                   </button>)}
               </div>
             )}
             {selectedMechanic && <div className="rounded-md bg-muted p-3 text-sm" data-testid="selected-mechanic">
-              <span className="font-medium">{selectedMechanic.fullName || selectedMechanic.username}</span>
+              <span className="font-medium">{selectedMechanic.fullName || "Técnico mecánico"}</span>
               <Button type="button" variant="ghost" size="sm" className="ml-2" onClick={() => setSelectedMechanic(null)} data-testid="button-clear-mechanic">Cambiar</Button>
             </div>}
           </div>
@@ -267,7 +265,7 @@ function MechanicAccessPanel() {
               <div className="flex flex-wrap gap-3">{MECHANIC_SCOPES.map(item => <label key={item.value} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={scope.includes(item.value)} onChange={() => toggleScope(item.value)} data-testid={`checkbox-mechanic-scope-${item.value}`} />{item.label}</label>)}</div>
             </fieldset>
             <Button type="button" onClick={() => createGrant.mutate()} disabled={createGrant.isPending || !selectedMechanic} data-testid="button-create-mechanic-access">
-              Autorizar acceso
+               Enviar invitación
             </Button>
           </div>
         </div>
@@ -276,8 +274,8 @@ function MechanicAccessPanel() {
           <Table data-testid="table-mechanic-access"><TableHeader><TableRow><TableHead>Técnico</TableHead><TableHead>Empresa empleadora</TableHead><TableHead>Empresa autorizada</TableHead><TableHead>Vigencia</TableHead><TableHead>Alcance</TableHead><TableHead>Estado</TableHead><TableHead /></TableRow></TableHeader>
             <TableBody>{grants.length === 0 ? <TableRow><TableCell colSpan={7} className="text-muted-foreground">No hay autorizaciones registradas.</TableCell></TableRow> : grants.map(grant => {
               const today = new Date().toISOString().slice(0, 10);
-              const status = !grant.isActive ? "Revocada" : grant.endDate && grant.endDate < today ? "Vencida" : grant.startDate > today ? "Programada" : "Activa";
-              return <TableRow key={grant.id} data-testid={`row-mechanic-access-${grant.id}`}><TableCell>{grant.mechanicName || grant.mechanicUsername}<span className="block text-xs text-muted-foreground">{grant.mechanicEmail}</span></TableCell><TableCell>{grant.employerCompanyName}</TableCell><TableCell data-testid={`authorized-company-mechanic-access-${grant.id}`}>{grant.authorizedCompanyName || grant.authorizedCompanyId}</TableCell><TableCell>{grant.startDate} {grant.endDate ? `— ${grant.endDate}` : "— sin vencimiento"}</TableCell><TableCell>{grant.scope.map(value => MECHANIC_SCOPES.find(item => item.value === value)?.label || value).join(", ")}</TableCell><TableCell><Badge variant={status === "Activa" ? "default" : "secondary"} data-testid={`status-mechanic-access-${grant.id}`}>{status}</Badge></TableCell><TableCell>{grant.isActive && <Button size="sm" variant="destructive" onClick={() => revokeGrant.mutate(grant.id)} disabled={revokeGrant.isPending} data-testid={`button-revoke-mechanic-access-${grant.id}`}>Revocar</Button>}</TableCell></TableRow>;
+               const status = ({ pending: "Pendiente", accepted: "Aceptada", rejected: "Rechazada", revoked: "Revocada", expired: "Vencida" } as Record<string, string>)[grant.status] || "Pendiente";
+              return <TableRow key={grant.id} data-testid={`row-mechanic-access-${grant.id}`}><TableCell>{grant.mechanicName || grant.mechanicUsername}<span className="block text-xs text-muted-foreground">{grant.mechanicEmail}</span></TableCell><TableCell>{grant.employerCompanyName}</TableCell><TableCell data-testid={`authorized-company-mechanic-access-${grant.id}`}>{grant.authorizedCompanyName || grant.authorizedCompanyId}</TableCell><TableCell>{grant.startDate} {grant.endDate ? `— ${grant.endDate}` : "— sin vencimiento"}</TableCell><TableCell>{grant.scope.map(value => MECHANIC_SCOPES.find(item => item.value === value)?.label || value).join(", ")}</TableCell><TableCell><Badge variant={grant.status === "accepted" ? "default" : "secondary"} data-testid={`status-mechanic-access-${grant.id}`}>{status}</Badge></TableCell><TableCell>{(grant.status === "pending" || grant.status === "accepted") && <Button size="sm" variant="destructive" onClick={() => revokeGrant.mutate(grant.id)} disabled={revokeGrant.isPending} data-testid={`button-revoke-mechanic-access-${grant.id}`}>Revocar</Button>}</TableCell></TableRow>;
             })}</TableBody>
           </Table>
         </div>
@@ -393,6 +391,7 @@ export default function GestionUsuarios() {
       role: "trabajador",
       fullName: "",
       email: "",
+      identificationNumber: "",
       department: "",
       companyId: null,
       workerId: null,
@@ -517,6 +516,10 @@ export default function GestionUsuarios() {
   const handleSubmit = (data: UserFormData) => {
     // Para usuarios no-superadmin, forzar el companyId al del usuario actual
     const finalData = { ...data };
+    if (finalData.role === "tecnico_mecanico" && !finalData.identificationNumber?.trim()) {
+      toast({ title: "Cédula requerida", description: "El número de cédula es obligatorio para Técnicos Mecánicos", variant: "destructive" });
+      return;
+    }
     if (currentUser?.role !== 'superadmin' && currentUser?.companyId) {
       finalData.companyId = currentUser.companyId;
     }
@@ -549,6 +552,7 @@ export default function GestionUsuarios() {
       role: user.role,
       fullName: user.fullName || "",
       email: user.email || "",
+      identificationNumber: user.identificationNumber || "",
       department: user.department || "",
       companyId: user.companyId,
       workerId: user.workerId,
@@ -572,6 +576,7 @@ export default function GestionUsuarios() {
       role: "trabajador",
       fullName: "",
       email: "",
+      identificationNumber: "",
       department: "",
       companyId: defaultCompanyId,
       workerId: null,
@@ -853,6 +858,23 @@ export default function GestionUsuarios() {
                     </FormItem>
                   )}
                 />
+
+                {selectedRole === "tecnico_mecanico" && (
+                  <FormField
+                    control={form.control}
+                    name="identificationNumber"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Número de cédula</FormLabel>
+                        <FormControl>
+                          <Input {...field} value={field.value || ""} required placeholder="Ej.: 1.234.567.890" data-testid="input-mechanic-identification-number" />
+                        </FormControl>
+                        <FormDescription>Se usa para recibir invitaciones de otras empresas.</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
 
                 {/* Sección de Credenciales SST - Solo visible para roles SST */}
                 {selectedRole && SST_ROLES.includes(selectedRole as typeof SST_ROLES[number]) && (

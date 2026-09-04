@@ -1,5 +1,5 @@
 import type { Express, Request } from "express";
-import { and, desc, eq, gte, ilike, isNull, or, sql } from "drizzle-orm";
+import { and, desc, eq, gte, isNull, or, sql } from "drizzle-orm";
 import { db } from "../db";
 import { requireAuth, requirePermission } from "../auth";
 import * as schema from "@shared/schema";
@@ -11,7 +11,15 @@ const accessInputSchema = z.object({
   startDate: z.string().min(1, "La fecha de inicio es obligatoria"),
   endDate: z.string().optional().nullable(),
   scope: z.array(z.enum(scopeValues)).min(1).default(["maintenance"]),
+}).refine((value) => !value.endDate || value.endDate >= value.startDate, {
+  message: "La fecha de finalización no puede ser anterior a la fecha de inicio",
 });
+
+const rejectionSchema = z.object({ reason: z.string().max(500).optional() });
+
+function normalizeIdentification(value: string): string {
+  return value.replace(/[\s.-]/g, "");
+}
 
 function isCompanyAdministrator(req: Request): boolean {
   return (req.user?.role === "superusuario" || req.user?.role === "admin") && !!req.user.companyId;
@@ -45,6 +53,9 @@ export function registerMechanicAccessRoutes(app: Express) {
         startDate: schema.mechanicCompanyAccess.startDate,
         endDate: schema.mechanicCompanyAccess.endDate,
         isActive: schema.mechanicCompanyAccess.isActive,
+        status: schema.mechanicCompanyAccess.status,
+        invitedAt: schema.mechanicCompanyAccess.invitedAt,
+        respondedAt: schema.mechanicCompanyAccess.respondedAt,
         createdAt: schema.mechanicCompanyAccess.createdAt,
       })
       .from(schema.mechanicCompanyAccess)
@@ -58,29 +69,23 @@ export function registerMechanicAccessRoutes(app: Express) {
   // Búsqueda acotada: nunca expone el directorio completo de clientes.
   app.get("/api/mechanic-access/search", requirePermission("mechanic_access:manage"), async (req, res) => {
     if (!isCompanyAdministrator(req)) return res.status(403).json({ error: "Solo el administrador de la empresa puede buscar técnicos" });
-    const query = String(req.query.q || "").trim();
-    if (query.length < 3) return res.json([]);
+    const cedula = normalizeIdentification(String(req.query.cedula || ""));
+    if (!cedula) return res.json([]);
     const rows = await db
       .select({
         id: schema.users.id,
-        username: schema.users.username,
         fullName: schema.users.fullName,
-        email: schema.users.email,
-        employerCompanyId: schema.users.companyId,
         employerCompanyName: schema.companies.name,
       })
       .from(schema.users)
       .leftJoin(schema.companies, eq(schema.users.companyId, schema.companies.id))
       .where(and(
         eq(schema.users.role, "tecnico_mecanico"),
-        or(
-          ilike(schema.users.username, `%${query}%`),
-          ilike(schema.users.fullName, `%${query}%`),
-          ilike(schema.users.email, `%${query}%`)
-        )
+        sql`regexp_replace(coalesce(${schema.users.identificationNumber}, ''), '[[:space:].-]', '', 'g') = ${cedula}`,
+        sql`${schema.users.companyId} <> ${currentCompanyId(req)!}`
       ))
-      .limit(20);
-    res.json(rows.filter((row) => row.employerCompanyId !== currentCompanyId(req)));
+      .limit(1);
+    res.json(rows);
   });
 
   app.post("/api/mechanic-access", requirePermission("mechanic_access:manage"), async (req, res) => {
@@ -104,9 +109,12 @@ export function registerMechanicAccessRoutes(app: Express) {
         .where(and(
           eq(schema.mechanicCompanyAccess.mechanicUserId, mechanic.id),
           eq(schema.mechanicCompanyAccess.authorizedCompanyId, authorizedCompanyId),
-          eq(schema.mechanicCompanyAccess.isActive, true)
+          or(
+            eq(schema.mechanicCompanyAccess.status, "pending"),
+            eq(schema.mechanicCompanyAccess.status, "accepted")
+          )
         ));
-      if (existing) return res.status(409).json({ error: "Este técnico ya está autorizado en tu empresa" });
+      if (existing) return res.status(409).json({ error: "Ya existe una invitación pendiente o aceptada para este técnico" });
 
       const [created] = await db.insert(schema.mechanicCompanyAccess).values({
         mechanicUserId: mechanic.id,
@@ -116,6 +124,8 @@ export function registerMechanicAccessRoutes(app: Express) {
         startDate: input.startDate,
         endDate: input.endDate || null,
         grantedByUserId: req.user!.id,
+        status: "pending",
+        isActive: false,
       }).returning();
       res.status(201).json(created);
     } catch (error: any) {
@@ -127,15 +137,56 @@ export function registerMechanicAccessRoutes(app: Express) {
     if (!isCompanyAdministrator(req)) return res.status(403).json({ error: "Solo el administrador de la empresa puede revocar autorizaciones" });
     const companyId = currentCompanyId(req)!;
     const [updated] = await db.update(schema.mechanicCompanyAccess)
-      .set({ isActive: false, revokedAt: new Date(), revokedByUserId: req.user!.id })
+      .set({ isActive: false, status: "revoked", revokedAt: new Date(), revokedByUserId: req.user!.id })
       .where(and(
         eq(schema.mechanicCompanyAccess.id, req.params.id),
         eq(schema.mechanicCompanyAccess.authorizedCompanyId, companyId),
-        eq(schema.mechanicCompanyAccess.isActive, true)
+        or(eq(schema.mechanicCompanyAccess.status, "pending"), eq(schema.mechanicCompanyAccess.status, "accepted"))
       ))
       .returning();
     if (!updated) return res.status(404).json({ error: "Autorización activa no encontrada" });
     res.json(updated);
+  });
+
+  app.get("/api/mechanic-access/invitations", requireAuth, async (req, res) => {
+    if (req.user?.role !== "tecnico_mecanico") return res.status(403).json({ error: "Ruta exclusiva para Técnicos Mecánicos" });
+    const rows = await db.select({
+      id: schema.mechanicCompanyAccess.id,
+      companyName: schema.companies.name,
+      scope: schema.mechanicCompanyAccess.scope,
+      startDate: schema.mechanicCompanyAccess.startDate,
+      endDate: schema.mechanicCompanyAccess.endDate,
+      invitedAt: schema.mechanicCompanyAccess.invitedAt,
+    }).from(schema.mechanicCompanyAccess)
+      .innerJoin(schema.companies, eq(schema.mechanicCompanyAccess.authorizedCompanyId, schema.companies.id))
+      .where(and(eq(schema.mechanicCompanyAccess.mechanicUserId, req.user.id), eq(schema.mechanicCompanyAccess.status, "pending")))
+      .orderBy(desc(schema.mechanicCompanyAccess.invitedAt));
+    res.json(rows);
+  });
+
+  app.post("/api/mechanic-access/:id/accept", requireAuth, async (req, res) => {
+    if (req.user?.role !== "tecnico_mecanico") return res.status(403).json({ error: "Ruta exclusiva para Técnicos Mecánicos" });
+    const [updated] = await db.update(schema.mechanicCompanyAccess)
+      .set({ status: "accepted", isActive: true, respondedAt: new Date(), respondedByUserId: req.user.id })
+      .where(and(eq(schema.mechanicCompanyAccess.id, req.params.id), eq(schema.mechanicCompanyAccess.mechanicUserId, req.user.id),
+        eq(schema.mechanicCompanyAccess.status, "pending"),
+        or(isNull(schema.mechanicCompanyAccess.endDate), gte(schema.mechanicCompanyAccess.endDate, sql`CURRENT_DATE`))))
+      .returning();
+    if (!updated) return res.status(409).json({ error: "La invitación no está pendiente o ya no está vigente" });
+    res.json(updated);
+  });
+
+  app.post("/api/mechanic-access/:id/reject", requireAuth, async (req, res) => {
+    if (req.user?.role !== "tecnico_mecanico") return res.status(403).json({ error: "Ruta exclusiva para Técnicos Mecánicos" });
+    try {
+      const input = rejectionSchema.parse(req.body || {});
+      const [updated] = await db.update(schema.mechanicCompanyAccess)
+        .set({ status: "rejected", isActive: false, respondedAt: new Date(), respondedByUserId: req.user.id, rejectionReason: input.reason || null })
+        .where(and(eq(schema.mechanicCompanyAccess.id, req.params.id), eq(schema.mechanicCompanyAccess.mechanicUserId, req.user.id), eq(schema.mechanicCompanyAccess.status, "pending")))
+        .returning();
+      if (!updated) return res.status(409).json({ error: "La invitación ya fue respondida" });
+      res.json(updated);
+    } catch (error: any) { res.status(400).json({ error: error.message }); }
   });
 
   // El técnico obtiene únicamente su empresa empleadora y sus autorizaciones activas.
@@ -156,6 +207,7 @@ export function registerMechanicAccessRoutes(app: Express) {
       .where(and(
         eq(schema.mechanicCompanyAccess.mechanicUserId, req.user.id),
         eq(schema.mechanicCompanyAccess.isActive, true),
+        eq(schema.mechanicCompanyAccess.status, "accepted"),
         sql`${schema.mechanicCompanyAccess.startDate} <= ${today}`,
         or(isNull(schema.mechanicCompanyAccess.endDate), gte(schema.mechanicCompanyAccess.endDate, today))
       ));

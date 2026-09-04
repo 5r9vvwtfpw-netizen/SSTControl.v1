@@ -181,6 +181,10 @@ export function PHVANavigation() {
     companyChapter,
     selectedCompanyScope,
   } = useCompanyContext();
+  const { data: mechanicInvitations = [] } = useQuery<Array<{ id: string }>>({
+    queryKey: ["/api/mechanic-access/invitations"],
+    enabled: user?.role === "tecnico_mecanico",
+  });
 
   const { data: userCompanyData } = useQuery<Company>({
     queryKey: ["/api/company/current"],
@@ -688,6 +692,17 @@ export function PHVANavigation() {
               {/* Técnico Mecánico: módulos visibles según el alcance de la empresa seleccionada */}
               {user?.role === 'tecnico_mecanico' && (
                 <>
+                  <Link href="/invitaciones-mecanico">
+                    <Button
+                      variant={location.startsWith("/invitaciones-mecanico") ? "secondary" : "ghost"}
+                      size="default"
+                      className={location.startsWith("/invitaciones-mecanico") ? "font-semibold text-primary" : "text-white"}
+                      data-testid="tab-mechanic-invitations"
+                    >
+                      Invitaciones
+                      {mechanicInvitations.length > 0 && <Badge className="ml-2 bg-white text-primary">{mechanicInvitations.length}</Badge>}
+                    </Button>
+                  </Link>
                   {selectedCompanyScope.includes("vehicles") && (
                     <Link href="/pesv/vehiculos">
                       <Button

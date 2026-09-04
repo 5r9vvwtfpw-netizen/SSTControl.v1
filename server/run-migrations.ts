@@ -59,6 +59,7 @@ import { createLoginVerificationChallenges } from './migrations/create-login-ver
 import { syncConvivenciaActasAttachmentColumns } from './migrations/sync-convivencia-actas-attachment-columns';
 import { createDriverVehicleAssignmentsTable } from './migrations/create-driver-vehicle-assignments';
 import { createMechanicCompanyAccessTable } from './migrations/create-mechanic-company-access';
+import { syncMechanicInvitations } from './migrations/sync-mechanic-invitations';
 
 /**
  * Ejecuta migraciones de base de datos automáticamente
@@ -68,6 +69,10 @@ export async function runMigrations() {
   console.log('🔄 Ejecutando migraciones automáticas...');
   
   try {
+    // Debe ejecutarse primero porque el schema de usuarios incluye
+    // identification_number y los procesos de arranque consultan usuarios.
+    await createMechanicCompanyAccessTable();
+    await syncMechanicInvitations();
     await syncWorkersPurchasedColumn();
     await syncSubscriptionExpiryWarningColumn();
     await syncAccidentTypeEnum();
@@ -128,7 +133,6 @@ export async function runMigrations() {
     await createLoginVerificationChallenges();
     await syncConvivenciaActasAttachmentColumns();
     await createDriverVehicleAssignmentsTable();
-    await createMechanicCompanyAccessTable();
     console.log('✅ Migraciones completadas exitosamente');
   } catch (error: any) {
     console.error('⚠️ Error en migraciones:', error.message);

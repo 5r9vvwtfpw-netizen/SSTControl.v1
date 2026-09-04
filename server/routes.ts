@@ -3585,6 +3585,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/users", requirePermission("users:create"), checkUserLimit(), async (req, res) => {
     try {
       const validatedData = insertUserSchema.parse(req.body);
+      validatedData.identificationNumber = validatedData.identificationNumber
+        ? validatedData.identificationNumber.replace(/[\s.-]/g, "")
+        : null;
+      if (validatedData.role === "tecnico_mecanico" && !validatedData.identificationNumber) {
+        return res.status(400).send("El número de cédula es obligatorio para Técnicos Mecánicos");
+      }
       
       // Check if username already exists
       const existing = await storage.getUserByUsername(validatedData.username);
@@ -3635,6 +3641,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Don't allow changing companyId or username
       delete (updateData as any).companyId;
       delete (updateData as any).username;
+      if (updateData.identificationNumber !== undefined) {
+        updateData.identificationNumber = updateData.identificationNumber
+          ? updateData.identificationNumber.replace(/[\s.-]/g, "")
+          : null;
+      }
+      const existingUser = await storage.getUser(req.params.id);
+      if (!existingUser) return res.status(404).send("Usuario no encontrado");
+      const resultingRole = updateData.role || existingUser.role;
+      const resultingIdentification = updateData.identificationNumber ?? existingUser.identificationNumber;
+      if (resultingRole === "tecnico_mecanico" && !resultingIdentification) {
+        return res.status(400).send("El número de cédula es obligatorio para Técnicos Mecánicos");
+      }
 
       // If password is being updated, hash it
       if (updateData.password) {
