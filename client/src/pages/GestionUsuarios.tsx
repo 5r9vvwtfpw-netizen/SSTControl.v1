@@ -165,6 +165,8 @@ type MechanicAccessGrant = {
   mechanicName: string | null;
   mechanicEmail: string | null;
   employerCompanyName: string | null;
+  authorizedCompanyId: string;
+  authorizedCompanyName: string | null;
   scope: string[];
   startDate: string;
   endDate: string | null;
@@ -271,11 +273,11 @@ function MechanicAccessPanel() {
         </div>
         <div>
           <h3 className="mb-2 text-sm font-semibold">Autorizaciones actuales e históricas</h3>
-          <Table data-testid="table-mechanic-access"><TableHeader><TableRow><TableHead>Técnico</TableHead><TableHead>Empresa empleadora</TableHead><TableHead>Vigencia</TableHead><TableHead>Alcance</TableHead><TableHead>Estado</TableHead><TableHead /></TableRow></TableHeader>
-            <TableBody>{grants.length === 0 ? <TableRow><TableCell colSpan={6} className="text-muted-foreground">No hay autorizaciones registradas.</TableCell></TableRow> : grants.map(grant => {
+          <Table data-testid="table-mechanic-access"><TableHeader><TableRow><TableHead>Técnico</TableHead><TableHead>Empresa empleadora</TableHead><TableHead>Empresa autorizada</TableHead><TableHead>Vigencia</TableHead><TableHead>Alcance</TableHead><TableHead>Estado</TableHead><TableHead /></TableRow></TableHeader>
+            <TableBody>{grants.length === 0 ? <TableRow><TableCell colSpan={7} className="text-muted-foreground">No hay autorizaciones registradas.</TableCell></TableRow> : grants.map(grant => {
               const today = new Date().toISOString().slice(0, 10);
               const status = !grant.isActive ? "Revocada" : grant.endDate && grant.endDate < today ? "Vencida" : grant.startDate > today ? "Programada" : "Activa";
-              return <TableRow key={grant.id} data-testid={`row-mechanic-access-${grant.id}`}><TableCell>{grant.mechanicName || grant.mechanicUsername}<span className="block text-xs text-muted-foreground">{grant.mechanicEmail}</span></TableCell><TableCell>{grant.employerCompanyName}</TableCell><TableCell>{grant.startDate} {grant.endDate ? `— ${grant.endDate}` : "— sin vencimiento"}</TableCell><TableCell>{grant.scope.map(value => MECHANIC_SCOPES.find(item => item.value === value)?.label || value).join(", ")}</TableCell><TableCell><Badge variant={status === "Activa" ? "default" : "secondary"} data-testid={`status-mechanic-access-${grant.id}`}>{status}</Badge></TableCell><TableCell>{grant.isActive && <Button size="sm" variant="destructive" onClick={() => revokeGrant.mutate(grant.id)} disabled={revokeGrant.isPending} data-testid={`button-revoke-mechanic-access-${grant.id}`}>Revocar</Button>}</TableCell></TableRow>;
+              return <TableRow key={grant.id} data-testid={`row-mechanic-access-${grant.id}`}><TableCell>{grant.mechanicName || grant.mechanicUsername}<span className="block text-xs text-muted-foreground">{grant.mechanicEmail}</span></TableCell><TableCell>{grant.employerCompanyName}</TableCell><TableCell data-testid={`authorized-company-mechanic-access-${grant.id}`}>{grant.authorizedCompanyName || grant.authorizedCompanyId}</TableCell><TableCell>{grant.startDate} {grant.endDate ? `— ${grant.endDate}` : "— sin vencimiento"}</TableCell><TableCell>{grant.scope.map(value => MECHANIC_SCOPES.find(item => item.value === value)?.label || value).join(", ")}</TableCell><TableCell><Badge variant={status === "Activa" ? "default" : "secondary"} data-testid={`status-mechanic-access-${grant.id}`}>{status}</Badge></TableCell><TableCell>{grant.isActive && <Button size="sm" variant="destructive" onClick={() => revokeGrant.mutate(grant.id)} disabled={revokeGrant.isPending} data-testid={`button-revoke-mechanic-access-${grant.id}`}>Revocar</Button>}</TableCell></TableRow>;
             })}</TableBody>
           </Table>
         </div>

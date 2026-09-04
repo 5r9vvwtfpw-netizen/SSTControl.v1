@@ -35,6 +35,12 @@ export function registerMechanicAccessRoutes(app: Express) {
         mechanicEmail: schema.users.email,
         employerCompanyId: schema.mechanicCompanyAccess.employerCompanyId,
         employerCompanyName: schema.companies.name,
+        authorizedCompanyId: schema.mechanicCompanyAccess.authorizedCompanyId,
+        authorizedCompanyName: sql<string>`(
+          SELECT name
+          FROM companies
+          WHERE id = ${schema.mechanicCompanyAccess.authorizedCompanyId}
+        )`,
         scope: schema.mechanicCompanyAccess.scope,
         startDate: schema.mechanicCompanyAccess.startDate,
         endDate: schema.mechanicCompanyAccess.endDate,
