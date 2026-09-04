@@ -28197,6 +28197,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         companyId = getEffectiveCompanyId(req);
       }
+
+      const targetEvaluacion = await storage.getEvaluacionSstById(req.params.id);
+      if (!targetEvaluacion || targetEvaluacion.companyId !== companyId) {
+        return res.status(404).send("Evaluación no encontrada");
+      }
+      if (targetEvaluacion.estado === "enviada") {
+        return res.status(409).send("La evaluación ya fue enviada oficialmente y no permite ediciones");
+      }
       
       const validatedData = insertRespuestaEstandarSchema.parse({
         ...req.body,
@@ -28209,6 +28217,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         req.params.id, respuesta.id, validatedData.estandarId,
         validatedData.cumple, validatedData.noAplica, companyId
       );
+
+      if (targetEvaluacion.estado === "completada") {
+        await storage.updateEvaluacionSst(req.params.id, { estado: "en-progreso" }, companyId);
+      }
 
       res.status(201).json(respuesta);
     } catch (error: any) {
@@ -28252,6 +28264,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         companyId = getEffectiveCompanyId(req);
       }
       const validatedData = insertRespuestaEstandarSchema.partial().parse(req.body);
+
+      const [existingRespuesta] = await db.select().from(schema.respuestasEstandares)
+        .where(eq(schema.respuestasEstandares.id, req.params.id));
+      if (!existingRespuesta) {
+        return res.status(404).send("Respuesta no encontrada");
+      }
+      const targetEvaluacion = await storage.getEvaluacionSstById(existingRespuesta.evaluacionId);
+      if (!targetEvaluacion || targetEvaluacion.companyId !== companyId) {
+        return res.status(404).send("Evaluación no encontrada");
+      }
+      if (targetEvaluacion.estado === "enviada") {
+        return res.status(409).send("La evaluación ya fue enviada oficialmente y no permite ediciones");
+      }
+
       const verifiedData = {
         ...validatedData,
         lastVerifiedAt: new Date(),
@@ -28268,6 +28294,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await autoGestionarAccionMejora(
           respuesta.evaluacionId, respuesta.id, respuesta.estandarId,
           respuesta.cumple, respuesta.noAplica, companyId
+        );
+      }
+
+      if (targetEvaluacion.estado === "completada") {
+        await storage.updateEvaluacionSst(
+          targetEvaluacion.id,
+          { estado: "en-progreso" },
+          companyId
         );
       }
       

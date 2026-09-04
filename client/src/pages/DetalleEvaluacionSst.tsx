@@ -424,11 +424,12 @@ export default function DetalleEvaluacionSst() {
   };
 
   const handleEstandarClick = (estandar: EstandarSst) => {
-    // Bloquear edición si la evaluación está completada o enviada
-    if (evaluacion?.estado === "completada" || evaluacion?.estado === "enviada") {
+    // Una evaluación completada se reabre automáticamente al guardar.
+    // Solo las evaluaciones enviadas oficialmente permanecen bloqueadas.
+    if (evaluacion?.estado === "enviada") {
       toast({
         title: "Evaluación bloqueada",
-        description: "Esta evaluación está finalizada y no permite ediciones. Para modificarla, primero reabra la evaluación.",
+        description: "Esta evaluación ya fue enviada oficialmente y no permite ediciones.",
         variant: "destructive",
       });
       return;
@@ -786,15 +787,6 @@ export default function DetalleEvaluacionSst() {
           )}
           {evaluacion.estado === "completada" && (
             <>
-              <Button 
-                variant="outline"
-                onClick={() => finalizarEvaluacionMutation.mutate("en-progreso")}
-                disabled={finalizarEvaluacionMutation.isPending}
-                data-testid="button-reabrir-evaluacion"
-              >
-                <RefreshCcw className="h-4 w-4 mr-2" />
-                Reabrir
-              </Button>
               <Button 
                 variant="default"
                 onClick={() => finalizarEvaluacionMutation.mutate("enviada")}
@@ -1542,7 +1534,7 @@ export default function DetalleEvaluacionSst() {
                                     variant="outline"
                                     className="border-green-500 text-green-700 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-950/30"
                                     onClick={() => verificarEficaciaMutation.mutate({ accionId: accion.id, eficaz: 1 })}
-                                    disabled={verificarEficaciaMutation.isPending || evaluacion?.estado === "completada" || evaluacion?.estado === "enviada"}
+                                    disabled={verificarEficaciaMutation.isPending || evaluacion?.estado === "enviada"}
                                     data-testid={`button-eficaz-${accion.id}`}
                                   >
                                     <Check className="h-4 w-4 mr-1" />
@@ -1553,7 +1545,7 @@ export default function DetalleEvaluacionSst() {
                                     variant="outline"
                                     className="border-red-500 text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30"
                                     onClick={() => verificarEficaciaMutation.mutate({ accionId: accion.id, eficaz: 0 })}
-                                    disabled={verificarEficaciaMutation.isPending || evaluacion?.estado === "completada" || evaluacion?.estado === "enviada"}
+                                    disabled={verificarEficaciaMutation.isPending || evaluacion?.estado === "enviada"}
                                     data-testid={`button-no-eficaz-${accion.id}`}
                                   >
                                     <X className="h-4 w-4 mr-1" />
@@ -4850,7 +4842,7 @@ export default function DetalleEvaluacionSst() {
               <DialogFooter>
                 <Button
                   type="submit"
-                  disabled={saveRespuestaMutation.isPending || evaluacion?.estado === "completada" || evaluacion?.estado === "enviada"}
+                  disabled={saveRespuestaMutation.isPending || evaluacion?.estado === "enviada"}
                   data-testid="button-submit-respuesta"
                 >
                   <Save className="h-4 w-4 mr-2" />
