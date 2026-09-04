@@ -59,6 +59,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       authChannelRef.current.onmessage = (event) => {
         if (event.data?.type === "LOGOUT") {
+          localStorage.removeItem("mechanic_selected_company");
+          queryClient.clear();
           queryClient.setQueryData(["/api/user"], null);
           window.location.href = "/login";
         }
@@ -215,6 +217,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await apiRequest("POST", "/api/logout");
     },
     onSuccess: () => {
+      localStorage.removeItem("mechanic_selected_company");
+      queryClient.clear();
       queryClient.setQueryData(["/api/user"], null);
       
       // Broadcast logout to all other tabs/windows

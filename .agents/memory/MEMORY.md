@@ -24,3 +24,4 @@
 - [Worker and contract date synchronization](worker-contract-date-sync.md) — workers y contracts duplican fechas laborales; sincronizar solo el contrato activo en ambas direcciones.
 - [Development module access](development-module-access.md) — en desarrollo se omiten gates comerciales para probar módulos; producción conserva capítulo, suscripción y menú.
 - [Blank form validation](blank-form-validation.md) — los campos de negocio empiezan vacíos y los obligatorios requieren validación explícita antes de mutar.
+- [Mechanic tenant context](mechanic-tenant-context.md) — el contexto externo exige caché por empresa y no debe validar selección persistida hasta que terminen de cargar las autorizaciones.

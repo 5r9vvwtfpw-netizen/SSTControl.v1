@@ -62,7 +62,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { PHVANavigation } from "@/components/PHVANavigation";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { useWebSocketNotifications } from "@/hooks/use-websocket-notifications";
-import { CompanyProvider } from "@/hooks/use-company-context";
+import { CompanyProvider, useCompanyContext } from "@/hooks/use-company-context";
 import { ProtectedRoute } from "@/lib/protected-route";
 import { SubscriptionProtectedRoute } from "@/lib/subscription-protected-route";
 import { Button } from "@/components/ui/button";
@@ -249,8 +249,9 @@ function HelpVideoButtonWrapper() {
 
 function HomeGateway() {
   const { user, isLoading } = useAuth();
+  const { selectedCompanyScope, isLoading: companyContextLoading } = useCompanyContext();
   
-  if (isLoading) {
+  if (isLoading || (user?.role === "tecnico_mecanico" && companyContextLoading)) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -258,9 +259,16 @@ function HomeGateway() {
     );
   }
   
-  // Técnico Mecánico va directo al módulo de mantenimiento vehicular
+  // Técnico Mecánico entra al primer módulo permitido para la empresa activa.
   if (user?.role === 'tecnico_mecanico') {
-    return <Redirect to="/pesv/mantenimiento" />;
+    const destination = selectedCompanyScope.includes("maintenance")
+      ? "/pesv/mantenimiento"
+      : selectedCompanyScope.includes("vehicles")
+        ? "/pesv/vehiculos"
+        : selectedCompanyScope.includes("inspections")
+          ? "/pesv/inspecciones"
+          : "/login";
+    return <Redirect to={destination} />;
   }
 
   // Si está logueado -> siempre al Dashboard

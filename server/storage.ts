@@ -694,10 +694,10 @@ export interface IStorage {
 
   // PESV - Vehicle Maintenances (Res. 40595/2022 - H06)
   getVehicleMaintenances(companyId: string): Promise<schema.VehicleMaintenance[]>;
-  getVehicleMaintenance(id: string): Promise<schema.VehicleMaintenance | undefined>;
+  getVehicleMaintenance(id: string, companyId: string): Promise<schema.VehicleMaintenance | undefined>;
   createVehicleMaintenance(data: schema.InsertVehicleMaintenance, companyId: string): Promise<schema.VehicleMaintenance>;
-  updateVehicleMaintenance(id: string, data: Partial<schema.InsertVehicleMaintenance>): Promise<schema.VehicleMaintenance>;
-  deleteVehicleMaintenance(id: string): Promise<void>;
+  updateVehicleMaintenance(id: string, data: Partial<schema.InsertVehicleMaintenance>, companyId: string): Promise<schema.VehicleMaintenance | undefined>;
+  deleteVehicleMaintenance(id: string, companyId: string): Promise<void>;
 
   // PESV - Vehicle GPS Tracking (Res. 40595/2022 - H07)
   getVehicleGpsTrackings(companyId: string): Promise<schema.VehicleGpsTracking[]>;
@@ -17781,10 +17781,13 @@ export class DbStorage implements IStorage {
       .orderBy(desc(schema.vehicleMaintenances.createdAt));
   }
 
-  async getVehicleMaintenance(id: string): Promise<schema.VehicleMaintenance | undefined> {
+  async getVehicleMaintenance(id: string, companyId: string): Promise<schema.VehicleMaintenance | undefined> {
     const [maintenance] = await db.select()
       .from(schema.vehicleMaintenances)
-      .where(eq(schema.vehicleMaintenances.id, id));
+      .where(and(
+        eq(schema.vehicleMaintenances.id, id),
+        eq(schema.vehicleMaintenances.companyId, companyId)
+      ));
     return maintenance;
   }
 
@@ -17795,17 +17798,23 @@ export class DbStorage implements IStorage {
     return created;
   }
 
-  async updateVehicleMaintenance(id: string, data: Partial<schema.InsertVehicleMaintenance>): Promise<schema.VehicleMaintenance> {
+  async updateVehicleMaintenance(id: string, data: Partial<schema.InsertVehicleMaintenance>, companyId: string): Promise<schema.VehicleMaintenance | undefined> {
     const [updated] = await db.update(schema.vehicleMaintenances)
       .set(data as Partial<typeof schema.vehicleMaintenances.$inferInsert>)
-      .where(eq(schema.vehicleMaintenances.id, id))
+      .where(and(
+        eq(schema.vehicleMaintenances.id, id),
+        eq(schema.vehicleMaintenances.companyId, companyId)
+      ))
       .returning();
     return updated;
   }
 
-  async deleteVehicleMaintenance(id: string): Promise<void> {
+  async deleteVehicleMaintenance(id: string, companyId: string): Promise<void> {
     await db.delete(schema.vehicleMaintenances)
-      .where(eq(schema.vehicleMaintenances.id, id));
+      .where(and(
+        eq(schema.vehicleMaintenances.id, id),
+        eq(schema.vehicleMaintenances.companyId, companyId)
+      ));
   }
 
   // ==================== PESV - Vehicle GPS Tracking (Res. 40595/2022 - H07) ====================

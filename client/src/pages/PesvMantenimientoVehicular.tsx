@@ -22,7 +22,7 @@ import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner
 
 export default function PesvMantenimientoVehicular() {
   const { user } = useAuth();
-  const { selectedCompany: currentCompany } = useCompanyContext();
+  const { selectedCompany: currentCompany, effectiveCompanyId } = useCompanyContext();
   const { toast } = useToast();
   // tecnico_mecanico tiene acceso completo a este módulo (crear/editar/eliminar)
   const isAdmin = user?.role ? (hasCompanyAdminAccess(user.role) || user.role === 'tecnico_mecanico') : false;
@@ -47,11 +47,21 @@ export default function PesvMantenimientoVehicular() {
   });
 
   const { data: maintenances = [], isLoading: maintenancesLoading } = useQuery<VehicleMaintenance[]>({
-    queryKey: ["/api/vehicle-maintenances"],
+    queryKey: ["/api/vehicle-maintenances", effectiveCompanyId || "sin-empresa"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/vehicle-maintenances");
+      return response.json();
+    },
+    enabled: !!effectiveCompanyId,
   });
 
   const { data: vehicles = [] } = useQuery<Vehicle[]>({
-    queryKey: ["/api/vehicles"],
+    queryKey: ["/api/vehicles", effectiveCompanyId || "sin-empresa"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/vehicles");
+      return response.json();
+    },
+    enabled: !!effectiveCompanyId,
   });
 
   const createMaintenanceMutation = useMutation({

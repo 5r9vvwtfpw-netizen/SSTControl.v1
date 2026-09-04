@@ -1104,6 +1104,10 @@ export const rolePermissions: Record<UserRole, Permission[]> = {
     "vehicles:create",
     "vehicles:edit",
     "vehicles:delete",
+    "vehicle_inspections:view",
+    "vehicle_inspections:create",
+    "vehicle_inspections:edit",
+    "vehicle_inspections:delete",
   ],
 
   // Trabajador - Solo consulta su información personal (no puede crear/editar/eliminar en Planear/Hacer)

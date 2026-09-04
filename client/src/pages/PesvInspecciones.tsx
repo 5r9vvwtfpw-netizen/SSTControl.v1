@@ -72,6 +72,7 @@ function computeResult(data: Record<ItemKey, number>): "apto" | "apto-con-observ
 
 export default function PesvInspecciones() {
   const { user } = useAuth();
+  const { effectiveCompanyId } = useCompanyContext();
   const { selectedCompany: currentCompany } = useCompanyContext();
   const { toast } = useToast();
   const isAdmin = user?.role ? canWrite(user.role, 'vehicle_inspections') : false;
@@ -107,15 +108,33 @@ export default function PesvInspecciones() {
   });
 
   const { data: inspections = [], isLoading: inspectionsLoading } = useQuery<VehicleInspection[]>({
-    queryKey: ["/api/vehicle-inspections"],
+    queryKey: ["/api/vehicle-inspections", effectiveCompanyId || "sin-empresa"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/vehicle-inspections");
+      return response.json();
+    },
+    enabled: !!effectiveCompanyId,
   });
 
   const { data: vehicles = [] } = useQuery<Vehicle[]>({
-    queryKey: ["/api/vehicles"],
+    queryKey: ["/api/vehicles", effectiveCompanyId || "sin-empresa"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/vehicles");
+      return response.json();
+    },
+    enabled: !!effectiveCompanyId,
   });
 
   const { data: drivers = [] } = useQuery<Driver[]>({
-    queryKey: ["/api/drivers"],
+    queryKey: [user?.role === "tecnico_mecanico" ? "/api/mechanic-access/inspection-drivers" : "/api/drivers", effectiveCompanyId || "sin-empresa"],
+    queryFn: async () => {
+      const url = user?.role === "tecnico_mecanico"
+        ? "/api/mechanic-access/inspection-drivers"
+        : "/api/drivers";
+      const response = await apiRequest("GET", url);
+      return response.json();
+    },
+    enabled: !!effectiveCompanyId,
   });
 
   const createInspectionMutation = useMutation({

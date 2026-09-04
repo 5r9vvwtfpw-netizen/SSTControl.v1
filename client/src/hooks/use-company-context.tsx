@@ -18,6 +18,11 @@ type StoredAccessSession = {
   startTime: string;
 };
 
+export type MechanicCompany = Company & {
+  isEmployer: boolean;
+  scope: string[];
+};
+
 type CompanyContextType = {
   selectedCompanyId: string | null;
   setSelectedCompanyId: (id: string | null) => void;
@@ -27,6 +32,7 @@ type CompanyContextType = {
   canSelectCompany: boolean;
   effectiveCompanyId: string | null;
   companyChapter: ChapterType | null;
+  selectedCompanyScope: string[];
   startAccessSession: (companyId: string, reason: string, description: string, ticketNumber?: string) => Promise<void>;
   endAccessSession: () => Promise<void>;
   currentAccessSession: AccessSession | null;
@@ -45,8 +51,9 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
   const previousCompanyIdRef = useRef<string | null>(null);
 
   const canSelectCompany = useMemo(() => {
-    return user?.role === 'superadmin';
+    return user?.role === 'superadmin' || user?.role === 'tecnico_mecanico';
   }, [user?.role]);
+  const isMechanic = user?.role === "tecnico_mecanico";
 
   useEffect(() => {
     if (!canSelectCompany) {
@@ -55,14 +62,46 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem("superadmin_selected_company");
       localStorage.removeItem("superadmin_access_session");
       queryClient.removeQueries({ queryKey: ["/api/companies"] });
+      localStorage.removeItem("mechanic_selected_company");
     }
   }, [canSelectCompany, queryClient]);
 
   const { data: companies = [], isLoading: isLoadingCompanies } = useQuery<Company[]>({
     queryKey: ["/api/companies"],
-    enabled: canSelectCompany && user?.role === 'superadmin',
+    enabled: user?.role === 'superadmin',
     staleTime: 0,
   });
+  type MechanicCompanyResponse = {
+    employer: MechanicCompany | null;
+    authorized: Array<{
+      id: string;
+      companyId: string;
+      companyName: string;
+      scope: string[];
+      startDate: string;
+      endDate: string | null;
+      isEmployer: false;
+    }>;
+  };
+  const { data: mechanicCompaniesData, isLoading: isLoadingMechanicCompanies } = useQuery<MechanicCompanyResponse>({
+    queryKey: ["/api/mechanic-access/companies"],
+    enabled: isMechanic,
+    staleTime: 0,
+  });
+  const mechanicCompanies = useMemo<MechanicCompany[]>(
+    () => {
+      if (!mechanicCompaniesData) return [];
+      const authorized = mechanicCompaniesData.authorized.map((access) => ({
+        ...access,
+        id: access.companyId,
+        name: access.companyName,
+      } as unknown as MechanicCompany));
+      return mechanicCompaniesData.employer
+        ? [mechanicCompaniesData.employer, ...authorized]
+        : authorized;
+    },
+    [mechanicCompaniesData],
+  );
 
   // Query para obtener la empresa del usuario (para usuarios no-superadmin)
   const { data: userCompany, isLoading: isLoadingUserCompany } = useQuery<Company>({
@@ -72,7 +111,17 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
   });
 
   // Combinar estados de carga: para superadmin usa companies, para usuarios regulares usa userCompany
-  const isLoading = canSelectCompany ? isLoadingCompanies : isLoadingUserCompany;
+  const isLoading = isMechanic ? isLoadingMechanicCompanies : canSelectCompany ? isLoadingCompanies : isLoadingUserCompany;
+
+  useEffect(() => {
+    if (!isMechanic || isLoadingMechanicCompanies || !mechanicCompaniesData) return;
+    const stored = localStorage.getItem("mechanic_selected_company");
+    const validStored = stored && mechanicCompanies.some(company => company.id === stored);
+    const nextId = validStored ? stored : (user?.companyId && mechanicCompanies.some(company => company.id === user.companyId) ? user.companyId : null);
+    setSelectedCompanyIdInternal(current => current === nextId ? current : nextId);
+    if (nextId) localStorage.setItem("mechanic_selected_company", nextId);
+    else localStorage.removeItem("mechanic_selected_company");
+  }, [isMechanic, isLoadingMechanicCompanies, mechanicCompaniesData, mechanicCompanies, user?.companyId]);
 
   useEffect(() => {
     if (canSelectCompany && companies.length > 0 && !selectedCompanyId && !currentAccessSession) {
@@ -222,6 +271,19 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const setSelectedCompanyId = useCallback((id: string | null) => {
+    if (isMechanic) {
+      if (id && mechanicCompanies.some(company => company.id === id)) {
+        void queryClient.cancelQueries();
+        queryClient.removeQueries({
+          predicate: query =>
+            query.queryKey[0] !== "/api/user" &&
+            query.queryKey[0] !== "/api/mechanic-access/companies",
+        });
+        setSelectedCompanyIdInternal(id);
+        localStorage.setItem("mechanic_selected_company", id);
+      }
+      return;
+    }
     if (!canSelectCompany) return;
     
     if (id === null) {
@@ -237,11 +299,17 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     if (company) {
       setPendingCompanySelectionInternal(company);
     }
-  }, [canSelectCompany, companies, currentAccessSession, endAccessSession]);
+  }, [isMechanic, mechanicCompanies, queryClient, canSelectCompany, companies, currentAccessSession, endAccessSession]);
 
   const selectedCompany = useMemo(() => {
-    return companies.find(c => c.id === selectedCompanyId) || null;
-  }, [companies, selectedCompanyId]);
+    return (isMechanic ? mechanicCompanies : companies).find(c => c.id === selectedCompanyId) || null;
+  }, [isMechanic, mechanicCompanies, companies, selectedCompanyId]);
+  const selectedCompanyScope = useMemo(
+    () => isMechanic
+      ? (mechanicCompanies.find(company => company.id === selectedCompanyId)?.scope || [])
+      : [],
+    [isMechanic, mechanicCompanies, selectedCompanyId],
+  );
 
   const effectiveCompanyId = useMemo(() => {
     if (canSelectCompany) {
@@ -313,12 +381,13 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
       value={{
         selectedCompanyId,
         setSelectedCompanyId,
-        companies: canSelectCompany ? companies : [],
+        companies: isMechanic ? mechanicCompanies : canSelectCompany ? companies : [],
         isLoading,
         selectedCompany,
         canSelectCompany,
         effectiveCompanyId,
         companyChapter,
+        selectedCompanyScope,
         startAccessSession,
         endAccessSession,
         currentAccessSession,

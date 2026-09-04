@@ -51,7 +51,7 @@ type VehicleFormData = {
 
 export default function PesvVehiculos() {
   const { user } = useAuth();
-  const { selectedCompany: currentCompany } = useCompanyContext();
+  const { selectedCompany: currentCompany, effectiveCompanyId } = useCompanyContext();
   const { toast } = useToast();
   const isAdmin = user?.role ? canWrite(user.role, 'vehicles') : false;
   const [searchTerm, setSearchTerm] = useState("");
@@ -82,7 +82,12 @@ export default function PesvVehiculos() {
   });
 
   const { data: vehicles = [], isLoading: vehiclesLoading } = useQuery<Vehicle[]>({
-    queryKey: ["/api/vehicles"],
+    queryKey: ["/api/vehicles", effectiveCompanyId || "sin-empresa"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/vehicles");
+      return response.json();
+    },
+    enabled: !!effectiveCompanyId,
   });
 
 

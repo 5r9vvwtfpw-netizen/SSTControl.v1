@@ -94,6 +94,17 @@ export function ProtectedRoute({
   const paymentPaths = ["/checkout", "/pago-pse", "/planes-suscripcion", "/mi-suscripcion", "/dashboard-facturacion"];
   const isPaymentPath = paymentPaths.some(p => path === p || path.startsWith(p + "/"));
 
+  // El inicio de sesión histórico pasa por /dashboard. El técnico no usa ese
+  // dashboard: enviarlo directamente a PESV evita una doble redirección
+  // /dashboard -> / -> /pesv mientras se monta la navegación.
+  if (user.role === "tecnico_mecanico" && path === "/dashboard") {
+    return (
+      <Route path={path}>
+        <Redirect to="/pesv/vehiculos" />
+      </Route>
+    );
+  }
+
   // Si no tiene acceso a la ruta, redirigir a la página principal
   if (!hasAccess && !isPaymentPath) {
     return (

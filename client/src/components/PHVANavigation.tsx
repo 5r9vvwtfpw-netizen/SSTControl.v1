@@ -179,16 +179,24 @@ export function PHVANavigation() {
     pendingCompanySelection,
     setPendingCompanySelection,
     companyChapter,
+    selectedCompanyScope,
   } = useCompanyContext();
 
   const { data: userCompanyData } = useQuery<Company>({
     queryKey: ["/api/company/current"],
-    enabled: !!user && user.role !== 'superadmin' && !!user.companyId,
+    enabled: !!user && user.role !== 'superadmin' && user.role !== 'tecnico_mecanico' && !!user.companyId,
     staleTime: 60000,
   });
 
-  const effectiveCompany = user?.role === 'superadmin' ? selectedCompany : userCompanyData;
+  const effectiveCompany = user?.role === 'superadmin' || user?.role === 'tecnico_mecanico' ? selectedCompany : userCompanyData;
   const companyHasVehicles = (effectiveCompany?.numberOfVehicles ?? 0) > 0;
+  const isMechanicTransitionRoute = user?.role === "tecnico_mecanico" &&
+    (location === "/" || location === "/dashboard");
+  const mechanicSelectValue = user?.role === "tecnico_mecanico" &&
+    selectedCompanyId &&
+    companies.some(company => company.id === selectedCompanyId)
+      ? selectedCompanyId
+      : undefined;
 
   const handleCompanySelect = (value: string) => {
     if (!value || value === selectedCompanyId) return;
@@ -594,6 +602,40 @@ export function PHVANavigation() {
 
             {/* Navegación PHVA - Tabs horizontales (filtrados por permisos) */}
             <nav className="flex items-center gap-1">
+              {user?.role === "tecnico_mecanico" && !companiesLoading && companies.length > 0 && mechanicSelectValue && (
+                <div className="flex max-w-[220px] flex-col gap-0.5">
+                  <div className="relative">
+                    <Building2 className="pointer-events-none absolute left-2 top-2.5 h-4 w-4 text-white" />
+                    <select
+                      value={mechanicSelectValue}
+                      onChange={(event) => handleCompanySelect(event.target.value)}
+                      className="h-9 w-[200px] rounded-md border border-white/30 bg-primary pl-8 pr-2 text-sm text-white"
+                      data-testid="select-mechanic-company"
+                      aria-label="Empresa de operación"
+                    >
+                      {companies.map((company: any) => (
+                        <option
+                          key={company.id}
+                          value={company.id}
+                          className="bg-background text-foreground"
+                          data-testid={`option-mechanic-company-${company.id}`}
+                        >
+                          {company.name}{company.isEmployer ? " (Empleadora)" : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {selectedCompany && (
+                    <span className="truncate px-1 text-[10px] text-white/75" data-testid="text-mechanic-company-scope">
+                      Alcance: {selectedCompanyScope.map(value => ({
+                        maintenance: "Mantenimientos",
+                        vehicles: "Vehículos",
+                        inspections: "Inspecciones",
+                      }[value] || value)).join(", ")}
+                    </span>
+                  )}
+                </div>
+              )}
               {visiblePhvaTabs.map((tab) => {
                 const Icon = tab.icon;
                 return (
@@ -643,20 +685,49 @@ export function PHVANavigation() {
                 );
               })}
 
-              {/* Tab PESV separado - Resolución 40595/2022 */}
-              {/* Técnico Mecánico: acceso directo a mantenimiento, sin menú */}
+              {/* Técnico Mecánico: módulos visibles según el alcance de la empresa seleccionada */}
               {user?.role === 'tecnico_mecanico' && (
-                <Link href="/pesv/mantenimiento">
-                  <Button
-                    variant={isPesvActive ? "secondary" : "ghost"}
-                    size="default"
-                    className={isPesvActive ? "font-semibold text-primary" : "text-white"}
-                    data-testid="tab-mantenimiento"
-                  >
-                    <Car className="mr-2 h-4 w-4" />
-                    Mantenimiento
-                  </Button>
-                </Link>
+                <>
+                  {selectedCompanyScope.includes("vehicles") && (
+                    <Link href="/pesv/vehiculos">
+                      <Button
+                        variant={location.startsWith("/pesv/vehiculos") ? "secondary" : "ghost"}
+                        size="default"
+                        className={location.startsWith("/pesv/vehiculos") ? "font-semibold text-primary" : "text-white"}
+                        data-testid="tab-mechanic-vehicles"
+                      >
+                        <Car className="mr-2 h-4 w-4" />
+                        Vehículos
+                      </Button>
+                    </Link>
+                  )}
+                  {selectedCompanyScope.includes("maintenance") && (
+                    <Link href="/pesv/mantenimiento">
+                      <Button
+                        variant={location.startsWith("/pesv/mantenimiento") ? "secondary" : "ghost"}
+                        size="default"
+                        className={location.startsWith("/pesv/mantenimiento") ? "font-semibold text-primary" : "text-white"}
+                        data-testid="tab-mantenimiento"
+                      >
+                        <Car className="mr-2 h-4 w-4" />
+                        Mantenimiento
+                      </Button>
+                    </Link>
+                  )}
+                  {selectedCompanyScope.includes("inspections") && (
+                    <Link href="/pesv/inspecciones">
+                      <Button
+                        variant={location.startsWith("/pesv/inspecciones") ? "secondary" : "ghost"}
+                        size="default"
+                        className={location.startsWith("/pesv/inspecciones") ? "font-semibold text-primary" : "text-white"}
+                        data-testid="tab-mechanic-inspections"
+                      >
+                        <CheckSquare className="mr-2 h-4 w-4" />
+                        Inspecciones
+                      </Button>
+                    </Link>
+                  )}
+                </>
               )}
               {user?.role !== 'tecnico_mecanico' && showPesvTab && filteredPesvNavItems.length > 0 && (
                 <DropdownMenu
@@ -712,7 +783,9 @@ export function PHVANavigation() {
             {/* Usuario y controles */}
             <div className="flex items-center gap-4">
               {/* Campana de notificaciones de mensajes internos */}
-              <NotificationBell />
+              {!isMechanicTransitionRoute && (
+                <NotificationBell simple={user?.role === "tecnico_mecanico"} />
+              )}
               
               
               <div className="text-right text-xs hidden lg:block">

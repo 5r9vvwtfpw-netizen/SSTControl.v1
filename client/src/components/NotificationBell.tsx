@@ -31,7 +31,7 @@ const priorityLabels: Record<string, string> = {
 
 type PortalNotificationCount = { messages: number; capacitaciones: number; examenes: number; total: number };
 
-export function NotificationBell() {
+export function NotificationBell({ simple = false }: { simple?: boolean }) {
   const { user } = useAuth();
   const [location, setLocation] = useLocation();
   const [isOpen, setIsOpen] = useState(false);
@@ -159,6 +159,29 @@ export function NotificationBell() {
     setIsOpen(false);
     setLocation(`/mensajes-internos?new=true&t=${Date.now()}`);
   };
+
+  if (simple) {
+    return (
+      <Button
+        variant="ghost"
+        size="icon"
+        className="relative text-white hover:bg-white/20"
+        onClick={handleViewAll}
+        data-testid="button-notification-bell"
+        aria-label="Ver mensajes internos"
+      >
+        <Bell className="h-5 w-5" />
+        {unreadCount > 0 && (
+          <span
+            className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white"
+            data-testid="badge-unread-count"
+          >
+            {unreadCount > 9 ? "9+" : unreadCount}
+          </span>
+        )}
+      </Button>
+    );
+  }
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>

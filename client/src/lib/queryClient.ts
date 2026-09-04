@@ -73,7 +73,7 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
-// Helper to get the selected company ID from localStorage (for superadmin or LSO)
+// Helper to get the selected company ID from localStorage (for superadmin, LSO or mechanic)
 function getSelectedCompanyId(): string | null {
   try {
     const session = localStorage.getItem("superadmin_access_session");
@@ -83,6 +83,12 @@ function getSelectedCompanyId(): string | null {
     }
   } catch {
     // Ignore parse errors
+  }
+  try {
+    const mechanicCompanyId = localStorage.getItem("mechanic_selected_company");
+    if (mechanicCompanyId) return mechanicCompanyId;
+  } catch {
+    // Ignore storage errors
   }
   // Vault navigation context: set by DetalleEvaluacionSst/Pesv when superadmin views a company's
   // evaluation. Applied when: (1) navigating via sub-modules with ?from=evaluation in URL, or
@@ -110,7 +116,7 @@ function getSelectedCompanyId(): string | null {
   return null;
 }
 
-// Build headers including X-Company-Id for superadmin context
+// Build headers including X-Company-Id for the active company context.
 export function buildHeaders(includeContentType: boolean = false): HeadersInit {
   const headers: Record<string, string> = {};
   

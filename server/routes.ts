@@ -46,6 +46,8 @@ import { legalDocsPdfService } from "./services/legal-docs-pdf";
 import { verifyQuote, getQuoteSummary, type NormalizedQuoteData } from "../plugins/landing-page-integration";
 import { registerInduccionVirtualRoutes } from "./induccion-virtual-routes";
 import { registerChatbotRoutes } from "./chatbot";
+import { mechanicCompanyContextMiddleware } from "./middleware/mechanic-company-context";
+import { registerMechanicAccessRoutes } from "./routes/mechanic-access";
 import { checkWorkerLimit, checkUserLimit } from "./middleware/subscription-limits";
 import { calcularIndicador, parsePeriodoToDateRange } from "./indicadores-calculators";
 import { z } from "zod";
@@ -1497,6 +1499,12 @@ async function assertLsoAssignedToCompany(userId: string, companyId: string): Pr
 function getEffectiveCompanyId(req: Request): string {
   const user = req.user;
   if (!user) return null as unknown as string;
+
+  // Set exclusively by mechanicCompanyContextMiddleware after it validates a
+  // current grant and module scope. Never trust X-Company-Id directly here.
+  if (user.role === "tecnico_mecanico" && req.mechanicEffectiveCompanyId) {
+    return req.mechanicEffectiveCompanyId;
+  }
   
   // For superadmins and LSO professionals (both internal and external), check for X-Company-Id header first
   if (user.role === 'superadmin' || user.role === 'lso' || user.role === 'lso_externo') {
@@ -1560,6 +1568,8 @@ function canAccessMedicalData(role: UserRole): boolean {
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
   setupAuth(app);
+  app.use(mechanicCompanyContextMiddleware);
+  registerMechanicAccessRoutes(app);
 
   if (isDemoEnabled()) {
     app.use(demoReadOnlyMiddleware());
@@ -9830,6 +9840,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!userCompanyId) {
           return res.status(403).send("Usuario no asociado a una empresa");
         }
+        // Company context is server-controlled; a tenant user cannot move a
+        // vehicle to a different company through a PATCH payload.
         const validatedData = insertVehicleSchema.partial().parse(req.body);
         const vehicle = await storage.updateVehicle(req.params.id, validatedData, userCompanyId);
         if (!vehicle) {
@@ -9856,6 +9868,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } else {
       if (!userCompanyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
+      }
+      const vehicle = await storage.getVehicle(req.params.id, userCompanyId);
+      if (!vehicle) {
+        return res.status(404).send("Vehículo no encontrado");
       }
       await storage.deleteVehicle(req.params.id, userCompanyId);
       res.sendStatus(204);
@@ -10679,6 +10695,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const validatedData = insertVehicleInspectionSchema.parse(req.body);
+      const [inspectionVehicle, inspectionDriver] = await Promise.all([
+        storage.getVehicle(validatedData.vehicleId, companyId),
+        storage.getDriver(validatedData.driverId, companyId),
+      ]);
+      if (!inspectionVehicle || !inspectionDriver) {
+        return res.status(400).send("El vehículo y el conductor deben pertenecer a la empresa seleccionada");
+      }
       const inspection = await storage.createVehicleInspection(validatedData, companyId);
       res.status(201).json(inspection);
     } catch (error: any) {
@@ -10697,13 +10720,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(404).send("Inspección no encontrada");
         }
         const validatedData = insertVehicleInspectionSchema.partial().parse(req.body);
+        if (validatedData.vehicleId && !await storage.getVehicle(validatedData.vehicleId, existingInspection.companyId)) {
+          return res.status(400).send("El vehículo debe pertenecer a la empresa de la inspección");
+        }
+        if (validatedData.driverId && !await storage.getDriver(validatedData.driverId, existingInspection.companyId)) {
+          return res.status(400).send("El conductor debe pertenecer a la empresa de la inspección");
+        }
         const inspection = await storage.updateVehicleInspection(req.params.id, validatedData, existingInspection.companyId);
         res.json(inspection);
       } else {
         if (!userCompanyId) {
           return res.status(403).send("Usuario no asociado a una empresa");
         }
+        // Keep the inspection inside the validated effective company context.
         const validatedData = insertVehicleInspectionSchema.partial().parse(req.body);
+        if (validatedData.vehicleId && !await storage.getVehicle(validatedData.vehicleId, userCompanyId)) {
+          return res.status(400).send("El vehículo debe pertenecer a la empresa seleccionada");
+        }
+        if (validatedData.driverId && !await storage.getDriver(validatedData.driverId, userCompanyId)) {
+          return res.status(400).send("El conductor debe pertenecer a la empresa seleccionada");
+        }
         const inspection = await storage.updateVehicleInspection(req.params.id, validatedData, userCompanyId);
         if (!inspection) {
           return res.status(404).send("Inspección no encontrada");
@@ -10729,6 +10765,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } else {
       if (!userCompanyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
+      }
+      const inspection = await storage.getVehicleInspection(req.params.id, userCompanyId);
+      if (!inspection) {
+        return res.status(404).send("Inspección no encontrada");
       }
       await storage.deleteVehicleInspection(req.params.id, userCompanyId);
       res.sendStatus(204);
@@ -55181,7 +55221,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/vehicle-maintenances/:id - Get a specific vehicle maintenance
   app.get("/api/vehicle-maintenances/:id", requirePermission("vehicles:view"), async (req, res) => {
     try {
-      const maintenance = await storage.getVehicleMaintenance(req.params.id);
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      const maintenance = await storage.getVehicleMaintenance(req.params.id, companyId);
       if (!maintenance) {
         return res.status(404).json({ error: "Mantenimiento no encontrado" });
       }
@@ -55208,6 +55250,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       }
       
       const validated = insertVehicleMaintenanceSchema.omit({ companyId: true }).parse(req.body);
+      if (!await storage.getVehicle(validated.vehicleId, companyId)) {
+        return res.status(400).json({ error: "El vehículo debe pertenecer a la empresa seleccionada" });
+      }
       const maintenance = await storage.createVehicleMaintenance({ ...validated, companyId }, companyId);
       res.status(201).json(maintenance);
     } catch (error: any) {
@@ -55219,8 +55264,17 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // PATCH /api/vehicle-maintenances/:id - Update a vehicle maintenance
   app.patch("/api/vehicle-maintenances/:id", requirePermission("vehicles:edit"), async (req, res) => {
     try {
-      const validated = insertVehicleMaintenanceSchema.partial().parse(req.body);
-      const maintenance = await storage.updateVehicleMaintenance(req.params.id, validated);
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      const existing = await storage.getVehicleMaintenance(req.params.id, companyId);
+      if (!existing) {
+        return res.status(404).json({ error: "Mantenimiento no encontrado" });
+      }
+      const validated = insertVehicleMaintenanceSchema.partial().omit({ companyId: true }).parse(req.body);
+      if (validated.vehicleId && !await storage.getVehicle(validated.vehicleId, companyId)) {
+        return res.status(400).json({ error: "El vehículo debe pertenecer a la empresa seleccionada" });
+      }
+      const maintenance = await storage.updateVehicleMaintenance(req.params.id, validated, companyId);
       if (!maintenance) {
         return res.status(404).json({ error: "Mantenimiento no encontrado" });
       }
@@ -55234,7 +55288,13 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // DELETE /api/vehicle-maintenances/:id - Delete a vehicle maintenance
   app.delete("/api/vehicle-maintenances/:id", requirePermission("vehicles:delete"), async (req, res) => {
     try {
-      await storage.deleteVehicleMaintenance(req.params.id);
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      const existing = await storage.getVehicleMaintenance(req.params.id, companyId);
+      if (!existing) {
+        return res.status(404).json({ error: "Mantenimiento no encontrado" });
+      }
+      await storage.deleteVehicleMaintenance(req.params.id, companyId);
       res.json({ success: true });
     } catch (error: any) {
       console.error("Error deleting vehicle maintenance:", error);

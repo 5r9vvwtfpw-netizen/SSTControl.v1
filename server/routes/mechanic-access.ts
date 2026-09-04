@@ -5,7 +5,7 @@ import { requireAuth, requirePermission } from "../auth";
 import * as schema from "@shared/schema";
 import { z } from "zod";
 
-const scopeValues = ["maintenance", "vehicles", "machinery", "inspections"] as const;
+const scopeValues = ["maintenance", "vehicles", "inspections"] as const;
 const accessInputSchema = z.object({
   mechanicUserId: z.string().min(1),
   startDate: z.string().min(1, "La fecha de inicio es obligatoria"),
@@ -158,8 +158,27 @@ export function registerMechanicAccessRoutes(app: Express) {
         .from(schema.companies).where(eq(schema.companies.id, req.user.companyId))
       : [];
     res.json({
-      employer: employer[0] ? { ...employer[0], isEmployer: true, scope: ["maintenance", "vehicles", "machinery", "inspections"] } : null,
+      employer: employer[0] ? { ...employer[0], isEmployer: true, scope: ["maintenance", "vehicles", "inspections"] } : null,
       authorized: grants.map((grant) => ({ ...grant, isEmployer: false })),
     });
+  });
+
+  // Consulta mínima para que el técnico pueda registrar inspecciones en una
+  // empresa autorizada sin abrirle el módulo completo de conductores.
+  app.get("/api/mechanic-access/inspection-drivers", requireAuth, async (req, res) => {
+    if (req.user?.role !== "tecnico_mecanico") {
+      return res.status(403).json({ error: "Ruta exclusiva para Técnicos Mecánicos" });
+    }
+    const companyId = req.mechanicEffectiveCompanyId || req.user.companyId;
+    if (!companyId) return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+    const rows = await db
+      .select({
+        id: schema.drivers.id,
+        name: schema.drivers.name,
+        status: schema.drivers.status,
+      })
+      .from(schema.drivers)
+      .where(eq(schema.drivers.companyId, companyId));
+    res.json(rows);
   });
 }
