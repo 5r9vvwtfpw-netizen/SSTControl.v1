@@ -304,7 +304,15 @@ export default function AuthPage() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    loginMutation.mutate(loginData, {
+    const form = e.currentTarget as HTMLFormElement;
+    const formData = new FormData(form);
+    const credentials = {
+      username: String(formData.get("username") ?? loginData.username).trim(),
+      password: String(formData.get("password") ?? loginData.password),
+    };
+
+    setLoginData(credentials);
+    loginMutation.mutate(credentials, {
       onSuccess: (data: any) => {
         if (data.requiresVerification) {
           setPendingLoginVerification({
@@ -525,6 +533,8 @@ export default function AuthPage() {
                     <Label htmlFor="login-username">Usuario</Label>
                     <Input
                       id="login-username"
+                       name="username"
+                       autoComplete="username"
                       placeholder="Ingrese su usuario"
                       value={loginData.username}
                       onChange={(e) => setLoginData({ ...loginData, username: e.target.value })}
@@ -537,6 +547,8 @@ export default function AuthPage() {
                     <div className="relative">
                       <Input
                         id="login-password"
+                         name="password"
+                         autoComplete="current-password"
                         type={showLoginPassword ? "text" : "password"}
                         placeholder="Ingrese su contraseña"
                         value={loginData.password}

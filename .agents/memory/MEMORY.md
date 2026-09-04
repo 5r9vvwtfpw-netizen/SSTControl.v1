@@ -25,3 +25,4 @@
 - [Development module access](development-module-access.md) — en desarrollo se omiten gates comerciales para probar módulos; producción conserva capítulo, suscripción y menú.
 - [Blank form validation](blank-form-validation.md) — los campos de negocio empiezan vacíos y los obligatorios requieren validación explícita antes de mutar.
 - [Mechanic tenant context](mechanic-tenant-context.md) — el contexto externo exige caché por empresa y no debe validar selección persistida hasta que terminen de cargar las autorizaciones.
+- [Safari login autofill](safari-login-autofill.md) — Safari puede mostrar credenciales que React no recibió; el submit debe leer los valores reales del formulario.
