@@ -34,7 +34,17 @@ export function setSessionParser(parser: any): void {
 }
 
 export function initializeWebSocket(server: Server): void {
-  wss = new WebSocketServer({ server, path: "/ws/notifications" });
+  const notificationWebSocketServer = new WebSocketServer({ noServer: true });
+  wss = notificationWebSocketServer;
+
+  server.on("upgrade", (req, socket, head) => {
+    const pathname = new URL(req.url || "/", "http://localhost").pathname;
+    if (pathname !== "/ws/notifications") return;
+
+    notificationWebSocketServer.handleUpgrade(req, socket, head, (ws) => {
+      notificationWebSocketServer.emit("connection", ws, req);
+    });
+  });
 
   wss.on("connection", async (ws: AuthenticatedWebSocket, req: IncomingMessage) => {
     ws.isAlive = true;
