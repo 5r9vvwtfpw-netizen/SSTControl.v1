@@ -247,11 +247,10 @@ function HelpVideoButtonWrapper() {
   );
 }
 
-function HomeGateway() {
-  const { user, isLoading } = useAuth();
+function MechanicHomeGateway() {
   const { selectedCompanyScope, isLoading: companyContextLoading } = useCompanyContext();
-  
-  if (isLoading || (user?.role === "tecnico_mecanico" && companyContextLoading)) {
+
+  if (companyContextLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -259,16 +258,30 @@ function HomeGateway() {
     );
   }
   
+  const destination = selectedCompanyScope.includes("maintenance")
+    ? "/pesv/mantenimiento"
+    : selectedCompanyScope.includes("vehicles")
+      ? "/pesv/vehiculos"
+      : selectedCompanyScope.includes("inspections")
+        ? "/pesv/inspecciones"
+        : "/login";
+  return <Redirect to={destination} />;
+}
+
+function HomeGateway() {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   // Técnico Mecánico entra al primer módulo permitido para la empresa activa.
   if (user?.role === 'tecnico_mecanico') {
-    const destination = selectedCompanyScope.includes("maintenance")
-      ? "/pesv/mantenimiento"
-      : selectedCompanyScope.includes("vehicles")
-        ? "/pesv/vehiculos"
-        : selectedCompanyScope.includes("inspections")
-          ? "/pesv/inspecciones"
-          : "/login";
-    return <Redirect to={destination} />;
+    return <MechanicHomeGateway />;
   }
 
   // Si está logueado -> siempre al Dashboard

@@ -185,7 +185,12 @@ function DecisionItem({ decision, revisionId }: { decision: DecisionRevision; re
                     <FormItem>
                       <FormLabel>Fecha Compromiso</FormLabel>
                       <FormControl>
-                        <Input type="date" value={field.value instanceof Date ? format(field.value, 'yyyy-MM-dd') : ''} onChange={(e) => field.onChange(new Date(e.target.value))} data-testid="input-accion-fecha" />
+                        <Input
+                          type="date"
+                          value={field.value instanceof Date && !Number.isNaN(field.value.getTime()) ? format(field.value, 'yyyy-MM-dd') : ''}
+                          onChange={(e) => field.onChange(e.target.value ? new Date(`${e.target.value}T00:00:00`) : undefined)}
+                          data-testid="input-accion-fecha"
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -713,8 +718,8 @@ export default function RevisionesDireccion() {
                         <FormControl>
                           <Input
                             type="date"
-                            value={field.value instanceof Date ? format(field.value, 'yyyy-MM-dd') : field.value}
-                            onChange={(e) => field.onChange(new Date(e.target.value))}
+                            value={field.value instanceof Date && !Number.isNaN(field.value.getTime()) ? format(field.value, 'yyyy-MM-dd') : ''}
+                            onChange={(e) => field.onChange(e.target.value ? new Date(`${e.target.value}T00:00:00`) : undefined)}
                             data-testid="input-fecha-revision"
                           />
                         </FormControl>

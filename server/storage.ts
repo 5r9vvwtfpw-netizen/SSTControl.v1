@@ -6781,23 +6781,6 @@ export class DbStorage implements IStorage {
       nivelCumplimiento = 'aceptable';
     }
 
-    // Las filas se inicializan al crear la evaluación para alimentar el plan de
-    // mejora. Solo una respuesta guardada/verificada por el usuario representa
-    // un estándar realmente gestionado.
-    const totalEstandaresAplicables = estandaresAplicables.length;
-    const totalRespuestasVerificadas = respuestas.filter(
-      respuesta => respuesta.lastVerifiedAt && respuesta.requiresRefresh === 0
-    ).length;
-    const todosEstandaresRespondidos = totalRespuestasVerificadas >= totalEstandaresAplicables;
-    
-    // Determinar si debe activarse automáticamente
-    // Si todos los estándares tienen respuesta Y estado es "en-progreso", cambiar a "completada"
-    let nuevoEstado = evaluacion.estado;
-    if (todosEstandaresRespondidos && evaluacion.estado === 'en-progreso') {
-      nuevoEstado = 'completada';
-      console.log(`[Evaluación ${evaluacionId}] ✅ Activación automática: Todos los ${totalEstandaresAplicables} estándares respondidos. Estado: en-progreso → completada`);
-    }
-
     // Actualizar evaluación
     await this.updateEvaluacionSst(evaluacionId, {
       puntajeTotal,
@@ -6806,7 +6789,6 @@ export class DbStorage implements IStorage {
       nivelCumplimiento,
       puntajesPorComponente: JSON.stringify(puntajesPorComponente),
       puntajesPorCicloPhva: JSON.stringify(puntajesPorCicloPhva),
-      ...(nuevoEstado !== evaluacion.estado ? { estado: nuevoEstado } : {}),
     } as any, companyId);
   }
 
