@@ -317,7 +317,7 @@ export default function GestionUsuarios() {
   });
 
   const hasGlobalCompanyAccess = currentUser?.role ? hasGlobalAccess(currentUser.role) : false;
-  const canManageMechanicAccess = currentUser?.role === "superusuario" &&
+  const canManageMechanicAccess = (currentUser?.role === "superusuario" || currentUser?.role === "admin") &&
     getRolePermissions(currentUser.role).includes("mechanic_access:manage");
 
   const companyMap = useMemo(() => {
@@ -1029,8 +1029,6 @@ export default function GestionUsuarios() {
         </Dialog>
       </div>
 
-      {canManageMechanicAccess && <MechanicAccessPanel />}
-
       <Card>
         <CardHeader>
           <CardTitle>Información de Roles</CardTitle>
@@ -1095,6 +1093,8 @@ export default function GestionUsuarios() {
           </div>
         </CardContent>
       </Card>
+
+      {canManageMechanicAccess && <MechanicAccessPanel />}
 
       <Card>
         <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

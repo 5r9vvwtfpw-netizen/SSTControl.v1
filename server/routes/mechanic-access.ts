@@ -14,7 +14,7 @@ const accessInputSchema = z.object({
 });
 
 function isCompanyAdministrator(req: Request): boolean {
-  return req.user?.role === "superusuario" && !!req.user.companyId;
+  return (req.user?.role === "superusuario" || req.user?.role === "admin") && !!req.user.companyId;
 }
 
 function currentCompanyId(req: Request): string | null {
@@ -24,7 +24,7 @@ function currentCompanyId(req: Request): string | null {
 export function registerMechanicAccessRoutes(app: Express) {
   // Solo devuelve autorizaciones de la empresa del administrador autenticado.
   app.get("/api/mechanic-access", requirePermission("mechanic_access:manage"), async (req, res) => {
-    if (!isCompanyAdministrator(req)) return res.status(403).json({ error: "Solo el Super Usuario puede gestionar autorizaciones" });
+    if (!isCompanyAdministrator(req)) return res.status(403).json({ error: "Solo el administrador de la empresa puede gestionar autorizaciones" });
     const companyId = currentCompanyId(req)!;
     const rows = await db
       .select({
@@ -57,7 +57,7 @@ export function registerMechanicAccessRoutes(app: Express) {
 
   // Búsqueda acotada: nunca expone el directorio completo de clientes.
   app.get("/api/mechanic-access/search", requirePermission("mechanic_access:manage"), async (req, res) => {
-    if (!isCompanyAdministrator(req)) return res.status(403).json({ error: "Solo el Super Usuario puede buscar técnicos" });
+    if (!isCompanyAdministrator(req)) return res.status(403).json({ error: "Solo el administrador de la empresa puede buscar técnicos" });
     const query = String(req.query.q || "").trim();
     if (query.length < 3) return res.json([]);
     const rows = await db
@@ -84,7 +84,7 @@ export function registerMechanicAccessRoutes(app: Express) {
   });
 
   app.post("/api/mechanic-access", requirePermission("mechanic_access:manage"), async (req, res) => {
-    if (!isCompanyAdministrator(req)) return res.status(403).json({ error: "Solo el Super Usuario puede autorizar técnicos" });
+    if (!isCompanyAdministrator(req)) return res.status(403).json({ error: "Solo el administrador de la empresa puede autorizar técnicos" });
     const authorizedCompanyId = currentCompanyId(req)!;
     try {
       const input = accessInputSchema.parse(req.body);
@@ -124,7 +124,7 @@ export function registerMechanicAccessRoutes(app: Express) {
   });
 
   app.patch("/api/mechanic-access/:id/revoke", requirePermission("mechanic_access:manage"), async (req, res) => {
-    if (!isCompanyAdministrator(req)) return res.status(403).json({ error: "Solo el Super Usuario puede revocar autorizaciones" });
+    if (!isCompanyAdministrator(req)) return res.status(403).json({ error: "Solo el administrador de la empresa puede revocar autorizaciones" });
     const companyId = currentCompanyId(req)!;
     const [updated] = await db.update(schema.mechanicCompanyAccess)
       .set({ isActive: false, revokedAt: new Date(), revokedByUserId: req.user!.id })
