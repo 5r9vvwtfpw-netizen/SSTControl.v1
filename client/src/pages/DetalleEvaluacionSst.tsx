@@ -703,7 +703,9 @@ export default function DetalleEvaluacionSst() {
   );
 
   const totalEstandares = estandares.length;
-  const estandaresEvaluados = respuestas.length;
+  const estandaresEvaluados = respuestas.filter(
+    respuesta => respuesta.cumple === 1 || respuesta.noAplica === 1
+  ).length;
   const progreso = totalEstandares > 0 ? Math.round((estandaresEvaluados / totalEstandares) * 100) : 0;
   
   // Detectar si es evaluación inicial (todos los estándares en "No Cumple" = puntaje 0)

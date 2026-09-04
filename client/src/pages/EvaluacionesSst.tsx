@@ -27,7 +27,7 @@ import { TrialVerificationBannerAuto } from "@/components/TrialGate";
 // IMPORTANTE: Se basa EXCLUSIVAMENTE en numberOfWorkers y riskLevel de la empresa
 // NO en el plan de suscripción (el plan solo afecta facturación)
 // 
-// Artículo 9: ≤10 trabajadores AND riesgo I/II/III → Capítulo I (7 estándares)
+// Artículo 9: ≤10 trabajadores AND riesgo I/II/III → Capítulo I
 // Artículo 10: 11-50 trabajadores AND riesgo I/II/III → Capítulo II (21 estándares)
 // Artículo 11: >50 trabajadores OR riesgo IV/V → Capítulo III (62 estándares)
 function calculateTipoEmpresa(numberOfWorkers: number, riskLevel: string): "tipo1" | "tipo2" | "tipo3" {
@@ -49,7 +49,7 @@ function calculateTipoEmpresa(numberOfWorkers: number, riskLevel: string): "tipo
 
 // Etiquetas de tipo de empresa según Resolución 0312/2019
 const tipoEmpresaLabels: Record<string, string> = {
-  tipo1: "7 estándares (≤10 trabajadores, riesgo I-III)",
+  tipo1: "10 estándares (≤10 trabajadores, riesgo I-III)",
   tipo2: "21 estándares (11-50 trabajadores, riesgo I-III)",
   tipo3: "61 estándares (>50 trabajadores ó riesgo IV-V)",
 };
@@ -250,7 +250,7 @@ export default function EvaluacionesSst() {
       }
       setDialogOpen(false);
       form.reset();
-      setImportarAnterior(true);
+      setImportarAnterior(false);
       toast({
         title: "Evaluación creada",
         description: "La evaluación inicial del SG-SST se ha creado exitosamente",

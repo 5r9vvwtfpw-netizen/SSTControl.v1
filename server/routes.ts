@@ -27922,10 +27922,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         company.riskLevel as "I" | "II" | "III" | "IV" | "V"
       );
       
-      // Sobrescribir tipoEmpresa con el valor correcto
+      // Sobrescribir valores derivados/controlados por el servidor.
+      // Una evaluación nueva nunca puede nacer finalizada por un valor residual
+      // del formulario o del autocompletado del navegador.
       const evaluacionConTipoCorrecto = {
         ...validatedData,
-        tipoEmpresa: tipoEmpresaCorrecto
+        tipoEmpresa: tipoEmpresaCorrecto,
+        estado: "en-progreso" as const,
       };
       
       const evaluacion = await storage.createEvaluacionSst(evaluacionConTipoCorrecto, companyId);
