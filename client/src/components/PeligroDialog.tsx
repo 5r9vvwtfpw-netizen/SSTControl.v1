@@ -590,8 +590,8 @@ export function PeligroDialog({ open, onOpenChange, matrizId, peligro, prefillVa
                     <SelectContent>
                       <SelectItem value="eliminacion">Eliminación</SelectItem>
                       <SelectItem value="sustitucion">Sustitución</SelectItem>
-                      <SelectItem value="controles_ingenieria">Controles de Ingeniería</SelectItem>
-                      <SelectItem value="controles_administrativos">Controles Administrativos</SelectItem>
+                      <SelectItem value="ingenieria">Controles de Ingeniería</SelectItem>
+                      <SelectItem value="administrativo">Controles Administrativos</SelectItem>
                       <SelectItem value="epp">EPP</SelectItem>
                     </SelectContent>
                   </Select>

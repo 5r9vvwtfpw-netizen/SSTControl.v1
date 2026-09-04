@@ -1257,7 +1257,7 @@ export default function Iperc() {
                           controlesPropuestos: substanceData?.controlMeasures || "",
                           nivelProbabilidad: "media",
                           nivelSeveridad: "danino",
-                          tipoControlPrincipal: "controles_ingenieria",
+                          tipoControlPrincipal: "ingenieria",
                         });
                         setPeligroDialogOpen(true);
                         toast({
