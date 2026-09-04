@@ -24,6 +24,7 @@ export function TrialAlert() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isActivating, setIsActivating] = useState(false);
+  const isDevelopment = import.meta.env.DEV;
   
   const searchParams = new URLSearchParams(useSearch());
   const activationStatus = searchParams.get('activation');
@@ -32,10 +33,11 @@ export function TrialAlert() {
 
   const { data: subscription } = useQuery<SubscriptionResponse>({
     queryKey: ['/api/billing/subscription'],
-    enabled: !!user?.companyId,
+    enabled: !isDevelopment && !!user?.companyId,
     staleTime: 1000 * 60 * 5,
   });
 
+  if (isDevelopment) return null;
   if (!subscription) return null;
 
   const { id: subscriptionId, status } = subscription;

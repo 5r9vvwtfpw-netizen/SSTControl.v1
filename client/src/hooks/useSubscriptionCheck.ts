@@ -44,11 +44,13 @@ export function useSubscriptionCheck() {
     location === path || location.startsWith(path + "/") || location.startsWith("/checkout")
   );
 
+  const isDevelopment = import.meta.env.DEV;
   const exemptRoles = ['superadmin', 'soporte', 'lso_externo', 'lso', 'trabajador', 'admin'];
   const isExemptRole = user?.role ? exemptRoles.includes(user.role) : false;
 
-  const shouldBlock = !isLoading && 
-    !isExcludedPath && 
+  const shouldBlock = !isDevelopment &&
+    !isLoading &&
+    !isExcludedPath &&
     !isExemptRole &&
     user?.subscriptionStatus?.isBlocked === true;
 
