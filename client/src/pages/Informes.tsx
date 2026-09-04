@@ -11,6 +11,7 @@ import { useCompanyContext } from "@/hooks/use-company-context";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { formatReportError } from "@/lib/report-error-messages";
+import { downloadAuthenticatedReport } from "@/lib/download-report";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
 import type { PlanTrabajoAnual } from "@shared/schema";
@@ -26,6 +27,8 @@ interface ReportType {
   normativa?: string;
   documentCode: string;
   version: string;
+  endpoint?: string;
+  filename: string;
 }
 
 const currentYear = new Date().getFullYear();
@@ -33,14 +36,32 @@ const currentMonth = String(new Date().getMonth() + 1).padStart(2, '0');
 
 const reportTypes: ReportType[] = [
   // Obligatorios para Rendición de Cuentas
-  // { id: "mensual", name: "Informe de Rendición de Cuentas", icon: ClipboardCheck, description: "Informe consolidado del SG-SST con indicadores clave", category: "obligatorio", normativa: "Decreto 1072/2015 Art. 2.2.4.6.8", documentCode: `SST-MEN-${currentYear}-${currentMonth}`, version: "1.0" }, // OCULTO - pendiente de revisión
-  { id: "cumplimiento", name: "Autoevaluación Estándares Mínimos", icon: CheckCircle2, description: "Evaluación según Resolución 0312/2019", category: "obligatorio", normativa: "Resolución 0312/2019 Art. 28", documentCode: `SST-EVAL-${currentYear}`, version: "1.0" },
-  { id: "accidentes", name: "Indicadores de Accidentalidad", icon: Activity, description: "Frecuencia, severidad, días sin accidentes", category: "obligatorio", normativa: "Resolución 0312/2019 Art. 30", documentCode: `SST-IND-ACC-${currentYear}`, version: "1.0" },
-  { id: "capacitaciones", name: "Informe de Capacitaciones", icon: BarChart3, description: "Cumplimiento del programa de formación", category: "obligatorio", normativa: "Decreto 1072/2015 Art. 2.2.4.6.11", documentCode: `SST-INF-CAP-${currentYear}`, version: "1.0" },
+  { id: "mensual", name: "Informe de Rendición de Cuentas", icon: ClipboardCheck, description: "Informe mensual consolidado del SG-SST con indicadores clave", category: "obligatorio", normativa: "Decreto 1072/2015 Art. 2.2.4.6.8", documentCode: `SST-MEN-${currentYear}-${currentMonth}`, version: "1.0", endpoint: `/api/reports/rendicion-cuentas?year=${currentYear}&month=${Number(currentMonth)}`, filename: `rendicion-cuentas-${currentYear}-${currentMonth}.pdf` },
+  { id: "cumplimiento", name: "Autoevaluación Estándares Mínimos", icon: CheckCircle2, description: "Evaluación según Resolución 0312/2019", category: "obligatorio", normativa: "Resolución 0312/2019 Art. 28", documentCode: `SST-EVAL-${currentYear}`, version: "1.0", filename: `cumplimiento-${currentYear}.pdf` },
+  { id: "accidentes", name: "Indicadores de Accidentalidad", icon: Activity, description: "Frecuencia, severidad, días sin accidentes", category: "obligatorio", normativa: "Resolución 0312/2019 Art. 30", documentCode: `SST-IND-ACC-${currentYear}`, version: "1.0", filename: `accidentes-${currentYear}.pdf` },
+  { id: "capacitaciones", name: "Informe de Capacitaciones", icon: BarChart3, description: "Cumplimiento del programa de formación", category: "obligatorio", normativa: "Decreto 1072/2015 Art. 2.2.4.6.11", documentCode: `SST-INF-CAP-${currentYear}`, version: "1.0", filename: `capacitaciones-${currentYear}.pdf` },
   
   // Indicadores Oficiales
-  { id: "inspecciones", name: "Informe de Inspecciones", icon: TrendingUp, description: "Resultados de inspecciones de seguridad", category: "indicadores", normativa: "Decreto 1072/2015 Art. 2.2.4.6.24", documentCode: `SST-INF-INS-${currentYear}`, version: "1.0" },
-  { id: "contratos", name: "Informe de Contratos y Designaciones", icon: Users, description: "Contratos laborales con responsabilidades SST", category: "indicadores", normativa: "Decreto 1072/2015 Art. 2.2.4.6.8", documentCode: `SST-CNT-${currentYear}`, version: "1.0" },
+  { id: "inspecciones", name: "Informe de Inspecciones", icon: TrendingUp, description: "Resultados de inspecciones de seguridad", category: "indicadores", normativa: "Decreto 1072/2015 Art. 2.2.4.6.24", documentCode: `SST-INF-INS-${currentYear}`, version: "1.0", filename: `inspecciones-${currentYear}.pdf` },
+  { id: "contratos", name: "Informe de Contratos y Designaciones", icon: Users, description: "Contratos laborales con responsabilidades SST", category: "indicadores", normativa: "Decreto 1072/2015 Art. 2.2.4.6.8", documentCode: `SST-CNT-${currentYear}`, version: "1.0", filename: `contratos-${currentYear}.pdf` },
+];
+
+const consolidatedReports = [
+  { id: "evaluaciones-sst", name: "Evaluaciones SST consolidadas", description: "Consolidado de estándares mínimos y cumplimiento.", endpoint: "/api/reportes/evaluaciones-sst-consolidado/pdf", filename: `evaluaciones-sst-consolidado-${currentYear}.pdf` },
+  { id: "auditorias", name: "Auditorías internas consolidadas", description: "Programa, hallazgos y resultados de auditoría.", endpoint: "/api/reportes/auditorias-internas-consolidado/pdf", filename: `auditorias-internas-${currentYear}.pdf` },
+  { id: "objetivos-indicadores", name: "Objetivos e indicadores consolidados", description: "Seguimiento de metas e indicadores del SG-SST.", endpoint: "/api/reportes/objetivos-indicadores-consolidado/pdf", filename: `objetivos-indicadores-${currentYear}.pdf` },
+  { id: "revisiones-direccion", name: "Revisiones por dirección consolidadas", description: "Decisiones y acciones de las revisiones gerenciales.", endpoint: "/api/reportes/revisiones-direccion-consolidado/pdf", filename: `revisiones-direccion-${currentYear}.pdf` },
+  { id: "acciones-contexto", name: "Acciones de mejora del contexto", description: "Plan de acciones derivado del análisis de contexto.", endpoint: "/api/acciones-mejora-contexto/pdf", filename: `acciones-mejora-contexto-${currentYear}.pdf` },
+];
+
+const newReports = [
+  { id: "condiciones-salud", name: "Condiciones de salud", description: "Diagnóstico consolidado de condiciones de salud.", endpoint: "/api/reportes/condiciones-salud/pdf", filename: `condiciones-salud-${currentYear}.pdf` },
+  { id: "examenes-medicos", name: "Exámenes médicos", description: "Consolidado de evaluaciones médicas ocupacionales.", endpoint: "/api/reportes/examenes-medicos/pdf", filename: `examenes-medicos-${currentYear}.pdf` },
+  { id: "conservacion-auditiva", name: "Conservación auditiva", description: "Perfiles de exposición, audiometrías y controles.", endpoint: "/api/conservacion-auditiva/pdf", filename: `conservacion-auditiva-${currentYear}.pdf` },
+  { id: "partes-interesadas", name: "Partes interesadas", description: "Matriz de necesidades, expectativas y comunicación.", endpoint: "/api/partes-interesadas/pdf", filename: `partes-interesadas-${currentYear}.pdf` },
+  { id: "sedes", name: "Sedes y plantas", description: "Relación consolidada de sedes, ubicación y personal.", endpoint: "/api/company-sedes/pdf", filename: `sedes-${currentYear}.pdf` },
+  { id: "rutas-seguras", name: "Rutas seguras PESV", description: "Reporte general de rutas y controles de seguridad vial.", endpoint: "/api/pesv/rutas-seguras/pdf", filename: `rutas-seguras-pesv-${currentYear}.pdf` },
+  { id: "liderazgo-pesv", name: "Liderazgo PESV", description: "Evidencias de liderazgo y compromiso de alta dirección.", endpoint: "/api/pesv/liderazgo/pdf", filename: `liderazgo-pesv-${currentYear}.pdf` },
 ];
 
 const categoryLabels: Record<ReportCategory, { label: string; color: string }> = {
@@ -103,47 +124,18 @@ export default function Informes() {
     setIsGenerating(true);
 
     try {
-      let apiUrl = `/api/reports/${reportId}?period=${selectedPeriod}`;
-      if (isSuperadmin && selectedCompanyId) {
-        apiUrl += `&companyId=${selectedCompanyId}`;
-      }
-      
-      const response = await fetch(apiUrl, {
-        method: 'GET',
-        credentials: 'include',
+      const report = reportTypes.find(item => item.id === reportId)
+        || consolidatedReports.find(item => item.id === reportId)
+        || newReports.find(item => item.id === reportId);
+      if (!report) throw new Error("Informe no encontrado.");
+      const endpoint = "endpoint" in report && report.endpoint
+        ? report.endpoint
+        : `/api/reports/${reportId}?period=${selectedPeriod}`;
+      await downloadAuthenticatedReport({
+        url: endpoint,
+        filename: report.filename,
+        companyId: isSuperadmin ? selectedCompanyId : undefined,
       });
-
-      if (!response.ok) {
-        // Try to parse JSON for specific error information
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
-          const errorData = await response.json();
-          const error = new Error(errorData.message || `Error al generar el informe: ${response.statusText}`) as any;
-          error.response = { data: errorData };
-          error.statusCode = response.status;
-          throw error;
-        }
-        
-        // Handle specific HTTP status codes
-        let statusMessage = response.statusText;
-        if (response.status === 403) statusMessage = "Acceso denegado";
-        if (response.status === 404) statusMessage = "Informe no encontrado";
-        if (response.status === 500) statusMessage = "Error interno del servidor";
-        
-        const error = new Error(`Error al generar el informe: ${statusMessage}`) as any;
-        error.statusCode = response.status;
-        throw error;
-      }
-
-      const blob = await response.blob();
-      const downloadUrl = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = downloadUrl;
-      a.download = `${reportId}_${selectedPeriod}_${new Date().toISOString().split('T')[0]}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(downloadUrl);
-      document.body.removeChild(a);
 
       toast({
         title: "Informe generado",
@@ -337,6 +329,66 @@ export default function Informes() {
               </Card>
             );
           })}
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <h2 className="text-xl font-semibold text-foreground">Informes consolidados</h2>
+          <Badge className="bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-300">SG-SST</Badge>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {consolidatedReports.map((report) => (
+            <Card key={report.id} data-testid={`card-report-${report.id}`} className="hover-elevate border-violet-200 dark:border-violet-800">
+              <CardHeader>
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-md bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300">
+                    <FileText className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">{report.name}</CardTitle>
+                    <CardDescription>{report.description}</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <Button className="w-full" variant="outline" onClick={() => handleGenerateReport(report.id)} disabled={isGenerating} data-testid={`button-download-${report.id}`}>
+                  <Download className="h-4 w-4 mr-2" />
+                  {isGenerating && selectedReport === report.id ? "Descargando..." : "Descargar PDF"}
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <h2 className="text-xl font-semibold text-foreground">Reportes especializados</h2>
+          <Badge className="bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300">SST y PESV</Badge>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {newReports.map((report) => (
+            <Card key={report.id} data-testid={`card-report-${report.id}`} className="hover-elevate border-teal-200 dark:border-teal-800">
+              <CardHeader>
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-md bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300">
+                    <FileText className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">{report.name}</CardTitle>
+                    <CardDescription>{report.description}</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <Button className="w-full" variant="outline" onClick={() => handleGenerateReport(report.id)} disabled={isGenerating} data-testid={`button-download-${report.id}`}>
+                  <Download className="h-4 w-4 mr-2" />
+                  {isGenerating && selectedReport === report.id ? "Descargando..." : "Descargar PDF"}
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </div>
 

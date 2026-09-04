@@ -11,6 +11,7 @@ import { setupTrialWatermarkOnAllPages } from '../services/pdf-watermark';
 import { getTrialStatus } from '@shared/utils';
 import { requireAuth as authRequireAuth, requirePermission } from '../auth';
 import { storage } from '../storage';
+import { withPdfSemaphore } from '../services/pdf-semaphore';
 
 function getEffectiveCompanyId(req: Request): string | null {
   const user = (req as any).user;
@@ -2269,6 +2270,350 @@ export function registerPesvPdfRoutes(app: Express) {
       doc.end();
     } catch (error) {
       handlePdfError(error, res, 'sst-revision-direccion-individual');
+    }
+  });
+
+  // GET /api/conservacion-auditiva/pdf
+  // Informe consolidado del Programa de Conservación Auditiva (PCA).
+  app.get('/api/conservacion-auditiva/pdf', requireAuth, viewPermission, async (req: Request, res: Response) => {
+    try {
+      await withPdfSemaphore(async () => {
+        const companyId = getEffectiveCompanyId(req);
+        if (!companyId) {
+          res.status(403).send('Empresa no identificada');
+          return;
+        }
+
+        const [company] = await db.select().from(schema.companies)
+          .where(eq(schema.companies.id, companyId)).limit(1);
+        if (!company) {
+          res.status(404).send('Empresa no encontrada');
+          return;
+        }
+
+        const [profiles, assignments, audiometries, controls, programs, workers] = await Promise.all([
+          db.select().from(schema.noiseExposureProfiles).where(eq(schema.noiseExposureProfiles.companyId, companyId)).orderBy(desc(schema.noiseExposureProfiles.createdAt)),
+          db.select().from(schema.workerExposureAssignments).where(eq(schema.workerExposureAssignments.companyId, companyId)),
+          db.select().from(schema.audiometryRecords).where(eq(schema.audiometryRecords.companyId, companyId)).orderBy(desc(schema.audiometryRecords.scheduledDate)),
+          db.select().from(schema.pcaControlActions).where(eq(schema.pcaControlActions.companyId, companyId)).orderBy(desc(schema.pcaControlActions.plannedDate)),
+          db.select().from(schema.pcaPrograms).where(eq(schema.pcaPrograms.companyId, companyId)).orderBy(desc(schema.pcaPrograms.year)),
+          db.select().from(schema.workers).where(eq(schema.workers.companyId, companyId)),
+        ]);
+
+        const { default: PDFDocument } = await import('pdfkit');
+        const doc = new PDFDocument({ margin: PDF_CONFIG.MARGIN, size: PDF_CONFIG.PAGE_SIZE });
+        const subscription = await storage.getSubscriptionByCompany(companyId);
+        const trialStatus = getTrialStatus(subscription?.status || 'trial', subscription?.trialEnd || null, true, true);
+        setupTrialWatermarkOnAllPages(doc, trialStatus.requiresWatermark);
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', 'inline; filename="informe-conservacion-auditiva-pca.pdf"');
+        doc.pipe(res);
+
+        const logoBuffer = await loadCompanyLogo(company.logoUrl);
+        const signers = await getSignersForCompany(companyId, true);
+        const workersById = new Map(workers.map(worker => [worker.id, worker]));
+        const assignmentsByProfile = new Map<string, number>();
+        for (const assignment of assignments.filter(item => item.isActive === 1 && !item.endDate)) {
+          assignmentsByProfile.set(assignment.exposureProfileId, (assignmentsByProfile.get(assignment.exposureProfileId) || 0) + 1);
+        }
+        const completedAudiometries = audiometries.filter(record => record.status === 'realizada').length;
+        const alertAudiometries = audiometries.filter(record =>
+          record.status === 'vencida' || record.thresholdShiftDetected === 1 ||
+          ['trauma_leve', 'trauma_moderado', 'trauma_severo'].includes(record.overallResult || '')
+        ).length;
+        const implementedControls = controls.filter(control => ['implementada', 'verificada'].includes(control.status)).length;
+
+        let y = await addStandardHeader({
+          doc, company, logoBuffer,
+          documentTitle: 'INFORME INTEGRAL DE CONSERVACIÓN AUDITIVA (PCA)',
+          documentCode: 'SST-PCA-INF',
+        });
+        y = addSectionBar(doc, 'Resumen basado en registros', y);
+        y = addSimpleTable(doc,
+          ['Indicador', 'Valor registrado'],
+          [
+            ['Perfiles de exposición activos', String(profiles.filter(profile => profile.isActive === 1).length)],
+            ['Trabajadores con asignación activa', String(assignments.filter(item => item.isActive === 1 && !item.endDate).length)],
+            ['Audiometrías registradas / realizadas', `${audiometries.length} / ${completedAudiometries}`],
+            ['Registros que requieren atención', String(alertAudiometries)],
+            ['Acciones de control registradas / implementadas o verificadas', `${controls.length} / ${implementedControls}`],
+            ['Consolidados anuales PCA registrados', String(programs.length)],
+          ], { y, columnWidths: [280, 212] });
+
+        y = addSectionBar(doc, 'Perfiles de exposición a ruido', y);
+        if (profiles.length) {
+          y = addSimpleTable(doc,
+            ['Perfil', 'Área / cargo', 'dB(A)', 'Horas/día', 'Asignaciones activas', 'Límite'],
+            profiles.map(profile => [
+              profile.name,
+              `${profile.area}${profile.jobPosition ? ` / ${profile.jobPosition}` : ''}`,
+              String(profile.noiseLevel),
+              String(profile.exposureHoursDay),
+              String(assignmentsByProfile.get(profile.id) || 0),
+              profile.exceedsLimit === 1 ? 'Supera 85 dB(A)' : 'No marcado',
+            ]),
+            { y, columnWidths: [105, 105, 48, 55, 88, 91] });
+        } else {
+          y = addParagraph(doc, 'No hay perfiles de exposición a ruido registrados para esta empresa.', { y });
+        }
+
+        y = addSectionBar(doc, 'Audiometrías ocupacionales', y);
+        if (audiometries.length) {
+          y = addSimpleTable(doc,
+            ['Trabajador', 'Tipo', 'Programada', 'Estado', 'Resultado', 'Próxima'],
+            audiometries.map(record => [
+              workersById.get(record.workerId)?.name || 'Trabajador no disponible',
+              record.audiometryType,
+              formatDate(record.scheduledDate),
+              record.status,
+              record.overallResult || 'pendiente',
+              formatDate(record.nextAudiometryDate),
+            ]),
+            { y, columnWidths: [125, 68, 72, 62, 82, 83] });
+        } else {
+          y = addParagraph(doc, 'No hay audiometrías ocupacionales registradas para esta empresa.', { y });
+        }
+
+        y = addSectionBar(doc, 'Acciones de control', y);
+        if (controls.length) {
+          y = addSimpleTable(doc,
+            ['Tipo', 'Descripción', 'Responsable', 'Planeada', 'Estado'],
+            controls.map(control => [
+              control.controlType,
+              control.description,
+              control.responsible,
+              formatDate(control.plannedDate),
+              control.status,
+            ]),
+            { y, columnWidths: [70, 190, 90, 70, 72] });
+        } else {
+          y = addParagraph(doc, 'No hay acciones de control PCA registradas para esta empresa.', { y });
+        }
+
+        if (programs.length) {
+          y = addSectionBar(doc, 'Consolidados anuales registrados', y);
+          y = addSimpleTable(doc,
+            ['Año', 'Expuestos', 'Audiometrías', 'Controles', 'Estado'],
+            programs.map(program => [
+              String(program.year),
+              String(program.totalExposedWorkers || 0),
+              `${program.totalAudiometriesCompleted || 0}/${program.totalAudiometriesScheduled || 0}`,
+              `${program.totalControlsImplemented || 0}/${program.totalControlActions || 0}`,
+              program.status,
+            ]),
+            { y, columnWidths: [70, 90, 125, 125, 82] });
+        }
+        await addSignatureFooter(doc, signers, true);
+        await new Promise<void>((resolve, reject) => {
+          doc.once('end', resolve);
+          doc.once('error', reject);
+          doc.end();
+        });
+      });
+    } catch (error) {
+      handlePdfError(error, res, 'conservacion-auditiva');
+    }
+  });
+
+  const renderSafeRoutePdf = async (req: Request, res: Response, routeId?: string) => {
+    await withPdfSemaphore(async () => {
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) {
+        res.status(403).send('Empresa no identificada');
+        return;
+      }
+      const [company] = await db.select().from(schema.companies)
+        .where(eq(schema.companies.id, companyId)).limit(1);
+      if (!company) {
+        res.status(404).send('Empresa no encontrada');
+        return;
+      }
+      const routes = await db.select().from(schema.safeRoutes)
+        .where(routeId
+          ? and(eq(schema.safeRoutes.id, routeId), eq(schema.safeRoutes.companyId, companyId))
+          : eq(schema.safeRoutes.companyId, companyId))
+        .orderBy(desc(schema.safeRoutes.createdAt));
+      if (routeId && !routes.length) {
+        res.status(404).send('Ruta segura no encontrada');
+        return;
+      }
+
+      const { default: PDFDocument } = await import('pdfkit');
+      const doc = new PDFDocument({ margin: PDF_CONFIG.MARGIN, size: PDF_CONFIG.PAGE_SIZE });
+      const subscription = await storage.getSubscriptionByCompany(companyId);
+      const trialStatus = getTrialStatus(subscription?.status || 'trial', subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, trialStatus.requiresWatermark);
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `inline; filename="${routeId ? `ruta-segura-${routeId}` : 'rutas-seguras-pesv'}.pdf"`);
+      doc.pipe(res);
+
+      const logoBuffer = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(companyId, true);
+      let y = await addStandardHeader({
+        doc, company, logoBuffer,
+        documentTitle: routeId ? 'FICHA DE RUTA SEGURA - PESV' : 'INVENTARIO DE RUTAS SEGURAS - PESV',
+        documentCode: routeId ? 'PESV-RS-FICHA' : 'PESV-RS-INV',
+      });
+      if (!routeId) {
+        y = addSectionBar(doc, 'Rutas registradas', y);
+        if (routes.length) {
+          y = addSimpleTable(doc,
+            ['Ruta', 'Origen', 'Destino', 'Km', 'Tiempo', 'Tipo', 'Riesgo', 'Estado'],
+            routes.map(route => [
+              route.routeName, route.origin, route.destination, route.distance ? String(route.distance) : 'N/R',
+              route.estimatedTime ? `${route.estimatedTime} min` : 'N/R', route.routeType, route.riskLevel,
+              route.isActive === 1 ? 'Activa' : 'Inactiva',
+            ]),
+            { y, columnWidths: [100, 65, 65, 35, 50, 55, 55, 67] });
+        } else {
+          y = addParagraph(doc, 'No hay rutas seguras registradas para esta empresa.', { y });
+        }
+      } else {
+        const route = routes[0];
+        y = addSectionBar(doc, 'Identificación de la ruta', y);
+        y = addLabeledField(doc, 'Nombre', route.routeName, { y });
+        y = addLabeledField(doc, 'Origen - destino', `${route.origin} - ${route.destination}`, { y });
+        y = addLabeledField(doc, 'Tipo / riesgo', `${route.routeType} / ${route.riskLevel}`, { y });
+        y = addLabeledField(doc, 'Distancia / tiempo estimado', `${route.distance ?? 'N/R'} km / ${route.estimatedTime ?? 'N/R'} min`, { y });
+        y = addLabeledField(doc, 'Estado', route.isActive === 1 ? 'Activa' : 'Inactiva', { y });
+        const details: Array<[string, string | null]> = [
+          ['Puntos críticos', route.criticalPoints], ['Límites de velocidad', route.speedLimits],
+          ['Puntos de descanso', route.restStops], ['Contactos de emergencia', route.emergencyContacts],
+          ['Restricciones', route.restrictions], ['Observaciones', route.observations],
+        ];
+        for (const [title, value] of details) {
+          if (value) {
+            y = addSectionBar(doc, title, y);
+            y = addParagraph(doc, value, { y });
+          }
+        }
+      }
+      await addSignatureFooter(doc, signers, true);
+      await new Promise<void>((resolve, reject) => {
+        doc.once('end', resolve);
+        doc.once('error', reject);
+        doc.end();
+      });
+    });
+  };
+
+  // GET /api/pesv/rutas-seguras/pdf
+  app.get('/api/pesv/rutas-seguras/pdf', requireAuth, viewPermission, async (req, res) => {
+    try {
+      await renderSafeRoutePdf(req, res);
+    } catch (error) {
+      handlePdfError(error, res, 'pesv-rutas-seguras');
+    }
+  });
+
+  // GET /api/pesv/rutas-seguras/:id/pdf
+  app.get('/api/pesv/rutas-seguras/:id/pdf', requireAuth, viewPermission, async (req, res) => {
+    try {
+      await renderSafeRoutePdf(req, res, req.params.id);
+    } catch (error) {
+      handlePdfError(error, res, 'pesv-ruta-segura');
+    }
+  });
+
+  // GET /api/pesv/liderazgo/pdf?evaluacionId=:evaluacionId
+  app.get('/api/pesv/liderazgo/pdf', requireAuth, viewPermission, async (req: Request, res: Response) => {
+    try {
+      await withPdfSemaphore(async () => {
+        const companyId = getEffectiveCompanyId(req);
+        if (!companyId) {
+          res.status(403).send('Empresa no identificada');
+          return;
+        }
+        const [company] = await db.select().from(schema.companies)
+          .where(eq(schema.companies.id, companyId)).limit(1);
+        if (!company) {
+          res.status(404).send('Empresa no encontrada');
+          return;
+        }
+        const evaluationId = typeof req.query.evaluacionId === 'string' ? req.query.evaluacionId : undefined;
+        const evaluations = await db.select().from(schema.evaluacionesPesv)
+          .where(evaluationId
+            ? and(eq(schema.evaluacionesPesv.id, evaluationId), eq(schema.evaluacionesPesv.companyId, companyId))
+            : eq(schema.evaluacionesPesv.companyId, companyId))
+          .orderBy(desc(schema.evaluacionesPesv.anio), desc(schema.evaluacionesPesv.mes))
+          .limit(1);
+        if (evaluationId && !evaluations.length) {
+          res.status(404).send('Evaluación PESV no encontrada');
+          return;
+        }
+        const evaluation = evaluations[0];
+        const [designations, resources, committeeMembers, meetingMinutes, policies, responses, criteria, evidence] = await Promise.all([
+          db.select().from(schema.responsibleDesignations).where(eq(schema.responsibleDesignations.companyId, companyId)),
+          db.select().from(schema.resourceAllocations).where(eq(schema.resourceAllocations.companyId, companyId)),
+          db.select().from(schema.comiteIntegrantesPesv).where(eq(schema.comiteIntegrantesPesv.companyId, companyId)),
+          db.select().from(schema.actasComitePesv).where(eq(schema.actasComitePesv.companyId, companyId)),
+          db.select().from(schema.politicasSst).where(eq(schema.politicasSst.companyId, companyId)),
+          evaluation ? db.select().from(schema.respuestasPasosPesv).where(eq(schema.respuestasPasosPesv.evaluacionId, evaluation.id)) : Promise.resolve([]),
+          evaluation ? db.select().from(schema.pesvCriteriosVerificacion).where(eq(schema.pesvCriteriosVerificacion.evaluacionId, evaluation.id)) : Promise.resolve([]),
+          evaluation ? db.select().from(schema.pesvEvidenciasDocumentos).where(eq(schema.pesvEvidenciasDocumentos.evaluacionId, evaluation.id)) : Promise.resolve([]),
+        ]);
+
+        const { default: PDFDocument } = await import('pdfkit');
+        const doc = new PDFDocument({ margin: PDF_CONFIG.MARGIN, size: PDF_CONFIG.PAGE_SIZE });
+        const subscription = await storage.getSubscriptionByCompany(companyId);
+        const trialStatus = getTrialStatus(subscription?.status || 'trial', subscription?.trialEnd || null, true, true);
+        setupTrialWatermarkOnAllPages(doc, trialStatus.requiresWatermark);
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', 'inline; filename="informe-liderazgo-pesv.pdf"');
+        doc.pipe(res);
+        const logoBuffer = await loadCompanyLogo(company.logoUrl);
+        const signers = await getSignersForCompany(companyId, true);
+        const leadershipResponse = responses.find(response => response.pasoId === 'P04');
+        const leadershipCriteria = criteria.filter(item => item.pasoId === 'P04');
+        const leadershipEvidence = evidence.filter(item => item.pasoId === 'P04');
+
+        let y = await addStandardHeader({
+          doc, company, logoBuffer, documentTitle: 'INFORME DE LIDERAZGO Y COMPROMISO - PESV', documentCode: 'PESV-LID-INF',
+        });
+        y = addSectionBar(doc, 'Contexto de evaluación', y);
+        if (evaluation) {
+          y = addLabeledField(doc, 'Evaluación', `${evaluation.anio}-${String(evaluation.mes).padStart(2, '0')} (${evaluation.nivel})`, { y });
+          y = addLabeledField(doc, 'Estado de evaluación', evaluation.estado, { y });
+          y = addLabeledField(doc, 'Respuesta registrada para P04', leadershipResponse
+            ? leadershipResponse.noAplica === 1 ? 'No aplica' : leadershipResponse.cumple === 1 ? 'Cumple' : leadershipResponse.cumple === 0 ? 'No cumple' : 'Sin calificación'
+            : 'Sin respuesta registrada', { y });
+        } else {
+          y = addParagraph(doc, 'No existe una evaluación PESV registrada para la empresa; el informe presenta únicamente los registros de evidencia disponibles.', { y });
+        }
+
+        y = addSectionBar(doc, 'Resumen de registros de evidencia', y);
+        y = addSimpleTable(doc, ['Registro', 'Cantidad / estado real'], [
+          ['Políticas SST vigentes registradas', String(policies.filter(policy => policy.estado === 'vigente').length)],
+          ['Designaciones activas registradas', String(designations.filter(item => item.status === 'activo').length)],
+          ['Asignaciones de recursos registradas', String(resources.length)],
+          ['Integrantes activos de comité PESV', String(committeeMembers.filter(item => item.estado === 'activo').length)],
+          ['Actas de comité completadas o aprobadas', String(meetingMinutes.filter(item => ['completada', 'aprobada'].includes(item.estado)).length)],
+          ['Criterios P04 verificados', `${leadershipCriteria.filter(item => item.verificado === 1).length}/${leadershipCriteria.length}`],
+          ['Evidencias documentales P04 adjuntas', String(leadershipEvidence.filter(item => !!item.archivoUrl).length)],
+        ], { y, columnWidths: [300, 192] });
+        y = addParagraph(doc, 'Este resumen no infiere cumplimiento a partir de la existencia de registros: la calificación mostrada corresponde exclusivamente a la respuesta P04 de la evaluación seleccionada.', { y, fontSize: 8 });
+
+        if (leadershipCriteria.length) {
+          y = addSectionBar(doc, 'Criterios verificados en P04', y);
+          y = addSimpleTable(doc, ['Criterio', 'Verificado', 'Fecha', 'Observación'],
+            leadershipCriteria.map(item => [item.criterioTexto, item.verificado === 1 ? 'Sí' : 'No', formatDate(item.fechaVerificacion), item.observacion || '']),
+            { y, columnWidths: [250, 65, 75, 102] });
+        }
+        if (leadershipEvidence.length) {
+          y = addSectionBar(doc, 'Evidencias documentales P04', y);
+          y = addSimpleTable(doc, ['Evidencia requerida', 'Archivo adjunto', 'Fecha de carga'],
+            leadershipEvidence.map(item => [item.evidenciaTexto, item.archivoNombre || 'Sin archivo adjunto', formatDate(item.fechaSubida)]),
+            { y, columnWidths: [240, 160, 92] });
+        }
+        await addSignatureFooter(doc, signers, true);
+        await new Promise<void>((resolve, reject) => {
+          doc.once('end', resolve);
+          doc.once('error', reject);
+          doc.end();
+        });
+      });
+    } catch (error) {
+      handlePdfError(error, res, 'pesv-liderazgo');
     }
   });
 }

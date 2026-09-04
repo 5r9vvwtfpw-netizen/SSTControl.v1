@@ -38,6 +38,7 @@ import { registerRiesgosVinculacionRoutes } from "./routes/riesgos-vinculacion";
 import { registerAdminPortalsRoutes } from "./routes/admin-portals";
 import { registerNgoWebhookRoutes } from "./routes/ngo-webhook";
 import { registerCompanySedesRoutes } from "./routes/company-sedes";
+import { registerMissingSstReportsRoutes } from "./routes/missing-sst-reports";
 import { registerPropuestaComercialRoutes } from "./routes/propuesta-comercial";
 import { registerAlianzaConsultoresRoutes } from "./routes/alianza-consultores";
 import { registerConfidencialidadAsistentesRoutes } from "./routes/confidencialidad-asistentes";
@@ -21807,6 +21808,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     }
   });
+
+  // Register exact report routes before the generic /api/reports/:reportType
+  // handler so "mensual" and "rendicion-cuentas" are not intercepted.
+  registerMissingSstReportsRoutes(app, requireAuth);
 
   // Reports generation routes
   app.get("/api/reports/:reportType", requireAuth, async (req, res) => {

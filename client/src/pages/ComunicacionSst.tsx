@@ -36,6 +36,7 @@ import { AutomationAssistant, PlantillaInfo } from "@/components/AutomationAssis
 import { getEstandarByCodigo } from "@/data/planear-normativa";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
+import { downloadAuthenticatedReport } from "@/lib/download-report";
 
 interface PrefilledFormData {
   tipo: string;
@@ -1292,9 +1293,26 @@ function EnviarComunicacionTab({ prefilledData, onPrefilledDataApplied }: Enviar
 // ==================== TAB 3: HISTORIAL DE COMUNICACIONES ====================
 
 function HistorialComunicacionesTab() {
+  const { toast } = useToast();
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const { data: comunicaciones = [], isLoading } = useQuery<ComunicacionSstType[]>({
     queryKey: ["/api/comunicacion-sst/comunicaciones"],
   });
+
+  const handleDownloadPdf = async (comunicacion: ComunicacionSstType) => {
+    setDownloadingId(comunicacion.id);
+    try {
+      await downloadAuthenticatedReport({
+        url: `/api/comunicaciones-sst/${comunicacion.id}/pdf`,
+        filename: `comunicacion-sst-${comunicacion.id}.pdf`,
+      });
+      toast({ title: "PDF descargado", description: "La comunicación se descargó correctamente." });
+    } catch (error: any) {
+      toast({ title: "Error al descargar PDF", description: error.message, variant: "destructive" });
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   if (isLoading) {
     return <Card><CardContent className="py-8 text-center">Cargando...</CardContent></Card>;
@@ -1330,6 +1348,18 @@ function HistorialComunicacionesTab() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm whitespace-pre-wrap">{com.contenido}</p>
+                  <div className="mt-3 pt-3 border-t flex justify-end">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleDownloadPdf(com)}
+                      disabled={downloadingId === com.id}
+                      data-testid={`button-download-comunicacion-${com.id}`}
+                    >
+                      <FileText className="h-4 w-4 mr-1" />
+                      {downloadingId === com.id ? "Descargando..." : "Descargar PDF"}
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             ))}

@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, Search, Pencil, Trash2, ArrowLeft, Route, Zap, Loader2 } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, ArrowLeft, Route, Zap, Loader2, FileText } from "lucide-react";
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { SafeRoute, insertSafeRouteSchema } from "@shared/schema";
@@ -23,6 +23,7 @@ import { hasCompanyAdminAccess, canWrite } from "@shared/permissions";
 import { BackToPesvEvaluationButton } from "@/components/BackToPesvEvaluationButton";
 import { Link } from "wouter";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
+import { downloadAuthenticatedReport } from "@/lib/download-report";
 
 interface RutaPredefinida {
   routeName: string;
@@ -803,6 +804,7 @@ export default function PesvRutasSeguras() {
   const [editingRoute, setEditingRoute] = useState<SafeRoute | null>(null);
   const [confirmGenerateDialogOpen, setConfirmGenerateDialogOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [downloadingRouteId, setDownloadingRouteId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     companyId: "",
     routeName: "",
@@ -825,6 +827,21 @@ export default function PesvRutasSeguras() {
   const { data: safeRoutes = [], isLoading: routesLoading } = useQuery<SafeRoute[]>({
     queryKey: ["/api/safe-routes"],
   });
+
+  const handleDownloadRoutePdf = async (route: SafeRoute) => {
+    setDownloadingRouteId(route.id);
+    try {
+      await downloadAuthenticatedReport({
+        url: `/api/pesv/rutas-seguras/${route.id}/pdf`,
+        filename: `ruta-segura-${route.id}.pdf`,
+      });
+      toast({ title: "PDF descargado", description: "La ruta segura se descargó correctamente." });
+    } catch (error: any) {
+      toast({ title: "Error al descargar PDF", description: error.message, variant: "destructive" });
+    } finally {
+      setDownloadingRouteId(null);
+    }
+  };
 
   const createRouteMutation = useMutation({
     mutationFn: async (data: z.infer<typeof insertSafeRouteSchema>) => {
@@ -1394,7 +1411,7 @@ export default function PesvRutasSeguras() {
               <TableHead data-testid="header-type">Tipo</TableHead>
               <TableHead data-testid="header-risk-level">Nivel Riesgo</TableHead>
               <TableHead data-testid="header-status">Estado</TableHead>
-              {isAdmin && <TableHead data-testid="header-actions">Acciones</TableHead>}
+              <TableHead data-testid="header-actions">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -1424,18 +1441,23 @@ export default function PesvRutasSeguras() {
                   <TableCell data-testid={`text-type-${route.id}`}>{getRouteTypeLabel(route.routeType)}</TableCell>
                   <TableCell data-testid={`text-risk-level-${route.id}`}>{getRiskLevelBadge(route.riskLevel)}</TableCell>
                   <TableCell data-testid={`text-status-${route.id}`}>{getStatusLabel(route.isActive)}</TableCell>
-                  {isAdmin && (
-                    <TableCell>
-                      <div className="flex gap-2">
+                   <TableCell>
+                     <div className="flex gap-2">
+                       <Button size="icon" variant="ghost" onClick={() => handleDownloadRoutePdf(route)} disabled={downloadingRouteId === route.id} data-testid={`button-download-${route.id}`}>
+                         {downloadingRouteId === route.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+                       </Button>
+                       {isAdmin && (
+                         <>
                         <Button size="icon" variant="ghost" onClick={() => handleEdit(route)} data-testid={`button-edit-${route.id}`}>
                           <Pencil className="h-4 w-4" />
                         </Button>
                         <Button size="icon" variant="ghost" onClick={() => handleDelete(route.id)} data-testid={`button-delete-${route.id}`}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
-                      </div>
-                    </TableCell>
-                  )}
+                         </>
+                       )}
+                     </div>
+                   </TableCell>
                 </TableRow>
               ))
             )}

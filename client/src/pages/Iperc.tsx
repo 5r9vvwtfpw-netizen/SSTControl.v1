@@ -40,6 +40,7 @@ import {
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
 import { OrigenPesvBanner } from "@/components/OrigenPesvBanner";
+import { downloadAuthenticatedReport } from "@/lib/download-report";
 
 const normativaIperc = [
   {
@@ -98,6 +99,7 @@ export default function Iperc() {
   } | null>(null);
   const [substanceProcessed, setSubstanceProcessed] = useState(false);
   const [peligroPrefillValues, setPeligroPrefillValues] = useState<Record<string, any> | null>(null);
+  const [downloadingMatrizId, setDownloadingMatrizId] = useState<string | null>(null);
   const isAdmin = user?.role ? hasGlobalAccess(user.role) : false;
 
   // Leer parámetros de URL si viene desde Sustancias Químicas
@@ -289,6 +291,22 @@ export default function Iperc() {
   const openHeatmap = (matrizId: string) => {
     setSelectedMatrizId(matrizId);
     setHeatmapOpen(true);
+  };
+
+  const handleDownloadPdf = async (matriz: MatrizIperc, event: React.MouseEvent) => {
+    event.stopPropagation();
+    setDownloadingMatrizId(matriz.id);
+    try {
+      await downloadAuthenticatedReport({
+        url: `/api/matrices-iperc/${matriz.id}/pdf`,
+        filename: `matriz-iperc-${matriz.codigo || matriz.id}.pdf`,
+      });
+      toast({ title: "PDF descargado", description: "La matriz IPERC se descargó correctamente." });
+    } catch (error: any) {
+      toast({ title: "Error al descargar PDF", description: error.message, variant: "destructive" });
+    } finally {
+      setDownloadingMatrizId(null);
+    }
   };
 
   const openPeligroDialog = (peligro?: PeligroIperc) => {
@@ -941,7 +959,17 @@ export default function Iperc() {
                     <span className="font-medium truncate ml-2">{matriz.responsableEvaluacion}</span>
                   </div>
                 </div>
-                <div className="mt-4 pt-3 border-t flex justify-end">
+                <div className="mt-4 pt-3 border-t flex justify-end gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={(event) => handleDownloadPdf(matriz, event)}
+                    disabled={downloadingMatrizId === matriz.id}
+                    data-testid={`button-download-matriz-${matriz.id}`}
+                  >
+                    <FileText className="h-4 w-4 mr-1" />
+                    {downloadingMatrizId === matriz.id ? "Descargando..." : "PDF"}
+                  </Button>
                   <Button 
                     size="sm" 
                     variant="outline"
