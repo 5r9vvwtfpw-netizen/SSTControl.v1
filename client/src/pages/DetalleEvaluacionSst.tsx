@@ -704,7 +704,7 @@ export default function DetalleEvaluacionSst() {
 
   const totalEstandares = estandares.length;
   const estandaresEvaluados = respuestas.filter(
-    respuesta => respuesta.cumple === 1 || respuesta.noAplica === 1
+    respuesta => respuesta.lastVerifiedAt && respuesta.requiresRefresh === 0
   ).length;
   const progreso = totalEstandares > 0 ? Math.round((estandaresEvaluados / totalEstandares) * 100) : 0;
   

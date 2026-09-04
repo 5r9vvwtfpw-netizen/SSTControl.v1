@@ -6781,10 +6781,14 @@ export class DbStorage implements IStorage {
       nivelCumplimiento = 'aceptable';
     }
 
-    // Verificar si todos los estándares aplicables tienen respuesta para activación automática
+    // Las filas se inicializan al crear la evaluación para alimentar el plan de
+    // mejora. Solo una respuesta guardada/verificada por el usuario representa
+    // un estándar realmente gestionado.
     const totalEstandaresAplicables = estandaresAplicables.length;
-    const totalRespuestasRegistradas = respuestas.length;
-    const todosEstandaresRespondidos = totalRespuestasRegistradas >= totalEstandaresAplicables;
+    const totalRespuestasVerificadas = respuestas.filter(
+      respuesta => respuesta.lastVerifiedAt && respuesta.requiresRefresh === 0
+    ).length;
+    const todosEstandaresRespondidos = totalRespuestasVerificadas >= totalEstandaresAplicables;
     
     // Determinar si debe activarse automáticamente
     // Si todos los estándares tienen respuesta Y estado es "en-progreso", cambiar a "completada"

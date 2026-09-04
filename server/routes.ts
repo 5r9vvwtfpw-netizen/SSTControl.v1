@@ -28268,8 +28268,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         companyId = getEffectiveCompanyId(req);
       }
       const validatedData = insertRespuestaEstandarSchema.partial().parse(req.body);
+      const verifiedData = {
+        ...validatedData,
+        lastVerifiedAt: new Date(),
+        requiresRefresh: 0,
+      };
       
-      const respuesta = await storage.updateRespuestaEstandar(req.params.id, validatedData, companyId);
+      const respuesta = await storage.updateRespuestaEstandar(req.params.id, verifiedData, companyId);
       
       if (!respuesta) {
         return res.status(404).send('Respuesta no encontrada');
@@ -51227,6 +51232,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
           companyId,
           nivel,
           numeroVehiculos,
+          estado: "en-progreso",
         })
         .returning();
       
