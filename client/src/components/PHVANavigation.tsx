@@ -134,6 +134,7 @@ const phvaMenus: Record<PHVASection, MenuGroup[]> = {
       title: "Paneles Ejecutivos",
       items: [
         { label: "Panel VERIFICAR - Indicadores", path: "/dashboard-verificar" },
+        { label: "Informes y Reportes", path: "/informes" },
       ],
     },
   ],
