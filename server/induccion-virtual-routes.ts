@@ -774,6 +774,13 @@ export function registerInduccionVirtualRoutes(app: Express) {
         return res.status(400).json({ error: "Sesión no válida" });
       }
 
+      if (new Date(sesion.fechaExpiracion).getTime() <= Date.now()) {
+        await db.update(schema.sesionesInduccionVirtual)
+          .set({ estado: "expirada", updatedAt: new Date() })
+          .where(eq(schema.sesionesInduccionVirtual.id, sesion.id));
+        return res.status(410).json({ error: "La sesión de inducción ha expirado" });
+      }
+
       await db.update(schema.sesionesInduccionVirtual)
         .set({
           contenidosVistos: JSON.stringify(contenidosVistos || []),
@@ -806,6 +813,21 @@ export function registerInduccionVirtualRoutes(app: Express) {
         return res.status(400).json({ error: "Esta inducción ya fue completada" });
       }
 
+      if (sesion.estado === "expirada" || new Date(sesion.fechaExpiracion).getTime() <= Date.now()) {
+        await db.update(schema.sesionesInduccionVirtual)
+          .set({ estado: "expirada", updatedAt: new Date() })
+          .where(eq(schema.sesionesInduccionVirtual.id, sesion.id));
+        return res.status(410).json({ error: "La sesión de inducción ha expirado" });
+      }
+
+      if (
+        typeof firmaDigital !== "string" ||
+        !/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(firmaDigital) ||
+        firmaDigital.length > 2_000_000
+      ) {
+        return res.status(400).json({ error: "La firma digital es obligatoria y debe ser una imagen PNG válida" });
+      }
+
       const preguntas = await db.select()
         .from(schema.preguntasInduccion)
         .where(and(
@@ -816,6 +838,13 @@ export function registerInduccionVirtualRoutes(app: Express) {
 
       let correctas = 0;
       const totalPreguntas = preguntas.length;
+
+      const faltantes = preguntas.filter(
+        (pregunta) => !respuestas || !Object.prototype.hasOwnProperty.call(respuestas, pregunta.id)
+      );
+      if (faltantes.length > 0) {
+        return res.status(400).json({ error: "Debe responder todas las preguntas de la evaluación" });
+      }
 
       for (const pregunta of preguntas) {
         const respuestaUsuario = respuestas?.[pregunta.id];
@@ -1127,11 +1156,30 @@ export function registerInduccionVirtualRoutes(app: Express) {
 
   app.get("/api/portal/mis-inducciones-virtuales", async (req: Request, res: Response) => {
     try {
-      if (!req.isAuthenticated() || !(req.user as any)?.workerId) {
+      if (!req.isAuthenticated()) {
         return res.status(200).json([]);
       }
       
       const user = req.user as any;
+      if (!user.companyId) {
+        return res.status(200).json([]);
+      }
+
+      let workerId = user.workerId as string | undefined;
+      if (!workerId && user.email) {
+        const [worker] = await db.select({ id: schema.workers.id })
+          .from(schema.workers)
+          .where(and(
+            eq(schema.workers.email, user.email),
+            eq(schema.workers.companyId, user.companyId)
+          ))
+          .limit(1);
+        workerId = worker?.id;
+      }
+
+      if (!workerId) {
+        return res.status(200).json([]);
+      }
       
       const sesiones = await db.select({
         id: schema.sesionesInduccionVirtual.id,
@@ -1147,7 +1195,7 @@ export function registerInduccionVirtualRoutes(app: Express) {
       })
         .from(schema.sesionesInduccionVirtual)
         .where(and(
-          eq(schema.sesionesInduccionVirtual.workerId, user.workerId),
+          eq(schema.sesionesInduccionVirtual.workerId, workerId),
           eq(schema.sesionesInduccionVirtual.companyId, user.companyId),
           sql`${schema.sesionesInduccionVirtual.tipoInduccion} IN ('induccion', 'reinduccion')`
         ))
@@ -1166,11 +1214,30 @@ export function registerInduccionVirtualRoutes(app: Express) {
 
   app.get("/api/portal/mis-inducciones-pesv", async (req: Request, res: Response) => {
     try {
-      if (!req.isAuthenticated() || !(req.user as any)?.workerId) {
+      if (!req.isAuthenticated()) {
         return res.status(200).json([]);
       }
       
       const user = req.user as any;
+      if (!user.companyId) {
+        return res.status(200).json([]);
+      }
+
+      let workerId = user.workerId as string | undefined;
+      if (!workerId && user.email) {
+        const [worker] = await db.select({ id: schema.workers.id })
+          .from(schema.workers)
+          .where(and(
+            eq(schema.workers.email, user.email),
+            eq(schema.workers.companyId, user.companyId)
+          ))
+          .limit(1);
+        workerId = worker?.id;
+      }
+
+      if (!workerId) {
+        return res.status(200).json([]);
+      }
       
       const sesiones = await db.select({
         id: schema.sesionesInduccionVirtual.id,
@@ -1186,7 +1253,7 @@ export function registerInduccionVirtualRoutes(app: Express) {
       })
         .from(schema.sesionesInduccionVirtual)
         .where(and(
-          eq(schema.sesionesInduccionVirtual.workerId, user.workerId),
+          eq(schema.sesionesInduccionVirtual.workerId, workerId),
           eq(schema.sesionesInduccionVirtual.companyId, user.companyId),
           eq(schema.sesionesInduccionVirtual.tipoInduccion, "pesv")
         ))

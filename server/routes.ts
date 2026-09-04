@@ -38106,17 +38106,23 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   app.get("/api/portal/mis-inducciones", requireAuth, async (req, res) => {
     try {
       const user = req.user!;
-      
-      if (!user.workerId) {
+
+      if (!user.companyId) {
         return res.status(200).json([]);
       }
-      
-      if (!user.companyId) {
+
+      let workerId = user.workerId;
+      if (!workerId && user.email) {
+        const worker = await storage.getWorkerByEmail(user.email, user.companyId);
+        workerId = worker?.id ?? null;
+      }
+
+      if (!workerId) {
         return res.status(200).json([]);
       }
       
       // Buscar registros de inducción del trabajador
-      const registros = await storage.getRegistrosInduccionByWorker(user.workerId, user.companyId);
+      const registros = await storage.getRegistrosInduccionByWorker(workerId, user.companyId);
       return res.json(registros);
     } catch (error: any) {
       console.error("Error fetching worker inductions:", error);
@@ -38133,7 +38139,13 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(403).json({ error: "Usuario no asociado a una empresa" });
       }
 
-      if (!user.workerId) {
+      let workerId = user.workerId;
+      if (!workerId && user.email) {
+        const worker = await storage.getWorkerByEmail(user.email, companyId);
+        workerId = worker?.id ?? null;
+      }
+
+      if (!workerId) {
         return res.status(404).json({ error: "Usuario no asociado a un trabajador" });
       }
 
@@ -38153,10 +38165,13 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         estado: string;
         asistenciaId: string;
         source: 'programa' | 'legacy';
+        contentType?: string | null;
+        contentUrl?: string | null;
+        contentText?: string | null;
       }> = [];
       
       // === Source 1: Programa de Capacitación (capacitacion_eventos + capacitacion_asistentes) ===
-      const misAsistencias = await storage.getAsistentesByWorker(user.workerId);
+      const misAsistencias = await storage.getAsistentesByWorker(workerId);
       const eventos = await storage.getCapacitacionEventos(companyId);
       const eventosMap = new Map(eventos.map(e => [e.id, e]));
       
@@ -38179,12 +38194,15 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
             estado: asistencia.estado,
             asistenciaId: asistencia.id,
             source: 'programa',
+            contentType: evento.archivoUrl ? 'archivo' : 'presencial',
+            contentUrl: evento.archivoUrl || null,
+            contentText: evento.descripcionCurso || null,
           });
         }
       }
       
       // === Source 2: Sistema Legacy (trainings + training_attendees) ===
-      const legacyAttendees = await storage.getTrainingAttendeesByWorker(user.workerId);
+      const legacyAttendees = await storage.getTrainingAttendeesByWorker(workerId);
       const legacyTrainings = await storage.getTrainings(companyId);
       const trainingsMap = new Map(legacyTrainings.map(t => [t.id, t]));
       
@@ -38209,6 +38227,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
             estado: attendee.attended ? 'asistio' : (attendee.confirmed ? 'confirmado' : 'invitado'),
             asistenciaId: attendee.id,
             source: 'legacy',
+            contentType: training.contentType ?? 'presencial',
+            contentUrl: training.contentUrl ?? null,
+            contentText: training.contentText ?? null,
           });
         }
       }
@@ -38217,7 +38238,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       // === Source 3: PESV Road Safety Trainings (road_safety_trainings + road_safety_attendees) ===
       // First find if worker is associated with a driver record
       const allDrivers = await storage.getDrivers(companyId);
-      const myDriver = allDrivers.find(d => d.workerId === user.workerId);
+      const myDriver = allDrivers.find(d => d.workerId === workerId);
       
       if (myDriver) {
         const pesvTrainings = await storage.getRoadSafetyTrainings(companyId);
@@ -38243,6 +38264,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
               estado: myAttendance.attended === 1 ? 'asistio' : 'invitado',
               asistenciaId: myAttendance.id,
               source: 'programa',
+              contentType: training.contentType ?? 'presencial',
+              contentUrl: training.contentUrl ?? null,
+              contentText: training.contentText ?? null,
             });
           }
         }
@@ -38261,7 +38285,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
             confirmedAt: roadSafetyWorkerAttendees.confirmedAt,
           })
           .from(roadSafetyWorkerAttendees)
-          .where(eq(roadSafetyWorkerAttendees.workerId, user.workerId));
+          .where(eq(roadSafetyWorkerAttendees.workerId, workerId));
 
         if (workerInvitations.length > 0) {
           const pesvTrainings = await storage.getRoadSafetyTrainings(companyId);
@@ -38291,6 +38315,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
               estado: inv.attended ? 'asistio' : (inv.confirmedAt ? 'confirmado' : 'invitado'),
               asistenciaId: inv.id,
               source: 'programa',
+              contentType: training.contentType ?? 'presencial',
+              contentUrl: training.contentUrl ?? null,
+              contentText: training.contentText ?? null,
             });
             existingTrainingIds.add(training.id);
           }
@@ -38318,7 +38345,13 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(403).json({ error: "Usuario no asociado a una empresa" });
       }
 
-      if (!user.workerId) {
+      let workerId = user.workerId;
+      if (!workerId && user.email) {
+        const worker = await storage.getWorkerByEmail(user.email, companyId);
+        workerId = worker?.id ?? null;
+      }
+
+      if (!workerId) {
         return res.status(404).json({ error: "Usuario no asociado a un trabajador" });
       }
 
@@ -38327,7 +38360,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       
       if (asistencia) {
         // Nuevo sistema de programa de capacitación
-        if (asistencia.workerId !== user.workerId) {
+        if (asistencia.workerId !== workerId) {
           return res.status(403).json({ error: "No tiene permiso para confirmar esta asistencia" });
         }
         
@@ -38344,7 +38377,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         // Notificar al administrador de la empresa
         try {
           const [worker, evento] = await Promise.all([
-            storage.getWorker(user.workerId!, companyId!),
+            storage.getWorker(workerId, companyId!),
             storage.getCapacitacionEvento(asistencia.eventoId, companyId!),
           ]);
           let adminUser = await storage.getCompanySuperusuario(companyId!);
@@ -38386,7 +38419,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const legacyAttendee = await storage.getTrainingAttendeeById(asistenciaId);
       
       if (legacyAttendee) {
-        if (legacyAttendee.workerId !== user.workerId) {
+        if (legacyAttendee.workerId !== workerId) {
           return res.status(403).json({ error: "No tiene permiso para confirmar esta asistencia" });
         }
         
@@ -38404,7 +38437,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         // Notificar al administrador de la empresa
         try {
           const [worker, training] = await Promise.all([
-            storage.getWorker(user.workerId!, companyId!),
+            storage.getWorker(workerId, companyId!),
             storage.getTraining(legacyAttendee.trainingId, companyId!),
           ]);
           let adminUser = await storage.getCompanySuperusuario(companyId!);

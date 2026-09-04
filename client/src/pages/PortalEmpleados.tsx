@@ -2537,6 +2537,18 @@ function MisCapacitacionesTab() {
                               Completar Formulario
                             </a>
                           )}
+                          {cap.contentType === "archivo" && cap.contentUrl && (
+                            <a
+                              href={cap.contentUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 bg-slate-700 text-white text-sm font-semibold px-4 py-2 rounded-md hover:bg-slate-800"
+                              data-testid={`link-archivo-sst-${cap.asistenciaId}`}
+                            >
+                              <FileText className="h-4 w-4" />
+                              Ver material
+                            </a>
+                          )}
                           {cap.contentType === "texto" && cap.contentText && (
                             <div className="bg-muted/40 rounded-md p-3 text-sm text-foreground whitespace-pre-wrap" data-testid={`text-contenido-sst-${cap.asistenciaId}`}>
                               {cap.contentText}
@@ -2896,6 +2908,16 @@ function InduccionesVirtualesTab() {
                           Completada: {sesion.fechaFinalizacion ? new Date(sesion.fechaFinalizacion).toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' }) : '-'}
                         </p>
                       </div>
+                      <a
+                        href={`/api/sesiones-induccion-virtual/${sesion.id}/pdf`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <Button variant="outline" data-testid={`button-constancia-induccion-${sesion.id}`}>
+                          <Download className="h-4 w-4 mr-2" />
+                          Descargar constancia
+                        </Button>
+                      </a>
                     </div>
                   </CardContent>
                 </Card>

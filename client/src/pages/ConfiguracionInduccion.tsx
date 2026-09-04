@@ -89,11 +89,11 @@ export default function ConfiguracionInduccion() {
   const [selectedWorker, setSelectedWorker] = useState("");
 
   const { data: contenidos = [], isLoading: loadingContenidos } = useQuery<ContenidoInduccion[]>({
-    queryKey: ["/api/contenidos-induccion"],
+    queryKey: [`/api/contenidos-induccion?tipo=${tipoInduccion}`],
   });
 
   const { data: preguntas = [], isLoading: loadingPreguntas } = useQuery<PreguntaInduccion[]>({
-    queryKey: ["/api/preguntas-induccion"],
+    queryKey: [`/api/preguntas-induccion?tipo=${tipoInduccion}`],
   });
 
   const { data: sesiones = [] } = useQuery<SesionInduccionVirtual[]>({
@@ -106,11 +106,14 @@ export default function ConfiguracionInduccion() {
 
   const createContenidoMutation = useMutation({
     mutationFn: async (data: ContenidoFormData) => {
-      const res = await apiRequest("POST", "/api/contenidos-induccion", data);
+      const res = await apiRequest("POST", "/api/contenidos-induccion", {
+        ...data,
+        tipoInduccion,
+      });
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/contenidos-induccion"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/contenidos-induccion?tipo=${tipoInduccion}`] });
       setContenidoDialogOpen(false);
       setContenidoForm(defaultContenido);
       toast({ title: "Contenido creado", description: "El contenido de inducción se ha creado exitosamente" });
@@ -126,7 +129,7 @@ export default function ConfiguracionInduccion() {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/contenidos-induccion"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/contenidos-induccion?tipo=${tipoInduccion}`] });
       setContenidoDialogOpen(false);
       setEditingContenido(null);
       setContenidoForm(defaultContenido);
@@ -142,7 +145,7 @@ export default function ConfiguracionInduccion() {
       await apiRequest("DELETE", `/api/contenidos-induccion/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/contenidos-induccion"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/contenidos-induccion?tipo=${tipoInduccion}`] });
       setDeleteDialogOpen(false);
       setItemToDelete(null);
       toast({ title: "Contenido eliminado", description: "El contenido se ha eliminado exitosamente" });
@@ -157,11 +160,12 @@ export default function ConfiguracionInduccion() {
       const res = await apiRequest("POST", "/api/preguntas-induccion", {
         ...data,
         opciones: JSON.stringify(data.opciones),
+        tipoInduccion,
       });
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/preguntas-induccion"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/preguntas-induccion?tipo=${tipoInduccion}`] });
       setPreguntaDialogOpen(false);
       setPreguntaForm(defaultPregunta);
       toast({ title: "Pregunta creada", description: "La pregunta de evaluación se ha creado exitosamente" });
@@ -180,7 +184,7 @@ export default function ConfiguracionInduccion() {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/preguntas-induccion"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/preguntas-induccion?tipo=${tipoInduccion}`] });
       setPreguntaDialogOpen(false);
       setEditingPregunta(null);
       setPreguntaForm(defaultPregunta);
@@ -196,7 +200,7 @@ export default function ConfiguracionInduccion() {
       await apiRequest("DELETE", `/api/preguntas-induccion/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/preguntas-induccion"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/preguntas-induccion?tipo=${tipoInduccion}`] });
       setDeleteDialogOpen(false);
       setItemToDelete(null);
       toast({ title: "Pregunta eliminada", description: "La pregunta se ha eliminado exitosamente" });
@@ -246,7 +250,7 @@ export default function ConfiguracionInduccion() {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/contenidos-induccion"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/contenidos-induccion?tipo=${tipoInduccion}`] });
     },
     onError: (error: Error) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -259,7 +263,7 @@ export default function ConfiguracionInduccion() {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/preguntas-induccion"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/preguntas-induccion?tipo=${tipoInduccion}`] });
     },
     onError: (error: Error) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -282,8 +286,8 @@ export default function ConfiguracionInduccion() {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/contenidos-induccion"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/preguntas-induccion"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/contenidos-induccion?tipo=${tipoInduccion}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/preguntas-induccion?tipo=${tipoInduccion}`] });
       setPlantillaDialogOpen(false);
       toast({
         title: "Plantilla cargada exitosamente",
