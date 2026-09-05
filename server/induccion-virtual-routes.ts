@@ -95,19 +95,6 @@ async function buildSessionSnapshot(companyId: string, tipoInduccion: InductionT
   };
 }
 
-function getMissingEvaluationMessage(
-  snapshot: InductionSessionSnapshot,
-  tipoInduccion: InductionType
-): string | null {
-  if (snapshot.preguntaIds.length > 0) return null;
-  const nombre = tipoInduccion === "pesv"
-    ? "la inducción PESV"
-    : tipoInduccion === "reinduccion"
-      ? "la reinducción"
-      : "la inducción";
-  return `No se puede asignar ${nombre}: debe configurar y activar al menos una pregunta de evaluación.`;
-}
-
 async function getSessionContents(sesion: schema.SesionInduccionVirtual) {
   const snapshot = parseSessionSnapshot(sesion.datosAdicionales);
   if (snapshot) {
@@ -791,10 +778,6 @@ export function registerInduccionVirtualRoutes(app: Express) {
       const fechaExpiracion = new Date();
       fechaExpiracion.setDate(fechaExpiracion.getDate() + 7);
       const sessionSnapshot = await buildSessionSnapshot(companyId, tipoInduccion);
-      const missingEvaluationMessage = getMissingEvaluationMessage(sessionSnapshot, tipoInduccion);
-      if (missingEvaluationMessage) {
-        return res.status(409).json({ error: missingEvaluationMessage });
-      }
 
       const [sesion] = await db.insert(schema.sesionesInduccionVirtual)
         .values({
@@ -866,10 +849,6 @@ export function registerInduccionVirtualRoutes(app: Express) {
       const [company] = await db.select().from(schema.companies).where(eq(schema.companies.id, companyId));
       const baseUrl = process.env.REPLIT_DEPLOYMENT_URL || process.env.APP_URL || 'https://sst-colombia.com';
       const sessionSnapshot = await buildSessionSnapshot(companyId, tipoInduccion);
-      const missingEvaluationMessage = getMissingEvaluationMessage(sessionSnapshot, tipoInduccion);
-      if (missingEvaluationMessage) {
-        return res.status(409).json({ error: missingEvaluationMessage });
-      }
 
       let enviados = 0;
       const errores: string[] = [];
