@@ -8,3 +8,7 @@ The AI assistant in `server/chatbot.ts` (APP_KNOWLEDGE_BASE) has no hardcoded in
 **Why:** User complained the bot gave "generic answers, not what's actually in the form." Root cause: knowledge base described the *concept* of the standard, not the *actual form fields* (exact dropdown option lists, field names, required/optional).
 
 **How to apply:** When fixing/improving a chatbot answer about "how to fill out X standard," don't just tighten the prose — open the real form component (e.g. via explore) and copy the exact field names, dropdown option lists, and which fields are required into the knowledge-base entry for that standard. Verify afterward with a direct POST to `/api/chatbot/ask` (SSE-streamed response, parse `data: {...}` lines) authenticated via `/api/login` (admin/admin123 dev seed account) rather than relying only on e2e browser tests, which can truncate long responses and give false negatives on minor wording.
+
+Short noun-only queries about a role or requirement (for example, “líder del PESV”) should default to the actionable compliance workflow when the platform has one: state what document to create, the exact standard, the real button/route sequence, required information, and how to close the standard. Definitions and lists of duties are secondary unless explicitly requested.
+
+**Why:** Users commonly type the name of the requirement expecting instructions to complete it; a technically correct role description is still an incorrect product answer if it omits the acta and standard workflow.
