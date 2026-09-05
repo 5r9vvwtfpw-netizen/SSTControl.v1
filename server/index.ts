@@ -20,6 +20,7 @@ import { setupVite, serveStatic, log } from "./vite";
 import { seedSstCatalog } from "./sst-seed";
 import { runMigrations } from "./run-migrations";
 import { ensureSchemaSync } from "./migrations/ensure-schema-sync";
+import { createWebPushTables } from "./migrations/create-web-push-tables";
 import { seedAdminUser } from "./seed-admin";
 import { seedSubscriptionPlans } from "./seed-subscription-plans";
 import logger from "./lib/logger";
@@ -938,6 +939,11 @@ app.use((req, res, next) => {
       await ensureSchemaSync();
     } catch (error) {
       logger.error({ err: error }, "⚠️ Sincronización de esquema falló");
+    }
+    try {
+      await createWebPushTables();
+    } catch (error) {
+      logger.error({ err: error }, "⚠️ Web Push schema initialization failed");
     }
     // Crear usuario admin si no existe
     try {

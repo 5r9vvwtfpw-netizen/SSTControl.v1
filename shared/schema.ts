@@ -7239,6 +7239,26 @@ export const internalMessages = pgTable("internal_messages", {
   archivedAt: timestamp("archived_at"),
 });
 
+// Web Push is device-scoped: a user can have several browser/PWA subscriptions.
+// The endpoint is globally unique according to the Push API.
+export const pushSubscriptions = pgTable("push_subscriptions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  endpoint: text("endpoint").notNull().unique(),
+  p256dh: text("p256dh").notNull(),
+  auth: text("auth").notNull(),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+});
+
+// Small server-only configuration store. Values which are secrets are encrypted
+// before being persisted; do not use this as a client configuration endpoint.
+export const appConfig = pgTable("app_config", {
+  key: varchar("key").primaryKey(),
+  value: text("value").notNull(),
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+});
+
 // Validation Schemas - Internal Messages
 export const insertInternalMessageSchema = createInsertSchema(internalMessages)
   .omit({ id: true, createdAt: true, readAt: true, archivedAt: true });

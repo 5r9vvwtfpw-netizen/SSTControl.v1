@@ -50,6 +50,7 @@ import { useAuth } from "@/hooks/use-auth";
 import type { UserRole } from "@shared/schema";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
 import { PwaInstallCard } from "@/components/PwaInstallCard";
+import { WebPushControl } from "@/components/WebPushControl";
 
 // Roles administrativos que ven el dashboard de gestión
 const ADMIN_ROLES: UserRole[] = [
@@ -978,6 +979,7 @@ const portalNavGroups = [
 ];
 
 function WorkerPortal() {
+  const { user } = useAuth();
   const [activeSection, setActiveSection] = useState("contrato");
   const [expandedBottomGroup, setExpandedBottomGroup] = useState<string | null>(null);
 
@@ -1145,6 +1147,7 @@ function WorkerPortal() {
       </div>
 
       <PwaInstallCard />
+      {user?.role === "trabajador" && <WebPushControl />}
 
       {/* Navegación Profesional con Menús Desplegables — escritorio */}
       <Card className="border-0 shadow-sm bg-card/50 hidden sm:block">

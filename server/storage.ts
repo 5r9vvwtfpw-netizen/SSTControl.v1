@@ -14817,6 +14817,10 @@ export class DbStorage implements IStorage {
     const [newMessage] = await db.insert(schema.internalMessages)
       .values(message)
       .returning();
+    // Fire-and-forget: a Push provider outage must never prevent storing a message.
+    void import("./services/web-push")
+      .then(({ sendInternalMessagePush }) => sendInternalMessagePush(newMessage))
+      .catch((error) => console.error("[WebPush] Message trigger failed", error));
     return newMessage;
   }
 

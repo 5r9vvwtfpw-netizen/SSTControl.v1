@@ -30,6 +30,7 @@ import { registerBillingRoutes } from "./routes/billing";
 import { registerStripeRoutes } from "./routes/stripe";
 import { registerWompiRoutes } from "./routes/wompi";
 import { registerDbDiagnosticRoutes } from "./routes/db-diagnostic";
+import { registerWebPushRoutes } from "./routes/web-push";
 import companyCreationDiagnosticRoutes from "./routes/company-creation-diagnostic";
 import writeTestDiagnosticRoutes from "./routes/write-test-diagnostic";
 import { registerSubscriptionCheckRoutes } from "./routes/subscription-check";
@@ -56763,6 +56764,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       res.status(500).json({ error: error.message });
     }
   });
+
+  registerWebPushRoutes(app);
 
   const httpServer = createServer(app);
   // Initialize WebSocket for real-time notifications
