@@ -474,6 +474,9 @@ export default function ResponsibleDesignationPage() {
 
   // Obtener las responsabilidades disponibles según el cargo seleccionado
   const selectedPosition = form.watch("position");
+  const positionAllowsExternalLso =
+    selectedPosition === "Responsable del SG-SST" ||
+    selectedPosition === "Líder del PESV";
   const availableResponsibilities = selectedPosition ? POSITION_RESPONSIBILITIES[selectedPosition] : [];
   const selectedResponsibilities = form.watch("responsibilities") || [];
 
@@ -506,7 +509,7 @@ export default function ResponsibleDesignationPage() {
     }
     
     // Manejar LSO externo según el cargo seleccionado
-    if (position === "Responsable del SG-SST" && lsoAssignment) {
+    if ((position === "Responsable del SG-SST" || position === "Líder del PESV") && lsoAssignment) {
       setUseExternalLso(true);
       form.setValue("isExternalLso", true);
       form.setValue("externalLsoName", lsoAssignment.name);
@@ -604,8 +607,8 @@ export default function ResponsibleDesignationPage() {
 
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-                    {/* Toggle para elegir entre trabajador interno o LSO externo - SOLO para cargo Responsable del SG-SST */}
-                    {lsoAssignment && selectedPosition === "Responsable del SG-SST" && (
+                    {/* El Responsable SG-SST y el Líder PESV pueden ser el LSO externo asignado */}
+                    {lsoAssignment && positionAllowsExternalLso && (
                       <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
                         <div className="flex items-center gap-2">
                           <UserCheck className="h-5 w-5 text-green-600" />
@@ -641,8 +644,8 @@ export default function ResponsibleDesignationPage() {
                       </div>
                     )}
 
-                    {/* Selector de trabajador - mostrar SIEMPRE excepto cuando es Responsable del SG-SST con LSO externo */}
-                    {!(selectedPosition === "Responsable del SG-SST" && useExternalLso) && (
+                    {/* No exigir trabajador cuando se está usando el LSO externo asignado */}
+                    {!(positionAllowsExternalLso && useExternalLso) && (
                       <FormField
                         control={form.control}
                         name="workerId"
