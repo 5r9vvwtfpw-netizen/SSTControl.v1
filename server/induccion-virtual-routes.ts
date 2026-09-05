@@ -1,11 +1,23 @@
 import { Express, Request, Response } from "express";
 import { db } from "./db";
-import { eq, and, desc, sql, inArray } from "drizzle-orm";
+import { eq, and, desc, sql, inArray, lte } from "drizzle-orm";
 import * as schema from "@shared/schema";
 import { randomBytes } from "crypto";
 import { resend } from "./services/email";
 import PDFDocument from "pdfkit";
 import { objectStorageService } from "./objectStorage";
+
+const VALID_INDUCTION_TYPES = ["induccion", "reinduccion", "pesv"] as const;
+type InductionType = typeof VALID_INDUCTION_TYPES[number];
+
+function parseInductionType(value: unknown, fallback?: InductionType): InductionType | null {
+  if (value === undefined || value === null || value === "") {
+    return fallback || null;
+  }
+  return typeof value === "string" && VALID_INDUCTION_TYPES.includes(value as InductionType)
+    ? value as InductionType
+    : null;
+}
 
 function generateToken(): string {
   return randomBytes(32).toString("hex");
@@ -20,6 +32,112 @@ function getEffectiveCompanyId(req: any): string | null {
     if (queryCompanyId) return queryCompanyId;
   }
   return req.user?.companyId || null;
+}
+
+interface InductionSessionSnapshot {
+  snapshotVersion: 1;
+  contenidoIds: string[];
+  preguntaIds: string[];
+}
+
+function parseSessionSnapshot(raw: string | null): InductionSessionSnapshot | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    if (
+      parsed?.snapshotVersion === 1 &&
+      Array.isArray(parsed.contenidoIds) &&
+      parsed.contenidoIds.every((id: unknown) => typeof id === "string") &&
+      Array.isArray(parsed.preguntaIds) &&
+      parsed.preguntaIds.every((id: unknown) => typeof id === "string")
+    ) {
+      return parsed as InductionSessionSnapshot;
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+async function buildSessionSnapshot(companyId: string, tipoInduccion: InductionType): Promise<InductionSessionSnapshot> {
+  const [contenidos, preguntas] = await Promise.all([
+    db.select({ id: schema.contenidosInduccion.id })
+      .from(schema.contenidosInduccion)
+      .where(and(
+        eq(schema.contenidosInduccion.companyId, companyId),
+        eq(schema.contenidosInduccion.estado, "publicado"),
+        eq(schema.contenidosInduccion.tipoInduccion, tipoInduccion)
+      ))
+      .orderBy(schema.contenidosInduccion.orden),
+    db.select({ id: schema.preguntasInduccion.id })
+      .from(schema.preguntasInduccion)
+      .where(and(
+        eq(schema.preguntasInduccion.companyId, companyId),
+        eq(schema.preguntasInduccion.activa, 1),
+        eq(schema.preguntasInduccion.tipoInduccion, tipoInduccion)
+      ))
+      .orderBy(schema.preguntasInduccion.orden),
+  ]);
+
+  return {
+    snapshotVersion: 1,
+    contenidoIds: contenidos.map(contenido => contenido.id),
+    preguntaIds: preguntas.map(pregunta => pregunta.id),
+  };
+}
+
+async function getSessionContents(sesion: schema.SesionInduccionVirtual) {
+  const snapshot = parseSessionSnapshot(sesion.datosAdicionales);
+  if (snapshot) {
+    if (snapshot.contenidoIds.length === 0) return [];
+    const contenidos = await db.select()
+      .from(schema.contenidosInduccion)
+      .where(and(
+        eq(schema.contenidosInduccion.companyId, sesion.companyId),
+        eq(schema.contenidosInduccion.tipoInduccion, sesion.tipoInduccion),
+        inArray(schema.contenidosInduccion.id, snapshot.contenidoIds)
+      ));
+    const order = new Map(snapshot.contenidoIds.map((id, index) => [id, index]));
+    return contenidos.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
+  }
+
+  // Legacy sessions did not store a snapshot. Never attach content published
+  // after the session was sent.
+  return db.select()
+    .from(schema.contenidosInduccion)
+    .where(and(
+      eq(schema.contenidosInduccion.companyId, sesion.companyId),
+      eq(schema.contenidosInduccion.estado, "publicado"),
+      eq(schema.contenidosInduccion.tipoInduccion, sesion.tipoInduccion),
+      lte(schema.contenidosInduccion.createdAt, sesion.fechaEnvio)
+    ))
+    .orderBy(schema.contenidosInduccion.orden);
+}
+
+async function getSessionQuestions(sesion: schema.SesionInduccionVirtual) {
+  const snapshot = parseSessionSnapshot(sesion.datosAdicionales);
+  if (snapshot) {
+    if (snapshot.preguntaIds.length === 0) return [];
+    const preguntas = await db.select()
+      .from(schema.preguntasInduccion)
+      .where(and(
+        eq(schema.preguntasInduccion.companyId, sesion.companyId),
+        eq(schema.preguntasInduccion.tipoInduccion, sesion.tipoInduccion),
+        inArray(schema.preguntasInduccion.id, snapshot.preguntaIds)
+      ));
+    const order = new Map(snapshot.preguntaIds.map((id, index) => [id, index]));
+    return preguntas.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
+  }
+
+  return db.select()
+    .from(schema.preguntasInduccion)
+    .where(and(
+      eq(schema.preguntasInduccion.companyId, sesion.companyId),
+      eq(schema.preguntasInduccion.activa, 1),
+      eq(schema.preguntasInduccion.tipoInduccion, sesion.tipoInduccion),
+      lte(schema.preguntasInduccion.createdAt, sesion.fechaEnvio)
+    ))
+    .orderBy(schema.preguntasInduccion.orden);
 }
 
 export function registerInduccionVirtualRoutes(app: Express) {
@@ -48,7 +166,10 @@ export function registerInduccionVirtualRoutes(app: Express) {
         return res.status(401).send("No autorizado");
       }
       
-      const tipoInduccion = (req.query.tipo as string) || "induccion";
+      const tipoInduccion = parseInductionType(req.query.tipo, "induccion");
+      if (!tipoInduccion) {
+        return res.status(400).json({ error: "Tipo de inducción inválido" });
+      }
 
       const contenidos = await db.select()
         .from(schema.contenidosInduccion)
@@ -76,7 +197,10 @@ export function registerInduccionVirtualRoutes(app: Express) {
       }
 
       const parsed = schema.insertContenidoInduccionSchema.parse(req.body);
-      const tipoInduccion = (req.body.tipoInduccion as string) || "induccion";
+      const tipoInduccion = parseInductionType(req.body.tipoInduccion, "induccion");
+      if (!tipoInduccion) {
+        return res.status(400).json({ error: "Tipo de inducción inválido" });
+      }
 
       // Auto-assign orden: query max(orden) for this company and tipo
       const [maxResult] = await db.select({ maxOrden: sql<number>`COALESCE(MAX(${schema.contenidosInduccion.orden}), 0)` })
@@ -118,6 +242,12 @@ export function registerInduccionVirtualRoutes(app: Express) {
       // orden should only change via dedicated /reorder endpoints
       const { orden: _ordenIgnored, ...bodyWithoutOrden } = req.body;
       const parsed = schema.insertContenidoInduccionSchema.partial().parse(bodyWithoutOrden);
+      if (
+        bodyWithoutOrden.tipoInduccion !== undefined &&
+        !parseInductionType(bodyWithoutOrden.tipoInduccion)
+      ) {
+        return res.status(400).json({ error: "Tipo de inducción inválido" });
+      }
       
       // updateData is now guaranteed to not contain orden
       const updateData = parsed;
@@ -178,7 +308,10 @@ export function registerInduccionVirtualRoutes(app: Express) {
         return res.status(401).send("No autorizado");
       }
       
-      const tipoInduccion = (req.query.tipo as string) || "induccion";
+      const tipoInduccion = parseInductionType(req.query.tipo, "induccion");
+      if (!tipoInduccion) {
+        return res.status(400).json({ error: "Tipo de inducción inválido" });
+      }
 
       const preguntas = await db.select()
         .from(schema.preguntasInduccion)
@@ -206,7 +339,10 @@ export function registerInduccionVirtualRoutes(app: Express) {
       }
 
       const parsed = schema.insertPreguntaInduccionSchema.parse(req.body);
-      const tipoInduccion = (req.body.tipoInduccion as string) || "induccion";
+      const tipoInduccion = parseInductionType(req.body.tipoInduccion, "induccion");
+      if (!tipoInduccion) {
+        return res.status(400).json({ error: "Tipo de inducción inválido" });
+      }
 
       // Auto-assign orden: query max(orden) for this company and tipo
       const [maxResult] = await db.select({ maxOrden: sql<number>`COALESCE(MAX(${schema.preguntasInduccion.orden}), 0)` })
@@ -248,6 +384,12 @@ export function registerInduccionVirtualRoutes(app: Express) {
       // orden should only change via dedicated /reorder endpoints
       const { orden: _ordenIgnored, ...bodyWithoutOrden } = req.body;
       const parsed = schema.insertPreguntaInduccionSchema.partial().parse(bodyWithoutOrden);
+      if (
+        bodyWithoutOrden.tipoInduccion !== undefined &&
+        !parseInductionType(bodyWithoutOrden.tipoInduccion)
+      ) {
+        return res.status(400).json({ error: "Tipo de inducción inválido" });
+      }
       
       // updateData is now guaranteed to not contain orden
       const updateData = parsed;
@@ -310,6 +452,22 @@ export function registerInduccionVirtualRoutes(app: Express) {
       if (!Array.isArray(ordenPreguntaIds) || ordenPreguntaIds.length === 0) {
         return res.status(400).send("Se requiere un array de IDs de preguntas");
       }
+      const uniquePreguntaIds = [...new Set(ordenPreguntaIds.filter((id): id is string => typeof id === "string"))];
+      const preguntasToReorder = await db.select({
+        id: schema.preguntasInduccion.id,
+        tipoInduccion: schema.preguntasInduccion.tipoInduccion,
+      })
+        .from(schema.preguntasInduccion)
+        .where(and(
+          eq(schema.preguntasInduccion.companyId, companyId),
+          inArray(schema.preguntasInduccion.id, uniquePreguntaIds)
+        ));
+      if (
+        preguntasToReorder.length !== uniquePreguntaIds.length ||
+        new Set(preguntasToReorder.map(pregunta => pregunta.tipoInduccion)).size !== 1
+      ) {
+        return res.status(400).json({ error: "Las preguntas deben pertenecer a la misma empresa y tipo de inducción" });
+      }
 
       // Actualizar el orden de cada pregunta según su posición en el array
       for (let i = 0; i < ordenPreguntaIds.length; i++) {
@@ -361,10 +519,13 @@ export function registerInduccionVirtualRoutes(app: Express) {
           throw new Error("NOT_FOUND");
         }
 
-        // Obtener todas las preguntas ordenadas
+        // Reorder only within the current induction type.
         const allPreguntas = await tx.select()
           .from(schema.preguntasInduccion)
-          .where(eq(schema.preguntasInduccion.companyId, companyId))
+          .where(and(
+            eq(schema.preguntasInduccion.companyId, companyId),
+            eq(schema.preguntasInduccion.tipoInduccion, currentPregunta.tipoInduccion)
+          ))
           .orderBy(schema.preguntasInduccion.orden);
 
         const currentIndex = allPreguntas.findIndex(p => p.id === currentPregunta.id);
@@ -415,6 +576,22 @@ export function registerInduccionVirtualRoutes(app: Express) {
       
       if (!Array.isArray(ordenContenidoIds) || ordenContenidoIds.length === 0) {
         return res.status(400).send("Se requiere un array de IDs de contenidos");
+      }
+      const uniqueContenidoIds = [...new Set(ordenContenidoIds.filter((id): id is string => typeof id === "string"))];
+      const contenidosToReorder = await db.select({
+        id: schema.contenidosInduccion.id,
+        tipoInduccion: schema.contenidosInduccion.tipoInduccion,
+      })
+        .from(schema.contenidosInduccion)
+        .where(and(
+          eq(schema.contenidosInduccion.companyId, companyId),
+          inArray(schema.contenidosInduccion.id, uniqueContenidoIds)
+        ));
+      if (
+        contenidosToReorder.length !== uniqueContenidoIds.length ||
+        new Set(contenidosToReorder.map(contenido => contenido.tipoInduccion)).size !== 1
+      ) {
+        return res.status(400).json({ error: "Los contenidos deben pertenecer a la misma empresa y tipo de inducción" });
       }
 
       // Actualizar el orden de cada contenido según su posición en el array
@@ -467,10 +644,13 @@ export function registerInduccionVirtualRoutes(app: Express) {
           throw new Error("NOT_FOUND");
         }
 
-        // Obtener todos los contenidos ordenados
+        // Reorder only within the current induction type.
         const allContenidos = await tx.select()
           .from(schema.contenidosInduccion)
-          .where(eq(schema.contenidosInduccion.companyId, companyId))
+          .where(and(
+            eq(schema.contenidosInduccion.companyId, companyId),
+            eq(schema.contenidosInduccion.tipoInduccion, currentContenido.tipoInduccion)
+          ))
           .orderBy(schema.contenidosInduccion.orden);
 
         const currentIndex = allContenidos.findIndex(c => c.id === currentContenido.id);
@@ -542,10 +722,14 @@ export function registerInduccionVirtualRoutes(app: Express) {
         return res.status(401).send("No autorizado");
       }
 
-      const { workerId, tipoInduccion } = req.body;
+      const { workerId } = req.body;
+      const tipoInduccion = parseInductionType(req.body.tipoInduccion, "induccion");
       
       if (!workerId) {
         return res.status(400).send("workerId es requerido");
+      }
+      if (!tipoInduccion) {
+        return res.status(400).json({ error: "Tipo de inducción inválido" });
       }
 
       const [worker] = await db.select()
@@ -566,17 +750,19 @@ export function registerInduccionVirtualRoutes(app: Express) {
       const token = generateToken();
       const fechaExpiracion = new Date();
       fechaExpiracion.setDate(fechaExpiracion.getDate() + 7);
+      const sessionSnapshot = await buildSessionSnapshot(companyId, tipoInduccion);
 
       const [sesion] = await db.insert(schema.sesionesInduccionVirtual)
         .values({
           companyId: companyId,
           workerId,
           token,
-          tipoInduccion: tipoInduccion || "induccion",
+          tipoInduccion,
           estado: "pendiente",
           fechaExpiracion,
           contenidosVistos: "[]",
           progresoEvaluacion: "{}",
+          datosAdicionales: JSON.stringify(sessionSnapshot),
         })
         .returning();
 
@@ -611,18 +797,31 @@ export function registerInduccionVirtualRoutes(app: Express) {
       const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).send("No autorizado");
 
-      const { tipoInduccion = "induccion" } = req.body;
+      const tipoInduccion = parseInductionType(req.body.tipoInduccion, "induccion");
+      if (!tipoInduccion) {
+        return res.status(400).json({ error: "Tipo de inducción inválido" });
+      }
 
       // 1. Todos los trabajadores activos de la empresa
       const allWorkers = await db.select()
         .from(schema.workers)
         .where(eq(schema.workers.companyId, companyId));
 
-      // Enviar a TODOS los trabajadores sin importar si ya tienen sesión
-      const pendientes = allWorkers;
+      const activeSessions = await db.select({
+        workerId: schema.sesionesInduccionVirtual.workerId,
+      })
+        .from(schema.sesionesInduccionVirtual)
+        .where(and(
+          eq(schema.sesionesInduccionVirtual.companyId, companyId),
+          eq(schema.sesionesInduccionVirtual.tipoInduccion, tipoInduccion),
+          inArray(schema.sesionesInduccionVirtual.estado, ["pendiente", "en_progreso"])
+        ));
+      const workersWithActiveSession = new Set(activeSessions.map(session => session.workerId));
+      const pendientes = allWorkers.filter(worker => !workersWithActiveSession.has(worker.id));
 
       const [company] = await db.select().from(schema.companies).where(eq(schema.companies.id, companyId));
       const baseUrl = process.env.REPLIT_DEPLOYMENT_URL || process.env.APP_URL || 'https://sst-colombia.com';
+      const sessionSnapshot = await buildSessionSnapshot(companyId, tipoInduccion);
 
       let enviados = 0;
       const errores: string[] = [];
@@ -642,6 +841,7 @@ export function registerInduccionVirtualRoutes(app: Express) {
             fechaExpiracion,
             contenidosVistos: "[]",
             progresoEvaluacion: "{}",
+            datosAdicionales: JSON.stringify(sessionSnapshot),
           });
 
           // Correo masivo de inducción deshabilitado: el trabajador accede desde su portal de empleados.
@@ -709,23 +909,10 @@ export function registerInduccionVirtualRoutes(app: Express) {
         .from(schema.companies)
         .where(eq(schema.companies.id, sesion.companyId));
 
-      const contenidos = await db.select()
-        .from(schema.contenidosInduccion)
-        .where(and(
-          eq(schema.contenidosInduccion.companyId, sesion.companyId),
-          eq(schema.contenidosInduccion.estado, "publicado"),
-          eq(schema.contenidosInduccion.tipoInduccion, sesion.tipoInduccion)
-        ))
-        .orderBy(schema.contenidosInduccion.orden);
-
-      const preguntas = await db.select()
-        .from(schema.preguntasInduccion)
-        .where(and(
-          eq(schema.preguntasInduccion.companyId, sesion.companyId),
-          eq(schema.preguntasInduccion.activa, 1),
-          eq(schema.preguntasInduccion.tipoInduccion, sesion.tipoInduccion)
-        ))
-        .orderBy(schema.preguntasInduccion.orden);
+      const [contenidos, preguntas] = await Promise.all([
+        getSessionContents(sesion),
+        getSessionQuestions(sesion),
+      ]);
 
       const preguntasSinRespuesta = preguntas.map(p => ({
         id: p.id,
@@ -828,13 +1015,7 @@ export function registerInduccionVirtualRoutes(app: Express) {
         return res.status(400).json({ error: "La firma digital es obligatoria y debe ser una imagen PNG válida" });
       }
 
-      const preguntas = await db.select()
-        .from(schema.preguntasInduccion)
-        .where(and(
-          eq(schema.preguntasInduccion.companyId, sesion.companyId),
-          eq(schema.preguntasInduccion.activa, 1),
-          eq(schema.preguntasInduccion.tipoInduccion, sesion.tipoInduccion)
-        ));
+      const preguntas = await getSessionQuestions(sesion);
 
       let correctas = 0;
       const totalPreguntas = preguntas.length;
@@ -946,13 +1127,7 @@ export function registerInduccionVirtualRoutes(app: Express) {
         .from(schema.companies)
         .where(eq(schema.companies.id, companyId));
 
-      const preguntas = await db.select()
-        .from(schema.preguntasInduccion)
-        .where(and(
-          eq(schema.preguntasInduccion.companyId, companyId),
-          eq(schema.preguntasInduccion.tipoInduccion, sesion.tipoInduccion)
-        ))
-        .orderBy(schema.preguntasInduccion.orden);
+      const preguntas = await getSessionQuestions(sesion);
 
       // ── Firma del LSO (misma lógica de prioridad que pdf-standardizer) ──
       let lsoName = 'Responsable SST';
@@ -1305,6 +1480,7 @@ export function registerInduccionVirtualRoutes(app: Express) {
           inArray(schema.sesionesInduccionVirtual.estado, ["pendiente", "en_progreso"])
         ));
       const activosSet = new Set(sesionesActivas.map(s => s.workerId));
+      const sessionSnapshot = await buildSessionSnapshot(companyId, "pesv");
 
       let enviados = 0;
       let omitidos = 0;
@@ -1318,6 +1494,7 @@ export function registerInduccionVirtualRoutes(app: Express) {
           await db.insert(schema.sesionesInduccionVirtual).values({
             companyId, workerId: worker.id, token, tipoInduccion: "pesv",
             estado: "pendiente", fechaExpiracion, contenidosVistos: "[]", progresoEvaluacion: "{}",
+            datosAdicionales: JSON.stringify(sessionSnapshot),
           });
           enviados++;
         } catch (err: any) {
@@ -1355,6 +1532,7 @@ export function registerInduccionVirtualRoutes(app: Express) {
 
       const allWorkers = await db.select().from(schema.workers)
         .where(eq(schema.workers.companyId, companyId));
+      const sessionSnapshot = await buildSessionSnapshot(companyId, "pesv");
 
       let enviados = 0; let omitidos = 0;
       for (const worker of allWorkers) {
@@ -1366,6 +1544,7 @@ export function registerInduccionVirtualRoutes(app: Express) {
           await db.insert(schema.sesionesInduccionVirtual).values({
             companyId, workerId: worker.id, token, tipoInduccion: "pesv",
             estado: "pendiente", fechaExpiracion, contenidosVistos: "[]", progresoEvaluacion: "{}",
+            datosAdicionales: JSON.stringify(sessionSnapshot),
           });
           enviados++;
         } catch { omitidos++; }
@@ -1428,13 +1607,7 @@ export function registerInduccionVirtualRoutes(app: Express) {
         .from(schema.companies)
         .where(eq(schema.companies.id, companyId));
 
-      const preguntas = await db.select()
-        .from(schema.preguntasInduccion)
-        .where(and(
-          eq(schema.preguntasInduccion.companyId, companyId),
-          eq(schema.preguntasInduccion.tipoInduccion, "pesv")
-        ))
-        .orderBy(schema.preguntasInduccion.orden);
+      const preguntas = await getSessionQuestions(sesion);
 
       // ── Firma del responsable PESV (misma lógica de prioridad que SST) ──
       let lsoName = 'Responsable PESV';
