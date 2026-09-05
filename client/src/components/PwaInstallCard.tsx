@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Link } from "wouter";
 import { Download, Share, Smartphone } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,7 +19,9 @@ function isInstalled(): boolean {
 }
 
 function isIosDevice(): boolean {
-  return /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const classicIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const modernIpad = /macintosh/i.test(navigator.userAgent) && navigator.maxTouchPoints > 1;
+  return classicIos || modernIpad;
 }
 
 function isAndroidDevice(): boolean {
@@ -117,13 +118,15 @@ export function PwaInstallCard() {
               <Download className="mr-2 h-4 w-4" aria-hidden="true" />
               Instalar ahora
             </Button>
-          ) : (
-            <Link href="/instalar">
-              <Button variant="outline" data-testid="button-pwa-instructions">
-                Agregar al dispositivo
-              </Button>
-            </Link>
-          )}
+          ) : isIos ? (
+            <div
+              className="flex items-center gap-2 rounded-md border border-green-300 bg-white px-3 py-2 text-sm font-medium text-green-900"
+              data-testid="ios-pwa-instructions"
+            >
+              <Share className="h-4 w-4" aria-hidden="true" />
+              Compartir → Agregar a inicio
+            </div>
+          ) : null}
         </div>
       </CardContent>
     </Card>
