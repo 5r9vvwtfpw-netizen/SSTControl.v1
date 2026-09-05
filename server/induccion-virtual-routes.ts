@@ -86,6 +86,19 @@ async function buildSessionSnapshot(companyId: string, tipoInduccion: InductionT
   };
 }
 
+function getMissingEvaluationMessage(
+  snapshot: InductionSessionSnapshot,
+  tipoInduccion: InductionType
+): string | null {
+  if (snapshot.preguntaIds.length > 0) return null;
+  const nombre = tipoInduccion === "pesv"
+    ? "la inducción PESV"
+    : tipoInduccion === "reinduccion"
+      ? "la reinducción"
+      : "la inducción";
+  return `No se puede asignar ${nombre}: debe configurar y activar al menos una pregunta de evaluación.`;
+}
+
 async function getSessionContents(sesion: schema.SesionInduccionVirtual) {
   const snapshot = parseSessionSnapshot(sesion.datosAdicionales);
   if (snapshot) {
@@ -115,6 +128,19 @@ async function getSessionContents(sesion: schema.SesionInduccionVirtual) {
 }
 
 async function getSessionQuestions(sesion: schema.SesionInduccionVirtual) {
+  // El cuestionario PESV ya está establecido en el sistema y no se administra
+  // por sesión. Todas las sesiones PESV usan las preguntas activas existentes.
+  if (sesion.tipoInduccion === "pesv") {
+    return db.select()
+      .from(schema.preguntasInduccion)
+      .where(and(
+        eq(schema.preguntasInduccion.companyId, sesion.companyId),
+        eq(schema.preguntasInduccion.activa, 1),
+        eq(schema.preguntasInduccion.tipoInduccion, "pesv")
+      ))
+      .orderBy(schema.preguntasInduccion.orden);
+  }
+
   const snapshot = parseSessionSnapshot(sesion.datosAdicionales);
   if (snapshot) {
     if (snapshot.preguntaIds.length === 0) return [];
@@ -751,6 +777,10 @@ export function registerInduccionVirtualRoutes(app: Express) {
       const fechaExpiracion = new Date();
       fechaExpiracion.setDate(fechaExpiracion.getDate() + 7);
       const sessionSnapshot = await buildSessionSnapshot(companyId, tipoInduccion);
+      const missingEvaluationMessage = getMissingEvaluationMessage(sessionSnapshot, tipoInduccion);
+      if (missingEvaluationMessage) {
+        return res.status(409).json({ error: missingEvaluationMessage });
+      }
 
       const [sesion] = await db.insert(schema.sesionesInduccionVirtual)
         .values({
@@ -822,6 +852,10 @@ export function registerInduccionVirtualRoutes(app: Express) {
       const [company] = await db.select().from(schema.companies).where(eq(schema.companies.id, companyId));
       const baseUrl = process.env.REPLIT_DEPLOYMENT_URL || process.env.APP_URL || 'https://sst-colombia.com';
       const sessionSnapshot = await buildSessionSnapshot(companyId, tipoInduccion);
+      const missingEvaluationMessage = getMissingEvaluationMessage(sessionSnapshot, tipoInduccion);
+      if (missingEvaluationMessage) {
+        return res.status(409).json({ error: missingEvaluationMessage });
+      }
 
       let enviados = 0;
       const errores: string[] = [];
@@ -1007,6 +1041,13 @@ export function registerInduccionVirtualRoutes(app: Express) {
         return res.status(410).json({ error: "La sesión de inducción ha expirado" });
       }
 
+      const preguntas = await getSessionQuestions(sesion);
+      if (preguntas.length === 0) {
+        return res.status(409).json({
+          error: "La evaluación no tiene preguntas configuradas. Solicite al responsable PESV o SST que configure las preguntas y vuelva a asignar la sesión.",
+        });
+      }
+
       if (
         typeof firmaDigital !== "string" ||
         !/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(firmaDigital) ||
@@ -1014,8 +1055,6 @@ export function registerInduccionVirtualRoutes(app: Express) {
       ) {
         return res.status(400).json({ error: "La firma digital es obligatoria y debe ser una imagen PNG válida" });
       }
-
-      const preguntas = await getSessionQuestions(sesion);
 
       let correctas = 0;
       const totalPreguntas = preguntas.length;
@@ -1034,7 +1073,7 @@ export function registerInduccionVirtualRoutes(app: Express) {
         }
       }
 
-      const puntaje = totalPreguntas > 0 ? Math.round((correctas / totalPreguntas) * 100) : 100;
+      const puntaje = Math.round((correctas / totalPreguntas) * 100);
       const aprobado = puntaje >= 80 ? 1 : 0;
 
       const [worker] = await db.select()

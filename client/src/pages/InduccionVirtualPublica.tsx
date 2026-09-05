@@ -301,8 +301,12 @@ export default function InduccionVirtualPublica() {
   const progresoTotal = data.contenidos.length + data.preguntas.length + 1;
   const progresoActual = contenidosVistos.length + Object.keys(respuestas).length + (step === "firma" || step === "completado" ? 1 : 0);
   const porcentajeProgreso = Math.round((progresoActual / progresoTotal) * 100);
-  const isPesv = data.sesion.tipoInduccion === "pesv";
-  const noHayMaterial = data.contenidos.length === 0 && data.preguntas.length === 0;
+  const noHayPreguntas = data.preguntas.length === 0;
+  const tipoSesionLabel = data.sesion.tipoInduccion === "pesv"
+    ? "Inducción PESV"
+    : data.sesion.tipoInduccion === "induccion"
+      ? "Inducción"
+      : "Reinducción";
 
   const renderContenido = (contenido: Contenido) => {
     const iconMap = {
@@ -377,11 +381,15 @@ export default function InduccionVirtualPublica() {
             )}
             <div>
               <h1 className="text-xl font-bold text-primary">{data.company.nombre}</h1>
-              <p className="text-sm text-muted-foreground">Inducción de Seguridad y Salud en el Trabajo</p>
+              <p className="text-sm text-muted-foreground">
+                {data.sesion.tipoInduccion === "pesv"
+                  ? "Inducción del Plan Estratégico de Seguridad Vial"
+                  : "Inducción de Seguridad y Salud en el Trabajo"}
+              </p>
             </div>
           </div>
           <Badge variant={data.sesion.tipoInduccion === "induccion" ? "default" : "secondary"}>
-            {data.sesion.tipoInduccion === "induccion" ? "Inducción" : "Reinducción"}
+            {tipoSesionLabel}
           </Badge>
         </div>
 
@@ -399,7 +407,7 @@ export default function InduccionVirtualPublica() {
               <Award className="h-16 w-16 text-primary mx-auto mb-4" />
               <CardTitle className="text-2xl">Bienvenido(a), {data.worker.nombre}</CardTitle>
               <CardDescription className="text-base">
-                A continuación completará la {data.sesion.tipoInduccion === "induccion" ? "inducción" : "reinducción"} de Seguridad y Salud en el Trabajo.
+                A continuación completará la {tipoSesionLabel.toLowerCase()}.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -407,15 +415,15 @@ export default function InduccionVirtualPublica() {
                 <p className="text-sm"><strong>Identificación:</strong> {data.worker.identificacion}</p>
                 <p className="text-sm"><strong>Cargo:</strong> {data.worker.cargo}</p>
               </div>
-              {noHayMaterial && !isPesv ? (
+              {noHayPreguntas ? (
                 <div className="bg-orange-50 border border-orange-200 p-4 rounded-lg">
                   <div className="flex items-start gap-3">
                     <AlertCircle className="h-5 w-5 text-orange-500 mt-0.5 flex-shrink-0" />
                     <div>
-                      <p className="text-sm font-medium text-orange-800 mb-1">Inducción no configurada</p>
+                      <p className="text-sm font-medium text-orange-800 mb-1">Evaluación no disponible</p>
                       <p className="text-sm text-orange-700">
-                        El área de SST de su empresa aún no ha cargado el contenido de esta inducción.
-                        Por favor contacte al responsable de SST para que complete la configuración antes de continuar.
+                        No fue posible cargar las preguntas establecidas para esta evaluación.
+                        Por favor contacte al responsable PESV o SST antes de continuar.
                       </p>
                     </div>
                   </div>
@@ -442,7 +450,7 @@ export default function InduccionVirtualPublica() {
               <Button 
                 className="w-full" 
                 size="lg"
-                disabled={noHayMaterial && !isPesv}
+                disabled={noHayPreguntas}
                 onClick={() => setStep(data.contenidos.length > 0 ? "contenido" : "evaluacion")}
                 data-testid="button-comenzar-induccion"
               >
@@ -510,6 +518,15 @@ export default function InduccionVirtualPublica() {
               </CardHeader>
             </Card>
 
+            {noHayPreguntas && (
+              <div className="bg-orange-50 border border-orange-200 p-4 rounded-lg mb-4">
+                <p className="font-medium text-orange-800">Evaluación no disponible</p>
+                <p className="text-sm text-orange-700">
+                  No fue posible cargar las preguntas establecidas. No puede continuar a firma.
+                </p>
+              </div>
+            )}
+
             {data.preguntas.map((pregunta, index) => (
               <Card key={pregunta.id} className="mb-4">
                 <CardHeader>
@@ -556,7 +573,7 @@ export default function InduccionVirtualPublica() {
               </Button>
               <Button
                 onClick={() => setStep("firma")}
-                disabled={Object.keys(respuestas).length < data.preguntas.length}
+                disabled={noHayPreguntas || Object.keys(respuestas).length < data.preguntas.length}
                 data-testid="button-ir-firma"
               >
                 Continuar a Firma
