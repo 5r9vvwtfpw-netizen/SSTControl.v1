@@ -45,8 +45,9 @@ import {
 import { ProviderAccessDialog } from "@/components/ProviderAccessDialog";
 import { Badge } from "@/components/ui/badge";
 import { NotificationBell } from "@/components/NotificationBell";
+import { APP_RELEASE } from "@shared/app-version";
 
-const SYSTEM_VERSION = "v4.1.2";
+const SYSTEM_VERSION = APP_RELEASE.label;
 
 type PHVASection = "configuracion" | "planear" | "hacer" | "verificar" | "actuar";
 
