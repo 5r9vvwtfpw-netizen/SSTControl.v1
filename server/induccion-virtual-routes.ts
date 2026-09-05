@@ -6,6 +6,7 @@ import { randomBytes } from "crypto";
 import { resend } from "./services/email";
 import PDFDocument from "pdfkit";
 import { objectStorageService } from "./objectStorage";
+import { getPlantillaPesv } from "../client/src/data/induccion-plantillas-pesv";
 
 const VALID_INDUCTION_TYPES = ["induccion", "reinduccion", "pesv"] as const;
 type InductionType = typeof VALID_INDUCTION_TYPES[number];
@@ -39,6 +40,12 @@ interface InductionSessionSnapshot {
   contenidoIds: string[];
   preguntaIds: string[];
 }
+
+const ESTABLISHED_PESV_QUESTIONS = getPlantillaPesv().preguntas.map((pregunta, index) => ({
+  id: `pesv-established-${index + 1}`,
+  ...pregunta,
+  orden: index + 1,
+}));
 
 function parseSessionSnapshot(raw: string | null): InductionSessionSnapshot | null {
   if (!raw) return null;
@@ -82,7 +89,9 @@ async function buildSessionSnapshot(companyId: string, tipoInduccion: InductionT
   return {
     snapshotVersion: 1,
     contenidoIds: contenidos.map(contenido => contenido.id),
-    preguntaIds: preguntas.map(pregunta => pregunta.id),
+    preguntaIds: tipoInduccion === "pesv"
+      ? ESTABLISHED_PESV_QUESTIONS.map(pregunta => pregunta.id)
+      : preguntas.map(pregunta => pregunta.id),
   };
 }
 
@@ -128,17 +137,22 @@ async function getSessionContents(sesion: schema.SesionInduccionVirtual) {
 }
 
 async function getSessionQuestions(sesion: schema.SesionInduccionVirtual) {
-  // El cuestionario PESV ya está establecido en el sistema y no se administra
-  // por sesión. Todas las sesiones PESV usan las preguntas activas existentes.
+  // El cuestionario PESV ya está establecido en la plantilla del sistema.
+  // No depende de registros configurables por empresa ni se duplica en la BD.
   if (sesion.tipoInduccion === "pesv") {
-    return db.select()
-      .from(schema.preguntasInduccion)
-      .where(and(
-        eq(schema.preguntasInduccion.companyId, sesion.companyId),
-        eq(schema.preguntasInduccion.activa, 1),
-        eq(schema.preguntasInduccion.tipoInduccion, "pesv")
-      ))
-      .orderBy(schema.preguntasInduccion.orden);
+    return ESTABLISHED_PESV_QUESTIONS.map(pregunta => ({
+      id: pregunta.id,
+      companyId: sesion.companyId,
+      contenidoId: null,
+      pregunta: pregunta.pregunta,
+      opciones: JSON.stringify(pregunta.opciones),
+      respuestaCorrecta: pregunta.respuestaCorrecta,
+      explicacion: pregunta.explicacion,
+      orden: pregunta.orden,
+      activa: 1,
+      tipoInduccion: "pesv",
+      createdAt: sesion.fechaEnvio,
+    }));
   }
 
   const snapshot = parseSessionSnapshot(sesion.datosAdicionales);
