@@ -33,6 +33,7 @@ export function PwaInstallCard() {
   const [installed, setInstalled] = useState(isInstalled);
   const [isIos] = useState(isIosDevice);
   const [isAndroid] = useState(isAndroidDevice);
+  const [shareUnavailable, setShareUnavailable] = useState(false);
 
   useEffect(() => {
     const pwaWindow = window as PwaWindow;
@@ -73,6 +74,25 @@ export function PwaInstallCard() {
     }
   };
 
+  const handleIosShare = async () => {
+    if (!navigator.share) {
+      setShareUnavailable(true);
+      return;
+    }
+
+    try {
+      await navigator.share({
+        title: "Portal de Empleados SST",
+        text: "Acceso al Portal de Empleados SST",
+        url: window.location.href,
+      });
+    } catch (error) {
+      if (!(error instanceof DOMException) || error.name !== "AbortError") {
+        setShareUnavailable(true);
+      }
+    }
+  };
+
   if (installed) return null;
 
   return (
@@ -87,10 +107,16 @@ export function PwaInstallCard() {
               Instala el Portal en tu celular
             </p>
             {isIos ? (
-              <p className="text-sm text-green-800 dark:text-green-200">
-                En Safari, toca <Share className="inline h-4 w-4 align-text-bottom" aria-label="Compartir" />{" "}
-                <strong>Compartir</strong> y luego <strong>Agregar a pantalla de inicio</strong>.
-              </p>
+              <>
+                <p className="text-sm text-green-800 dark:text-green-200">
+                  Abre el menú y elige <strong>Agregar a pantalla de inicio</strong>.
+                </p>
+                {shareUnavailable && (
+                  <p className="text-xs text-green-700 dark:text-green-300" role="status">
+                    Si el menú no se abre, usa el botón Compartir de la barra de Safari.
+                  </p>
+                )}
+              </>
             ) : deferredPrompt ? (
               <p className="text-sm text-green-800 dark:text-green-200">
                 Accede más rápido desde un ícono en la pantalla principal.
@@ -119,13 +145,16 @@ export function PwaInstallCard() {
               Instalar ahora
             </Button>
           ) : isIos ? (
-            <div
-              className="flex items-center gap-2 rounded-md border border-green-300 bg-white px-3 py-2 text-sm font-medium text-green-900"
-              data-testid="ios-pwa-instructions"
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleIosShare}
+              className="border-green-300 bg-white text-green-900 hover:bg-green-100"
+              data-testid="button-share-ios-pwa"
             >
-              <Share className="h-4 w-4" aria-hidden="true" />
-              Compartir → Agregar a inicio
-            </div>
+              <Share className="mr-2 h-4 w-4" aria-hidden="true" />
+              Abrir menú Compartir
+            </Button>
           ) : null}
         </div>
       </CardContent>
