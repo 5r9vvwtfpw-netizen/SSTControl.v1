@@ -29,3 +29,4 @@
 - [Vite and app WebSockets](vite-app-websockets.md) — un WebSocket con path sobre el servidor compartido puede rechazar HMR; aislar upgrades por ruta con noServer.
 - [PDF report discovery before implementation](pdf-report-discovery.md) — auditar generadores, rutas indirectas y botones antes de crear informes; CRUD o adjuntos PDF no prueban que exista un reporte.
 - [Application version source](application-version-source.md) — la versión visible y los metadatos web consumen una sola fuente; no escribir números de versión dentro de componentes.
+- [SST and PESV designation acts](sst-pesv-designation-acts.md) — son documentos distintos; el portal LSO debe mostrar y firmar ambos sin reutilizar títulos ni normativa.

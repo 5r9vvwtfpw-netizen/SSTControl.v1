@@ -13920,7 +13920,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.sendStatus(204);
   });
 
-  // Generate Acta de Designación PDF - Resolución 0312/2019 Estándar 1.1.1
+  // Generate designation PDF for SG-SST responsibilities or PESV leadership
   app.get("/api/responsible-designations/:id/acta-pdf", requirePermission("companies:view"), async (req, res) => {
     try {
       const isAdmin = hasGlobalAccess(req.user!.role);
@@ -13939,6 +13939,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // For external LSO, workerId is null - use designation data instead
       const isExternalLso = designation.isExternalLso || !designation.workerId;
+      const isPesvDesignation = designation.position?.trim().toLocaleLowerCase('es-CO') === 'líder del pesv';
       
       // Build designee info (works for both internal workers and external LSOs)
       const designeeInfo = {
@@ -14019,7 +14020,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       setupTrialWatermarkOnAllPages(doc, desig_trialStatus.requiresWatermark);
       // Set response headers
       res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="Acta-Designacion-Responsable-SST-${designation.id.substring(0, 8)}.pdf"`);
+      const designationFilename = isPesvDesignation
+        ? `Acta-Designacion-Lider-PESV-${designation.id.substring(0, 8)}.pdf`
+        : `Acta-Designacion-Responsable-SST-${designation.id.substring(0, 8)}.pdf`;
+      res.setHeader('Content-Disposition', `attachment; filename="${designationFilename}"`);
       
       // Pipe PDF to response
       doc.pipe(res);
@@ -14039,8 +14043,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let currentY = await addStandardHeader({
         doc,
         company,
-        documentTitle: 'ACTA DE DESIGNACIÓN RESPONSABLE SST',
-        documentCode: `SST-DES-${designation.id.substring(0, 8)}`,
+        documentTitle: isPesvDesignation
+          ? 'ACTA DE DESIGNACIÓN DEL LÍDER DEL PESV'
+          : 'ACTA DE DESIGNACIÓN RESPONSABLE SST',
+        documentCode: `${isPesvDesignation ? 'PESV-DES' : 'SST-DES'}-${designation.id.substring(0, 8)}`,
         version: '1.0',
         date: new Date(designation.designationDate + 'T12:00:00'),
         logoBuffer: logo,
@@ -14086,8 +14092,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Determine if this is an LSO designation for enhanced PDF - use explicit flags
       const isLsoDesignation = isExternalLso || designation.isExternalLso === true || (designation.licenciaSstNumero && designation.licenciaSstNumero.length > 0);
       
-      // LSO-specific enhanced intro paragraph
-      if (isLsoDesignation) {
+      if (isPesvDesignation) {
+        doc.fontSize(9).text(
+          `En la ciudad de ${city}, a los ${formattedDate}, la empresa ${company.name}, identificada con NIT ${company.nit || '____________'}, designa formalmente a la persona identificada en la presente acta como Líder del Plan Estratégico de Seguridad Vial (PESV), para dirigir, coordinar y hacer seguimiento a su diseño, implementación, evaluación y mejora, de conformidad con la Ley 1503 de 2011, el Decreto 1252 de 2021, la Resolución 40595 de 2022 del Ministerio de Transporte y las demás normas aplicables en materia de seguridad vial.`,
+          margin, currentY, { width: contentWidth, align: 'justify' }
+        );
+      } else if (isLsoDesignation) {
         doc.fontSize(9).text(
           `En la ciudad de ${city}, a los ${formattedDate}, la empresa ${company.name}, identificada con NIT ${company.nit || '____________'}, en cumplimiento de lo establecido en el Decreto 1072 de 2015 (Libro 2, Parte 2, Título 4, Capítulo 6), la Resolución 0312 de 2019, la Ley 1562 de 2012 y demás normas concordantes del Sistema General de Riesgos Laborales, procede a designar formalmente al siguiente profesional para la dirección, administración y ejecución del Sistema de Gestión de la Seguridad y Salud en el Trabajo (SG-SST):`,
           margin, currentY, { width: contentWidth, align: 'justify' }
@@ -14102,7 +14112,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       currentY = doc.y + 15;
       
       // Position box
-      const positionTitle = isLsoDesignation 
+      const positionTitle = isPesvDesignation
+        ? 'LÍDER DEL PLAN ESTRATÉGICO DE SEGURIDAD VIAL (PESV)'
+        : isLsoDesignation
         ? 'PROFESIONAL LICENCIADO EN SEGURIDAD Y SALUD EN EL TRABAJO'
         : (designation.position || '').toUpperCase();
       doc.rect(margin, currentY, contentWidth, 30).fill('#f0f0f0').stroke();
@@ -14114,7 +14126,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const workerBoxStartY = currentY;
       const workerBoxPadding = 10;
       
-      doc.fontSize(8).font('Helvetica-Bold').text(isLsoDesignation ? 'DATOS DEL PROFESIONAL DESIGNADO' : 'DATOS DEL DESIGNADO', margin + workerBoxPadding, workerBoxStartY + workerBoxPadding);
+      const designeeSectionTitle = isPesvDesignation
+        ? 'DATOS DEL LÍDER DEL PESV DESIGNADO'
+        : isLsoDesignation
+          ? 'DATOS DEL PROFESIONAL DESIGNADO'
+          : 'DATOS DEL DESIGNADO';
+      doc.fontSize(8).font('Helvetica-Bold').text(designeeSectionTitle, margin + workerBoxPadding, workerBoxStartY + workerBoxPadding);
       currentY = doc.y + 6;
       
       doc.font('Helvetica');
@@ -14124,7 +14141,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.text(`Documento de Identidad: CC ${designeeInfo.identificationNumber}`, margin + workerBoxPadding, currentY);
       currentY = doc.y + 4;
       
-      doc.text(`Cargo: ${designeeInfo.position || (isLsoDesignation ? 'Profesional Licenciado SST' : 'No especificado')}`, margin + workerBoxPadding, currentY);
+      doc.text(`Cargo o rol designado: ${isPesvDesignation ? 'Líder del PESV' : designeeInfo.position || (isLsoDesignation ? 'Profesional Licenciado SST' : 'No especificado')}`, margin + workerBoxPadding, currentY);
       currentY = doc.y + 4;
       
       // License info
@@ -14151,19 +14168,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.rect(margin, workerBoxStartY, contentWidth, workerBoxHeight).stroke();
       currentY = workerBoxEndY + 15;
       
-      // For LSO, add normative framework section before responsibilities
-      if (isLsoDesignation) {
+      // Add the normative framework that corresponds to the designation type
+      if (isPesvDesignation || isLsoDesignation) {
         checkPageSpace(doc, 80);
         doc.fontSize(9).font('Helvetica-Bold').text('MARCO NORMATIVO:', margin, currentY);
         currentY = doc.y + 6;
         doc.font('Helvetica').fontSize(8);
-        const normas = [
-          'Ley 1562 de 2012 - Sistema General de Riesgos Laborales.',
-          'Decreto 1072 de 2015 - Decreto Único Reglamentario del Sector Trabajo, Libro 2, Parte 2, Título 4, Capítulo 6.',
-          'Resolución 0312 de 2019 - Estándares Mínimos del SG-SST.',
-          'Resolución 4927 de 2016 - Curso obligatorio de 50 horas en SST.',
-          'Resolución 1111 de 2017 y demás normas concordantes.'
-        ];
+        const normas = isPesvDesignation
+          ? [
+              'Ley 1503 de 2011 - Promoción de la formación de hábitos, comportamientos y conductas seguras en la vía.',
+              'Decreto 1252 de 2021 - Reglamentación de los Planes Estratégicos de Seguridad Vial.',
+              'Resolución 40595 de 2022 - Metodología para el diseño, implementación y verificación de los Planes Estratégicos de Seguridad Vial.',
+              'Decreto 1072 de 2015 - Articulación del PESV con el Sistema de Gestión de Seguridad y Salud en el Trabajo.',
+              'Demás normas concordantes y aplicables en materia de seguridad vial.'
+            ]
+          : [
+              'Ley 1562 de 2012 - Sistema General de Riesgos Laborales.',
+              'Decreto 1072 de 2015 - Decreto Único Reglamentario del Sector Trabajo, Libro 2, Parte 2, Título 4, Capítulo 6.',
+              'Resolución 0312 de 2019 - Estándares Mínimos del SG-SST.',
+              'Resolución 4927 de 2016 - Curso obligatorio de 50 horas en SST.',
+              'Resolución 1111 de 2017 y demás normas concordantes.'
+            ];
         for (const norma of normas) {
           doc.text(`  - ${norma}`, margin + 10, currentY, { width: contentWidth - 20 });
           currentY = doc.y + 3;
@@ -14172,7 +14197,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Responsibilities section
-      doc.fontSize(9).font('Helvetica-Bold').text(isLsoDesignation ? 'FUNCIONES Y RESPONSABILIDADES DEL PROFESIONAL SST:' : 'RESPONSABILIDADES ASIGNADAS:', margin, currentY);
+      const responsibilitiesTitle = isPesvDesignation
+        ? 'FUNCIONES Y RESPONSABILIDADES DEL LÍDER DEL PESV:'
+        : isLsoDesignation
+          ? 'FUNCIONES Y RESPONSABILIDADES DEL PROFESIONAL SST:'
+          : 'RESPONSABILIDADES ASIGNADAS:';
+      doc.fontSize(9).font('Helvetica-Bold').text(responsibilitiesTitle, margin, currentY);
       currentY = doc.y + 8;
       
       const respFontSize = 8;
@@ -14180,7 +14210,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const responsibilities = designation.responsibilities || [];
       let respNum = 1;
       for (const resp of responsibilities) {
-        const respText = isLsoDesignation ? `${respNum}. ${resp}` : `• ${resp}`;
+        const respText = isPesvDesignation || isLsoDesignation ? `${respNum}. ${resp}` : `• ${resp}`;
         const respHeight = doc.heightOfString(respText, { width: contentWidth - 20 });
         if (currentY + respHeight > doc.page.height - 80) {
           doc.addPage();
@@ -14194,20 +14224,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       currentY += 5;
       
-      // For LSO, add employer obligations section
-      if (isLsoDesignation) {
+      // Add organization commitments appropriate to the designation
+      if (isPesvDesignation || isLsoDesignation) {
         checkPageSpace(doc, 100);
         currentY = doc.y;
-        doc.fontSize(9).font('Helvetica-Bold').text('OBLIGACIONES DEL EMPLEADOR:', margin, currentY);
+        doc.fontSize(9).font('Helvetica-Bold').text(isPesvDesignation ? 'COMPROMISOS DE LA ORGANIZACIÓN:' : 'OBLIGACIONES DEL EMPLEADOR:', margin, currentY);
         currentY = doc.y + 6;
         doc.font('Helvetica').fontSize(8);
-        const obligaciones = [
-          'Suministrar al profesional designado los recursos financieros, técnicos y el personal necesario para el diseño, implementación, revisión, evaluación y mejora del SG-SST.',
-          'Garantizar al profesional designado el acceso a todas las áreas, procesos e información de la empresa necesarios para el cumplimiento de sus funciones.',
-          'Facilitar la participación de los trabajadores en las actividades programadas por el profesional SST.',
-          'Asegurar que el profesional SST cuente con la autoridad y el respaldo de la alta dirección para la toma de decisiones en materia de SST.',
-          'Responder por la implementación del SG-SST como obligación del empleador, sin que la designación del profesional le exima de su responsabilidad legal.'
-        ];
+        const obligaciones = isPesvDesignation
+          ? [
+              'Asignar los recursos financieros, técnicos y humanos necesarios para el diseño, implementación, seguimiento y mejora del PESV.',
+              'Facilitar al Líder del PESV el acceso a la información, procesos, instalaciones, vehículos y personal requeridos para el cumplimiento de sus funciones.',
+              'Promover la participación de conductores, contratistas y demás actores viales de la organización en las actividades del PESV.',
+              'Respaldar las decisiones y acciones preventivas propuestas por el Líder del PESV para gestionar los riesgos de seguridad vial.',
+              'Mantener la responsabilidad institucional sobre el cumplimiento y mejora continua del PESV.'
+            ]
+          : [
+              'Suministrar al profesional designado los recursos financieros, técnicos y el personal necesario para el diseño, implementación, revisión, evaluación y mejora del SG-SST.',
+              'Garantizar al profesional designado el acceso a todas las áreas, procesos e información de la empresa necesarios para el cumplimiento de sus funciones.',
+              'Facilitar la participación de los trabajadores en las actividades programadas por el profesional SST.',
+              'Asegurar que el profesional SST cuente con la autoridad y el respaldo de la alta dirección para la toma de decisiones en materia de SST.',
+              'Responder por la implementación del SG-SST como obligación del empleador, sin que la designación del profesional le exima de su responsabilidad legal.'
+            ];
         let oblNum = 1;
         for (const obl of obligaciones) {
           const oblText = `${oblNum}. ${obl}`;
@@ -14228,7 +14266,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       checkPageSpace(doc, 80);
       currentY = doc.y;
       
-      if (isLsoDesignation) {
+      if (isPesvDesignation) {
+        doc.fontSize(8).text(
+          `El Líder del PESV contará con la autoridad y el respaldo de la alta dirección para coordinar las áreas involucradas, solicitar información, gestionar recursos y proponer las acciones necesarias para prevenir siniestros viales y cumplir los objetivos del Plan Estratégico de Seguridad Vial. Esta designación no exime a la organización de sus responsabilidades legales frente al diseño, implementación, seguimiento y mejora del PESV.`,
+          margin, currentY, { width: contentWidth, align: 'justify' }
+        );
+      } else if (isLsoDesignation) {
         doc.fontSize(8).text(
           `El profesional designado tendrá la autoridad y el respaldo de la alta dirección para tomar decisiones en materia de seguridad y salud en el trabajo, asignar recursos y solicitar la colaboración de todas las áreas de la organización para el cumplimiento de sus funciones. La presente designación se realiza en cumplimiento del artículo 2.2.4.6.8 del Decreto 1072 de 2015 y los estándares mínimos establecidos en la Resolución 0312 de 2019.`,
           margin, currentY, { width: contentWidth, align: 'justify' }

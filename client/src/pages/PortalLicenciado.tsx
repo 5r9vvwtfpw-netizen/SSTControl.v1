@@ -1323,7 +1323,10 @@ function buildCompanyVaults(docs: AllDocuments): CompanyVault[] {
     if (mat.lsoSignatureName) v.signedDocs++; else v.pendingDocs++;
   }
   for (const des of (docs.designaciones || [])) {
-    if (des.position !== 'Responsable del SG-SST') continue;
+    const isSstOrPesvDesignation =
+      des.position === 'Responsable del SG-SST' ||
+      des.position === 'Líder del PESV';
+    if (!isSstOrPesvDesignation) continue;
     const v = getOrCreate(des.companyId, des.companyName, des.companyNit);
     v.designaciones.push(des);
     v.totalDocs++;
@@ -1675,8 +1678,8 @@ function CompanyVaultDetail({ vault, onBack, isSigning, signingId, onSign, onMes
         <Card>
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
             <div>
-              <CardTitle className="text-base">Actas de Designación del Responsable</CardTitle>
-              <CardDescription>Estándar 1.1.1 - Res. 0312/2019 - Designación del responsable del SG-SST</CardDescription>
+              <CardTitle className="text-base">Actas de Designación SST y PESV</CardTitle>
+              <CardDescription>Actas del Responsable del SG-SST y del Líder del Plan Estratégico de Seguridad Vial</CardDescription>
             </div>
             <Badge variant="outline">{vault.designaciones.length}</Badge>
           </CardHeader>
@@ -1734,7 +1737,11 @@ function CompanyVaultDetail({ vault, onBack, isSigning, signingId, onSign, onMes
                           <Button 
                             size="sm"
                             data-testid={`button-sign-des-${des.id}`}
-                            onClick={() => onSign('designacion', des.id, `Acta Designación - ${vault.companyName}`)}
+                            onClick={() => onSign(
+                              'designacion',
+                              des.id,
+                              `${des.position === 'Líder del PESV' ? 'Acta Designación Líder PESV' : 'Acta Designación Responsable SST'} - ${vault.companyName}`,
+                            )}
                             disabled={isSigning}
                           >
                             <FileCheck className="h-4 w-4 mr-1" />
