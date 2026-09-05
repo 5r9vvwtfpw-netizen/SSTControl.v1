@@ -1,6 +1,6 @@
 # Manual de Usuario — SST Colombia
-**Versión:** 4.0.0
-**Fecha:** 11 de junio de 2026
+**Versión:** 4.1.2
+**Fecha:** 5 de septiembre de 2026
 **Conforme a:** Resolución 0312/2019, Decreto 1072/2015, ISO 45001:2018, Resolución 40595/2022
 
 ---
@@ -1027,6 +1027,64 @@ Sí. En el proceso de pago o en Administración Global → Mi Cuenta puede ingre
 
 > Esta sección se genera automáticamente desde `docs/changelog.json`.
 > Para agregar cambios, edita ese archivo y ejecuta `npx tsx scripts/generate-manual.ts`.
+
+### v4.1.2 — 5 de septiembre de 2026
+
+#### Nueva funcionalidad
+
+**Informes y Reportes** — Biblioteca consolidada de 18 informes PDF
+Se habilitó desde Verificar una biblioteca central con 18 informes SST y PESV, incluyendo Rendición de Cuentas, Autoevaluación de Estándares Mínimos, accidentalidad, capacitaciones, inspecciones, contratos y designaciones, evaluaciones SST, auditorías, objetivos, revisiones por la Dirección, acciones de contexto, condiciones de salud, exámenes médicos, conservación auditiva, partes interesadas, sedes, rutas seguras y liderazgo PESV.
+*Ruta:* `/informes`
+*Fase:* Verificar
+
+**Acceso Multiempresa de Mecánicos** — Asignación de mecánicos a varias empresas
+Se incorporó la administración de autorizaciones por empresa para mecánicos externos, con invitaciones sincronizadas, selección segura del contexto empresarial y validación de permisos antes de consultar o gestionar información vehicular.
+*Ruta:* `/invitaciones-mecanico`
+*Fase:* PESV
+
+#### Mejora
+
+**Informes y Reportes** — Estandarización integral de documentos PDF
+Los 18 informes utilizan encabezado corporativo, código y versión documental, secciones estándar, tablas con altura dinámica, paginación automática, marca de agua y tabla de firmas. Se eliminaron cuerpos con coordenadas fijas que podían superponer o cortar contenido.
+*Ruta:* `/informes`
+*Fase:* Verificar
+
+**Inducciones Virtuales** — Separación de contenidos SST y PESV
+El envío de inducciones PESV ya no depende de tener materiales o preguntas configuradas. Los contenidos son opcionales, las preguntas se aíslan por tipo y los portales administrativos y de trabajadores reflejan correctamente las sesiones asignadas.
+*Ruta:* `/configuracion-induccion`
+*Fase:* Hacer
+
+**Evaluaciones SST** — Mejoras de navegación, detalle y persistencia
+Se actualizaron las vistas de evaluaciones y detalle, sus rutas y la lógica de almacenamiento para conservar correctamente el contexto de empresa, facilitar el acceso a los módulos asociados y evitar inconsistencias al consultar evaluaciones.
+*Ruta:* `/evaluaciones-sst`
+*Fase:* Verificar
+
+**Gestión de Usuarios y Accesos** — Controles de acceso y navegación por rol
+Se reforzaron los permisos de gestión de usuarios, el acceso del Responsable SST y la navegación hacia las funciones permitidas. Las rutas sensibles validan tanto el rol como el contexto efectivo de empresa.
+*Ruta:* `/gestion-usuarios`
+*Fase:* Global
+
+**IPERC, Comunicación SST y PESV** — Accesos directos e informes contextuales
+Se mejoraron las pantallas de IPERC, Comunicación SST, inspecciones vehiculares, mantenimiento, alcohol y sustancias, fatiga y somnolencia, vehículos y rutas seguras. Se añadieron accesos contextuales a los informes correspondientes y se corrigió la identificación de H04 Vehículos Seguros y H08 Rutas Seguras.
+*Fase:* PESV
+
+#### Corrección
+
+**Descarga de Informes** — Validación de integridad y recuperación de descargas
+Las descargas ahora tienen límite de 60 segundos y validan Content-Type, firma inicial %PDF- y cierre %%EOF antes de guardar el archivo. Los errores liberan el botón y evitan descargar documentos vacíos o truncados. También se corrigió el tratamiento de hallazgos estructurados en Inspecciones y de fechas en Capacitaciones.
+*Ruta:* `/informes`
+*Fase:* Verificar
+
+**Autenticación** — Compatibilidad con autocompletado de Safari
+El inicio de sesión ahora lee los valores reales del formulario al enviar, incluso cuando Safari completa las credenciales sin notificar correctamente a React.
+*Ruta:* `/auth`
+*Fase:* Global
+
+**Comunicación en Tiempo Real** — WebSocket aislado del canal de desarrollo
+El servidor procesa las conexiones WebSocket de la aplicación únicamente en su ruta designada, evitando interferencias con el canal de actualización de Vite y mejorando la estabilidad del chat y de las notificaciones en desarrollo.
+*Fase:* Soporte
+
+---
 
 ### v4.0.0 — 11 de junio de 2026
 

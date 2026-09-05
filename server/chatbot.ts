@@ -19,8 +19,21 @@ const COMPANY_CACHE_TTL = 10 * 60 * 1000;
 const APP_KNOWLEDGE_BASE = `
 === BASE DE CONOCIMIENTO: PLATAFORMA SST COLOMBIA ===
 
+## VERSIÓN ACTUAL Y NOVEDADES
+La versión actual es **4.1.2** (5 de septiembre de 2026). Cuando el usuario pregunte por novedades recientes, explica en lenguaje sencillo:
+- **Informes y Reportes** está en **Verificar → Informes y Reportes** (/informes) y reúne 18 documentos SST y PESV descargables.
+- Todos esos informes usan el formato corporativo estándar: encabezado, código y versión documental, secciones, tablas paginadas, marca de agua cuando aplica y firmas. La descarga valida que el PDF esté completo y se cancela con un mensaje claro si tarda más de 60 segundos.
+- La biblioteca incluye: Rendición de Cuentas; Autoevaluación de Estándares Mínimos; Indicadores de Accidentalidad; Capacitaciones; Inspecciones; Contratos y Designaciones; Evaluaciones SST; Auditorías Internas; Objetivos e Indicadores; Revisiones por la Dirección; Acciones de Mejora del Contexto; Condiciones de Salud; Exámenes Médicos; Conservación Auditiva; Partes Interesadas; Sedes y Plantas; Rutas Seguras PESV; y Liderazgo PESV.
+- Los mecánicos externos pueden tener acceso autorizado a varias empresas. Deben seleccionar una empresa habilitada y el sistema valida ese contexto antes de mostrar o modificar información vehicular.
+- Las inducciones SST y PESV están separadas por tipo. Una sesión PESV puede enviarse aunque no tenga materiales o preguntas; estos elementos son opcionales.
+- Se reforzaron la Gestión de Usuarios, los permisos del Responsable SST y el contexto efectivo de empresa.
+- Se corrigió el inicio de sesión con credenciales autocompletadas por Safari.
+- Se estabilizaron las conexiones WebSocket del chat y las notificaciones sin interferir con la actualización de Vite.
+- H04 corresponde a **Vehículos Seguros** y H08 a **Rutas Seguras**. No intercambies esos nombres.
+No presentes detalles técnicos internos salvo que el usuario los solicite. Para guiar una descarga, indica siempre la ruta exacta y el nombre visible del informe.
+
 ## NAVEGACIÓN PRINCIPAL
-La plataforma usa navegación por pestañas horizontales siguiendo el ciclo PHVA (Planear-Hacer-Verificar-Actuar). En la barra superior hay pestañas: **Administración Global**, Planear, Hacer, Verificar, Actuar, y PESV (si la empresa tiene vehículos). Al hacer clic en cada pestaña se despliega un menú con las opciones disponibles. IMPORTANTE: No existe ninguna pestaña ni menú llamado "Configuración" — siempre di "Administración Global" cuando te refieras a ese menú.
+La plataforma usa navegación por pestañas horizontales siguiendo el ciclo PHVA (Planear-Hacer-Verificar-Actuar). En la barra superior hay pestañas: **Administración Global**, Planear, Hacer, Verificar, Actuar, y PESV (si la empresa tiene vehículos). Al hacer clic en cada pestaña se despliega un menú con las opciones disponibles. En **Verificar** está **Informes y Reportes**, que abre /informes. IMPORTANTE: No existe ninguna pestaña ni menú llamado "Configuración" — siempre di "Administración Global" cuando te refieras a ese menú.
 
 ## ROLES DE USUARIO
 La plataforma tiene 11 roles con diferentes niveles de acceso:

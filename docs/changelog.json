@@ -1,6 +1,92 @@
 {
   "entries": [
     {
+      "version": "4.1.2",
+      "date": "2026-09-05",
+      "changes": [
+        {
+          "type": "nueva-funcionalidad",
+          "modulo": "Informes y Reportes",
+          "titulo": "Biblioteca consolidada de 18 informes PDF",
+          "descripcion": "Se habilitó desde Verificar una biblioteca central con 18 informes SST y PESV, incluyendo Rendición de Cuentas, Autoevaluación de Estándares Mínimos, accidentalidad, capacitaciones, inspecciones, contratos y designaciones, evaluaciones SST, auditorías, objetivos, revisiones por la Dirección, acciones de contexto, condiciones de salud, exámenes médicos, conservación auditiva, partes interesadas, sedes, rutas seguras y liderazgo PESV.",
+          "ruta": "/informes",
+          "fase": "Verificar"
+        },
+        {
+          "type": "mejora",
+          "modulo": "Informes y Reportes",
+          "titulo": "Estandarización integral de documentos PDF",
+          "descripcion": "Los 18 informes utilizan encabezado corporativo, código y versión documental, secciones estándar, tablas con altura dinámica, paginación automática, marca de agua y tabla de firmas. Se eliminaron cuerpos con coordenadas fijas que podían superponer o cortar contenido.",
+          "ruta": "/informes",
+          "fase": "Verificar"
+        },
+        {
+          "type": "correccion",
+          "modulo": "Descarga de Informes",
+          "titulo": "Validación de integridad y recuperación de descargas",
+          "descripcion": "Las descargas ahora tienen límite de 60 segundos y validan Content-Type, firma inicial %PDF- y cierre %%EOF antes de guardar el archivo. Los errores liberan el botón y evitan descargar documentos vacíos o truncados. También se corrigió el tratamiento de hallazgos estructurados en Inspecciones y de fechas en Capacitaciones.",
+          "ruta": "/informes",
+          "fase": "Verificar"
+        },
+        {
+          "type": "nueva-funcionalidad",
+          "modulo": "Acceso Multiempresa de Mecánicos",
+          "titulo": "Asignación de mecánicos a varias empresas",
+          "descripcion": "Se incorporó la administración de autorizaciones por empresa para mecánicos externos, con invitaciones sincronizadas, selección segura del contexto empresarial y validación de permisos antes de consultar o gestionar información vehicular.",
+          "ruta": "/invitaciones-mecanico",
+          "fase": "PESV"
+        },
+        {
+          "type": "mejora",
+          "modulo": "Inducciones Virtuales",
+          "titulo": "Separación de contenidos SST y PESV",
+          "descripcion": "El envío de inducciones PESV ya no depende de tener materiales o preguntas configuradas. Los contenidos son opcionales, las preguntas se aíslan por tipo y los portales administrativos y de trabajadores reflejan correctamente las sesiones asignadas.",
+          "ruta": "/configuracion-induccion",
+          "fase": "Hacer"
+        },
+        {
+          "type": "mejora",
+          "modulo": "Evaluaciones SST",
+          "titulo": "Mejoras de navegación, detalle y persistencia",
+          "descripcion": "Se actualizaron las vistas de evaluaciones y detalle, sus rutas y la lógica de almacenamiento para conservar correctamente el contexto de empresa, facilitar el acceso a los módulos asociados y evitar inconsistencias al consultar evaluaciones.",
+          "ruta": "/evaluaciones-sst",
+          "fase": "Verificar"
+        },
+        {
+          "type": "mejora",
+          "modulo": "Gestión de Usuarios y Accesos",
+          "titulo": "Controles de acceso y navegación por rol",
+          "descripcion": "Se reforzaron los permisos de gestión de usuarios, el acceso del Responsable SST y la navegación hacia las funciones permitidas. Las rutas sensibles validan tanto el rol como el contexto efectivo de empresa.",
+          "ruta": "/gestion-usuarios",
+          "fase": "Global"
+        },
+        {
+          "type": "correccion",
+          "modulo": "Autenticación",
+          "titulo": "Compatibilidad con autocompletado de Safari",
+          "descripcion": "El inicio de sesión ahora lee los valores reales del formulario al enviar, incluso cuando Safari completa las credenciales sin notificar correctamente a React.",
+          "ruta": "/auth",
+          "fase": "Global"
+        },
+        {
+          "type": "correccion",
+          "modulo": "Comunicación en Tiempo Real",
+          "titulo": "WebSocket aislado del canal de desarrollo",
+          "descripcion": "El servidor procesa las conexiones WebSocket de la aplicación únicamente en su ruta designada, evitando interferencias con el canal de actualización de Vite y mejorando la estabilidad del chat y de las notificaciones en desarrollo.",
+          "ruta": null,
+          "fase": "Soporte"
+        },
+        {
+          "type": "mejora",
+          "modulo": "IPERC, Comunicación SST y PESV",
+          "titulo": "Accesos directos e informes contextuales",
+          "descripcion": "Se mejoraron las pantallas de IPERC, Comunicación SST, inspecciones vehiculares, mantenimiento, alcohol y sustancias, fatiga y somnolencia, vehículos y rutas seguras. Se añadieron accesos contextuales a los informes correspondientes y se corrigió la identificación de H04 Vehículos Seguros y H08 Rutas Seguras.",
+          "ruta": null,
+          "fase": "PESV"
+        }
+      ]
+    },
+    {
       "version": "4.0.0",
       "date": "2026-06-11",
       "changes": [
