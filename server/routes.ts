@@ -21918,206 +21918,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
           logoBuffer,
         });
 
-        doc.y = currentY;
-
-        // Helper for green section headers (bar only, no box)
-        const drawGreenHeader = (title: string) => {
-          const startY = doc.y;
-          doc.rect(margin, startY, pageWidth - 2 * margin, 18).fill('#1e7e34');
-          doc.fontSize(10).font('Helvetica-Bold').fillColor('#ffffff')
-            .text(title, margin + 10, startY + 4, { lineBreak: false });
-          doc.fillColor('#000000');
-          doc.y = startY + 24;
-          doc.x = margin;
-        };
-
-        // Summary information
-        drawGreenHeader('RESUMEN EJECUTIVO');
-        
         const totalWorkers = workersWithData.length;
         const activeContracts = contracts.filter(c => c.status === 'activo').length;
         const totalDesignations = workersWithData.reduce((sum, item) => sum + item.designations.length, 0);
-        
-        doc.fontSize(9).font('Helvetica-Bold').text('Total de Trabajadores con Contrato: ', { continued: true });
-        doc.font('Helvetica').text(totalWorkers.toString());
-        
-        doc.font('Helvetica-Bold').text('Total de Contratos: ', { continued: true });
-        doc.font('Helvetica').text(contracts.length.toString());
-        
-        doc.font('Helvetica-Bold').text('Contratos Activos: ', { continued: true });
-        doc.font('Helvetica').text(activeContracts.toString());
-        
-        doc.font('Helvetica-Bold').text('Total de Designaciones SST: ', { continued: true });
-        doc.font('Helvetica').text(totalDesignations.toString());
-        
-        doc.moveDown(1.5);
-
-        // Detailed information organized by workers
-        drawGreenHeader('DETALLE POR TRABAJADOR');
-        doc.moveDown(0.5);
+        currentY = addSectionBar(doc, 'RESUMEN EJECUTIVO', currentY);
+        currentY = addSimpleTable(doc, ['Trabajadores', 'Contratos', 'Activos', 'Designaciones SST'],
+          [[String(totalWorkers), String(contracts.length), String(activeContracts), String(totalDesignations)]],
+          { y: currentY, columnWidths: [136, 135, 135, 136] });
+        currentY = addSectionBar(doc, 'DETALLE POR TRABAJADOR', currentY);
 
         for (let i = 0; i < workersWithData.length; i++) {
           const { worker, contracts: workerContracts, designations } = workersWithData[i];
-
-          // Check if we need a new page
-          if (doc.y > 650) {
-            doc.addPage();
-            // Reset font after page break to maintain consistent text size
-            doc.font('Helvetica').fontSize(9).fillColor('#000000');
-          }
-
-          // Check if we need a new page
-          if (doc.y > 650) {
-            doc.addPage();
-            // Reset font after page break to maintain consistent text size
-            doc.font('Helvetica').fontSize(9).fillColor('#000000');
-          }
-
-          // Check if we need a new page
-          if (doc.y > 650) {
-            doc.addPage();
-            // Reset font after page break to maintain consistent text size
-            doc.font('Helvetica').fontSize(9).fillColor('#000000');
-          }
-
-          // Check if we need a new page
-          if (doc.y > 650) {
-            doc.addPage();
-            // Reset font after page break to maintain consistent text size
-            doc.font('Helvetica').fontSize(9).fillColor('#000000');
-          }
-
-          // Check if we need a new page
-          if (doc.y > 650) {
-            doc.addPage();
-            // Reset font after page break to maintain consistent text size
-            doc.font('Helvetica').fontSize(9).fillColor('#000000');
-          }
-
-          // Check if we need a new page
-          if (doc.y > 650) {
-            doc.addPage();
-            // Reset font after page break to maintain consistent text size
-            doc.font('Helvetica').fontSize(9).fillColor('#000000');
-          }
-
-          // Check if we need a new page
-          if (doc.y > 650) {
-            doc.addPage();
-            // Reset font after page break to maintain consistent text size
-            doc.font('Helvetica').fontSize(9).fillColor('#000000');
-          }
-
-          // Worker name and identification
-          doc.fontSize(9).font('Helvetica-Bold')
-            .fillColor('#1e7e34')
-            .text(`${i + 1}. ${worker.name}`, { underline: true });
-          doc.fillColor('#000000');
-          doc.moveDown(0.2);
-
-          // Get identification from first contract (all contracts should have same identification)
+          currentY = checkPageBreak(doc, 100, currentY);
+          currentY = addParagraph(doc, `${i + 1}. ${worker.name}`, { y: currentY, bold: true });
           const identification = workerContracts[0]?.identificationNumber;
-          if (identification) {
-            doc.fontSize(8).font('Helvetica-Bold').text('Cédula de Ciudadanía: ', { continued: true });
-            doc.font('Helvetica').text(identification);
-          }
-
-          doc.font('Helvetica-Bold').text('Cargo Actual: ', { continued: true });
-          doc.font('Helvetica').text(worker.position);
-
-          if (worker.department) {
-            doc.font('Helvetica-Bold').text('Departamento: ', { continued: true });
-            doc.font('Helvetica').text(worker.department);
-          }
-
-          doc.moveDown(0.5);
-
-          // Contracts section
-          doc.fontSize(9).font('Helvetica-Bold')
-            .fillColor('#1e7e34')
-            .text(`Contratos (${workerContracts.length}):`, { underline: true });
-          doc.fillColor('#000000');
-          doc.moveDown(0.3);
-
-          workerContracts.forEach((contract, idx) => {
-            doc.fontSize(8).font('Helvetica-Bold').text(`Contrato ${idx + 1}: ${contract.contractNumber}`, { indent: 15 });
-            doc.fontSize(7).font('Helvetica');
-
-            const contractTypeLabels: Record<string, string> = {
-              'indefinido': 'Indefinido',
-              'fijo': 'Término Fijo',
-              'obra_labor': 'Obra o Labor',
-              'ocasional': 'Ocasional',
-              'aprendizaje': 'Aprendizaje',
-              'servicios': 'Prestación de Servicios'
-            };
-            
-            doc.text(`Tipo: ${contractTypeLabels[contract.contractType] || contract.contractType}`, { indent: 20 });
-            doc.text(`Cargo: ${contract.position}`, { indent: 20 });
-            doc.text(`Inicio: ${new Date(contract.startDate).toLocaleDateString('es-CO')}`, { indent: 20 });
-            
-            if (contract.endDate) {
-              doc.text(`Finalización: ${new Date(contract.endDate).toLocaleDateString('es-CO')}`, { indent: 20 });
-            }
-
-            const statusLabels: Record<string, string> = {
-              'activo': 'Activo',
-              'vencido': 'Vencido',
-              'terminado': 'Terminado',
-              'suspendido': 'Suspendido'
-            };
-            doc.text(`Estado: ${statusLabels[contract.status] || contract.status}`, { indent: 20 });
-
-            if (contract.salary) {
-              doc.text(`Salario: $${contract.salary.toLocaleString('es-CO')}`, { indent: 20 });
-            }
-
-            doc.moveDown(0.3);
-          });
-
-          // Designations section
-          if (designations.length > 0) {
-            doc.fontSize(9).font('Helvetica-Bold')
-              .fillColor('#1e7e34')
-              .text(`Designaciones SST Activas (${designations.length}):`, { underline: true });
-            doc.fillColor('#000000');
-            doc.moveDown(0.3);
-
-            designations.forEach((designation, idx) => {
-              doc.fontSize(9).font('Helvetica-Bold').text(`${idx + 1}. ${designation.position}`, { indent: 15 });
-              
-              doc.font('Helvetica').text(`Fecha de Designación: ${new Date(designation.designationDate).toLocaleDateString('es-CO')}`, { indent: 20 });
-              
-              if (designation.responsibilities && designation.responsibilities.length > 0) {
-                doc.font('Helvetica-Oblique').text('Responsabilidades:', { indent: 20 });
-                designation.responsibilities.slice(0, 5).forEach((resp) => {
-                  doc.font('Helvetica').text(`• ${resp}`, { indent: 25 });
-                });
-                if (designation.responsibilities.length > 5) {
-                  doc.font('Helvetica-Oblique').text(`... y ${designation.responsibilities.length - 5} más`, { indent: 25 });
-                }
-              }
-              
-              doc.moveDown(0.3);
-            });
-          } else {
-            doc.fontSize(8).font('Helvetica-Oblique')
-              .fillColor('#666666')
-              .text('Sin designaciones SST activas', { indent: 15 });
-            doc.fillColor('#000000');
-          }
-
-          doc.moveDown(1);
-          
-          // Separator line
-          if (i < workersWithData.length - 1) {
-            doc.strokeColor('#cccccc')
-              .lineWidth(0.5)
-              .moveTo(50, doc.y)
-              .lineTo(550, doc.y)
-              .stroke();
-            doc.moveDown(1);
-          }
+          currentY = addLabeledField(doc, 'Identificación', identification || 'N/A', { y: currentY });
+          currentY = addLabeledField(doc, 'Cargo actual', worker.position || 'N/A', { y: currentY });
+          currentY = addLabeledField(doc, 'Departamento', worker.department || 'N/A', { y: currentY });
+          const contractTypeLabels: Record<string, string> = { indefinido: 'Indefinido', fijo: 'Término Fijo', obra_labor: 'Obra o Labor', ocasional: 'Ocasional', aprendizaje: 'Aprendizaje', servicios: 'Prestación de Servicios' };
+          const statusLabels: Record<string, string> = { activo: 'Activo', vencido: 'Vencido', terminado: 'Terminado', suspendido: 'Suspendido' };
+          currentY = addSimpleTable(doc, ['Contrato', 'Tipo', 'Cargo', 'Inicio', 'Finalización', 'Estado', 'Salario'],
+            workerContracts.map((contract, idx) => [`${idx + 1}. ${contract.contractNumber || 'N/A'}`, contractTypeLabels[contract.contractType] || contract.contractType || 'N/A', contract.position || 'N/A', new Date(contract.startDate).toLocaleDateString('es-CO'), contract.endDate ? new Date(contract.endDate).toLocaleDateString('es-CO') : 'N/A', statusLabels[contract.status] || contract.status || 'N/A', contract.salary ? `$${contract.salary.toLocaleString('es-CO')}` : 'N/A']),
+            { y: currentY, columnWidths: [78, 88, 95, 70, 70, 65, 76] });
+          currentY = addParagraph(doc, `Designaciones SST activas (${designations.length})`, { y: currentY, bold: true });
+          currentY = designations.length
+            ? addSimpleTable(doc, ['Cargo', 'Fecha', 'Responsabilidades'], designations.map(d => [d.position || 'N/A', new Date(d.designationDate).toLocaleDateString('es-CO'), (d.responsibilities || []).join('; ') || 'Sin responsabilidades registradas']), { y: currentY, columnWidths: [150, 100, 292] })
+            : addParagraph(doc, 'Sin designaciones SST activas.', { y: currentY, indent: 10 });
         }
 
         // Finalize PDF with signature footer
@@ -22203,7 +22029,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const signers = await getSignersForCompany(effectiveCompanyId, false);
 
         // Standard Header with logo, version control, and signatures
-        await addStandardHeader({
+        let currentY = await addStandardHeader({
           doc,
           company: company || { name: 'Empresa', nit: 'N/A', address: null, logoUrl: null },
           documentTitle: 'INFORME DE INDICADORES DE ACCIDENTALIDAD',
@@ -22212,20 +22038,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           date: new Date(),
           logoBuffer,
         });
-
-        // Helper for green section headers
-        const drawGreenHeader = (title: string) => {
-          const startY = doc.y;
-          doc.rect(margin, startY, pageWidth - 2 * margin, 18).fill('#1e7e34');
-          doc.fontSize(10).font('Helvetica-Bold').fillColor('#ffffff')
-            .text(title, margin + 10, startY + 4, { lineBreak: false });
-          doc.fillColor('#000000');
-          doc.y = startY + 24;
-          doc.x = margin;
-        };
-
-        // Summary section - more compact layout
-        drawGreenHeader('RESUMEN EJECUTIVO');
 
         // Statistics
         const totalAccidents = filteredAccidents.filter(a => a.incidentType === 'accidente').length;
@@ -22261,122 +22073,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
           'anio': 'Año'
         };
 
-        // Summary info in a more compact format
-        const summaryStartY = doc.y;
-        
-        // Draw summary box
-        doc.rect(margin, summaryStartY, pageWidth - 2 * margin, 60).stroke('#cccccc');
-        
-        doc.fontSize(9).font('Helvetica-Bold').text('Período:', margin + 10, summaryStartY + 8, { continued: true });
-        doc.font('Helvetica').text(` ${periodLabels[period as string] || 'Todos los registros'}`);
-        
-        doc.font('Helvetica-Bold').text('Total Accidentes:', margin + 10, summaryStartY + 22, { continued: true });
-        doc.font('Helvetica').text(` ${totalAccidents}`, { continued: true });
-        doc.font('Helvetica-Bold').text('    Total Incidentes:', { continued: true });
-        doc.font('Helvetica').text(` ${totalIncidents}`);
-        
-        // Severity in one line
         const severityText = Object.entries(bySeverity)
           .map(([sev, count]) => `${severityLabels[sev] || sev}: ${count}`)
           .join('  |  ');
-        doc.font('Helvetica-Bold').text('Por Severidad: ', margin + 10, summaryStartY + 36, { continued: true });
-        doc.font('Helvetica').text(severityText || 'N/A');
-        
-        // Areas in one line (top 3)
         const topAreas = (Object.entries(byArea) as [string, number][])
           .sort((a, b) => b[1] - a[1])
           .slice(0, 3)
           .map(([area, count]) => `${area}: ${count}`)
           .join('  |  ');
-        doc.font('Helvetica-Bold').text('Top Áreas: ', margin + 10, summaryStartY + 50, { continued: true });
-        doc.font('Helvetica').text(topAreas || 'N/A');
-        
-        doc.y = summaryStartY + 70;
-        
-        // Detailed table of events - compact format
-        drawGreenHeader('DETALLE DE EVENTOS');
+        currentY = addSectionBar(doc, 'RESUMEN EJECUTIVO', currentY);
+        currentY = addSimpleTable(doc, ['Período', 'Accidentes', 'Incidentes', 'Por severidad', 'Áreas principales'],
+          [[periodLabels[period as string] || 'Todos los registros', String(totalAccidents), String(totalIncidents), severityText || 'N/A', topAreas || 'N/A']],
+          { y: currentY, columnWidths: [110, 75, 75, 140, 142] });
+        currentY = addSectionBar(doc, 'DETALLE DE EVENTOS', currentY);
 
         const recentAccidents = filteredAccidents
           .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
           .slice(0, 30);
 
-        if (recentAccidents.length === 0) {
-          doc.fontSize(8).font('Helvetica-Oblique').text('No se encontraron eventos en el período seleccionado.');
-        } else {
-          // Table header
-          const tableStartY = doc.y;
-          const colWidths = [25, 75, 120, 70, 50, 50, pageWidth - 2 * margin - 390];
-          const colX = [margin];
-          for (let i = 1; i < colWidths.length; i++) {
-            colX.push(colX[i - 1] + colWidths[i - 1]);
-          }
-          
-          // Header row
-          doc.rect(margin, tableStartY, pageWidth - 2 * margin, 18).fill('#1e7e34');
-          doc.fontSize(8).font('Helvetica-Bold').fillColor('#ffffff');
-          doc.text('#', colX[0] + 2, tableStartY + 5, { width: colWidths[0] - 4, align: 'center' });
-          doc.text('Fecha', colX[1] + 2, tableStartY + 5, { width: colWidths[1] - 4, align: 'center' });
-          doc.text('Trabajador', colX[2] + 2, tableStartY + 5, { width: colWidths[2] - 4 });
-          doc.text('Tipo', colX[3] + 2, tableStartY + 5, { width: colWidths[3] - 4, align: 'center' });
-          doc.text('Severidad', colX[4] + 2, tableStartY + 5, { width: colWidths[4] - 4, align: 'center' });
-          doc.text('Días', colX[5] + 2, tableStartY + 5, { width: colWidths[5] - 4, align: 'center' });
-          doc.text('Descripción', colX[6] + 2, tableStartY + 5, { width: colWidths[6] - 4 });
-          doc.fillColor('#000000');
-          
-          let rowY = tableStartY + 18;
-          
-          recentAccidents.forEach((accident, idx) => {
-            // Check if we need a new page (leave 100px for footer)
-            if (rowY > 700) {
-              doc.addPage();
-          // Reset font after page break to maintain consistent text size
-          doc.font('Helvetica').fontSize(7).fillColor('#000000');
-              rowY = doc.y;
-              
-              // Repeat header on new page
-              doc.rect(margin, rowY, pageWidth - 2 * margin, 18).fill('#1e7e34');
-              doc.fontSize(8).font('Helvetica-Bold').fillColor('#ffffff');
-              doc.text('#', colX[0] + 2, rowY + 5, { width: colWidths[0] - 4, align: 'center' });
-              doc.text('Fecha', colX[1] + 2, rowY + 5, { width: colWidths[1] - 4, align: 'center' });
-              doc.text('Trabajador', colX[2] + 2, rowY + 5, { width: colWidths[2] - 4 });
-              doc.text('Tipo', colX[3] + 2, rowY + 5, { width: colWidths[3] - 4, align: 'center' });
-              doc.text('Severidad', colX[4] + 2, rowY + 5, { width: colWidths[4] - 4, align: 'center' });
-              doc.text('Días', colX[5] + 2, rowY + 5, { width: colWidths[5] - 4, align: 'center' });
-              doc.text('Descripción', colX[6] + 2, rowY + 5, { width: colWidths[6] - 4 });
-              doc.fillColor('#000000');
-              rowY += 18;
-            }
-            
-            const worker = workers.find(w => w.id === accident.workerId);
-            const rowHeight = 28;
-            
-            // Alternate row colors
-            if (idx % 2 === 1) {
-              doc.rect(margin, rowY, pageWidth - 2 * margin, rowHeight).fill('#f5f5f5');
-            }
-            doc.rect(margin, rowY, pageWidth - 2 * margin, rowHeight).stroke('#dddddd');
-            
-            doc.fontSize(7).font('Helvetica').fillColor('#000000');
-            doc.text(String(idx + 1), colX[0] + 2, rowY + 4, { width: colWidths[0] - 4, align: 'center' });
-            doc.text(new Date(accident.date).toLocaleDateString('es-CO'), colX[1] + 2, rowY + 4, { width: colWidths[1] - 4, align: 'center' });
-            doc.text((worker?.name || 'N/A').substring(0, 22), colX[2] + 2, rowY + 4, { width: colWidths[2] - 4 });
-            doc.text((accident.incidentType || 'N/A').substring(0, 10), colX[3] + 2, rowY + 4, { width: colWidths[3] - 4, align: 'center' });
-            doc.text((severityLabels[accident.severity || ''] || 'N/A').substring(0, 8), colX[4] + 2, rowY + 4, { width: colWidths[4] - 4, align: 'center' });
-            doc.text(String(accident.daysLost || 0), colX[5] + 2, rowY + 4, { width: colWidths[5] - 4, align: 'center' });
-            doc.text((accident.description || 'Sin descripción').substring(0, 50) + (accident.description && accident.description.length > 50 ? '...' : ''), colX[6] + 2, rowY + 4, { width: colWidths[6] - 4 });
-            
-            // Second line for actions if present
-            if (accident.correctiveActions) {
-              doc.fontSize(6).font('Helvetica-Oblique').fillColor('#666666');
-              doc.text('Acciones: ' + (accident.correctiveActions).substring(0, 80) + (accident.correctiveActions.length > 80 ? '...' : ''), colX[2] + 2, rowY + 16, { width: pageWidth - margin - colX[2] - 10 });
-              doc.fillColor('#000000');
-            }
-            
-            rowY += rowHeight;
-          });
-          
-          doc.y = rowY + 10;
-        }
+        currentY = recentAccidents.length
+          ? addSimpleTable(doc, ['#', 'Fecha', 'Trabajador', 'Tipo', 'Severidad', 'Días', 'Descripción / acciones'],
+              recentAccidents.map((accident, idx) => {
+                const worker = workers.find(w => w.id === accident.workerId);
+                return [String(idx + 1), new Date(accident.date).toLocaleDateString('es-CO'), worker?.name || 'N/A', accident.incidentType || 'N/A', severityLabels[accident.severity || ''] || 'N/A', String(accident.daysLost || 0), `${accident.description || 'Sin descripción'}${accident.correctiveActions ? `\nAcciones: ${accident.correctiveActions}` : ''}`];
+              }), { y: currentY, columnWidths: [25, 65, 115, 65, 70, 35, 167] })
+          : addParagraph(doc, 'No se encontraron eventos en el período seleccionado.', { y: currentY });
 
         // Add signature footer
         await addSignatureFooter(doc, signers, false);
@@ -22461,7 +22182,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const signers = await getSignersForCompany(effectiveCompanyId, false);
 
         // Standard Header (ISO 45001:2018)
-        await addStandardHeader({
+        let currentY = await addStandardHeader({
           doc,
           company: { id: company?.id || effectiveCompanyId, name: company?.name || 'Empresa', nit: company?.nit || 'N/A', logoUrl: company?.logoUrl || null },
           documentTitle: 'INFORME DE CAPACITACIONES SST',
@@ -22470,20 +22191,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           date: new Date(),
           logoBuffer,
         });
-
-        // Helper for green section headers
-        const drawGreenHeader = (title: string) => {
-          const startY = doc.y;
-          doc.rect(margin, startY, pageWidth - 2 * margin, 18).fill('#1e7e34');
-          doc.fontSize(10).font('Helvetica-Bold').fillColor('#ffffff')
-            .text(title, margin + 10, startY + 4, { lineBreak: false });
-          doc.fillColor('#000000');
-          doc.y = startY + 24;
-          doc.x = margin;
-        };
-
-        // Summary section - compact layout
-        drawGreenHeader('RESUMEN EJECUTIVO');
 
         // Status breakdown
         const statusLabels: Record<string, string> = {
@@ -22524,110 +22231,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
           'semestre': 'Semestre',
           'anio': 'Año'
         };
-        const summaryStartY = doc.y;
-        
-        doc.rect(margin, summaryStartY, pageWidth - 2 * margin, 60).stroke('#cccccc');
-        
-        doc.fontSize(9).font('Helvetica-Bold').text('Período:', margin + 10, summaryStartY + 8, { continued: true });
-        doc.font('Helvetica').text(` ${periodLabels[period as string] || 'Todos los registros'}`);
-        
-        doc.font('Helvetica-Bold').text('Total Capacitaciones:', margin + 10, summaryStartY + 22, { continued: true });
-        doc.font('Helvetica').text(` ${filteredTrainings.length}`, { continued: true });
-        doc.font('Helvetica-Bold').text('    Total Horas:', { continued: true });
-        doc.font('Helvetica').text(` ${totalHours}`, { continued: true });
-        doc.font('Helvetica-Bold').text('    Total Asistentes:', { continued: true });
-        doc.font('Helvetica').text(` ${totalAttendees}`);
-        
-        // Status in one line
         const statusText = Object.entries(byStatus)
           .map(([status, count]) => `${statusLabels[status] || status}: ${count}`)
           .join('  |  ');
-        doc.font('Helvetica-Bold').text('Por Estado: ', margin + 10, summaryStartY + 36, { continued: true });
-        doc.font('Helvetica').text(statusText || 'N/A');
-        
-        // Types in one line
         const typeText = Object.entries(byType)
           .map(([type, count]) => `${typeLabels[type] || type}: ${count}`)
           .join('  |  ');
-        doc.font('Helvetica-Bold').text('Por Tipo: ', margin + 10, summaryStartY + 50, { continued: true });
-        doc.font('Helvetica').text(typeText || 'N/A');
-        
-        doc.y = summaryStartY + 70;
-
-        // All trainings in table format
-        drawGreenHeader('LISTADO DE CAPACITACIONES');
+        currentY = addSectionBar(doc, 'RESUMEN EJECUTIVO', currentY);
+        currentY = addSimpleTable(doc, ['Período', 'Capacitaciones', 'Horas', 'Asistentes', 'Por estado', 'Por tipo'],
+          [[periodLabels[period as string] || 'Todos los registros', String(filteredTrainings.length), String(totalHours), String(totalAttendees), statusText || 'N/A', typeText || 'N/A']],
+          { y: currentY, columnWidths: [85, 75, 50, 65, 130, 137] });
+        currentY = addSectionBar(doc, 'LISTADO DE CAPACITACIONES', currentY);
 
         const allTrainings = filteredTrainings
           .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
           .slice(0, 40);
 
-        if (allTrainings.length === 0) {
-          doc.fontSize(8).font('Helvetica-Oblique').text('No se encontraron capacitaciones en el período seleccionado.');
-        } else {
-          // Table header
-          const tableStartY = doc.y;
-          const colWidths = [25, 75, 170, 70, 45, 45, pageWidth - 2 * margin - 430];
-          const colX = [margin];
-          for (let i = 1; i < colWidths.length; i++) {
-            colX.push(colX[i - 1] + colWidths[i - 1]);
-          }
-          
-          // Header row
-          doc.rect(margin, tableStartY, pageWidth - 2 * margin, 18).fill('#1e7e34');
-          doc.fontSize(8).font('Helvetica-Bold').fillColor('#ffffff');
-          doc.text('#', colX[0] + 2, tableStartY + 5, { width: colWidths[0] - 4, align: 'center' });
-          doc.text('Fecha', colX[1] + 2, tableStartY + 5, { width: colWidths[1] - 4, align: 'center' });
-          doc.text('Tema', colX[2] + 2, tableStartY + 5, { width: colWidths[2] - 4 });
-          doc.text('Tipo', colX[3] + 2, tableStartY + 5, { width: colWidths[3] - 4, align: 'center' });
-          doc.text('Horas', colX[4] + 2, tableStartY + 5, { width: colWidths[4] - 4, align: 'center' });
-          doc.text('Asist.', colX[5] + 2, tableStartY + 5, { width: colWidths[5] - 4, align: 'center' });
-          doc.text('Estado', colX[6] + 2, tableStartY + 5, { width: colWidths[6] - 4, align: 'center' });
-          doc.fillColor('#000000');
-          
-          let rowY = tableStartY + 18;
-          
-          allTrainings.forEach((training, idx) => {
-            if (rowY > 700) {
-              doc.addPage();
-          // Reset font after page break to maintain consistent text size
-          doc.font('Helvetica').fontSize(7).fillColor('#000000');
-              rowY = doc.y;
-              
-              // Repeat header
-              doc.rect(margin, rowY, pageWidth - 2 * margin, 18).fill('#1e7e34');
-              doc.fontSize(8).font('Helvetica-Bold').fillColor('#ffffff');
-              doc.text('#', colX[0] + 2, rowY + 5, { width: colWidths[0] - 4, align: 'center' });
-              doc.text('Fecha', colX[1] + 2, rowY + 5, { width: colWidths[1] - 4, align: 'center' });
-              doc.text('Tema', colX[2] + 2, rowY + 5, { width: colWidths[2] - 4 });
-              doc.text('Tipo', colX[3] + 2, rowY + 5, { width: colWidths[3] - 4, align: 'center' });
-              doc.text('Horas', colX[4] + 2, rowY + 5, { width: colWidths[4] - 4, align: 'center' });
-              doc.text('Asist.', colX[5] + 2, rowY + 5, { width: colWidths[5] - 4, align: 'center' });
-              doc.text('Estado', colX[6] + 2, rowY + 5, { width: colWidths[6] - 4, align: 'center' });
-              doc.fillColor('#000000');
-              rowY += 18;
-            }
-            
-            const rowHeight = 22;
-            
-            if (idx % 2 === 1) {
-              doc.rect(margin, rowY, pageWidth - 2 * margin, rowHeight).fill('#f5f5f5');
-            }
-            doc.rect(margin, rowY, pageWidth - 2 * margin, rowHeight).stroke('#dddddd');
-            
-            doc.fontSize(7).font('Helvetica').fillColor('#000000');
-            doc.text(String(idx + 1), colX[0] + 2, rowY + 7, { width: colWidths[0] - 4, align: 'center' });
-            doc.text(new Date(training.trainingDate).toLocaleDateString('es-CO'), colX[1] + 2, rowY + 7, { width: colWidths[1] - 4, align: 'center' });
-            doc.text((training.title || 'Sin tema').substring(0, 35), colX[2] + 2, rowY + 7, { width: colWidths[2] - 4 });
-            doc.text((typeLabels[training.type || ''] || training.type || 'N/A').substring(0, 12), colX[3] + 2, rowY + 7, { width: colWidths[3] - 4, align: 'center' });
-             doc.text(String(4), colX[4] + 2, rowY + 7, { width: colWidths[4] - 4, align: 'center' });
-            doc.text(String(training.attendeesCount || 0), colX[5] + 2, rowY + 7, { width: colWidths[5] - 4, align: 'center' });
-            doc.text((statusLabels[training.status || ''] || training.status || 'N/A').substring(0, 12), colX[6] + 2, rowY + 7, { width: colWidths[6] - 4, align: 'center' });
-            
-            rowY += rowHeight;
-          });
-          
-          doc.y = rowY + 10;
-        }
+        currentY = allTrainings.length
+          ? addSimpleTable(doc, ['#', 'Fecha', 'Tema', 'Tipo', 'Horas', 'Asist.', 'Estado'], allTrainings.map((training, idx) => [String(idx + 1), formatDate(training.date), training.title || 'Sin tema', typeLabels[training.type || ''] || training.type || 'N/A', String(training.durationHours || 0), String(training.attendeesCount || 0), statusLabels[training.status || ''] || training.status || 'N/A']), { y: currentY, columnWidths: [25, 65, 170, 80, 50, 55, 97] })
+          : addParagraph(doc, 'No se encontraron capacitaciones en el período seleccionado.', { y: currentY });
 
         // Add signature footer (ISO 45001:2018)
         await addSignatureFooter(doc, signers, false);
@@ -22662,7 +22284,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const pdfInsp_trialStatus = getTrialStatus(pdfInsp_subscription?.status || 'trial', pdfInsp_subscription?.trialEnd || null, true, true);
           setupTrialWatermarkOnAllPages(doc, pdfInsp_trialStatus.requiresWatermark);
 
-          await addStandardHeader({
+          let currentY = await addStandardHeader({
             doc,
             company: company || { name: 'Empresa', nit: 'N/A', address: null, logoUrl: null },
             documentTitle: 'INFORME DE INSPECCIÓN DE SEGURIDAD',
@@ -22672,16 +22294,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             logoBuffer,
           });
 
-          const drawGreenHeader = (title: string) => {
-            const startY = doc.y;
-            doc.rect(margin, startY, pageWidth - 2 * margin, 18).fill('#1e7e34');
-            doc.fontSize(10).font('Helvetica-Bold').fillColor('#ffffff')
-              .text(title, margin + 10, startY + 4, { lineBreak: false });
-            doc.fillColor('#000000');
-            doc.y = startY + 24;
-            doc.x = margin;
-          };
-
           const formatInspDate = (dateStr: string | null | undefined): string => {
             if (!dateStr) return 'N/A';
             try {
@@ -22690,21 +22302,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             } catch { return 'N/A'; }
           };
 
-          drawGreenHeader('INFORMACIÓN DE LA INSPECCIÓN');
-          
-          const infoY = doc.y;
-          doc.rect(margin, infoY, pageWidth - 2 * margin, 80).stroke('#cccccc');
-          
-          doc.fontSize(9).font('Helvetica-Bold').text('Área:', margin + 10, infoY + 8);
-          doc.font('Helvetica').text(inspection.area || 'N/A', margin + 80, infoY + 8);
-          
-          doc.font('Helvetica-Bold').text('Fecha:', margin + 10, infoY + 22);
-          doc.font('Helvetica').text(formatInspDate(inspection.date), margin + 80, infoY + 22);
-          
-          doc.font('Helvetica-Bold').text('Inspector:', margin + 10, infoY + 36);
-          doc.font('Helvetica').text(inspection.inspector || 'N/A', margin + 80, infoY + 36);
-          
-          doc.font('Helvetica-Bold').text('Estado:', margin + 10, infoY + 50);
+          currentY = addSectionBar(doc, 'INFORMACIÓN DE LA INSPECCIÓN', currentY);
           const statusLabels: Record<string, string> = {
             'aprobada': 'Aprobada',
             'pendiente': 'Pendiente',
@@ -22712,68 +22310,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
             'completada': 'Completada',
             'requiere_accion': 'Requiere Acción'
           };
-          doc.font('Helvetica').text(statusLabels[inspection.status] || inspection.status || 'N/A', margin + 80, infoY + 50);
-          
-          doc.font('Helvetica-Bold').text('Tipo:', margin + 280, infoY + 8);
-          const typeLabels: Record<string, string> = {
-            'pre_operacional': 'Pre-operacional',
-            'puesto_trabajo': 'Puesto de Trabajo',
-            'epp': 'EPP',
-            'instalaciones': 'Instalaciones',
-            'equipos': 'Equipos',
-            'herramientas': 'Herramientas',
-            'vehiculos': 'Vehículos',
-            'extintores': 'Extintores',
-            'botiquines': 'Botiquines',
-            'general': 'General'
-          };
-          doc.font('Helvetica').text('General', margin + 350, infoY + 8);
-          
-          doc.y = infoY + 90;
-
-          drawGreenHeader('RESULTADOS');
-          
-          const resultsY = doc.y;
-          doc.rect(margin, resultsY, pageWidth - 2 * margin, 60).stroke('#cccccc');
-          
           const findingsCount = typeof inspection.findings === 'number' ? inspection.findings : 0;
           const complianceVal = typeof inspection.compliance === 'number' ? inspection.compliance : 0;
-          
-          doc.fontSize(9).font('Helvetica-Bold').text('Hallazgos:', margin + 10, resultsY + 8);
-          doc.font('Helvetica').text(String(findingsCount), margin + 80, resultsY + 8);
-          
-          doc.font('Helvetica-Bold').text('Cumplimiento:', margin + 10, resultsY + 22);
-          const complianceColor = complianceVal >= 90 ? '#16a34a' : complianceVal >= 70 ? '#eab308' : '#dc2626';
-          doc.font('Helvetica-Bold').fillColor(complianceColor).text(`${complianceVal}%`, margin + 80, resultsY + 22);
-          doc.fillColor('#000000');
-          
-          doc.fontSize(8).font('Helvetica').fillColor('#666666')
-            .text('Fórmula: % Cumplimiento = (Ítems Conformes / Total Ítems) × 100', margin + 10, resultsY + 40);
-          doc.text('C = Conforme (cumple el requisito) | NC = No Conforme (hallazgo/incumplimiento)', margin + 10, resultsY + 50);
-          doc.fillColor('#000000');
-          
-          doc.y = resultsY + 70;
+          currentY = addSimpleTable(doc, ['Área', 'Fecha', 'Inspector', 'Estado'],
+            [[inspection.area || 'N/A', formatInspDate(inspection.date), inspection.inspector || 'N/A', statusLabels[inspection.status] || inspection.status || 'N/A']],
+            { y: currentY, columnWidths: [140, 100, 150, 152] });
+          currentY = addSectionBar(doc, 'RESULTADOS', currentY);
+          currentY = addSimpleTable(doc, ['Hallazgos', 'Cumplimiento'], [[String(findingsCount), `${complianceVal}%`]], { y: currentY, columnWidths: [271, 271] });
+          currentY = addParagraph(doc, 'Fórmula: % Cumplimiento = (Ítems Conformes / Total Ítems) × 100. C = Conforme; NC = No Conforme.', { y: currentY });
 
           if (inspection.observations) {
-            drawGreenHeader('OBSERVACIONES');
-            
-            const obsY = doc.y;
-            const obsHeight = Math.max(40, doc.heightOfString(inspection.observations, { width: pageWidth - 2 * margin - 20 }) + 16);
-            doc.rect(margin, obsY, pageWidth - 2 * margin, obsHeight).stroke('#cccccc');
-            doc.fontSize(9).font('Helvetica').text(inspection.observations, margin + 10, obsY + 8, { width: pageWidth - 2 * margin - 20 });
-            doc.y = obsY + obsHeight + 10;
+            currentY = addSectionBar(doc, 'OBSERVACIONES', currentY);
+            currentY = addParagraph(doc, inspection.observations, { y: currentY });
           }
 
-          drawGreenHeader('MARCO NORMATIVO');
-          
-          const normY = doc.y;
-          doc.rect(margin, normY, pageWidth - 2 * margin, 50).stroke('#cccccc');
-          doc.fontSize(8).font('Helvetica')
-            .text('• Decreto 1072/2015, Art. 2.2.4.6.12: Documentación del SG-SST', margin + 10, normY + 8)
-            .text('• Decreto 1072/2015, Art. 2.2.4.6.24: Medidas de prevención y control', margin + 10, normY + 20)
-            .text('• Resolución 0312/2019, Art. 16: Evaluación inicial del SG-SST', margin + 10, normY + 32);
-          
-          doc.y = normY + 60;
+          currentY = addSectionBar(doc, 'MARCO NORMATIVO', currentY);
+          currentY = addParagraph(doc, '• Decreto 1072/2015, Arts. 2.2.4.6.12 y 2.2.4.6.24. • Resolución 0312/2019, Art. 16.', { y: currentY });
 
           await addSignatureFooter(doc, signers, false);
           
@@ -22855,17 +22407,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Get signers for standard footer
         const signers = await getSignersForCompany(effectiveCompanyId, false);
 
-        // Standard Header with logo, version control, and signatures
-        await addStandardHeader({
-          doc,
-          company: company || { name: 'Empresa', nit: 'N/A', address: null, logoUrl: null },
-          documentTitle: 'INFORME DE INSPECCIONES DE SEGURIDAD',
-          documentCode: `SST-INS-${new Date().getFullYear()}`,
-          version: '1.0',
-          date: new Date(),
-          logoBuffer,
-        });
-
+        /*
         // Helper for green section headers
         const drawGreenHeader = (title: string) => {
           const startY = doc.y;
@@ -23027,18 +22569,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
             doc.rect(margin, rowY, pageWidth - 2 * margin, rowHeight).stroke('#dddddd');
             
             doc.fontSize(7).font('Helvetica').fillColor('#000000');
+            const findingsText = typeof inspection.findings === 'string'
+              ? inspection.findings
+              : inspection.findings
+                ? JSON.stringify(inspection.findings)
+                : 'Sin hallazgos';
+            const abbreviatedFindings = findingsText.length > 40
+              ? `${findingsText.substring(0, 40)}...`
+              : findingsText;
             doc.text(String(idx + 1), colX[0] + 2, rowY + 8, { width: colWidths[0] - 4, align: 'center' });
             doc.text(new Date(inspection.date).toLocaleDateString('es-CO'), colX[1] + 2, rowY + 8, { width: colWidths[1] - 4, align: 'center' });
             doc.text((typeLabels[inspection.type || ''] || inspection.type || 'N/A').substring(0, 15), colX[2] + 2, rowY + 8, { width: colWidths[2] - 4 });
             doc.text((inspection.area || 'N/A').substring(0, 15), colX[3] + 2, rowY + 8, { width: colWidths[3] - 4 });
             doc.text((resultLabels[inspection.result || ''] || 'N/A').substring(0, 12), colX[4] + 2, rowY + 8, { width: colWidths[4] - 4, align: 'center' });
-            doc.text((inspection.findings || 'Sin hallazgos').substring(0, 40) + ((inspection.findings && inspection.findings.length > 40) ? '...' : ''), colX[5] + 2, rowY + 8, { width: colWidths[5] - 4 });
+            doc.text(abbreviatedFindings, colX[5] + 2, rowY + 8, { width: colWidths[5] - 4 });
             
             rowY += rowHeight;
           });
           
           doc.y = rowY + 10;
         }
+
+        */
+        let currentY = await addStandardHeader({
+          doc, company: company || { name: 'Empresa', nit: 'N/A', address: null, logoUrl: null },
+          documentTitle: 'INFORME DE INSPECCIONES DE SEGURIDAD', documentCode: `SST-INS-${new Date().getFullYear()}`,
+          version: '1.0', date: new Date(), logoBuffer,
+        });
+        const statusLabels: Record<string, string> = {
+          aprobada: 'Aprobada',
+          pendiente: 'Pendiente',
+          rechazada: 'Rechazada',
+          completada: 'Completada',
+          requiere_accion: 'Requiere acción',
+        };
+        const periodLabels: Record<string, string> = {
+          'mes-actual': 'Mes actual',
+          'mes-anterior': 'Mes anterior',
+          trimestre: 'Trimestre',
+          semestre: 'Semestre',
+          anio: 'Año',
+        };
+        const inspectionsByStatus = filteredInspections.reduce((acc, item) => {
+          const key = item.status || 'Sin estado';
+          acc[key] = (acc[key] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>);
+        const averageCompliance = filteredInspections.length > 0
+          ? (filteredInspections.reduce((sum, item) => sum + (Number(item.compliance) || 0), 0) / filteredInspections.length).toFixed(1)
+          : '0.0';
+        const allInspections = [...filteredInspections]
+          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+          .slice(0, 40);
+        currentY = addSectionBar(doc, 'RESUMEN EJECUTIVO', currentY);
+        currentY = addSimpleTable(doc, ['Período', 'Inspecciones', 'Cumplimiento promedio', 'Por estado'],
+          [[periodLabels[period as string] || 'Todos los registros', String(filteredInspections.length), `${averageCompliance}%`, Object.entries(inspectionsByStatus).map(([status, count]) => `${statusLabels[status] || status}: ${count}`).join(' | ') || 'N/A']],
+          { y: currentY, columnWidths: [120, 90, 120, 212] });
+        currentY = addSectionBar(doc, 'LISTADO DE INSPECCIONES', currentY);
+        currentY = allInspections.length
+          ? addSimpleTable(doc, ['#', 'Fecha', 'Área', 'Inspector', 'Estado', 'Hallazgos', 'Cumplimiento'],
+              allInspections.map((inspection, idx) => [
+                String(idx + 1),
+                new Date(inspection.date).toLocaleDateString('es-CO'),
+                inspection.area || 'N/A',
+                inspection.inspector || 'N/A',
+                statusLabels[inspection.status] || inspection.status || 'N/A',
+                String(inspection.findings ?? 0),
+                `${inspection.compliance ?? 0}%`,
+              ]), { y: currentY, columnWidths: [25, 65, 90, 90, 80, 92, 100] })
+          : addParagraph(doc, 'No se encontraron inspecciones en el período seleccionado.', { y: currentY });
 
         // Add signature footer
         await addSignatureFooter(doc, signers, false);
@@ -23090,8 +22689,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           date: new Date(),
           logoBuffer,
         });
-        doc.y = currentY;
-
+        /*
         // Helper function for green section headers (bar only, no box around content)
         const drawGreenHeader = (title: string) => {
           const startY = doc.y;
@@ -23224,6 +22822,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
             doc.fontSize(7).font('Helvetica')
               .text(`${idx + 1}. ${new Date(eval_.evaluationDate).toLocaleDateString('es-CO')} - Puntaje: ${eval_.compliancePercentage || 0}%`);
           });
+        }
+
+        */
+        currentY = addSectionBar(doc, 'RESUMEN EJECUTIVO', currentY);
+        if (!latestEvaluation) {
+          currentY = addParagraph(doc, 'No se encontraron evaluaciones de cumplimiento registradas. Se recomienda realizar la evaluación inicial de estándares mínimos.', { y: currentY });
+        } else {
+          const score = latestEvaluation.compliancePercentage || 0;
+          const chapterLabels: Record<string, string> = {
+            '1': 'Capítulo I - Empresas hasta 10 trabajadores', '2': 'Capítulo II - Empresas de 11 a 50 trabajadores', '3': 'Capítulo III - Empresas de más de 50 trabajadores o riesgos IV/V',
+          };
+          currentY = addSimpleTable(doc, ['Capítulo', 'Trabajadores', 'Riesgo', 'Puntaje', 'Nivel', 'Fecha'],
+            [[chapterLabels[company.calculatedChapter] || `Capítulo ${company.calculatedChapter}`, String(company.numberOfWorkers || 0), company.riskLevel || 'No especificado', `${score}%`, score < 60 ? 'Crítico' : score < 85 ? 'Moderadamente aceptable' : 'Aceptable', new Date(latestEvaluation.evaluationDate).toLocaleDateString('es-CO')]],
+            { y: currentY, columnWidths: [150, 70, 80, 65, 105, 72] });
+          currentY = addSectionBar(doc, 'ESTADO DE CUMPLIMIENTO', currentY);
+          currentY = addLabeledField(doc, 'Evaluación', latestEvaluation.title || 'No especificado', { y: currentY });
+          currentY = addLabeledField(doc, 'Puntaje total', `${latestEvaluation.totalScore || 0} / ${latestEvaluation.maxTotalScore || 100}`, { y: currentY });
+          const pendingActions = accionesMejora.filter(a => a.evaluacionId === latestEvaluation.id && (a.estado === 'pendiente' || a.estado === 'en-proceso'));
+          currentY = addSectionBar(doc, 'ACCIONES PENDIENTES', currentY);
+          currentY = pendingActions.length
+            ? addSimpleTable(doc, ['Acción', 'Prioridad', 'Responsable', 'Fecha compromiso'], pendingActions.map(a => [a.descripcionAccion || 'Sin descripción', a.prioridad || 'Media', a.responsable || 'N/A', a.fechaCompromiso ? new Date(a.fechaCompromiso).toLocaleDateString('es-CO') : 'N/A']), { y: currentY, columnWidths: [250, 80, 120, 92] })
+            : addParagraph(doc, 'No hay acciones pendientes para esta evaluación.', { y: currentY });
+        }
+        if (evaluations.length > 1) {
+          currentY = addSectionBar(doc, 'HISTORIAL DE EVALUACIONES', currentY);
+          currentY = addSimpleTable(doc, ['Fecha', 'Evaluación', 'Cumplimiento'], evaluations.slice(0, 5).map(e => [new Date(e.evaluationDate).toLocaleDateString('es-CO'), e.title || 'Sin título', `${e.compliancePercentage || 0}%`]), { y: currentY, columnWidths: [120, 300, 122] });
         }
 
         // Add signature footer
@@ -23441,6 +23065,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     } catch (error: any) {
       console.error('Error generating report:', error);
+
+      // PDFKit may already have started streaming the response. Trying to
+      // replace it with JSON at that point throws ERR_HTTP_HEADERS_SENT and
+      // leaves the browser waiting indefinitely.
+      if (res.headersSent) {
+        if (!res.writableEnded) res.end();
+        return;
+      }
       
       // Categorize the error and return appropriate message
       let statusCode = 500;
@@ -35792,36 +35424,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         logoBuffer: logo
       });
 
-      doc.fontSize(7).font('Helvetica').fillColor('#666666')
-        .text('Marco Normativo: ISO 45001:2018 | Decreto 1072/2015', margin, currentY, { align: 'center' });
-      currentY = doc.y + 8;
-
-      if (startDate && endDate) {
-        doc.fontSize(7).font('Helvetica').fillColor('#000000')
-          .text(`Período: ${startDate.toLocaleDateString('es-CO')} - ${endDate.toLocaleDateString('es-CO')}`, margin, currentY);
-        currentY = doc.y + 4;
-      }
-      doc.fontSize(7).font('Helvetica').fillColor('#000000')
-        .text(`Total de Auditorías: ${data.length}`, margin, currentY);
-      currentY = doc.y + 8;
-
-      // Executive Summary
-      doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e7e34').text('RESUMEN EJECUTIVO', margin, currentY);
-      currentY = doc.y + 6;
-
       const totalHallazgos = data.reduce((sum, a) => sum + a.totalHallazgos, 0);
       const totalPlanesAccion = data.reduce((sum, a) => sum + a.planesAccion.length, 0);
       const planesCompletados = data.reduce((sum, a) => sum + a.planesCompletados, 0);
-
-      doc.fontSize(8).font('Helvetica').fillColor('#000000');
-      doc.text(`Auditorías Realizadas: ${data.length}`, margin, currentY);
-      currentY = doc.y + 4;
-      doc.text(`Total Hallazgos: ${totalHallazgos}`, margin, currentY);
-      currentY = doc.y + 4;
-      doc.text(`Planes de Acción: ${totalPlanesAccion} (${planesCompletados} completados)`, margin, currentY);
-      currentY = doc.y + 8;
-
-      // Hallazgos por Severidad (Aggregate)
       const sevAggregate = {
         baja: data.reduce((sum, a) => sum + a.hallazgosPorSeveridad.baja, 0),
         media: data.reduce((sum, a) => sum + a.hallazgosPorSeveridad.media, 0),
@@ -35829,45 +35434,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
         critica: data.reduce((sum, a) => sum + a.hallazgosPorSeveridad.critica, 0)
       };
 
-      doc.fontSize(7).font('Helvetica-Bold').text('Hallazgos por Severidad:', margin, currentY);
-      currentY += 6;
-      doc.fontSize(7).font('Helvetica');
-      doc.fillColor('green').text(`✓ Baja: ${sevAggregate.baja}`, margin + 10, currentY).fillColor('black');
-      currentY += 2;
-      doc.fillColor('orange').text(`● Media: ${sevAggregate.media}`, margin + 10, currentY).fillColor('black');
-      currentY += 2;
-      doc.fillColor('red').text(`● Alta: ${sevAggregate.alta}`, margin + 10, currentY).fillColor('black');
-      currentY += 2;
-      doc.fillColor('darkred').text(`✗ Crítica: ${sevAggregate.critica}`, margin + 10, currentY).fillColor('black');
-      currentY += 4;
-
-      // Detailed Audit List
-      doc.fontSize(7).font('Helvetica-Bold').text('DETALLE DE AUDITORÍAS', margin, currentY);
-      currentY += 3;
-
-      for (const audit of data) {
-        if (currentY > doc.page.height - 70) {
-          doc.addPage({ margin: 35 });
-          currentY = 35;
-        }
-
-        doc.fontSize(7).font('Helvetica-Bold').text(audit.auditoria.titulo || 'Sin título', margin, currentY);
-        currentY += 6;
-        
-        doc.fontSize(7).font('Helvetica');
-        doc.text(`Alcance: ${audit.auditoria.alcance || 'N/A'}`, margin + 10, currentY);
-        currentY += 2;
-        doc.text(`Fecha: ${audit.auditoria.fechaInicio} - ${audit.auditoria.fechaFin || 'En curso'}`, margin + 10, currentY);
-        currentY += 2;
-        doc.text(`Estado: ${audit.auditoria.estado}`, margin + 10, currentY);
-        currentY += 2;
-        doc.text(`Equipo Auditor: ${audit.auditores.map(a => a.fullName).join(', ') || 'N/A'}`, margin + 10, currentY);
-        currentY += 2;
-        doc.text(`Hallazgos: ${audit.totalHallazgos} (Baja: ${audit.hallazgosPorSeveridad.baja}, Media: ${audit.hallazgosPorSeveridad.media}, Alta: ${audit.hallazgosPorSeveridad.alta}, Crítica: ${audit.hallazgosPorSeveridad.critica})`, margin + 10, currentY);
-        currentY += 2;
-        doc.text(`Planes de Acción: ${audit.planesAccion.length} (${audit.planesCompletados} completados)`, margin + 10, currentY);
-        currentY += 3;
+      currentY = addParagraph(doc, 'Marco normativo: ISO 45001:2018 y Decreto 1072 de 2015.', { y: currentY });
+      if (startDate && endDate) {
+        currentY = addParagraph(doc, `Período: ${startDate.toLocaleDateString('es-CO')} a ${endDate.toLocaleDateString('es-CO')}`, { y: currentY });
       }
+      currentY = addSectionBar(doc, 'Resumen ejecutivo', currentY);
+      currentY = addSimpleTable(doc, ['Indicador', 'Resultado'], [
+        ['Auditorías realizadas', String(data.length)],
+        ['Hallazgos registrados', String(totalHallazgos)],
+        ['Planes de acción', String(totalPlanesAccion)],
+        ['Planes completados', String(planesCompletados)],
+      ], { y: currentY, columnWidths: [360, 182] });
+      currentY = addSectionBar(doc, 'Hallazgos por severidad', currentY);
+      currentY = addSimpleTable(doc, ['Baja', 'Media', 'Alta', 'Crítica'], [[
+        String(sevAggregate.baja),
+        String(sevAggregate.media),
+        String(sevAggregate.alta),
+        String(sevAggregate.critica),
+      ]], { y: currentY });
+      currentY = addSectionBar(doc, 'Detalle de auditorías', currentY);
+      addSimpleTable(doc,
+        ['Auditoría', 'Alcance', 'Fechas', 'Estado', 'Equipo auditor', 'Hallazgos', 'Planes'],
+        data.map(audit => [
+          audit.auditoria.titulo || 'Sin título',
+          audit.auditoria.alcance || 'No registrado',
+          `${audit.auditoria.fechaInicio || 'N/A'} a ${audit.auditoria.fechaFin || 'En curso'}`,
+          audit.auditoria.estado || 'N/A',
+          audit.auditores.map(a => a.fullName).join(', ') || 'No registrado',
+          `Total: ${audit.totalHallazgos}\nB:${audit.hallazgosPorSeveridad.baja} M:${audit.hallazgosPorSeveridad.media} A:${audit.hallazgosPorSeveridad.alta} C:${audit.hallazgosPorSeveridad.critica}`,
+          `${audit.planesAccion.length} (${audit.planesCompletados} completos)`,
+        ]),
+        { y: currentY, columnWidths: [72, 105, 65, 55, 85, 85, 75] }
+      );
 
       await addSignatureFooter(doc, signers, true);
       doc.end();
@@ -35919,69 +35517,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
         logoBuffer
       });
 
-      // Report info section
-      doc.fontSize(8).font('Helvetica').fillColor('#333333');
-      doc.text(`Generado por: ${req.user?.fullName || 'Sistema'}`, margin, currentY);
-      currentY = doc.y + 5;
-      if (year) {
-        doc.text(`Año: ${year}`, margin, currentY);
-        currentY = doc.y + 5;
-      }
-      doc.text(`Total de Revisiones: ${data.length}`, margin, currentY);
-      currentY = doc.y + 15;
-
-      // Executive Summary
-      doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e7e34').text('RESUMEN EJECUTIVO', margin, currentY);
-      currentY = doc.y + 8;
+      currentY = addLabeledField(doc, 'Generado por', req.user?.fullName || 'Sistema', { y: currentY });
+      if (year) currentY = addLabeledField(doc, 'Año', String(year), { y: currentY });
+      currentY = addLabeledField(doc, 'Total de revisiones', String(data.length), { y: currentY });
+      currentY = addSectionBar(doc, 'RESUMEN EJECUTIVO', currentY);
 
       const totalDecisiones = data.reduce((sum, r) => sum + r.totalDecisiones, 0);
       const totalAcciones = data.reduce((sum, r) => sum + r.totalAcciones, 0);
       const accionesPendientes = data.reduce((sum, r) => sum + r.accionesPendientes, 0);
       const accionesCompletadas = data.reduce((sum, r) => sum + r.accionesCompletadas, 0);
 
-      doc.fontSize(8).font('Helvetica').fillColor('#333333');
-      doc.text(`Revisiones Realizadas: ${data.length}`, margin, currentY);
-      currentY = doc.y + 5;
-      doc.text(`Decisiones Estratégicas: ${totalDecisiones}`, margin, currentY);
-      currentY = doc.y + 5;
-      doc.text(`Acciones Derivadas: ${totalAcciones}`, margin, currentY);
-      currentY = doc.y + 5;
-      doc.text(`Acciones Completadas: ${accionesCompletadas} (${accionesPendientes} pendientes)`, margin, currentY);
-      currentY = doc.y + 15;
-
-      // Detailed Review List
-      doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e7e34').text('DETALLE DE REVISIONES', margin, currentY);
-      currentY = doc.y + 8;
+      currentY = addSimpleTable(doc,
+        ['Revisiones', 'Decisiones', 'Acciones', 'Completadas', 'Pendientes'],
+        [[String(data.length), String(totalDecisiones), String(totalAcciones), String(accionesCompletadas), String(accionesPendientes)]],
+        { y: currentY, columnWidths: [108, 108, 108, 109, 109] });
+      currentY = addSectionBar(doc, 'DETALLE DE REVISIONES', currentY);
 
       for (const review of data) {
-        currentY = checkPageSpace(doc, 100);
+        currentY = checkPageBreak(doc, 110, currentY);
+        currentY = addParagraph(doc, `Revisión: ${review.revision.titulo || 'Sin título'}`, { y: currentY, bold: true });
+        currentY = addSimpleTable(doc,
+          ['Fecha', 'Participantes', 'Temas', 'Decisiones', 'Acciones'],
+          [[String(review.revision.fechaRevision || 'N/A'), review.participantes.map(p => p.nombre).join(', ') || 'Sin participantes', String(review.temas.length), String(review.totalDecisiones), `${review.totalAcciones} (${review.accionesCompletadas} completadas, ${review.accionesPendientes} pendientes)`]],
+          { y: currentY, columnWidths: [80, 210, 60, 80, 112] });
 
-        doc.fontSize(8).font('Helvetica-Bold').fillColor('#1e7e34').text(`Revisión: ${review.revision.titulo || 'Sin título'}`, margin, currentY);
-        currentY = doc.y + 5;
-        
-        doc.fontSize(8).font('Helvetica').fillColor('#333333');
-        doc.text(`Fecha: ${review.revision.fechaRevision}`, margin + 10, currentY);
-        currentY = doc.y + 3;
-        doc.text(`Participantes: ${review.participantes.map(p => p.nombre).join(', ')}`, margin + 10, currentY);
-        currentY = doc.y + 3;
-        doc.text(`Temas Tratados: ${review.temas.length}`, margin + 10, currentY);
-        currentY = doc.y + 3;
-        doc.text(`Decisiones: ${review.totalDecisiones}`, margin + 10, currentY);
-        currentY = doc.y + 3;
-        doc.text(`Acciones: ${review.totalAcciones} (${review.accionesCompletadas} completadas, ${review.accionesPendientes} pendientes)`, margin + 10, currentY);
-        currentY = doc.y + 5;
-
-        // Decisiones detail
         if (review.decisiones.length > 0) {
-          doc.fontSize(8).font('Helvetica-Bold').fillColor('#333333').text('Decisiones:', margin + 10, currentY);
-          currentY = doc.y + 3;
-          
-          for (const decision of review.decisiones.slice(0, 3)) {
-            doc.fontSize(8).font('Helvetica').fillColor('#333333');
-            doc.text(`• ${decision.tipo}: ${decision.descripcion?.substring(0, 100)}...`, margin + 20, currentY);
-            currentY = doc.y + 5;
+          currentY = addParagraph(doc, 'Decisiones:', { y: currentY, bold: true, indent: 10 });
+          for (const decision of review.decisiones) {
+            currentY = addParagraph(doc, `• ${decision.tipo}: ${decision.descripcion || 'Sin descripción'}`, { y: currentY, indent: 20 });
           }
-          currentY = doc.y + 8;
         }
       }
 
@@ -36035,84 +35599,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
         logoBuffer
       });
 
-      // Report info section
-      doc.fontSize(8).font('Helvetica').fillColor('#333333');
-      doc.text(`Generado por: ${req.user?.fullName || 'Sistema'}`, margin, currentY);
-      currentY = doc.y + 15;
-
-      // Executive Summary
-      doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e7e34').text('RESUMEN EJECUTIVO', margin, currentY);
-      currentY = doc.y + 8;
-
-      doc.fontSize(8).font('Helvetica').fillColor('#333333');
-      doc.text(`Total de Objetivos: ${data.resumen.totalObjetivos}`, margin, currentY);
-      currentY = doc.y + 5;
-      doc.text(`Objetivos Cumplidos: ${data.resumen.objetivosCumplidos} (${((data.resumen.objetivosCumplidos / data.resumen.totalObjetivos) * 100).toFixed(1)}%)`, margin, currentY);
-      currentY = doc.y + 5;
-      doc.text(`Total de Indicadores: ${data.resumen.totalIndicadores}`, margin, currentY);
-      currentY = doc.y + 5;
-      doc.text(`Indicadores de Estructura: ${data.resumen.indicadoresPorTipo.estructura}`, margin + 10, currentY);
-      currentY = doc.y + 3;
-      doc.text(`Indicadores de Proceso: ${data.resumen.indicadoresPorTipo.proceso}`, margin + 10, currentY);
-      currentY = doc.y + 3;
-      doc.text(`Indicadores de Resultado: ${data.resumen.indicadoresPorTipo.resultado}`, margin + 10, currentY);
-      currentY = doc.y + 5;
-      doc.text(`Total de Mediciones: ${data.resumen.totalMediciones}`, margin, currentY);
-      currentY = doc.y + 15;
-
-      // Detailed Objectives and Indicators
-      doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e7e34').text('DETALLE DE OBJETIVOS E INDICADORES', margin, currentY);
-      currentY = doc.y + 8;
+      currentY = addLabeledField(doc, 'Generado por', req.user?.fullName || 'Sistema', { y: currentY });
+      currentY = addSectionBar(doc, 'RESUMEN EJECUTIVO', currentY);
+      const cumplimentoPorcentaje = data.resumen.totalObjetivos
+        ? ((data.resumen.objetivosCumplidos / data.resumen.totalObjetivos) * 100).toFixed(1)
+        : '0.0';
+      currentY = addSimpleTable(doc,
+        ['Objetivos', 'Cumplidos', 'Indicadores', 'Estructura', 'Proceso', 'Resultado', 'Mediciones'],
+        [[
+          String(data.resumen.totalObjetivos),
+          `${data.resumen.objetivosCumplidos} (${cumplimentoPorcentaje}%)`,
+          String(data.resumen.totalIndicadores),
+          String(data.resumen.indicadoresPorTipo.estructura),
+          String(data.resumen.indicadoresPorTipo.proceso),
+          String(data.resumen.indicadoresPorTipo.resultado),
+          String(data.resumen.totalMediciones),
+        ]],
+        { y: currentY, columnWidths: [65, 85, 78, 78, 78, 78, 80] });
+      currentY = addSectionBar(doc, 'DETALLE DE OBJETIVOS E INDICADORES', currentY);
 
       for (const obj of data.objetivos) {
-        currentY = checkPageSpace(doc, 80);
+        currentY = checkPageBreak(doc, 100, currentY);
+        currentY = addParagraph(doc, obj.objetivo.nombre || 'Sin título', { y: currentY, bold: true });
+        currentY = addLabeledField(doc, 'Descripción', obj.objetivo.descripcion || 'N/A', { y: currentY });
+        currentY = addLabeledField(doc, 'Meta', obj.objetivo.meta || 'N/A', { y: currentY });
+        currentY = addLabeledField(doc, 'Responsable', obj.objetivo.responsable || 'N/A', { y: currentY });
+        currentY = addLabeledField(doc, 'Estado', obj.objetivo.estado || 'N/A', { y: currentY });
 
-        doc.fontSize(8).font('Helvetica-Bold').fillColor('#1e7e34').text(obj.objetivo.nombre || 'Sin título', margin, currentY);
-        currentY = doc.y + 5;
-        
-        doc.fontSize(8).font('Helvetica').fillColor('#333333');
-        doc.text(`Descripción: ${obj.objetivo.descripcion || 'N/A'}`, margin + 10, currentY);
-        currentY = doc.y + 3;
-        doc.text(`Meta: ${obj.objetivo.meta || 'N/A'}`, margin + 10, currentY);
-        currentY = doc.y + 3;
-        doc.text(`Responsable: ${obj.objetivo.responsable || 'N/A'}`, margin + 10, currentY);
-        currentY = doc.y + 3;
-        doc.text(`Estado: ${obj.objetivo.estado}`, margin + 10, currentY);
-        currentY = doc.y + 8;
-
-        // Indicators for this objective
         if (obj.indicadores.length > 0) {
-          doc.fontSize(8).font('Helvetica-Bold').fillColor('#333333').text('Indicadores:', margin + 10, currentY);
-          currentY = doc.y + 3;
-          
+          currentY = addParagraph(doc, 'Indicadores:', { y: currentY, bold: true, indent: 10 });
           for (const ind of obj.indicadores) {
-            currentY = checkPageSpace(doc, 70);
-
-            doc.fontSize(8).font('Helvetica').fillColor('#333333');
-            doc.text(`• ${ind.indicador.nombre} (${ind.indicador.tipo})`, margin + 20, currentY);
-            currentY = doc.y + 4;
-            doc.text(`  Fórmula: ${ind.indicador.formula || 'N/A'}`, margin + 25, currentY);
-            currentY = doc.y + 4;
-            doc.text(`  Meta: ${ind.indicador.meta || 'N/A'} ${ind.indicador.unidadMedida || ''}`, margin + 25, currentY);
-            currentY = doc.y + 4;
-            
-            if (ind.mediciones.length > 0) {
-              const latestMedicion = ind.mediciones[0];
-              doc.text(`  Última medición: ${latestMedicion.valorMedido} ${ind.indicador.unidadMedida || ''} (${latestMedicion.fechaMedicion})`, margin + 25, currentY);
-              currentY = doc.y + 4;
-            } else {
-              doc.text(`  Sin mediciones registradas`, margin + 25, currentY);
-              currentY = doc.y + 4;
-            }
-            currentY = doc.y + 3;
+            currentY = checkPageBreak(doc, 75, currentY);
+            const latestMedicion = ind.mediciones[0];
+            currentY = addSimpleTable(doc,
+              ['Indicador', 'Fórmula', 'Meta', 'Última medición'],
+              [[
+                `${ind.indicador.nombre || 'Sin nombre'} (${ind.indicador.tipo || 'N/A'})`,
+                ind.indicador.formula || 'N/A',
+                `${ind.indicador.meta || 'N/A'} ${ind.indicador.unidadMedida || ''}`,
+                latestMedicion
+                  ? `${latestMedicion.valorMedido} ${ind.indicador.unidadMedida || ''} (${latestMedicion.fechaMedicion})`
+                  : 'Sin mediciones registradas',
+              ]],
+              { y: currentY, columnWidths: [160, 150, 105, 127] });
           }
-          currentY = doc.y + 6;
         } else {
-          doc.fontSize(8).font('Helvetica').fillColor('#333333').text('Sin indicadores asociados', margin + 20, currentY);
-          currentY = doc.y + 8;
+          currentY = addParagraph(doc, 'Sin indicadores asociados', { y: currentY, indent: 20 });
         }
-        
-        currentY = doc.y + 3;
       }
 
       await addSignatureFooter(doc, signers, true);
@@ -50472,9 +50005,6 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         date: new Date(),
         logoBuffer,
       });
-      doc.moveTo(margin, y + 4).lineTo(pageWidth - margin, y + 4).stroke('#cccccc');
-      doc.y = y + 14;
-
       // ── Resumen consolidado ───────────────────────────────────────────────
       const totalGeneral = accionesContexto.length + accionesSst.length + accionesPesv.length;
       const pendTotal = [
@@ -50493,9 +50023,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         ...accionesPesv.filter(a => a.estado === 'completada'),
       ].length;
 
-      y = addSectionBar(doc, '1. RESUMEN EJECUTIVO DEL PLAN DE MEJORAMIENTO', doc.y);
-      doc.y = y + 4;
-      addSimpleTable(doc,
+      y = addSectionBar(doc, '1. RESUMEN EJECUTIVO DEL PLAN DE MEJORAMIENTO', y);
+      y = addSimpleTable(doc,
         ['Fuente', 'Total', 'Pendientes', 'En Progreso', 'Completadas'],
         [
           [
@@ -50522,12 +50051,10 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
           [`TOTAL CONSOLIDADO`, totalGeneral.toString(), pendTotal.toString(), progrTotal.toString(), compTotal.toString()],
         ],
         {
-          y: doc.y,
-          columnWidths: [contentWidth * 0.40, contentWidth * 0.15, contentWidth * 0.15, contentWidth * 0.15, contentWidth * 0.15],
+          y,
+          columnWidths: [217, 81, 81, 81, 82],
         }
       );
-      doc.fillColor(PDF_COLORS.BLACK);
-      doc.y += 14;
 
       // ════════════════════════════════════════════════════════════════════
       // PÁGINA 2 — ACCIONES DE CONTEXTO / FODA
@@ -50542,14 +50069,10 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         date: new Date(),
         logoBuffer,
       });
-      doc.moveTo(margin, y + 4).lineTo(pageWidth - margin, y + 4).stroke('#cccccc');
-      doc.y = y + 14;
-
-      y = addSectionBar(doc, '2. ACCIONES DERIVADAS DEL ANÁLISIS DE CONTEXTO ORGANIZACIONAL', doc.y);
-      doc.y = y + 4;
+      y = addSectionBar(doc, '2. ACCIONES DERIVADAS DEL ANÁLISIS DE CONTEXTO ORGANIZACIONAL', y);
       if (accionesContexto.length > 0) {
-        const cw = [contentWidth * 0.38, contentWidth * 0.14, contentWidth * 0.12, contentWidth * 0.18, contentWidth * 0.18];
-        addSimpleTable(doc,
+        const cw = [206, 76, 65, 98, 97];
+        y = addSimpleTable(doc,
           ['Acción', 'Tipo FODA', 'Prioridad', 'Fecha Límite', 'Estado'],
           accionesContexto.map(a => [
             (a.accion || '—').substring(0, 85),
@@ -50558,16 +50081,11 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
             fmtDate(a.fechaLimite),
             lblEst[a.estado || ''] || (a.estado || '—'),
           ]),
-          { y: doc.y, columnWidths: cw }
+          { y, columnWidths: cw }
         );
       } else {
-        doc.y += 6;
-        doc.fontSize(9).font('Helvetica-Oblique').fillColor('#666666')
-          .text('No se han registrado acciones de mejora en el análisis de contexto.', margin, doc.y, { width: contentWidth, align: 'center' });
-        doc.y += 18;
+        y = addParagraph(doc, 'No se han registrado acciones de mejora en el análisis de contexto.', { y });
       }
-      doc.fillColor(PDF_COLORS.BLACK);
-      doc.y += 14;
 
       // ════════════════════════════════════════════════════════════════════
       // PÁGINA 3 — ACCIONES SST
@@ -50582,14 +50100,10 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         date: new Date(),
         logoBuffer,
       });
-      doc.moveTo(margin, y + 4).lineTo(pageWidth - margin, y + 4).stroke('#cccccc');
-      doc.y = y + 14;
-
-      y = addSectionBar(doc, '3. ACCIONES CORRECTIVAS Y PREVENTIVAS — EVALUACIÓN SG-SST', doc.y);
-      doc.y = y + 4;
+      y = addSectionBar(doc, '3. ACCIONES CORRECTIVAS Y PREVENTIVAS — EVALUACIÓN SG-SST', y);
       if (accionesSst.length > 0) {
-        const sw = [contentWidth * 0.26, contentWidth * 0.11, contentWidth * 0.10, contentWidth * 0.11, contentWidth * 0.14, contentWidth * 0.14, contentWidth * 0.14];
-        addSimpleTable(doc,
+        const sw = [141, 60, 54, 60, 76, 76, 75];
+        y = addSimpleTable(doc,
           ['Descripción', 'Tipo', 'Prioridad', 'Responsable', 'F. Comp.', 'Estado', 'Eficacia'],
           accionesSst.map(a => [
             (a.descripcionAccion || '—').substring(0, 65),
@@ -50600,16 +50114,11 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
             lblEst[a.estado || ''] || (a.estado || '—'),
             lblEfSst(a.eficaz),
           ]),
-          { y: doc.y, columnWidths: sw }
+          { y, columnWidths: sw }
         );
       } else {
-        doc.y += 6;
-        doc.fontSize(9).font('Helvetica-Oblique').fillColor('#666666')
-          .text('No se han registrado acciones de mejora en las evaluaciones SG-SST.', margin, doc.y, { width: contentWidth, align: 'center' });
-        doc.y += 18;
+        y = addParagraph(doc, 'No se han registrado acciones de mejora en las evaluaciones SG-SST.', { y });
       }
-      doc.fillColor(PDF_COLORS.BLACK);
-      doc.y += 14;
 
       // ════════════════════════════════════════════════════════════════════
       // PÁGINA 4 — ACCIONES PESV
@@ -50624,14 +50133,10 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         date: new Date(),
         logoBuffer,
       });
-      doc.moveTo(margin, y + 4).lineTo(pageWidth - margin, y + 4).stroke('#cccccc');
-      doc.y = y + 14;
-
-      y = addSectionBar(doc, '4. ACCIONES DE MEJORA — PLAN ESTRATÉGICO DE SEGURIDAD VIAL (PESV)', doc.y);
-      doc.y = y + 4;
+      y = addSectionBar(doc, '4. ACCIONES DE MEJORA — PLAN ESTRATÉGICO DE SEGURIDAD VIAL (PESV)', y);
       if (accionesPesv.length > 0) {
-        const pw = [contentWidth * 0.27, contentWidth * 0.09, contentWidth * 0.10, contentWidth * 0.11, contentWidth * 0.14, contentWidth * 0.14, contentWidth * 0.15];
-        addSimpleTable(doc,
+        const pw = [146, 49, 54, 60, 76, 76, 81];
+        y = addSimpleTable(doc,
           ['Descripción', 'Paso', 'Prioridad', 'Responsable', 'Fecha Límite', 'Estado', 'Eficacia'],
           accionesPesv.map(a => [
             (a.descripcion || '—').substring(0, 70),
@@ -50642,32 +50147,22 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
             lblEst[a.estado || ''] || (a.estado || '—'),
             lblEfPesv(a.eficaciaVerificada),
           ]),
-          { y: doc.y, columnWidths: pw }
+          { y, columnWidths: pw }
         );
       } else {
-        doc.y += 6;
-        doc.fontSize(9).font('Helvetica-Oblique').fillColor('#666666')
-          .text('No se han registrado acciones de mejora en las evaluaciones PESV.', margin, doc.y, { width: contentWidth, align: 'center' });
-        doc.y += 18;
+        y = addParagraph(doc, 'No se han registrado acciones de mejora en las evaluaciones PESV.', { y });
       }
-      doc.fillColor(PDF_COLORS.BLACK);
-      doc.y += 14;
 
       // ── Referencia normativa ──────────────────────────────────────────────
-      y = addSectionBar(doc, '5. REFERENCIA NORMATIVA Y COMPROMISO INSTITUCIONAL', doc.y);
-      doc.y = y + 8;
-      doc.fontSize(8).font('Helvetica').fillColor('#333333')
-        .text(
+      y = addSectionBar(doc, '5. REFERENCIA NORMATIVA Y COMPROMISO INSTITUCIONAL', y);
+      y = addParagraph(doc,
           'Este Plan de Mejoramiento Consolidado integra las acciones correctivas, preventivas y de mejora ' +
           'continua provenientes de (1) el análisis DOFA del contexto organizacional, (2) la evaluación de ' +
           'Estándares Mínimos del SG-SST según Resolución 0312 de 2019 y (3) la evaluación del Plan ' +
           'Estratégico de Seguridad Vial conforme a la Resolución 40595 de 2022. Su implementación es ' +
           'obligatoria para el cierre de no conformidades y el cumplimiento del ciclo PHVA, en consonancia ' +
           'con los numerales 10.1 y 10.2 de la norma ISO 45001:2018.',
-          margin, doc.y, { width: contentWidth, align: 'justify', lineGap: 2 }
-        );
-      doc.fillColor(PDF_COLORS.BLACK);
-      doc.y += 14;
+        { y });
 
       await addSignatureFooter(doc, signers, true);
       doc.end();

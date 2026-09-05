@@ -104,3 +104,11 @@ doc.end();
 ```
 
 **Why:** Pasar `{ y }` (objeto) donde se espera número hace que PDFKit use `undefined` como coordenada y lanza excepción interna. El stream se corta a mitad de descarga, dejando un PDF corrupto (se ve en el historial del navegador como "Reanudando..." sin completar).
+
+## Regla para la biblioteca de informes
+
+Los PDF expuestos en la biblioteca de informes no deben limitarse a usar el encabezado y la firma estándar: todo el cuerpo variable debe construirse con `addSectionBar`, `addSimpleTable`, `addParagraph`, `addLabeledField` y `checkPageBreak`, propagando siempre el valor `y` retornado.
+
+**Why:** Los bloques manuales con `doc.rect`, alturas fijas y coordenadas incrementadas a mano llegaron a producir texto superpuesto aunque la descarga respondiera HTTP 200 y el archivo tuviera una firma PDF válida.
+
+**How to apply:** Al crear o modificar un informe, validar tanto la integridad del archivo (`%PDF-` y `%%EOF`) como su renderizado visual con datos largos, múltiples filas, saltos de página y la tabla de firmas.

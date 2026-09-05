@@ -31,7 +31,16 @@ export type MissingSstReport =
   | "sedes"
   | "evaluaciones-consolidado";
 
-const text = (value: unknown) => value == null || value === "" ? "No registrado" : String(value);
+const text = (value: unknown) => {
+  if (value == null || value === "") return "No registrado";
+  if (typeof value === "object") return JSON.stringify(value);
+  return String(value);
+};
+const findingsCount = (value: unknown) => {
+  if (typeof value === "number") return value;
+  if (Array.isArray(value)) return value.length;
+  return value && typeof value === "object" ? Object.keys(value).length : 0;
+};
 const list = (value: string[] | null) => value?.filter(Boolean).join("; ") || "No registrado";
 
 function dateInPeriod(value: Date | string | null, year?: number, month?: number) {
@@ -98,15 +107,15 @@ export async function generateMissingSstReport(
       ["Trabajadores registrados", String(allWorkers.length)],
       ["Capacitaciones registradas en el período", String(trainingData.length)],
       ["Inspecciones registradas en el período", String(inspectionData.length)],
-      ["Hallazgos de inspección", String(inspectionData.reduce((total, item) => total + item.findings, 0))],
+      ["Hallazgos de inspección", String(inspectionData.reduce((total, item) => total + findingsCount(item.findings), 0))],
       ["Accidentes registrados en el período", String(accidentData.length)],
       ["Condiciones de salud registradas en el período", String(conditionData.length)],
       ["Exámenes médicos registrados en el período", String(examData.length)],
     ], { y });
     y = addSectionBar(doc, "Detalle de inspecciones", y);
     addSimpleTable(doc, ["Fecha", "Área", "Cumplimiento", "Hallazgos", "Estado"], inspectionData.map(item => [
-      formatDate(item.date), text(item.area), `${item.compliance}%`, String(item.findings), text(item.status),
-    ]), { y });
+      formatDate(item.date), text(item.area), `${item.compliance}%`, text(item.findings), text(item.status),
+    ]), { y, columnWidths: [70, 105, 75, 202, 90] });
   } else if (report === "condiciones-salud") {
     const rows = await db.select({ condition: healthConditions, worker: workers })
       .from(healthConditions).innerJoin(workers, and(eq(workers.id, healthConditions.workerId), eq(workers.companyId, companyId)))
@@ -115,7 +124,7 @@ export async function generateMissingSstReport(
     addSimpleTable(doc, ["Trabajador", "Tipo", "Descripción", "Diagnóstico", "Estado", "Seguimiento"], rows.map(({ condition, worker }) => [
       worker.name, text(condition.conditionType), text(condition.description), formatDate(condition.diagnosisDate),
       text(condition.status), condition.requiresFollowUp ? formatDate(condition.followUpDate) : "No requerido",
-    ]), { y, columnWidths: [90, 55, 130, 65, 60, 65] });
+    ]), { y, columnWidths: [90, 70, 142, 70, 75, 95] });
   } else if (report === "examenes-medicos") {
     const rows = await db.select({ exam: medicalExams, worker: workers })
       .from(medicalExams).innerJoin(workers, and(eq(workers.id, medicalExams.workerId), eq(workers.companyId, companyId)))
@@ -124,7 +133,7 @@ export async function generateMissingSstReport(
     addSimpleTable(doc, ["Trabajador", "Tipo", "Programado", "Realizado", "Aptitud", "Estado", "Seguimiento"], rows.map(({ exam, worker }) => [
       worker.name, text(exam.examType), formatDate(exam.scheduledDate), formatDate(exam.performedDate),
       text(exam.aptitude), text(exam.status), formatDate(exam.followUpDate),
-    ]), { y, columnWidths: [80, 60, 62, 62, 60, 55, 66] });
+    ]), { y, columnWidths: [90, 75, 70, 70, 75, 70, 92] });
   } else if (report === "partes-interesadas") {
     const rows = await db.select().from(partesInteresadas).where(eq(partesInteresadas.companyId, companyId)).orderBy(partesInteresadas.nombre);
     let y = addSectionBar(doc, "Partes interesadas identificadas");
@@ -150,6 +159,6 @@ export async function generateMissingSstReport(
     ]), { y, columnWidths: [55, 58, 105, 65, 65, 70, 57] });
   }
 
-  await addSignatureFooter(doc, await getSignersForCompany(companyId), false);
+  await addSignatureFooter(doc, await getSignersForCompany(companyId), true);
   doc.end();
 }
