@@ -84,12 +84,13 @@ export function PwaInstallCard() {
           </div>
           <div className="space-y-1">
             <p className="font-semibold text-green-900 dark:text-green-100">
-              Instala el Portal en tu celular
+              {isIos ? "Instalar en iPhone o iPad" : "Instala el Portal en tu celular"}
             </p>
             {isIos ? (
               <p className="text-sm text-green-800 dark:text-green-200">
-                En la barra de Safari toca <Share className="inline h-4 w-4 align-text-bottom" aria-label="Compartir" />{" "}
-                <strong>Compartir</strong> y después <strong>Agregar a pantalla de inicio</strong>.
+                Toca <Share className="inline h-4 w-4 align-text-bottom" aria-label="el botón con flecha hacia arriba" />{" "}
+                <strong>⬆ arriba a la derecha</strong> → <strong>Ver más</strong> →{" "}
+                <strong>Agregar a pantalla de inicio</strong>.
               </p>
             ) : deferredPrompt ? (
               <p className="text-sm text-green-800 dark:text-green-200">
