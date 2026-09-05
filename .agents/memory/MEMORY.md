@@ -17,7 +17,7 @@
 - [Committee actas document policy](committee-actas-document-policy.md) — COPASST y Convivencia se redactan dentro del sistema; los PDF cargados no son requisito.
 - [Driver–vehicle assignment policy](driver-vehicle-assignment-policy.md) — relación PESV muchos-a-muchos con vigencia e historial; finalizar no borra y el fallback de flota solo aplica antes de la primera asignación.
 - [Storage architecture](storage-architecture.md) — uploads use AWS S3; base64 logo routes need encoded-size parser headroom and explicit 413 messages.
-- [PESV induction send policy](pesv-induction-send-policy.md) — enviar sesiones PESV no depende de contenidos ni preguntas; los materiales son opcionales y las preguntas siempre se aíslan por tipo.
+- [Induction resend policy](pesv-induction-send-policy.md) — SST y PESV admiten sesiones repetidas incluso con otra activa; PESV no depende de contenidos ni preguntas configurables.
 - [PESV vehicle step naming](pesv-vehicle-step-naming.md) — vehículos seguros corresponde a H04; H08 está reservado para rutas seguras.
 - [Production billing data alignment](production-billing-data-alignment.md) — separar registros locales de suscripciones/facturas de pagos confirmados por Stripe o Wompi.
 - [TypeScript cleanup workflow](typescript-cleanup-workflow.md) — las correcciones delegadas deben validarse de inmediato; pueden dejar mejoras parciales pero nunca sustituyen el chequeo global final.

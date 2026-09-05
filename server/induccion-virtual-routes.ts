@@ -815,7 +815,7 @@ export function registerInduccionVirtualRoutes(app: Express) {
   });
 
   // ============================================================================
-  // ENVÍO MASIVO - Todos los trabajadores sin sesión activa
+  // ENVÍO MASIVO - Crea una sesión nueva por trabajador en cada solicitud
   // ============================================================================
 
   app.post("/api/sesiones-induccion-virtual/enviar-masivo", async (req: Request, res: Response) => {
@@ -834,18 +834,6 @@ export function registerInduccionVirtualRoutes(app: Express) {
         .from(schema.workers)
         .where(eq(schema.workers.companyId, companyId));
 
-      const activeSessions = await db.select({
-        workerId: schema.sesionesInduccionVirtual.workerId,
-      })
-        .from(schema.sesionesInduccionVirtual)
-        .where(and(
-          eq(schema.sesionesInduccionVirtual.companyId, companyId),
-          eq(schema.sesionesInduccionVirtual.tipoInduccion, tipoInduccion),
-          inArray(schema.sesionesInduccionVirtual.estado, ["pendiente", "en_progreso"])
-        ));
-      const workersWithActiveSession = new Set(activeSessions.map(session => session.workerId));
-      const pendientes = allWorkers.filter(worker => !workersWithActiveSession.has(worker.id));
-
       const [company] = await db.select().from(schema.companies).where(eq(schema.companies.id, companyId));
       const baseUrl = process.env.REPLIT_DEPLOYMENT_URL || process.env.APP_URL || 'https://sst-colombia.com';
       const sessionSnapshot = await buildSessionSnapshot(companyId, tipoInduccion);
@@ -853,7 +841,7 @@ export function registerInduccionVirtualRoutes(app: Express) {
       let enviados = 0;
       const errores: string[] = [];
 
-      for (const worker of pendientes) {
+      for (const worker of allWorkers) {
         try {
           const token = generateToken();
           const fechaExpiracion = new Date();
@@ -882,9 +870,9 @@ export function registerInduccionVirtualRoutes(app: Express) {
 
       res.json({
         enviados,
-        omitidos: allWorkers.length - pendientes.length,
+        omitidos: 0,
         errores: errores.length,
-        mensaje: `Se crearon ${enviados} sesión(es) de inducción. ${allWorkers.length - pendientes.length} trabajadores ya tenían sesión activa.`,
+        mensaje: `Se crearon ${enviados} sesión(es) nuevas de inducción${errores.length > 0 ? `; ${errores.length} no pudieron crearse` : ""}.`,
       });
     } catch (error: any) {
       console.error("Error en envío masivo:", error);
@@ -1503,22 +1491,12 @@ export function registerInduccionVirtualRoutes(app: Express) {
         return res.status(404).json({ enviados: 0, omitidos: 0, mensaje: "No se encontraron trabajadores" });
       }
 
-      // Obtener sesiones PESV activas (pendiente o en_progreso) para evitar duplicados
-      const sesionesActivas = await db.select({ workerId: schema.sesionesInduccionVirtual.workerId })
-        .from(schema.sesionesInduccionVirtual)
-        .where(and(
-          eq(schema.sesionesInduccionVirtual.companyId, companyId),
-          eq(schema.sesionesInduccionVirtual.tipoInduccion, "pesv"),
-          inArray(schema.sesionesInduccionVirtual.estado, ["pendiente", "en_progreso"])
-        ));
-      const activosSet = new Set(sesionesActivas.map(s => s.workerId));
       const sessionSnapshot = await buildSessionSnapshot(companyId, "pesv");
 
       let enviados = 0;
-      let omitidos = 0;
+      let errores = 0;
 
       for (const worker of targetWorkers) {
-        if (activosSet.has(worker.id)) { omitidos++; continue; }
         try {
           const token = generateToken();
           const fechaExpiracion = new Date();
@@ -1531,14 +1509,15 @@ export function registerInduccionVirtualRoutes(app: Express) {
           enviados++;
         } catch (err: any) {
           console.error(`Error creating PESV session for worker ${worker.id}:`, err);
-          omitidos++;
+          errores++;
         }
       }
 
       res.status(201).json({
         enviados,
-        omitidos,
-        mensaje: `${enviados} inducción(es) asignada(s)${omitidos > 0 ? `, ${omitidos} ya tenían sesión activa` : ""}.`,
+        omitidos: 0,
+        errores,
+        mensaje: `${enviados} inducción(es) PESV nueva(s) asignada(s)${errores > 0 ? `; ${errores} no pudieron crearse` : ""}.`,
       });
     } catch (error: any) {
       console.error("Error creating PESV session:", error);
@@ -1553,22 +1532,12 @@ export function registerInduccionVirtualRoutes(app: Express) {
       const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(401).send("No autorizado");
 
-      const sesionesActivas = await db.select({ workerId: schema.sesionesInduccionVirtual.workerId })
-        .from(schema.sesionesInduccionVirtual)
-        .where(and(
-          eq(schema.sesionesInduccionVirtual.companyId, companyId),
-          eq(schema.sesionesInduccionVirtual.tipoInduccion, "pesv"),
-          inArray(schema.sesionesInduccionVirtual.estado, ["pendiente", "en_progreso"])
-        ));
-      const activosSet = new Set(sesionesActivas.map(s => s.workerId));
-
       const allWorkers = await db.select().from(schema.workers)
         .where(eq(schema.workers.companyId, companyId));
       const sessionSnapshot = await buildSessionSnapshot(companyId, "pesv");
 
-      let enviados = 0; let omitidos = 0;
+      let enviados = 0; let errores = 0;
       for (const worker of allWorkers) {
-        if (activosSet.has(worker.id)) { omitidos++; continue; }
         try {
           const token = generateToken();
           const fechaExpiracion = new Date();
@@ -1579,9 +1548,17 @@ export function registerInduccionVirtualRoutes(app: Express) {
             datosAdicionales: JSON.stringify(sessionSnapshot),
           });
           enviados++;
-        } catch { omitidos++; }
+        } catch (err: any) {
+          console.error(`Error creating mass PESV session for worker ${worker.id}:`, err);
+          errores++;
+        }
       }
-      res.json({ enviados, omitidos, mensaje: `${enviados} inducción(es) asignada(s), ${omitidos} omitida(s).` });
+      res.json({
+        enviados,
+        omitidos: 0,
+        errores,
+        mensaje: `${enviados} inducción(es) PESV nueva(s) asignada(s)${errores > 0 ? `; ${errores} no pudieron crearse` : ""}.`,
+      });
     } catch (error: any) {
       res.status(500).send("Error al enviar inducciones PESV masivas");
     }

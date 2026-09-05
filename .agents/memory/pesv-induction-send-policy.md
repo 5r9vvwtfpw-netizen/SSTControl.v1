@@ -1,10 +1,10 @@
 ---
-name: PESV induction send policy
-description: Regla funcional para asignar y completar inducciones virtuales PESV sin exigir configuración previa de materiales.
+name: Induction resend policy
+description: Reglas funcionales para reenviar inducciones SST/PESV y asignar PESV sin exigir configuración previa de materiales.
 ---
 
-Las sesiones de inducción PESV se pueden enviar de forma individual o masiva sin exigir contenidos publicados ni que cada empresa gestione preguntas. Los contenidos son opcionales y el cuestionario PESV ya está establecido en el sistema.
+Las sesiones de inducción SST y PESV se pueden enviar repetidamente al mismo trabajador, de forma individual o masiva, incluso cuando ya tiene otra sesión pendiente o en progreso. Cada envío crea una sesión independiente. PESV tampoco exige contenidos publicados ni preguntas administradas por cada empresa.
 
-**Why:** La evaluación PESV ya forma parte del sistema y no debe duplicarse, redefinirse ni presentarse como configuración de cada empresa. El envío tampoco debe quedar bloqueado por una carga adicional de materiales.
+**Why:** La empresa puede necesitar reenviar una inducción por corrección, nueva convocatoria o repetición, sin esperar a que expire la anterior. La evaluación PESV ya forma parte del sistema y no debe duplicarse ni redefinirse por empresa.
 
-**How to apply:** No agregar validaciones previas de contenido o preguntas a los endpoints ni a los botones de envío PESV. Las sesiones deben reutilizar las ocho preguntas de la plantilla PESV existente, no inferir el cuestionario desde filas configurables por empresa ni crear otro fallback. Si una respuesta queda vacía, bloquear firma y finalización. La ausencia de contenidos lleva directamente a la evaluación. No crear otra sesión activa del mismo tipo para el mismo trabajador.
+**How to apply:** No excluir trabajadores por sesiones anteriores o activas en endpoints ni botones de envío SST/PESV. Cada solicitud explícita debe crear tokens e instantáneas nuevos sin reemplazar el historial. PESV debe reutilizar las ocho preguntas establecidas; no agregar validaciones previas de contenidos o preguntas configurables. Si una respuesta queda vacía, bloquear firma y finalización.
