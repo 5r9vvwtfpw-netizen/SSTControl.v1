@@ -108,7 +108,7 @@ export function PwaInstallCard() {
         </div>
 
         <div className="flex shrink-0 flex-wrap gap-2 sm:justify-end">
-          {deferredPrompt && (
+          {deferredPrompt ? (
             <Button
               onClick={handleInstall}
               className="bg-green-700 hover:bg-green-800"
@@ -117,12 +117,13 @@ export function PwaInstallCard() {
               <Download className="mr-2 h-4 w-4" aria-hidden="true" />
               Instalar ahora
             </Button>
+          ) : (
+            <Link href="/instalar">
+              <Button variant="outline" data-testid="button-pwa-instructions">
+                Agregar al dispositivo
+              </Button>
+            </Link>
           )}
-          <Link href="/instalar">
-            <Button variant="outline" data-testid="button-pwa-instructions">
-              Ver instrucciones
-            </Button>
-          </Link>
         </div>
       </CardContent>
     </Card>

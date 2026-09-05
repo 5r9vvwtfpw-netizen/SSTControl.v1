@@ -30,6 +30,10 @@ const priorityLabels: Record<string, string> = {
 };
 
 type PortalNotificationCount = { messages: number; capacitaciones: number; examenes: number; total: number };
+type BadgeNavigator = Navigator & {
+  setAppBadge?: (contents?: number) => Promise<void>;
+  clearAppBadge?: () => Promise<void>;
+};
 
 export function NotificationBell({ simple = false }: { simple?: boolean }) {
   const { user } = useAuth();
@@ -62,6 +66,22 @@ export function NotificationBell({ simple = false }: { simple?: boolean }) {
       playNotificationSound("ticket");
     }
     prevUnreadRef.current = unreadCount;
+  }, [unreadCount]);
+
+  useEffect(() => {
+    const badgeNavigator = navigator as BadgeNavigator;
+    const syncInstalledAppBadge = async () => {
+      try {
+        if (unreadCount > 0 && badgeNavigator.setAppBadge) {
+          await badgeNavigator.setAppBadge(unreadCount);
+        } else if (unreadCount === 0 && badgeNavigator.clearAppBadge) {
+          await badgeNavigator.clearAppBadge();
+        }
+      } catch {
+        // El launcher o navegador decide si admite distintivos en el icono.
+      }
+    };
+    void syncInstalledAppBadge();
   }, [unreadCount]);
 
   // Get recent messages

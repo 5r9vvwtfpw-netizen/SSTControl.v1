@@ -27,12 +27,16 @@ export default function InstalarApp() {
     };
     window.addEventListener("beforeinstallprompt", handler);
 
-    window.addEventListener("appinstalled", () => {
+    const handleInstalled = () => {
       setInstalled(true);
-      setTimeout(() => navigate("/login"), 2000);
-    });
+      setTimeout(() => navigate("/portal-empleados"), 800);
+    };
+    window.addEventListener("appinstalled", handleInstalled);
 
-    return () => window.removeEventListener("beforeinstallprompt", handler);
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handler);
+      window.removeEventListener("appinstalled", handleInstalled);
+    };
   }, [navigate]);
 
   const handleInstall = async () => {
@@ -42,6 +46,8 @@ export default function InstalarApp() {
     if (outcome === "accepted") {
       setInstalled(true);
       (window as any).__pwaInstallPrompt = null;
+      setDeferredPrompt(null);
+      setTimeout(() => navigate("/portal-empleados"), 800);
     }
   };
 
@@ -74,26 +80,16 @@ export default function InstalarApp() {
           <div style={styles.content}>
             {deferredPrompt ? (
               <>
-                <p style={styles.instruction}>Toca el botón para instalar la app en tu celular</p>
+                <p style={styles.instruction}>Instala el Portal de Empleados con un toque.</p>
                 <button style={styles.installBtn} onClick={handleInstall}>
-                  Instalar App
+                  Instalar Portal
                 </button>
               </>
             ) : (
               <>
-                <p style={styles.instruction}>Para instalar la app en Android:</p>
-                <div style={styles.step}>
-                  <span style={styles.stepNum}>1</span>
-                  <span>Toca los <strong>3 puntos</strong> del menú del navegador (esquina superior derecha)</span>
-                </div>
-                <div style={styles.step}>
-                  <span style={styles.stepNum}>2</span>
-                  <span>Selecciona <strong>"Instalar app"</strong> o <strong>"Agregar a pantalla de inicio"</strong></span>
-                </div>
-                <div style={styles.step}>
-                  <span style={styles.stepNum}>3</span>
-                  <span>Toca <strong>"Instalar"</strong> en el mensaje que aparece</span>
-                </div>
+                <p style={styles.instruction}>
+                  En Chrome, abre <strong>⋮</strong> y toca <strong>Instalar aplicación</strong>.
+                </p>
               </>
             )}
           </div>
@@ -101,34 +97,22 @@ export default function InstalarApp() {
 
         {platform === "ios" && (
           <div style={styles.content}>
-            <p style={styles.instruction}>Para instalar la app en iPhone:</p>
-            <div style={styles.step}>
-              <span style={styles.stepNum}>1</span>
-              <span>Abre esta página en <strong>Safari</strong> (no Chrome)</span>
-            </div>
-            <div style={styles.step}>
-              <span style={styles.stepNum}>2</span>
-              <span>Toca el botón de <strong>Compartir</strong> <span style={{fontSize: 18}}>⬆</span> en la barra inferior</span>
-            </div>
-            <div style={styles.step}>
-              <span style={styles.stepNum}>3</span>
-              <span>Selecciona <strong>"Agregar a pantalla de inicio"</strong></span>
-            </div>
-            <div style={styles.step}>
-              <span style={styles.stepNum}>4</span>
-              <span>Toca <strong>"Agregar"</strong></span>
-            </div>
+            <p style={styles.instruction}>
+              En Safari, toca <strong>Compartir ⬆</strong> y luego <strong>Agregar a pantalla de inicio</strong>.
+            </p>
           </div>
         )}
 
         {platform === "other" && (
           <div style={styles.content}>
-            <p style={styles.instruction}>Abre este enlace desde tu celular para instalar la app.</p>
+            <p style={styles.instruction}>
+              Si tu navegador muestra la opción de instalación, selecciónala para agregar el portal al dispositivo.
+            </p>
           </div>
         )}
 
-        <a href="/login" style={styles.loginLink}>
-          Ir al Portal sin instalar →
+        <a href="/portal-empleados" style={styles.loginLink}>
+          Entrar al Portal de Empleados →
         </a>
       </div>
     </div>

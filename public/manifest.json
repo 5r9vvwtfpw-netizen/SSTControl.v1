@@ -3,10 +3,11 @@
   "short_name": "SST Colombia",
   "description": "Gestión de Seguridad y Salud en el Trabajo",
   "start_url": "/portal-empleados",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#1d4ed8",
-  "orientation": "portrait-primary",
+  "orientation": "any",
   "lang": "es-CO",
   "icons": [
     {

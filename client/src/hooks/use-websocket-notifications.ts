@@ -43,6 +43,7 @@ export function useWebSocketNotifications() {
             case "new_message":
               queryClient.invalidateQueries({ queryKey: ["/api/internal-messages"] });
               queryClient.invalidateQueries({ queryKey: ["/api/internal-messages/unread-count"] });
+              queryClient.invalidateQueries({ queryKey: ["/api/portal/notification-count"] });
               break;
 
             case "message_read":
