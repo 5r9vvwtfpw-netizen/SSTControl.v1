@@ -5342,7 +5342,12 @@ function MisCapacitacionesPesvTab() {
   }
 
   const capacitaciones = data?.capacitaciones || [];
-  const pendientes = capacitaciones.filter(c => c.estado === "programada" || c.estado === "scheduled");
+  const pendientes = capacitaciones.filter(c =>
+    c.estado === "programada" ||
+    c.estado === "scheduled" ||
+    c.estado === "en-curso" ||
+    c.estado === "in-progress"
+  );
   const completadas = capacitaciones.filter(c => c.estado === "completada" || c.estado === "completed");
 
   return (
@@ -5357,7 +5362,7 @@ function MisCapacitacionesPesvTab() {
             </div>
             <div>
               <CardTitle className="text-lg" data-testid="text-titulo-capacitaciones-pesv">
-                Capacitaciones PESV Programadas
+                Capacitaciones PESV Programadas y en Curso
               </CardTitle>
               <CardDescription>
                 Capacitaciones de seguridad vial a las que ha sido invitado(a) según Resolución 40595/2022, Paso 10
@@ -5371,7 +5376,7 @@ function MisCapacitacionesPesvTab() {
               <div className="mx-auto w-14 h-14 rounded-full bg-muted/50 flex items-center justify-center mb-3">
                 <Calendar className="h-7 w-7 text-muted-foreground" />
               </div>
-              <p className="text-muted-foreground">No tiene capacitaciones PESV pendientes</p>
+              <p className="text-muted-foreground">No tiene capacitaciones PESV programadas o en curso</p>
             </div>
           ) : (
             <div className="space-y-4">
