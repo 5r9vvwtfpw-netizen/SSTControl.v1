@@ -7,4 +7,4 @@ La campana del Portal de Empleados, el distintivo de la PWA instalada y los Web 
 
 **Why:** Contadores separados o parciales hacen que el empleado no sepa que debe entrar al portal; sumar módulos históricos, informativos o voluntarios genera alertas que nunca puede limpiar.
 
-**How to apply:** Toda categoría nueva con una acción obligatoria debe incorporarse al cálculo central y sus eventos deben enviar Web Push con el total absoluto. No usar incrementos locales ni contar simples listados.
+**How to apply:** Toda categoría nueva con una acción obligatoria debe incorporarse al cálculo central y sus eventos deben enviar Web Push con el total absoluto. No usar incrementos locales ni contar simples listados. En iPhone/iPad, un contador correcto no aparece en el icono hasta que la PWA instalada tenga habilitados Notificaciones y Distintivos; al activar el permiso se debe resincronizar el total por navigator y por el registro del service worker.

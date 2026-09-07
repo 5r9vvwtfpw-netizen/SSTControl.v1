@@ -17,6 +17,7 @@ import { useLocation } from "wouter";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { syncAppBadge } from "@/lib/app-badge";
 import type { InternalMessage } from "@shared/schema";
 
 const priorityColors: Record<string, string> = {
@@ -40,11 +41,6 @@ type PortalNotificationCount = {
   inspeccionesVehiculo: number;
   total: number;
 };
-type BadgeNavigator = Navigator & {
-  setAppBadge?: (contents?: number) => Promise<void>;
-  clearAppBadge?: () => Promise<void>;
-};
-
 export function NotificationBell({ simple = false }: { simple?: boolean }) {
   const { user } = useAuth();
   const [location, setLocation] = useLocation();
@@ -79,19 +75,7 @@ export function NotificationBell({ simple = false }: { simple?: boolean }) {
   }, [unreadCount]);
 
   useEffect(() => {
-    const badgeNavigator = navigator as BadgeNavigator;
-    const syncInstalledAppBadge = async () => {
-      try {
-        if (unreadCount > 0 && badgeNavigator.setAppBadge) {
-          await badgeNavigator.setAppBadge(unreadCount);
-        } else if (unreadCount === 0 && badgeNavigator.clearAppBadge) {
-          await badgeNavigator.clearAppBadge();
-        }
-      } catch {
-        // El launcher o navegador decide si admite distintivos en el icono.
-      }
-    };
-    void syncInstalledAppBadge();
+    void syncAppBadge(unreadCount);
   }, [unreadCount]);
 
   // Get recent messages

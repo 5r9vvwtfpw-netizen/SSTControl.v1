@@ -2,8 +2,17 @@ import { useEffect, useState } from "react";
 import { Bell, BellOff, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { apiRequest } from "@/lib/queryClient";
+import { syncAppBadge } from "@/lib/app-badge";
 
 type PushStatus = "loading" | "enabled" | "disabled" | "denied" | "unsupported";
+
+async function syncCurrentPortalBadge(): Promise<{ count: number; applied: boolean }> {
+  const response = await fetch("/api/portal/notification-count", { credentials: "include" });
+  if (!response.ok) throw new Error("No fue posible consultar los pendientes.");
+  const data = await response.json() as { total?: number };
+  const count = Math.max(0, Number(data.total || 0));
+  return { count, applied: await syncAppBadge(count) };
+}
 
 function base64UrlToUint8Array(value: string): Uint8Array {
   const padded = value + "=".repeat((4 - value.length % 4) % 4);
@@ -27,7 +36,13 @@ export function WebPushControl() {
     }
     navigator.serviceWorker.ready.then(async (registration) => {
       const subscription = await registration.pushManager.getSubscription();
-      if (subscription) setStatus("enabled");
+      if (subscription) {
+        setStatus("enabled");
+        const badge = await syncCurrentPortalBadge().catch(() => null);
+        if (badge && badge.count > 0 && !badge.applied) {
+          setMessage(`Hay ${badge.count} pendientes, pero este dispositivo no admite el distintivo numérico.`);
+        }
+      }
       else if (Notification.permission === "denied") setStatus("denied");
       else setStatus("disabled");
     }).catch(() => setStatus("unsupported"));
@@ -49,8 +64,13 @@ export function WebPushControl() {
         applicationServerKey: base64UrlToUint8Array(config.publicKey),
       });
       await apiRequest("POST", "/api/web-push/subscriptions", subscription.toJSON());
+      const badge = await syncCurrentPortalBadge();
       setStatus("enabled");
-      setMessage("Notificaciones activadas en este dispositivo.");
+      setMessage(
+        badge.applied
+          ? `Notificaciones activadas. El icono se sincronizó con ${badge.count} pendiente${badge.count === 1 ? "" : "s"}.`
+          : `Notificaciones activadas, pero este dispositivo no admite el distintivo numérico. Tienes ${badge.count} pendiente${badge.count === 1 ? "" : "s"}.`,
+      );
     } catch (error: any) {
       setMessage(error?.message || "No fue posible activar las notificaciones.");
       setStatus("disabled");
@@ -66,6 +86,7 @@ export function WebPushControl() {
         await subscription.unsubscribe();
       }
       setStatus("disabled");
+      await syncAppBadge(0);
       setMessage("Notificaciones desactivadas en este dispositivo.");
     } catch {
       setMessage("No fue posible desactivar las notificaciones.");
@@ -108,8 +129,11 @@ export function WebPushControl() {
         </Button>
       )}
       <span className="text-xs text-muted-foreground" data-testid="web-push-status">
-        {status === "denied" ? "Las notificaciones fueron bloqueadas; habilítalas en los ajustes del navegador." :
-          message || "Recibe mensajes, capacitaciones y exámenes incluso cuando el portal esté cerrado."}
+        {status === "denied"
+          ? `Las notificaciones están bloqueadas. ${isiOS ? "Abre Ajustes > Notificaciones > SST Colombia y activa Permitir notificaciones y Distintivos." : "Habilítalas en los ajustes del navegador."}`
+          : message || (isiOS
+            ? "En iPhone/iPad debes activar las notificaciones para que iOS permita mostrar el contador sobre el icono."
+            : "Recibe mensajes, capacitaciones y exámenes incluso cuando el portal esté cerrado.")}
       </span>
     </div>
   );
