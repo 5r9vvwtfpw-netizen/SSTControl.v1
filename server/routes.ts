@@ -37843,6 +37843,17 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       }
       
       
+      const workerInvitations = await db
+        .select({
+          id: roadSafetyWorkerAttendees.id,
+          trainingId: roadSafetyWorkerAttendees.trainingId,
+          invited: roadSafetyWorkerAttendees.invited,
+          attended: roadSafetyWorkerAttendees.attended,
+          confirmedAt: roadSafetyWorkerAttendees.confirmedAt,
+        })
+        .from(roadSafetyWorkerAttendees)
+        .where(eq(roadSafetyWorkerAttendees.workerId, workerId));
+
       // === Source 3: PESV Road Safety Trainings (road_safety_trainings + road_safety_attendees) ===
       // First find if worker is associated with a driver record
       const allDrivers = await storage.getDrivers(companyId);
@@ -37855,6 +37866,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
           const myAttendance = attendees.find(a => a.driverId === myDriver.id);
           
           if (myAttendance) {
+            const workerInvitation = workerInvitations.find(inv => inv.trainingId === training.id);
             const dateStr = training.trainingDate ? (typeof training.trainingDate === 'string' ? training.trainingDate : new Date(training.trainingDate).toISOString().split('T')[0]) : new Date().toISOString().split('T')[0];
             capacitaciones.push({
               id: training.id,
@@ -37869,8 +37881,10 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
               instructor: training.instructor || null,
                duracionHoras: 4,
               normativa: 'Resolución 40595/2022 - Plan Estratégico de Seguridad Vial',
-              estado: myAttendance.attended === 1 ? 'asistio' : 'invitado',
-              asistenciaId: myAttendance.id,
+              estado: myAttendance.attended === 1
+                ? 'asistio'
+                : (workerInvitation?.confirmedAt ? 'confirmado' : 'invitado'),
+              asistenciaId: workerInvitation?.id || myAttendance.id,
               source: 'programa',
               contentType: training.contentType ?? 'presencial',
               contentUrl: training.contentUrl ?? null,
@@ -37884,17 +37898,6 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       // This covers workers invited via the "invite-workers" endpoint (non-driver workers)
       {
         const existingTrainingIds = new Set(capacitaciones.map(c => c.id));
-        const workerInvitations = await db
-          .select({
-            id: roadSafetyWorkerAttendees.id,
-            trainingId: roadSafetyWorkerAttendees.trainingId,
-            invited: roadSafetyWorkerAttendees.invited,
-            attended: roadSafetyWorkerAttendees.attended,
-            confirmedAt: roadSafetyWorkerAttendees.confirmedAt,
-          })
-          .from(roadSafetyWorkerAttendees)
-          .where(eq(roadSafetyWorkerAttendees.workerId, workerId));
-
         if (workerInvitations.length > 0) {
           const pesvTrainings = await storage.getRoadSafetyTrainings(companyId);
           const pesvTrainingsMap = new Map(pesvTrainings.map(t => [t.id, t]));
@@ -38080,6 +38083,149 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         } catch (notifErr: any) {
           console.error('[Training Confirmation] Error notifying admin (legacy):', notifErr.message);
         }
+
+        return res.json(updated);
+      }
+
+      // Si no está en SST ni legacy, buscar invitación PESV por trabajador
+      const [pesvWorkerAttendee] = await db
+        .select()
+        .from(schema.roadSafetyWorkerAttendees)
+        .where(eq(schema.roadSafetyWorkerAttendees.id, asistenciaId))
+        .limit(1);
+
+      if (pesvWorkerAttendee) {
+        if (pesvWorkerAttendee.workerId !== workerId) {
+          return res.status(403).json({ error: "No tiene permiso para confirmar esta asistencia" });
+        }
+
+        const [pesvTraining] = await db
+          .select()
+          .from(schema.roadSafetyTrainings)
+          .where(and(
+            eq(schema.roadSafetyTrainings.id, pesvWorkerAttendee.trainingId),
+            eq(schema.roadSafetyTrainings.companyId, companyId),
+          ))
+          .limit(1);
+
+        if (!pesvTraining) {
+          return res.status(404).json({ error: "Capacitación PESV no encontrada para esta empresa" });
+        }
+
+        if (pesvWorkerAttendee.confirmedAt) {
+          return res.status(400).json({ error: "Ya ha confirmado asistencia a esta capacitación" });
+        }
+
+        const [updated] = await db
+          .update(schema.roadSafetyWorkerAttendees)
+          .set({ confirmedAt: new Date() })
+          .where(eq(schema.roadSafetyWorkerAttendees.id, asistenciaId))
+          .returning();
+
+        // Notificar al administrador de la empresa
+        try {
+          const worker = await storage.getWorker(workerId, companyId);
+          let adminUser = await storage.getCompanySuperusuario(companyId);
+          if (!adminUser) {
+            const [fallback] = await db.select().from(schema.users)
+              .where(and(eq(schema.users.companyId, companyId), eq(schema.users.role, 'admin')))
+              .limit(1);
+            adminUser = fallback;
+          }
+
+          if (adminUser && worker) {
+            const fechaStr = pesvTraining.trainingDate
+              ? new Date(pesvTraining.trainingDate).toLocaleDateString('es-CO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+              : 'fecha programada';
+            const msg = await storage.createInternalMessage({
+              companyId,
+              senderId: user.id,
+              senderName: worker.name || user.fullName || user.username,
+              senderRole: user.role,
+              receiverId: adminUser.id,
+              receiverName: adminUser.fullName || adminUser.username,
+              receiverRole: adminUser.role,
+              subject: `Confirmación de asistencia PESV: ${pesvTraining.title}`,
+              content: `${worker.name} ha confirmado su asistencia a la capacitación PESV "${pesvTraining.title}" programada para el ${fechaStr}.`,
+              priority: 'normal',
+              status: 'unread',
+              relatedEntity: 'training',
+              relatedEntityId: pesvWorkerAttendee.trainingId,
+            });
+            notifyNewMessage(adminUser.id, user.id, msg.id);
+          }
+        } catch (notifErr: any) {
+          console.error('[Training Confirmation] Error notifying admin (PESV worker):', notifErr.message);
+        }
+
+        return res.json(updated);
+      }
+
+      // Programación PESV asignada directamente al conductor. La confirmación
+      // se registra en la tabla por trabajador para conservar el estado separado
+      // de la asistencia efectiva.
+      const [pesvDriverAttendee] = await db
+        .select({
+          id: schema.roadSafetyAttendees.id,
+          trainingId: schema.roadSafetyAttendees.trainingId,
+          driverWorkerId: schema.drivers.workerId,
+          driverCompanyId: schema.drivers.companyId,
+        })
+        .from(schema.roadSafetyAttendees)
+        .innerJoin(schema.drivers, eq(schema.roadSafetyAttendees.driverId, schema.drivers.id))
+        .where(eq(schema.roadSafetyAttendees.id, asistenciaId))
+        .limit(1);
+
+      if (pesvDriverAttendee) {
+        if (
+          pesvDriverAttendee.driverWorkerId !== workerId ||
+          pesvDriverAttendee.driverCompanyId !== companyId
+        ) {
+          return res.status(403).json({ error: "No tiene permiso para confirmar esta asistencia" });
+        }
+
+        const [pesvTraining] = await db
+          .select()
+          .from(schema.roadSafetyTrainings)
+          .where(and(
+            eq(schema.roadSafetyTrainings.id, pesvDriverAttendee.trainingId),
+            eq(schema.roadSafetyTrainings.companyId, companyId),
+          ))
+          .limit(1);
+
+        if (!pesvTraining) {
+          return res.status(404).json({ error: "Capacitación PESV no encontrada para esta empresa" });
+        }
+
+        const [existingWorkerConfirmation] = await db
+          .select()
+          .from(schema.roadSafetyWorkerAttendees)
+          .where(and(
+            eq(schema.roadSafetyWorkerAttendees.trainingId, pesvDriverAttendee.trainingId),
+            eq(schema.roadSafetyWorkerAttendees.workerId, workerId),
+          ))
+          .limit(1);
+
+        if (existingWorkerConfirmation?.confirmedAt) {
+          return res.status(400).json({ error: "Ya ha confirmado asistencia a esta capacitación" });
+        }
+
+        const [updated] = existingWorkerConfirmation
+          ? await db
+              .update(schema.roadSafetyWorkerAttendees)
+              .set({ confirmedAt: new Date() })
+              .where(eq(schema.roadSafetyWorkerAttendees.id, existingWorkerConfirmation.id))
+              .returning()
+          : await db
+              .insert(schema.roadSafetyWorkerAttendees)
+              .values({
+                trainingId: pesvDriverAttendee.trainingId,
+                workerId,
+                invited: 1,
+                attended: 0,
+                confirmedAt: new Date(),
+              })
+              .returning();
 
         return res.json(updated);
       }
