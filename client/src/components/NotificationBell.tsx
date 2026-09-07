@@ -29,7 +29,13 @@ const priorityLabels: Record<string, string> = {
   urgent: "Urgente",
 };
 
-type PortalNotificationCount = { messages: number; capacitaciones: number; examenes: number; total: number };
+type PortalNotificationCount = {
+  messages: number;
+  capacitaciones: number;
+  examenes: number;
+  inducciones: number;
+  total: number;
+};
 type BadgeNavigator = Navigator & {
   setAppBadge?: (contents?: number) => Promise<void>;
   clearAppBadge?: () => Promise<void>;

@@ -23,7 +23,7 @@ import { demoReadOnlyMiddleware } from "../plugins/demo-engine/readonly-middlewa
 import { isDemoEnabled } from "../plugins/demo-engine/types";
 import { storage } from "./storage";
 import { db } from "./db";
-import { users } from "@shared/schema";
+import { sesionesInduccionVirtual, users } from "@shared/schema";
 import { getAuditContext } from "./lib/audit-logger";
 import { logger } from "./lib/logger";
 import { registerBillingRoutes } from "./routes/billing";
@@ -38343,7 +38343,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const companyId = user.companyId;
 
       if (!companyId) {
-        return res.json({ messages: 0, capacitaciones: 0, examenes: 0, total: 0 });
+        return res.json({ messages: 0, capacitaciones: 0, examenes: 0, inducciones: 0, total: 0 });
       }
 
       // 1. Mensajes internos sin leer
@@ -38358,6 +38358,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
       let capacitaciones = 0;
       let examenes = 0;
+      let inducciones = 0;
 
       if (workerId) {
         // 2. Invitaciones a capacitaciones pendientes (programa nuevo)
@@ -38367,10 +38368,22 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         // 3. Exámenes médicos con notificación enviada pero sin confirmar lectura
         const exams = await storage.getMedicalExamsByWorker(workerId, companyId);
         examenes = exams.filter(e => e.notificationSentAt && !e.readConfirmedAt).length;
+
+        // 4. Inducciones SST/PESV pendientes y vigentes
+        const [pendingInductions] = await db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(sesionesInduccionVirtual)
+          .where(and(
+            eq(sesionesInduccionVirtual.companyId, companyId),
+            eq(sesionesInduccionVirtual.workerId, workerId),
+            eq(sesionesInduccionVirtual.estado, "pendiente"),
+            sql`${sesionesInduccionVirtual.fechaExpiracion} > now()`
+          ));
+        inducciones = Number(pendingInductions?.count ?? 0);
       }
 
-      const total = messages + capacitaciones + examenes;
-      res.json({ messages, capacitaciones, examenes, total });
+      const total = messages + capacitaciones + examenes + inducciones;
+      res.json({ messages, capacitaciones, examenes, inducciones, total });
     } catch (error: any) {
       console.error('Error fetching portal notification count:', error);
       res.status(500).json({ error: error.message || "Error al obtener conteo de notificaciones" });
