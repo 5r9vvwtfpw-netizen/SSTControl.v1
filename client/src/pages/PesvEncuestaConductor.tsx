@@ -15,7 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Trash2, ArrowLeft, ClipboardList, CheckCircle2, XCircle, AlertTriangle, Eye, FileDown } from "lucide-react";
 import { EvaluacionPesvContextHeader } from "@/components/EvaluacionPesvContextHeader";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, buildHeaders, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { useCompanyContext } from "@/hooks/use-company-context";
@@ -112,7 +112,10 @@ export default function PesvEncuestaConductor() {
   const { data: encuestas = [], isLoading } = useQuery<EncuestaType[]>({
     queryKey: [apiBase, selectedCompany?.id],
     queryFn: async () => {
-      const res = await fetch(`${apiBase}${companyParam}`, { credentials: "include" });
+      const res = await fetch(`${apiBase}${companyParam}`, {
+        credentials: "include",
+        headers: buildHeaders(false),
+      });
       if (!res.ok) throw new Error("Error al cargar encuestas");
       return res.json();
     },
