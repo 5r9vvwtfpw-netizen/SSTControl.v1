@@ -7,6 +7,7 @@ import { resend } from "./services/email";
 import PDFDocument from "pdfkit";
 import { objectStorageService } from "./objectStorage";
 import { getPlantillaPesv } from "../client/src/data/induccion-plantillas-pesv";
+import { getPlantillasPorNivel } from "../client/src/data/induccion-plantillas-arl";
 
 const VALID_INDUCTION_TYPES = ["induccion", "reinduccion", "pesv"] as const;
 type InductionType = typeof VALID_INDUCTION_TYPES[number];
@@ -47,6 +48,46 @@ const ESTABLISHED_PESV_QUESTIONS = getPlantillaPesv().preguntas.map((pregunta, i
   orden: index + 1,
 }));
 
+async function getEstablishedQuestions(companyId: string, tipoInduccion: InductionType) {
+  if (tipoInduccion === "pesv") {
+    return ESTABLISHED_PESV_QUESTIONS;
+  }
+
+  const [company] = await db.select({ riskLevel: schema.companies.riskLevel })
+    .from(schema.companies)
+    .where(eq(schema.companies.id, companyId))
+    .limit(1);
+  const riskLevel = company?.riskLevel || "I";
+
+  return getPlantillasPorNivel(riskLevel).preguntas.map((pregunta, index) => ({
+    id: `sst-established-${riskLevel}-${index + 1}`,
+    ...pregunta,
+    orden: index + 1,
+    tipoInduccion,
+  }));
+}
+
+async function getEstablishedSessionQuestions(sesion: schema.SesionInduccionVirtual) {
+  const preguntas = await getEstablishedQuestions(
+    sesion.companyId,
+    sesion.tipoInduccion as InductionType,
+  );
+
+  return preguntas.map(pregunta => ({
+    id: pregunta.id,
+    companyId: sesion.companyId,
+    contenidoId: null,
+    pregunta: pregunta.pregunta,
+    opciones: JSON.stringify(pregunta.opciones),
+    respuestaCorrecta: pregunta.respuestaCorrecta,
+    explicacion: pregunta.explicacion,
+    orden: pregunta.orden,
+    activa: 1,
+    tipoInduccion: sesion.tipoInduccion,
+    createdAt: sesion.fechaEnvio,
+  }));
+}
+
 function parseSessionSnapshot(raw: string | null): InductionSessionSnapshot | null {
   if (!raw) return null;
   try {
@@ -76,22 +117,13 @@ async function buildSessionSnapshot(companyId: string, tipoInduccion: InductionT
         eq(schema.contenidosInduccion.tipoInduccion, tipoInduccion)
       ))
       .orderBy(schema.contenidosInduccion.orden),
-    db.select({ id: schema.preguntasInduccion.id })
-      .from(schema.preguntasInduccion)
-      .where(and(
-        eq(schema.preguntasInduccion.companyId, companyId),
-        eq(schema.preguntasInduccion.activa, 1),
-        eq(schema.preguntasInduccion.tipoInduccion, tipoInduccion)
-      ))
-      .orderBy(schema.preguntasInduccion.orden),
+    getEstablishedQuestions(companyId, tipoInduccion),
   ]);
 
   return {
     snapshotVersion: 1,
     contenidoIds: contenidos.map(contenido => contenido.id),
-    preguntaIds: tipoInduccion === "pesv"
-      ? ESTABLISHED_PESV_QUESTIONS.map(pregunta => pregunta.id)
-      : preguntas.map(pregunta => pregunta.id),
+    preguntaIds: preguntas.map(pregunta => pregunta.id),
   };
 }
 
@@ -124,47 +156,10 @@ async function getSessionContents(sesion: schema.SesionInduccionVirtual) {
 }
 
 async function getSessionQuestions(sesion: schema.SesionInduccionVirtual) {
-  // El cuestionario PESV ya está establecido en la plantilla del sistema.
-  // No depende de registros configurables por empresa ni se duplica en la BD.
-  if (sesion.tipoInduccion === "pesv") {
-    return ESTABLISHED_PESV_QUESTIONS.map(pregunta => ({
-      id: pregunta.id,
-      companyId: sesion.companyId,
-      contenidoId: null,
-      pregunta: pregunta.pregunta,
-      opciones: JSON.stringify(pregunta.opciones),
-      respuestaCorrecta: pregunta.respuestaCorrecta,
-      explicacion: pregunta.explicacion,
-      orden: pregunta.orden,
-      activa: 1,
-      tipoInduccion: "pesv",
-      createdAt: sesion.fechaEnvio,
-    }));
-  }
-
-  const snapshot = parseSessionSnapshot(sesion.datosAdicionales);
-  if (snapshot) {
-    if (snapshot.preguntaIds.length === 0) return [];
-    const preguntas = await db.select()
-      .from(schema.preguntasInduccion)
-      .where(and(
-        eq(schema.preguntasInduccion.companyId, sesion.companyId),
-        eq(schema.preguntasInduccion.tipoInduccion, sesion.tipoInduccion),
-        inArray(schema.preguntasInduccion.id, snapshot.preguntaIds)
-      ));
-    const order = new Map(snapshot.preguntaIds.map((id, index) => [id, index]));
-    return preguntas.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
-  }
-
-  return db.select()
-    .from(schema.preguntasInduccion)
-    .where(and(
-      eq(schema.preguntasInduccion.companyId, sesion.companyId),
-      eq(schema.preguntasInduccion.activa, 1),
-      eq(schema.preguntasInduccion.tipoInduccion, sesion.tipoInduccion),
-      lte(schema.preguntasInduccion.createdAt, sesion.fechaEnvio)
-    ))
-    .orderBy(schema.preguntasInduccion.orden);
+  // Las evaluaciones virtuales SST, reinducción y PESV están prediseñadas
+  // en el sistema. Las sesiones antiguas también deben recibir estas preguntas,
+  // aunque su instantánea se haya creado vacía o con IDs configurables obsoletos.
+  return getEstablishedSessionQuestions(sesion);
 }
 
 export function registerInduccionVirtualRoutes(app: Express) {
