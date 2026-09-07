@@ -13,6 +13,22 @@ import { sendWorkerPortalPush } from "./services/web-push";
 const VALID_INDUCTION_TYPES = ["induccion", "reinduccion", "pesv"] as const;
 type InductionType = typeof VALID_INDUCTION_TYPES[number];
 
+function isNotTrainingModuleContent() {
+  return sql`NOT EXISTS (
+    SELECT 1
+    FROM trainings training
+    WHERE training.company_id = ${schema.contenidosInduccion.companyId}
+      AND NULLIF(TRIM(training.content_url), '') IS NOT NULL
+      AND TRIM(training.content_url) = TRIM(
+        COALESCE(
+          NULLIF(${schema.contenidosInduccion.urlVideo}, ''),
+          NULLIF(${schema.contenidosInduccion.urlDocumento}, ''),
+          ''
+        )
+      )
+  )`;
+}
+
 function parseInductionType(value: unknown, fallback?: InductionType): InductionType | null {
   if (value === undefined || value === null || value === "") {
     return fallback || null;
@@ -115,7 +131,8 @@ async function buildSessionSnapshot(companyId: string, tipoInduccion: InductionT
       .where(and(
         eq(schema.contenidosInduccion.companyId, companyId),
         eq(schema.contenidosInduccion.estado, "publicado"),
-        eq(schema.contenidosInduccion.tipoInduccion, tipoInduccion)
+        eq(schema.contenidosInduccion.tipoInduccion, tipoInduccion),
+        isNotTrainingModuleContent()
       ))
       .orderBy(schema.contenidosInduccion.orden),
     getEstablishedQuestions(companyId, tipoInduccion),
@@ -136,8 +153,10 @@ async function getSessionContents(sesion: schema.SesionInduccionVirtual) {
       .from(schema.contenidosInduccion)
       .where(and(
         eq(schema.contenidosInduccion.companyId, sesion.companyId),
+        eq(schema.contenidosInduccion.estado, "publicado"),
         eq(schema.contenidosInduccion.tipoInduccion, sesion.tipoInduccion),
-        inArray(schema.contenidosInduccion.id, snapshot.contenidoIds)
+        inArray(schema.contenidosInduccion.id, snapshot.contenidoIds),
+        isNotTrainingModuleContent()
       ));
     const order = new Map(snapshot.contenidoIds.map((id, index) => [id, index]));
     return contenidos.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
@@ -151,7 +170,8 @@ async function getSessionContents(sesion: schema.SesionInduccionVirtual) {
       eq(schema.contenidosInduccion.companyId, sesion.companyId),
       eq(schema.contenidosInduccion.estado, "publicado"),
       eq(schema.contenidosInduccion.tipoInduccion, sesion.tipoInduccion),
-      lte(schema.contenidosInduccion.createdAt, sesion.fechaEnvio)
+      lte(schema.contenidosInduccion.createdAt, sesion.fechaEnvio),
+      isNotTrainingModuleContent()
     ))
     .orderBy(schema.contenidosInduccion.orden);
 }
