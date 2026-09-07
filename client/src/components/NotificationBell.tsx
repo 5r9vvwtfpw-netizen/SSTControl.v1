@@ -323,46 +323,48 @@ export function NotificationBell({ simple = false }: { simple?: boolean }) {
           )}
         </ScrollArea>
 
-        <div className="border-t p-2 flex gap-2">
-          {isSupportRole ? (
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex-1"
-              onClick={() => {
-                markAllAsReadMutation.mutate();
-              }}
-              disabled={unreadCount === 0 || markAllAsReadMutation.isPending}
-              data-testid="button-mark-all-read"
-            >
-              <CheckCheck className="h-4 w-4 mr-2" />
-              Marcar todas como leídas
-            </Button>
-          ) : (
-            <>
-              <Button 
-                variant="outline" 
-                size="sm" 
+        {!isWorkerRole && (
+          <div className="border-t p-2 flex gap-2">
+            {isSupportRole ? (
+              <Button
+                variant="outline"
+                size="sm"
                 className="flex-1"
-                onClick={handleViewAll}
-                data-testid="button-view-all-messages"
+                onClick={() => {
+                  markAllAsReadMutation.mutate();
+                }}
+                disabled={unreadCount === 0 || markAllAsReadMutation.isPending}
+                data-testid="button-mark-all-read"
               >
-                <Mail className="h-4 w-4 mr-2" />
-                Ver todos
+                <CheckCheck className="h-4 w-4 mr-2" />
+                Marcar todas como leídas
               </Button>
-              <Button 
-                variant="default" 
-                size="sm" 
-                className="flex-1"
-                onClick={handleNewMessage}
-                data-testid="button-new-message"
-              >
-                <Send className="h-4 w-4 mr-2" />
-                Nuevo
-              </Button>
-            </>
-          )}
-        </div>
+            ) : (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={handleViewAll}
+                  data-testid="button-view-all-messages"
+                >
+                  <Mail className="h-4 w-4 mr-2" />
+                  Ver todos
+                </Button>
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="flex-1"
+                  onClick={handleNewMessage}
+                  data-testid="button-new-message"
+                >
+                  <Send className="h-4 w-4 mr-2" />
+                  Nuevo
+                </Button>
+              </>
+            )}
+          </div>
+        )}
       </PopoverContent>
     </Popover>
   );
