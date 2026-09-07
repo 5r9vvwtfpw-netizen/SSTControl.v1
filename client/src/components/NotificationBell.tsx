@@ -34,6 +34,10 @@ type PortalNotificationCount = {
   capacitaciones: number;
   examenes: number;
   inducciones: number;
+  audiometrias: number;
+  elecciones: number;
+  encuestaDiaria: number;
+  inspeccionesVehiculo: number;
   total: number;
 };
 type BadgeNavigator = Navigator & {

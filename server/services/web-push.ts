@@ -1,9 +1,9 @@
 import webpush from "web-push";
-import { eq } from "drizzle-orm";
+import { and, eq, or } from "drizzle-orm";
 import * as schema from "@shared/schema";
 import { db } from "../db";
 import { decrypt, encrypt, isEncryptionEnabled, type EncryptedData } from "../lib/crypto";
-import { storage } from "../storage";
+import { getPortalPendingCount } from "./portal-pending-count";
 
 const VAPID_CONFIG_KEY = "web_push_vapid";
 const VAPID_CONTEXT = "web-push:vapid-private-key";
@@ -95,20 +95,7 @@ export async function sendPushToUser(userId: string, payload: WorkerPushPayload)
 }
 
 export async function sendInternalMessagePush(message: schema.InternalMessage): Promise<void> {
-  const [user] = await db.select().from(schema.users).where(eq(schema.users.id, message.receiverId)).limit(1);
-  let badgeCount = await storage.getUnreadMessageCount(message.receiverId, message.companyId);
-  let workerId = user?.workerId;
-  if (!workerId && user?.email) {
-    workerId = (await storage.getWorkerByEmail(user.email, message.companyId))?.id ?? null;
-  }
-  if (workerId) {
-    const [attendees, exams] = await Promise.all([
-      storage.getAsistentesByWorker(workerId),
-      storage.getMedicalExamsByWorker(workerId, message.companyId),
-    ]);
-    badgeCount += attendees.filter((item) => item.estado === "invitado").length;
-    badgeCount += exams.filter((item) => item.notificationSentAt && !item.readConfirmedAt).length;
-  }
+  const badgeCount = (await getPortalPendingCount(message.receiverId, message.companyId)).total;
   await sendPushToUser(message.receiverId, {
     title: message.subject,
     body: message.content,
@@ -116,4 +103,32 @@ export async function sendInternalMessagePush(message: schema.InternalMessage): 
     tag: `internal-message-${message.id}`,
     badgeCount,
   });
+}
+
+export async function sendWorkerPortalPush(
+  workerId: string,
+  companyId: string,
+  payload: Omit<WorkerPushPayload, "badgeCount">,
+): Promise<void> {
+  const [worker] = await db
+    .select({ email: schema.workers.email })
+    .from(schema.workers)
+    .where(and(eq(schema.workers.id, workerId), eq(schema.workers.companyId, companyId)))
+    .limit(1);
+
+  const conditions = [eq(schema.users.workerId, workerId)];
+  if (worker?.email) conditions.push(eq(schema.users.email, worker.email));
+
+  const recipients = await db
+    .select({ id: schema.users.id })
+    .from(schema.users)
+    .where(and(
+      eq(schema.users.companyId, companyId),
+      conditions.length === 1 ? conditions[0] : or(...conditions),
+    ));
+
+  await Promise.all(recipients.map(async ({ id }) => {
+    const badgeCount = (await getPortalPendingCount(id, companyId)).total;
+    await sendPushToUser(id, { ...payload, badgeCount });
+  }));
 }

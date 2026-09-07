@@ -8,6 +8,7 @@ import PDFDocument from "pdfkit";
 import { objectStorageService } from "./objectStorage";
 import { getPlantillaPesv } from "../client/src/data/induccion-plantillas-pesv";
 import { getPlantillasPorNivel } from "../client/src/data/induccion-plantillas-arl";
+import { sendWorkerPortalPush } from "./services/web-push";
 
 const VALID_INDUCTION_TYPES = ["induccion", "reinduccion", "pesv"] as const;
 type InductionType = typeof VALID_INDUCTION_TYPES[number];
@@ -788,6 +789,13 @@ export function registerInduccionVirtualRoutes(app: Express) {
         })
         .returning();
 
+      void sendWorkerPortalPush(workerId, companyId, {
+        title: tipoInduccion === "reinduccion" ? "Nueva reinducción SST" : "Nueva inducción SST",
+        body: "Tienes una inducción pendiente en el Portal de Empleados.",
+        url: "/portal-empleados",
+        tag: `induction-${sesion.id}`,
+      }).catch(() => console.error("[WebPush] No fue posible notificar la inducción"));
+
       const [company] = await db.select()
         .from(schema.companies)
         .where(eq(schema.companies.id, companyId));
@@ -853,6 +861,12 @@ export function registerInduccionVirtualRoutes(app: Express) {
             progresoEvaluacion: "{}",
             datosAdicionales: JSON.stringify(sessionSnapshot),
           });
+          void sendWorkerPortalPush(worker.id, companyId, {
+            title: tipoInduccion === "reinduccion" ? "Nueva reinducción SST" : "Nueva inducción SST",
+            body: "Tienes una inducción pendiente en el Portal de Empleados.",
+            url: "/portal-empleados",
+            tag: `induction-${token}`,
+          }).catch(() => console.error("[WebPush] No fue posible notificar la inducción masiva"));
 
           // Correo masivo de inducción deshabilitado: el trabajador accede desde su portal de empleados.
 
@@ -1501,6 +1515,12 @@ export function registerInduccionVirtualRoutes(app: Express) {
             estado: "pendiente", fechaExpiracion, contenidosVistos: "[]", progresoEvaluacion: "{}",
             datosAdicionales: JSON.stringify(sessionSnapshot),
           });
+          void sendWorkerPortalPush(worker.id, companyId, {
+            title: "Nueva inducción PESV",
+            body: "Tienes una inducción de seguridad vial pendiente en el Portal de Empleados.",
+            url: "/portal-empleados",
+            tag: `pesv-induction-${token}`,
+          }).catch(() => console.error("[WebPush] No fue posible notificar la inducción PESV"));
           enviados++;
         } catch (err: any) {
           console.error(`Error creating PESV session for worker ${worker.id}:`, err);
@@ -1542,6 +1562,12 @@ export function registerInduccionVirtualRoutes(app: Express) {
             estado: "pendiente", fechaExpiracion, contenidosVistos: "[]", progresoEvaluacion: "{}",
             datosAdicionales: JSON.stringify(sessionSnapshot),
           });
+          void sendWorkerPortalPush(worker.id, companyId, {
+            title: "Nueva inducción PESV",
+            body: "Tienes una inducción de seguridad vial pendiente en el Portal de Empleados.",
+            url: "/portal-empleados",
+            tag: `pesv-induction-${token}`,
+          }).catch(() => console.error("[WebPush] No fue posible notificar la inducción PESV masiva"));
           enviados++;
         } catch (err: any) {
           console.error(`Error creating mass PESV session for worker ${worker.id}:`, err);

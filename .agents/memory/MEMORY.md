@@ -31,3 +31,4 @@
 - [Application version source](application-version-source.md) — la versión visible y los metadatos web consumen una sola fuente; no escribir números de versión dentro de componentes.
 - [SST and PESV designation acts](sst-pesv-designation-acts.md) — son documentos distintos; el portal LSO debe mostrar y firmar ambos sin reutilizar títulos ni normativa.
 - [Training confirmation scope](training-confirmation-scope.md) — Confirmar en el Portal de Empleados solo confirma una capacitación programada; nunca depende de inducciones SST/PESV.
+- [Employee portal pending badge](employee-portal-pending-badge.md) — campana, PWA y Web Push comparten un total de acciones pendientes; módulos informativos no suman.

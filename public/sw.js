@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sst-portal-v2';
+const CACHE_NAME = 'sst-portal-v3';
 const STATIC_ASSETS = [
   '/',
   '/portal-empleados',
