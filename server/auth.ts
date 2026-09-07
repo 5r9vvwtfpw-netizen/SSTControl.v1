@@ -130,6 +130,17 @@ async function recordBlockedIpAttempt(
   }
 }
 
+function destroyStoredSession(sessionId: string): Promise<void> {
+  return new Promise((resolve) => {
+    storage.sessionStore.destroy(sessionId, (error) => {
+      if (error) {
+        logger.error({ err: error, sessionId }, "[SESSION] Error destruyendo sesión simultánea");
+      }
+      resolve();
+    });
+  });
+}
+
 async function recordLoginSession(
   userId: string,
   sessionId: string,
@@ -140,7 +151,11 @@ async function recordLoginSession(
   try {
     // 1. Cerrar sesiones activas previas del mismo usuario (detectar acceso simultáneo)
     const activeSessions = await db
-      .select({ id: schema.userSessions.id, ipAddress: schema.userSessions.ipAddress })
+      .select({
+        id: schema.userSessions.id,
+        sessionId: schema.userSessions.sessionId,
+        ipAddress: schema.userSessions.ipAddress,
+      })
       .from(schema.userSessions)
       .where(and(eq(schema.userSessions.userId, userId), eq(schema.userSessions.isActive, true)));
 
@@ -158,10 +173,16 @@ async function recordLoginSession(
               alert_note,
               ${'Nueva sesión detectada desde IP ' + ip + '. Sesión previa cerrada automáticamente.'}::text
             )
-        WHERE user_id = ${userId} AND is_active = true
-        RETURNING id, ip_address, user_agent
+         WHERE user_id = ${userId} AND is_active = true
+         RETURNING id, session_id, ip_address, user_agent
       `);
-      for (const previous of ((simultaneousResult as any).rows ?? [])) {
+      const previousSessions = ((simultaneousResult as any).rows ?? []) as Array<{
+        id: string;
+        session_id: string | null;
+        ip_address: string | null;
+        user_agent: string | null;
+      }>;
+      for (const previous of previousSessions) {
         void processSecurityAlert({
           sessionRecordId: previous.id,
           userId,
@@ -171,6 +192,12 @@ async function recordLoginSession(
           userAgent: previous.user_agent || null,
         });
       }
+      await Promise.all(
+        previousSessions
+          .map((previous) => previous.session_id)
+          .filter((previousSessionId): previousSessionId is string => Boolean(previousSessionId))
+          .map(destroyStoredSession),
+      );
       logger.warn({ userId, ip, prevCount: activeSessions.length }, "[SESSION] Sesiones simultáneas detectadas");
     }
 
