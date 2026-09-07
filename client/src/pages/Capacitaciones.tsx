@@ -284,9 +284,6 @@ export default function Capacitaciones() {
     }
     
     const totalWorkersValue = formData.totalWorkers === '' ? 0 : Number(formData.totalWorkers);
-    if (!totalWorkersValue || totalWorkersValue < 1) {
-      validationErrors.push("Cupo Total: debe indicar al menos 1 trabajador");
-    }
     
     if (validationErrors.length > 0) {
       toast({
@@ -331,9 +328,6 @@ export default function Capacitaciones() {
     }
     
     const editTotalWorkersValue = editFormData.totalWorkers === '' ? 0 : Number(editFormData.totalWorkers);
-    if (!editTotalWorkersValue || editTotalWorkersValue < 1) {
-      validationErrors.push("Cupo Total: debe indicar al menos 1 trabajador");
-    }
     
     if (validationErrors.length > 0) {
       toast({
@@ -578,11 +572,11 @@ export default function Capacitaciones() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="totalWorkers">Cupo Total *</Label>
+                    <Label htmlFor="totalWorkers">Cupo Total (opcional)</Label>
                     <Input
                       id="totalWorkers"
                       type="number"
-                      min="1"
+                      min="0"
                       value={formData.totalWorkers}
                       onChange={(e) => setFormData({ ...formData, totalWorkers: e.target.value === '' ? '' : e.target.value })}
                       placeholder="Número de cupos"
@@ -768,11 +762,11 @@ export default function Capacitaciones() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="edit-totalWorkers">Cupo Total *</Label>
+                <Label htmlFor="edit-totalWorkers">Cupo Total (opcional)</Label>
                 <Input
                   id="edit-totalWorkers"
                   type="number"
-                  min="1"
+                  min="0"
                   value={editFormData.totalWorkers}
                   onChange={(e) => setEditFormData({ ...editFormData, totalWorkers: e.target.value === '' ? '' : e.target.value })}
                   placeholder="Número de cupos"

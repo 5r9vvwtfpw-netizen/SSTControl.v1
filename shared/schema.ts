@@ -788,7 +788,7 @@ export const insertTrainingSchema = createInsertSchema(trainings)
     startTime: z.string().optional().default(""),
     endTime: z.string().optional().default(""),
     location: z.string().optional().default(""),
-    totalWorkers: z.coerce.number().min(1, "El cupo total debe ser al menos 1 trabajador"),
+    totalWorkers: z.coerce.number().min(0, "El cupo total no puede ser negativo"),
   });
 export type InsertTraining = z.infer<typeof insertTrainingSchema>;
 export type Training = typeof trainings.$inferSelect;
