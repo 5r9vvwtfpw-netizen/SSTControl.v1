@@ -124,12 +124,13 @@ export function AppSidebar() {
   // Fetch subscription features for the current company
   const { data: subscriptionFeatures } = useSubscriptionFeatures();
 
-  // Determine if PESV module should be available based on Decreto 1252/2021
+  const isGlobalRole = user?.role && GLOBAL_ACCESS_ROLES.includes(user.role);
+
+  // El superadmin puede revisar el PESV global aunque no tenga una empresa
+  // propia seleccionada. Para los demás roles se conserva la regla comercial.
   const hasPesv = companyData 
     ? isPesvRequired(companyData.vehicleCount, companyData.driverCount)
-    : false;
-
-  const isGlobalRole = user?.role && GLOBAL_ACCESS_ROLES.includes(user.role);
+    : isGlobalRole === true;
 
   const visibleMenuItems = menuItems.filter(item => {
     // Filter superadmin-only items

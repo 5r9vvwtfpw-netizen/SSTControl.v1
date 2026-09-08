@@ -54,6 +54,7 @@ export default function PesvVehiculos() {
   const { selectedCompany: currentCompany, effectiveCompanyId } = useCompanyContext();
   const { toast } = useToast();
   const isAdmin = user?.role ? canWrite(user.role, 'vehicles') : false;
+  const canViewGlobalFleet = user?.role === "superadmin";
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
@@ -82,12 +83,12 @@ export default function PesvVehiculos() {
   });
 
   const { data: vehicles = [], isLoading: vehiclesLoading } = useQuery<Vehicle[]>({
-    queryKey: ["/api/vehicles", effectiveCompanyId || "sin-empresa"],
+    queryKey: ["/api/vehicles", effectiveCompanyId || "todas-las-empresas"],
     queryFn: async () => {
       const response = await apiRequest("GET", "/api/vehicles");
       return response.json();
     },
-    enabled: !!effectiveCompanyId,
+    enabled: !!effectiveCompanyId || canViewGlobalFleet,
   });
 
 
