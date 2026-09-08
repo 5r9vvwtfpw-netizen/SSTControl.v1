@@ -4,7 +4,7 @@ import { Separator } from "@/components/ui/separator";
 import { FileText } from "lucide-react";
 
 export default function TerminosServicio() {
-  const lastUpdated = "11 de noviembre de 2025";
+  const lastUpdated = "8 de septiembre de 2026";
 
   return (
     <div className="min-h-screen bg-background">
@@ -136,7 +136,12 @@ export default function TerminosServicio() {
                       <li>Control de acceso basado en roles (RBAC) con 6 niveles de autorización</li>
                       <li>Auditoría completa de operaciones CRUD sobre datos regulados</li>
                       <li>Respaldos diarios encriptados con retención de 20 años</li>
+                       <li>Registro de IP, dispositivo, navegador, sesiones y eventos de acceso para seguridad y prevención de fraude</li>
                     </ul>
+                     <div className="bg-primary/5 p-3 rounded-lg border border-primary/20 mt-3">
+                       <p><strong>6.7 Monitoreo de acceso y prevención de fraude:</strong> Para proteger las cuentas y los activos digitales del Cliente, SST Colombia registra la dirección IP de origen de cada acceso, el identificador técnico del dispositivo, navegador, fecha y hora, duración y estado de la sesión, eventos de acceso simultáneo, intentos desde IP no autorizadas y decisiones de autorización o bloqueo. También puede derivar una ubicación geográfica aproximada y el proveedor de internet a partir de la IP. Esta ubicación es orientativa y no equivale a GPS.</p>
+                       <p className="mt-2">Estos registros se utilizan para autenticar accesos, investigar suplantaciones, plagio, uso compartido indebido de credenciales, extracción no autorizada de información y otras conductas fraudulentas o abusivas. Cuando la configuración de seguridad lo requiera, la Plataforma podrá generar alertas, solicitar verificaciones adicionales, cerrar sesiones simultáneas o bloquear temporalmente el acceso. El Cliente y sus Usuarios autorizados aceptan este monitoreo como medida necesaria para proteger la Plataforma y la información gestionada en ella.</p>
+                     </div>
                   </div>
                 </section>
 

@@ -4,7 +4,7 @@ import { Separator } from "@/components/ui/separator";
 import { Shield } from "lucide-react";
 
 export default function PoliticaPrivacidad() {
-  const lastUpdated = "11 de noviembre de 2025";
+  const lastUpdated = "8 de septiembre de 2026";
 
   return (
     <div className="min-h-screen bg-background">
@@ -131,8 +131,10 @@ export default function PoliticaPrivacidad() {
                     <div>
                       <p className="font-semibold">3.5 Datos Técnicos (Logs):</p>
                       <ul className="list-disc pl-6 space-y-1">
-                        <li>Dirección IP, navegador, sistema operativo</li>
+                          <li>Dirección IP de origen informada por la infraestructura de red, navegador, sistema operativo e identificador técnico persistente del dispositivo</li>
                         <li>Fecha y hora de acceso a la plataforma</li>
+                          <li>Sesiones iniciadas, cerradas, simultáneas, intentos no autorizados y decisiones de autorización o bloqueo</li>
+                          <li>Ubicación geográfica aproximada y proveedor de internet derivados de la IP; estos datos no constituyen una ubicación física exacta ni seguimiento GPS</li>
                         <li>Acciones realizadas (audit logs para cumplimiento legal)</li>
                       </ul>
                     </div>
@@ -190,6 +192,18 @@ export default function PoliticaPrivacidad() {
                           <li>Soporte técnico y atención al cliente</li>
                           <li>Desarrollo de nuevas funcionalidades</li>
                         </ul>
+                      </div>
+                      <div className="bg-primary/5 p-3 rounded border border-primary/20">
+                        <p className="font-semibold">4.6 Seguridad, control de acceso y prevención de fraude:</p>
+                        <p className="mt-1">
+                          Registramos y analizamos la dirección IP de cada inicio de sesión, el dispositivo,
+                          el navegador, la hora, la sesión y la ubicación aproximada derivada de la IP para
+                          verificar accesos, detectar suplantación de identidad, plagio, uso compartido
+                          indebido de credenciales y otros comportamientos anómalos. Estos registros pueden
+                          generar alertas, exigir verificaciones adicionales, cerrar sesiones simultáneas o
+                          bloquear temporalmente accesos que no coincidan con la configuración de seguridad
+                          autorizada por el administrador.
+                        </p>
                       </div>
                     </div>
                   </div>
