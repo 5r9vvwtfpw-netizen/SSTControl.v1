@@ -9796,7 +9796,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const userCompanyId = getEffectiveCompanyId(req);
     const isAdmin = hasGlobalAccess(req.user!.role);
     
-    if (isAdmin) {
+    if (isAdmin && !userCompanyId) {
       const vehicles = await storage.getAllVehicles();
       res.json(vehicles);
     } else {
@@ -10175,7 +10175,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const userCompanyId = getEffectiveCompanyId(req);
     const isAdmin = hasGlobalAccess(req.user!.role);
     
-    if (isAdmin) {
+    if (isAdmin && !userCompanyId) {
       const drivers = await storage.getAllDrivers();
       res.json(drivers);
     } else {

@@ -25,3 +25,9 @@ function getEffectiveCompanyId(req: any): string | null {
 The frontend must send `X-Company-Id` header (or `?companyId=` query) when a global-role user is viewing a specific company (e.g. via the "Company Vault" pattern used in pages like PESV Evaluaciones / EvaluacionesSst).
 
 This helper is duplicated locally in several files (`server/routes.ts`, `server/routes/billing.ts`, `server/middleware/subscription-limits.ts`, `server/induccion-virtual-routes.ts`, `server/routes/stripe.ts`, `server/routes/wompi.ts`, `server/routes/licensed-professionals.ts`, `server/routes/lso-directory-external.ts`) rather than centralized — when adding new routes, copy this exact pattern rather than reading `req.user.companyId` directly. Some older files use a slightly different role list (e.g. `['superadmin','admin','asesor']` or a `hasGlobalAccess()` helper) — match whatever pattern already exists in that file if present.
+
+For global list endpoints, "global role" must not automatically mean "return all companies." If an effective company context is present, use the company-scoped query; only return the global list when no company context was supplied.
+
+**Why:** A PESV H01 link correctly selected an evaluation's company, but the drivers and vehicles endpoints discarded that context solely because the requester was superadmin, mixing multiple companies in one screen.
+
+**How to apply:** Branch on both conditions: global role and absence of an effective company ID for the all-companies query. Partition frontend query caches by the same effective company ID.

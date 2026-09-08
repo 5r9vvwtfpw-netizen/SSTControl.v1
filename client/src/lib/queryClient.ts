@@ -74,7 +74,7 @@ async function throwIfResNotOk(res: Response) {
 }
 
 // Helper to get the selected company ID from localStorage (for superadmin, LSO or mechanic)
-function getSelectedCompanyId(): string | null {
+export function getSelectedCompanyId(): string | null {
   try {
     const session = localStorage.getItem("superadmin_access_session");
     if (session) {
@@ -95,9 +95,12 @@ function getSelectedCompanyId(): string | null {
   // (2) on any /pesv/evaluacion/* route (all 24 PESV steps share the same evaluation context).
   try {
     const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
-    const isPesvEvaluacionRoute = typeof window !== 'undefined' &&
-      window.location.pathname.match(/^\/pesv\/evaluacion\//);
-    if (params.get('from') === 'evaluation' || isPesvEvaluacionRoute) {
+    const isPesvEvaluationContextRoute = typeof window !== 'undefined' &&
+      (
+        window.location.pathname.match(/^\/pesv\/evaluacion\//) ||
+        window.location.pathname === '/pesv/conductores'
+      );
+    if (params.get('from') === 'evaluation' || isPesvEvaluationContextRoute) {
       const vaultCompany = localStorage.getItem("superadmin_vault_company");
       if (vaultCompany) return vaultCompany;
     }

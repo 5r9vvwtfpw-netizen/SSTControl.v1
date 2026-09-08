@@ -13,7 +13,7 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Driver, Company, Worker, DriverComparendo, insertDriverSchema, insertDriverComparendoSchema } from "@shared/schema";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, buildHeaders, getSelectedCompanyId, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
@@ -41,6 +41,7 @@ export default function PesvConductores() {
   const { user } = useAuth();
   const { toast } = useToast();
   const isAdmin = user?.role ? canWrite(user.role, 'drivers') : false;
+  const activeCompanyId = getSelectedCompanyId() ?? user?.companyId ?? null;
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingDriver, setEditingDriver] = useState<Driver | null>(null);
@@ -108,22 +109,43 @@ export default function PesvConductores() {
   });
 
   const { data: drivers = [], isLoading: driversLoading } = useQuery<Driver[]>({
-    queryKey: ["/api/drivers"],
+    queryKey: ["pesv-drivers", activeCompanyId],
+    queryFn: async () => {
+      const response = await fetch("/api/drivers", { credentials: "include", headers: buildHeaders() });
+      if (!response.ok) throw new Error(await response.text());
+      return response.json();
+    },
   });
 
   const { data: comparendos = [], isLoading: comparendosLoading } = useQuery<DriverComparendo[]>({
-    queryKey: ["/api/drivers", comparendoDriverId, "comparendos"],
+    queryKey: ["/api/drivers", comparendoDriverId, "comparendos", activeCompanyId],
+    queryFn: async () => {
+      const response = await fetch(`/api/drivers/${comparendoDriverId}/comparendos`, {
+        credentials: "include",
+        headers: buildHeaders(),
+      });
+      if (!response.ok) throw new Error(await response.text());
+      return response.json();
+    },
     enabled: !!comparendoDriverId,
   });
 
   const { data: vehicles = [] } = useQuery<{ id: string; plate: string; brand: string; model: string; year: number; status: string }[]>({
-    queryKey: ["/api/vehicles"],
+    queryKey: ["pesv-vehicles", activeCompanyId],
+    queryFn: async () => {
+      const response = await fetch("/api/vehicles", { credentials: "include", headers: buildHeaders() });
+      if (!response.ok) throw new Error(await response.text());
+      return response.json();
+    },
   });
 
   const { data: vehicleAssignments = [], isLoading: assignmentsLoading } = useQuery<DriverVehicleAssignmentRow[]>({
-    queryKey: ["/api/drivers", assignmentDriverId, "vehicle-assignments"],
+    queryKey: ["/api/drivers", assignmentDriverId, "vehicle-assignments", activeCompanyId],
     queryFn: async () => {
-      const res = await fetch(`/api/drivers/${assignmentDriverId}/vehicle-assignments`, { credentials: "include" });
+      const res = await fetch(`/api/drivers/${assignmentDriverId}/vehicle-assignments`, {
+        credentials: "include",
+        headers: buildHeaders(),
+      });
       if (!res.ok) throw new Error(await res.text());
       return res.json();
     },
@@ -136,7 +158,7 @@ export default function PesvConductores() {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/drivers", assignmentDriverId, "vehicle-assignments"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/drivers", assignmentDriverId, "vehicle-assignments", activeCompanyId] });
       queryClient.invalidateQueries({ queryKey: ["/api/portal/mis-vehiculos"] });
       setAssignmentForm({
         vehicleId: "",
@@ -159,7 +181,7 @@ export default function PesvConductores() {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/drivers", assignmentDriverId, "vehicle-assignments"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/drivers", assignmentDriverId, "vehicle-assignments", activeCompanyId] });
       queryClient.invalidateQueries({ queryKey: ["/api/portal/mis-vehiculos"] });
       toast({ title: "Asignación finalizada", description: "El historial se conservó correctamente." });
     },
@@ -194,7 +216,7 @@ export default function PesvConductores() {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/drivers", comparendoDriverId, "comparendos"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/drivers", comparendoDriverId, "comparendos", activeCompanyId] });
       resetComparendoForm();
       toast({ title: "Comparendo registrado", description: "El comparendo se guardó exitosamente." });
     },
@@ -207,7 +229,7 @@ export default function PesvConductores() {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/drivers", comparendoDriverId, "comparendos"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/drivers", comparendoDriverId, "comparendos", activeCompanyId] });
       resetComparendoForm();
       toast({ title: "Comparendo actualizado" });
     },
@@ -219,7 +241,7 @@ export default function PesvConductores() {
       await apiRequest("DELETE", `/api/drivers/${comparendoDriverId}/comparendos/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/drivers", comparendoDriverId, "comparendos"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/drivers", comparendoDriverId, "comparendos", activeCompanyId] });
       setDeleteComparendoId(null);
       toast({ title: "Comparendo eliminado" });
     },
@@ -288,8 +310,13 @@ export default function PesvConductores() {
   // Query para obtener trabajadores de la empresa (integración SST-PESV)
   // Modelo single-company: siempre usar companyId del usuario
   const { data: workers = [] } = useQuery<Worker[]>({
-    queryKey: ["/api/workers"],
-    enabled: !!user?.companyId,
+    queryKey: ["pesv-workers", activeCompanyId],
+    queryFn: async () => {
+      const response = await fetch("/api/workers", { credentials: "include", headers: buildHeaders() });
+      if (!response.ok) throw new Error(await response.text());
+      return response.json();
+    },
+    enabled: !!activeCompanyId,
   });
 
   // Handler para seleccionar trabajador y auto-llenar datos
@@ -320,7 +347,7 @@ export default function PesvConductores() {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/drivers"] });
+      queryClient.invalidateQueries({ queryKey: ["pesv-drivers", activeCompanyId] });
       setDialogOpen(false);
       resetForm();
       toast({
@@ -344,7 +371,7 @@ export default function PesvConductores() {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/drivers"] });
+      queryClient.invalidateQueries({ queryKey: ["pesv-drivers", activeCompanyId] });
       setDialogOpen(false);
       resetForm();
       toast({
@@ -368,7 +395,7 @@ export default function PesvConductores() {
     },
     onSuccess: () => {
       setDeletingDriverId(null);
-      queryClient.invalidateQueries({ queryKey: ["/api/drivers"] });
+      queryClient.invalidateQueries({ queryKey: ["pesv-drivers", activeCompanyId] });
       toast({
         title: "Conductor eliminado",
         description: "El conductor se ha eliminado exitosamente",
@@ -542,7 +569,7 @@ export default function PesvConductores() {
     },
     onSuccess: (data) => {
       setImportResults(data);
-      queryClient.invalidateQueries({ queryKey: ["/api/drivers"] });
+      queryClient.invalidateQueries({ queryKey: ["pesv-drivers", activeCompanyId] });
       if (data.failed === 0) {
         toast({
           title: "Importación exitosa",

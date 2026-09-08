@@ -321,7 +321,10 @@ export function registerPesvCriteriosEvidenciasRoutes(app: Express) {
             fechaSubida: null,
             updatedAt: new Date(),
           })
-          .where(eq(pesvEvidenciasDocumentos.id, evidenciaId))
+          .where(and(
+            eq(pesvEvidenciasDocumentos.id, evidenciaId),
+            eq(pesvEvidenciasDocumentos.evaluacionId, evaluacionId),
+          ))
           .returning();
 
         if (!deleted) {
