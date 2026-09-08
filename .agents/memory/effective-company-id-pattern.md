@@ -31,3 +31,9 @@ For global list endpoints, "global role" must not automatically mean "return all
 **Why:** A PESV H01 link correctly selected an evaluation's company, but the drivers and vehicles endpoints discarded that context solely because the requester was superadmin, mixing multiple companies in one screen.
 
 **How to apply:** Branch on both conditions: global role and absence of an effective company ID for the all-companies query. Partition frontend query caches by the same effective company ID.
+
+Global-role navigation must also avoid company-only feature checks when no company is selected; otherwise a superadmin's missing `companyId` can hide a valid cross-company module before its global endpoint is reached.
+
+**Why:** The vehicle-management menu used `/api/company/current` to decide whether PESV existed, so the superadmin could not see vehicles registered by client companies even though the data and route permissions were valid.
+
+**How to apply:** For global roles, show the module and enable the all-companies query without a selected company; when a company context exists, keep the normal scoped query and feature checks.
