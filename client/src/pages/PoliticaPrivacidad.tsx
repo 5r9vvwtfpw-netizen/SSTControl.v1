@@ -134,7 +134,6 @@ export default function PoliticaPrivacidad() {
                           <li>Dirección IP de origen informada por la infraestructura de red, navegador, sistema operativo e identificador técnico persistente del dispositivo</li>
                         <li>Fecha y hora de acceso a la plataforma</li>
                           <li>Sesiones iniciadas, cerradas, simultáneas, intentos no autorizados y decisiones de autorización o bloqueo</li>
-                          <li>Ubicación geográfica aproximada y proveedor de internet derivados de la IP; estos datos no constituyen una ubicación física exacta ni seguimiento GPS</li>
                         <li>Acciones realizadas (audit logs para cumplimiento legal)</li>
                       </ul>
                     </div>
@@ -197,7 +196,7 @@ export default function PoliticaPrivacidad() {
                         <p className="font-semibold">4.6 Seguridad, control de acceso y prevención de fraude:</p>
                         <p className="mt-1">
                           Registramos y analizamos la dirección IP de cada inicio de sesión, el dispositivo,
-                          el navegador, la hora, la sesión y la ubicación aproximada derivada de la IP para
+                          el navegador, la hora y la sesión para
                           verificar accesos, detectar suplantación de identidad, plagio, uso compartido
                           indebido de credenciales y otros comportamientos anómalos. Estos registros pueden
                           generar alertas, exigir verificaciones adicionales, cerrar sesiones simultáneas o
