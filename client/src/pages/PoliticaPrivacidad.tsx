@@ -161,7 +161,7 @@ export default function PoliticaPrivacidad() {
                         <p className="font-semibold">4.2 Vigilancia Epidemiológica y Medicina Ocupacional:</p>
                         <ul className="list-disc pl-6 space-y-1">
                           <li>Programación y registro de exámenes médicos ocupacionales</li>
-                          <li>Seguimiento de restricciones médicas y reubicaciones</li>
+                          <li>Seguimiento de restricciones médicas y cambios laborales</li>
                           <li>Detección temprana de enfermedades laborales</li>
                           <li>Elaboración de perfiles epidemiológicos</li>
                         </ul>
@@ -379,19 +379,15 @@ export default function PoliticaPrivacidad() {
                 <section>
                   <h2 className="text-xl font-semibold mb-3">10. Transferencias Internacionales</h2>
                   <div className="space-y-2 text-muted-foreground">
-                    <p><strong>10.1 Ubicación de Servidores:</strong></p>
-                    <p>Los datos se almacenan en infraestructura cloud de Neon (PostgreSQL) con servidores ubicados en:</p>
-                    <ul className="list-disc pl-6 space-y-1">
-                      <li>Región primaria: AWS US-East-1 (Virginia, EE.UU.)</li>
-                      <li>Respaldos: Región secundaria en AWS (cifrados AES-256)</li>
-                    </ul>
+                    <p><strong>10.1 Infraestructura de almacenamiento:</strong></p>
+                    <p>Los datos se almacenan en infraestructura cloud de Neon (PostgreSQL) y sus respaldos cifrados, bajo contratos de procesamiento de datos y medidas de seguridad apropiadas.</p>
                     <p className="mt-3"><strong>10.2 Transferencia Internacional:</strong></p>
                     <p>La transferencia de datos a EE.UU. se realiza bajo las siguientes salvaguardas legales:</p>
                     <ul className="list-disc pl-6 space-y-1">
                       <li><strong>Cláusulas Contractuales Tipo (SCCs):</strong> Aprobadas por Comisión Europea (Decisión 2021/914)</li>
                       <li><strong>Certificación SOC 2 Type II</strong> del proveedor de infraestructura</li>
                       <li><strong>Cifrado end-to-end:</strong> Los datos viajan y se almacenan cifrados</li>
-                      <li><strong>Derechos de los titulares preservados:</strong> Mecanismos ARCO disponibles independientemente de ubicación física</li>
+                      <li><strong>Derechos de los titulares preservados:</strong> Mecanismos ARCO disponibles durante todo el tratamiento</li>
                     </ul>
                     <p className="mt-3 text-xs italic">Nota: Ningún dato personal se transfiere a terceros comerciales. La transferencia es únicamente a proveedores de infraestructura bajo contrato de procesamiento de datos (DPA).</p>
                   </div>
