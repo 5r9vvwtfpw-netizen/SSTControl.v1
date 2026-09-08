@@ -1,6 +1,6 @@
-const PDFDocument = require("pdfkit");
-const fs = require("fs");
-const path = require("path");
+import PDFDocument from "pdfkit";
+import fs from "node:fs";
+import path from "node:path";
 
 const outputPath = path.resolve(
   "documents/cotizacion-transicion-sst-pesv-transportes-limicio.pdf",
@@ -13,7 +13,7 @@ const doc = new PDFDocument({
   info: {
     Title: "Cotización - Transición SST/PESV Transportes Limicio",
     Author: "SADGI S.A.S. - SST Colombia",
-    Subject: "Capacitación virtual y habilitación de nueva responsable SST/PESV",
+    Subject: "Capacitación para reemplazo del LSO Hernán Valencia",
   },
 });
 
@@ -85,7 +85,7 @@ function labelValue(label, value, x, y, width) {
 
 header(
   "Cotización de transición SST y PESV",
-  "Capacitación virtual y habilitación operativa para TRANSPORTES LIMICIO LTDA",
+  "Capacitación para reemplazar al LSO Hernán Valencia",
 );
 
 doc.font("Helvetica-Bold").fontSize(11).fillColor(COLORS.green)
@@ -96,26 +96,27 @@ doc.font("Helvetica").fontSize(9).fillColor(COLORS.muted)
 doc.roundedRect(54, 220, 487, 76, 8).fill(COLORS.pale)
   .strokeColor(COLORS.border).lineWidth(0.7).stroke();
 labelValue("Cliente", "TRANSPORTES LIMICIO LTDA", 70, 237, 220);
-labelValue("Servicio", "Transición de responsable externa SST/PESV", 310, 237, 215);
+labelValue("Servicio", "Reemplazo operativo del LSO Hernán Valencia", 310, 237, 215);
 labelValue("Modalidad", "Virtual · individual · una empresa", 70, 272, 220);
 labelValue("Vigencia", "15 días calendario", 310, 272, 215);
 
 sectionTitle("Objeto de la propuesta", 324);
 doc.font("Helvetica").fontSize(10.5).fillColor(COLORS.text)
   .text(
-    "Capacitar y habilitar a la nueva responsable externa que continuará la gestión SST y PESV de TRANSPORTES LIMICIO LTDA dentro de la infraestructura digital de SST Colombia, utilizando la suscripción que la empresa ya tiene activa.",
+    "Capacitar y habilitar al equipo designado por TRANSPORTES LIMICIO LTDA para reemplazar al LSO Hernán Valencia y continuar directamente la gestión SST y PESV dentro de la infraestructura digital de SST Colombia, utilizando la suscripción que la empresa ya tiene activa.",
     54,
     350,
     { width: 487, lineGap: 4 },
   );
 
 sectionTitle("Alcance de la capacitación", 414);
-bullet("Capacitación virtual individual de hasta 8 horas, dividida en 4 sesiones de 2 horas diarias.", 60, 442, 460);
-bullet("Portal de la Empresa: usuarios, actividades, documentos, cronogramas y seguimiento.", 60, 466, 460);
-bullet("Portal LSO: estándares SST, evidencias, actividades pendientes, avances e informes.", 60, 490, 460);
-bullet("Portal de Empleados: inducciones, capacitaciones, evaluaciones y confirmaciones.", 60, 514, 460);
-bullet("Ejercicio práctico utilizando la información de TRANSPORTES LIMICIO LTDA.", 60, 538, 460);
-bullet("Una sesión virtual de seguimiento de hasta 30 minutos dentro de los 7 días siguientes.", 60, 562, 460);
+bullet("Capacitación virtual individual de 8 horas, dividida en 4 sesiones de 2 horas diarias.", 60, 442, 460);
+bullet("Transferencia operativa para que TRANSPORTES LIMICIO LTDA reemplace al LSO Hernán Valencia.", 60, 466, 460);
+bullet("Portal de la Empresa: usuarios, actividades, documentos, cronogramas y seguimiento.", 60, 490, 460);
+bullet("Portal LSO: estándares SST, evidencias, actividades pendientes, avances e informes.", 60, 514, 460);
+bullet("Portal de Empleados: inducciones, capacitaciones, evaluaciones y confirmaciones.", 60, 538, 460);
+bullet("Ejercicio práctico utilizando la información de TRANSPORTES LIMICIO LTDA.", 60, 562, 460);
+bullet("Una sesión virtual de seguimiento de hasta 30 minutos dentro de los 7 días siguientes.", 60, 586, 460);
 
 doc.addPage();
 header(
@@ -124,6 +125,11 @@ header(
 );
 
 sectionTitle("Inversión", 174);
+const hourlyRate = 58364;
+const trainingHours = 8;
+const subtotal = hourlyRate * trainingHours;
+const iva = Math.round(subtotal * 0.19);
+const total = subtotal + iva;
 const tableX = 54;
 const tableY = 204;
 const tableW = 487;
@@ -135,19 +141,25 @@ doc.font("Helvetica-Bold").fontSize(9).fillColor(COLORS.white)
 doc.rect(tableX, tableY + rowH, tableW, 48).fill(COLORS.pale)
   .strokeColor(COLORS.border).lineWidth(0.7).stroke();
 doc.font("Helvetica").fontSize(10).fillColor(COLORS.text)
-  .text("Capacitación virtual de transición SST/PESV y habilitación operativa (8 horas)", tableX + 14, tableY + 50, {
+  .text("Capacitación virtual para reemplazo del LSO Hernán Valencia (8 horas)", tableX + 14, tableY + 50, {
     width: 350,
   })
-  .text(money(1200000), tableX + 385, tableY + 50, { width: 88, align: "right" });
+  .text(money(subtotal), tableX + 385, tableY + 50, { width: 88, align: "right" });
 doc.font("Helvetica").fontSize(10).fillColor(COLORS.text)
   .text("Subtotal", tableX + 280, tableY + 78, { width: 155, align: "right" })
-  .text(money(1200000), tableX + 385, tableY + 78, { width: 88, align: "right" });
+  .text(money(subtotal), tableX + 385, tableY + 78, { width: 88, align: "right" });
 doc.text("IVA 19%", tableX + 280, tableY + 98, { width: 155, align: "right" })
-  .text(money(228000), tableX + 385, tableY + 98, { width: 88, align: "right" });
+  .text(money(iva), tableX + 385, tableY + 98, { width: 88, align: "right" });
 doc.roundedRect(tableX + 270, tableY + 126, 217, 39, 6).fill(COLORS.gold);
 doc.font("Helvetica-Bold").fontSize(12).fillColor(COLORS.green)
   .text("TOTAL", tableX + 284, tableY + 139)
-  .text(money(1428000), tableX + 385, tableY + 139, { width: 88, align: "right" });
+  .text(money(total), tableX + 385, tableY + 139, { width: 88, align: "right" });
+
+doc.font("Helvetica").fontSize(9).fillColor(COLORS.muted)
+  .text(`Base de cálculo: ${trainingHours} horas × ${money(hourlyRate)} por hora (valor de un día de trabajo).`, 54, 358, {
+    width: 487,
+    align: "right",
+  });
 
 sectionTitle("Incluye", 393);
 bullet("Acceso habilitado únicamente para la operación de TRANSPORTES LIMICIO LTDA.", 60, 421, 460);
