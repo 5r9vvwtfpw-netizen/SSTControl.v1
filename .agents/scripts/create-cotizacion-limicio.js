@@ -13,7 +13,7 @@ const doc = new PDFDocument({
   info: {
     Title: "Cotización - Transición SST/PESV Transportes Limicio",
     Author: "SADGI S.A.S. - SST Colombia",
-    Subject: "Capacitación para reemplazo del LSO Hernán Valencia",
+    Subject: "Capacitación para reemplazo del Profesional en SST Hernán Valencia",
   },
 });
 
@@ -85,7 +85,7 @@ function labelValue(label, value, x, y, width) {
 
 header(
   "Cotización de transición SST y PESV",
-  "Capacitación para reemplazar al LSO Hernán Valencia",
+  "Capacitación para reemplazar al Profesional en SST Hernán Valencia",
 );
 
 doc.font("Helvetica-Bold").fontSize(11).fillColor(COLORS.green)
@@ -96,14 +96,14 @@ doc.font("Helvetica").fontSize(9).fillColor(COLORS.muted)
 doc.roundedRect(54, 220, 487, 76, 8).fill(COLORS.pale)
   .strokeColor(COLORS.border).lineWidth(0.7).stroke();
 labelValue("Cliente", "TRANSPORTES LIMICIO LTDA", 70, 237, 220);
-labelValue("Servicio", "Reemplazo operativo del LSO Hernán Valencia", 310, 237, 215);
+labelValue("Servicio", "Reemplazo operativo del Profesional en SST Hernán Valencia", 310, 237, 215);
 labelValue("Modalidad", "Virtual · individual · una empresa", 70, 272, 220);
 labelValue("Vigencia", "15 días calendario", 310, 272, 215);
 
 sectionTitle("Objeto de la propuesta", 324);
 doc.font("Helvetica").fontSize(10.5).fillColor(COLORS.text)
   .text(
-    "Capacitar y habilitar al equipo designado por TRANSPORTES LIMICIO LTDA para reemplazar al LSO Hernán Valencia y continuar directamente la gestión SST y PESV dentro de la infraestructura digital de SST Colombia, utilizando la suscripción que la empresa ya tiene activa.",
+    "Capacitar y habilitar al equipo designado por TRANSPORTES LIMICIO LTDA para reemplazar al Profesional en SST Hernán Valencia y continuar directamente la gestión SST y PESV dentro de la infraestructura digital de SST Colombia, utilizando la suscripción que la empresa ya tiene activa.",
     54,
     350,
     { width: 487, lineGap: 4 },
@@ -111,9 +111,9 @@ doc.font("Helvetica").fontSize(10.5).fillColor(COLORS.text)
 
 sectionTitle("Alcance de la capacitación", 414);
 bullet("Capacitación virtual individual de 8 horas, dividida en 4 sesiones de 2 horas diarias.", 60, 442, 460);
-bullet("Transferencia operativa para que TRANSPORTES LIMICIO LTDA reemplace al LSO Hernán Valencia.", 60, 466, 460);
+bullet("Transferencia operativa para que TRANSPORTES LIMICIO LTDA reemplace al Profesional en SST Hernán Valencia.", 60, 466, 460);
 bullet("Portal de la Empresa: usuarios, actividades, documentos, cronogramas y seguimiento.", 60, 490, 460);
-bullet("Portal LSO: estándares SST, evidencias, actividades pendientes, avances e informes.", 60, 514, 460);
+bullet("Portal de gestión SST: estándares, evidencias, actividades pendientes, avances e informes.", 60, 514, 460);
 bullet("Portal de Empleados: inducciones, capacitaciones, evaluaciones y confirmaciones.", 60, 538, 460);
 bullet("Ejercicio práctico utilizando la información de TRANSPORTES LIMICIO LTDA.", 60, 562, 460);
 bullet("Una sesión virtual de seguimiento de hasta 30 minutos dentro de los 7 días siguientes.", 60, 586, 460);
@@ -141,7 +141,7 @@ doc.font("Helvetica-Bold").fontSize(9).fillColor(COLORS.white)
 doc.rect(tableX, tableY + rowH, tableW, 48).fill(COLORS.pale)
   .strokeColor(COLORS.border).lineWidth(0.7).stroke();
 doc.font("Helvetica").fontSize(10).fillColor(COLORS.text)
-  .text("Capacitación virtual para reemplazo del LSO Hernán Valencia (8 horas)", tableX + 14, tableY + 50, {
+  .text("Capacitación virtual para reemplazo del Profesional en SST Hernán Valencia (8 horas)", tableX + 14, tableY + 50, {
     width: 350,
   })
   .text(money(subtotal), tableX + 385, tableY + 50, { width: 88, align: "right" });
