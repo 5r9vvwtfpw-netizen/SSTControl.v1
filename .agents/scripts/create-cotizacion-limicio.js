@@ -160,7 +160,6 @@ doc.font("Helvetica-Bold").fontSize(12).fillColor(COLORS.green)
 sectionTitle("Incluye", 458);
 bullet("Acceso habilitado únicamente para la operación de TRANSPORTES LIMICIO LTDA.", 60, 486, 460);
 bullet("No incluye una licencia nueva ni una mensualidad adicional para la consultora.", 60, 510, 460);
-bullet("Los valores están expresados en pesos colombianos. El IVA se presenta al 19%, si aplica.", 60, 534, 460);
 
 doc.roundedRect(54, 575, 487, 122, 8).fill(COLORS.warning)
   .strokeColor(COLORS.warningBorder).lineWidth(1).stroke();
