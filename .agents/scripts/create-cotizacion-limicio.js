@@ -93,30 +93,30 @@ doc.font("Helvetica-Bold").fontSize(11).fillColor(COLORS.green)
 doc.font("Helvetica").fontSize(9).fillColor(COLORS.muted)
   .text("Fecha de emisión: 8 de septiembre de 2026", 54, 188);
 
-doc.roundedRect(54, 220, 487, 76, 8).fill(COLORS.pale)
+doc.roundedRect(54, 220, 487, 96, 8).fill(COLORS.pale)
   .strokeColor(COLORS.border).lineWidth(0.7).stroke();
 labelValue("Cliente", "TRANSPORTES LIMICIO LTDA", 70, 237, 220);
-labelValue("Servicio", "Reemplazo operativo del Profesional en SST Hernán Valencia", 310, 237, 215);
-labelValue("Modalidad", "Virtual · individual · una empresa", 70, 272, 220);
-labelValue("Vigencia", "15 días calendario", 310, 272, 215);
+labelValue("Servicio", "Reemplazo operativo del Profesional en SST Hernán Valencia", 310, 237, 205);
+labelValue("Modalidad", "Virtual · individual · una empresa", 70, 291, 220);
+labelValue("Vigencia", "15 días calendario", 310, 291, 205);
 
-sectionTitle("Objeto de la propuesta", 324);
+sectionTitle("Objeto de la propuesta", 338);
 doc.font("Helvetica").fontSize(10.5).fillColor(COLORS.text)
   .text(
     "Capacitar y habilitar al equipo designado por TRANSPORTES LIMICIO LTDA para reemplazar al Profesional en SST Hernán Valencia y continuar directamente la gestión SST y PESV dentro de la infraestructura digital de SST Colombia, utilizando la suscripción que la empresa ya tiene activa.",
     54,
-    350,
+    364,
     { width: 487, lineGap: 4 },
   );
 
-sectionTitle("Alcance de la capacitación", 414);
-bullet("Capacitación virtual individual de 8 horas, dividida en 4 sesiones de 2 horas diarias.", 60, 442, 460);
-bullet("Transferencia operativa para que TRANSPORTES LIMICIO LTDA reemplace al Profesional en SST Hernán Valencia.", 60, 466, 460);
-bullet("Portal de la Empresa: usuarios, actividades, documentos, cronogramas y seguimiento.", 60, 490, 460);
-bullet("Portal de gestión SST: estándares, evidencias, actividades pendientes, avances e informes.", 60, 514, 460);
-bullet("Portal de Empleados: inducciones, capacitaciones, evaluaciones y confirmaciones.", 60, 538, 460);
-bullet("Ejercicio práctico utilizando la información de TRANSPORTES LIMICIO LTDA.", 60, 562, 460);
-bullet("Una sesión virtual de seguimiento de hasta 30 minutos dentro de los 7 días siguientes.", 60, 586, 460);
+sectionTitle("Alcance de la capacitación", 444);
+bullet("Capacitación virtual individual de 8 horas, dividida en 4 sesiones de 2 horas diarias.", 60, 472, 460);
+bullet("Transferencia operativa para que TRANSPORTES LIMICIO LTDA reemplace al Profesional en SST Hernán Valencia.", 60, 496, 460);
+bullet("Portal de la Empresa: usuarios, actividades, documentos, cronogramas y seguimiento.", 60, 520, 460);
+bullet("Portal de gestión SST: estándares, evidencias, actividades pendientes, avances e informes.", 60, 544, 460);
+bullet("Portal de Empleados: inducciones, capacitaciones, evaluaciones y confirmaciones.", 60, 568, 460);
+bullet("Ejercicio práctico utilizando la información de TRANSPORTES LIMICIO LTDA.", 60, 592, 460);
+bullet("Una sesión virtual de seguimiento de hasta 30 minutos dentro de los 7 días siguientes.", 60, 616, 460);
 
 doc.addPage();
 header(
@@ -138,7 +138,7 @@ doc.roundedRect(tableX, tableY, tableW, 34).fill(COLORS.green);
 doc.font("Helvetica-Bold").fontSize(9).fillColor(COLORS.white)
   .text("CONCEPTO", tableX + 14, tableY + 12)
   .text("VALOR", tableX + 385, tableY + 12, { width: 88, align: "right" });
-doc.rect(tableX, tableY + rowH, tableW, 48).fill(COLORS.pale)
+doc.rect(tableX, tableY + rowH, tableW, 64).fill(COLORS.pale)
   .strokeColor(COLORS.border).lineWidth(0.7).stroke();
 doc.font("Helvetica").fontSize(10).fillColor(COLORS.text)
   .text("Capacitación virtual para reemplazo del Profesional en SST Hernán Valencia (8 horas)", tableX + 14, tableY + 50, {
@@ -146,45 +146,45 @@ doc.font("Helvetica").fontSize(10).fillColor(COLORS.text)
   })
   .text(money(subtotal), tableX + 385, tableY + 50, { width: 88, align: "right" });
 doc.font("Helvetica").fontSize(10).fillColor(COLORS.text)
-  .text("Subtotal", tableX + 280, tableY + 78, { width: 155, align: "right" })
-  .text(money(subtotal), tableX + 385, tableY + 78, { width: 88, align: "right" });
-doc.text("IVA 19%", tableX + 280, tableY + 98, { width: 155, align: "right" })
-  .text(money(iva), tableX + 385, tableY + 98, { width: 88, align: "right" });
-doc.roundedRect(tableX + 270, tableY + 126, 217, 39, 6).fill(COLORS.gold);
+  .text("Subtotal", tableX + 300, tableY + 108, { width: 135, align: "right" })
+  .text(money(subtotal), tableX + 430, tableY + 108, { width: 93, align: "right" });
+doc.text("IVA 19%", tableX + 300, tableY + 136, { width: 135, align: "right" })
+  .text(money(iva), tableX + 430, tableY + 136, { width: 93, align: "right" });
+doc.roundedRect(tableX + 270, tableY + 166, 217, 42, 6).fill(COLORS.gold);
 doc.font("Helvetica-Bold").fontSize(12).fillColor(COLORS.green)
-  .text("TOTAL", tableX + 284, tableY + 139)
-  .text(money(total), tableX + 385, tableY + 139, { width: 88, align: "right" });
+  .text("TOTAL", tableX + 284, tableY + 181)
+  .text(money(total), tableX + 385, tableY + 181, { width: 138, align: "right" });
 
 doc.font("Helvetica").fontSize(9).fillColor(COLORS.muted)
-  .text(`Base de cálculo: ${trainingHours} horas × ${money(hourlyRate)} por hora (valor de un día de trabajo).`, 54, 358, {
+  .text(`Base de cálculo: ${trainingHours} horas × ${money(hourlyRate)} por hora (valor de un día de trabajo).`, 54, 421, {
     width: 487,
     align: "right",
   });
 
-sectionTitle("Incluye", 393);
-bullet("Acceso habilitado únicamente para la operación de TRANSPORTES LIMICIO LTDA.", 60, 421, 460);
-bullet("No incluye una licencia nueva ni una mensualidad adicional para la consultora.", 60, 445, 460);
-bullet("Los valores están expresados en pesos colombianos. El IVA se presenta al 19%, si aplica.", 60, 469, 460);
+sectionTitle("Incluye", 458);
+bullet("Acceso habilitado únicamente para la operación de TRANSPORTES LIMICIO LTDA.", 60, 486, 460);
+bullet("No incluye una licencia nueva ni una mensualidad adicional para la consultora.", 60, 510, 460);
+bullet("Los valores están expresados en pesos colombianos. El IVA se presenta al 19%, si aplica.", 60, 534, 460);
 
-doc.roundedRect(54, 510, 487, 132, 8).fill(COLORS.warning)
+doc.roundedRect(54, 575, 487, 122, 8).fill(COLORS.warning)
   .strokeColor(COLORS.warningBorder).lineWidth(1).stroke();
 doc.font("Helvetica-Bold").fontSize(11).fillColor(COLORS.green)
-  .text("Precisión importante", 70, 528);
+  .text("Precisión importante", 70, 593);
 doc.font("Helvetica").fontSize(9.5).fillColor(COLORS.text)
   .text(
     "Esta capacitación se limita al uso de la plataforma y a la transferencia operativa del estado del programa de TRANSPORTES LIMICIO LTDA. No sustituye los requisitos profesionales, académicos, de experiencia o de licencia que puedan resultar exigibles para asumir formalmente funciones de SST o PESV. La empresa contratante debe verificar, antes de habilitarla, que el perfil de la nueva responsable sea adecuado y que cuente con las autorizaciones o licencias aplicables.",
     70,
-    552,
+    617,
     { width: 455, lineGap: 3.5 },
   );
 
 doc.font("Helvetica-Bold").fontSize(10).fillColor(COLORS.green)
-  .text("Aceptación de la propuesta", 54, 680);
+  .text("Aceptación de la propuesta", 54, 720);
 doc.font("Helvetica").fontSize(9.5).fillColor(COLORS.text)
   .text(
     "La aceptación podrá confirmarse por escrito para coordinar la agenda de las sesiones virtuales y la habilitación del usuario.",
     54,
-    699,
+    739,
     { width: 487 },
   );
 
