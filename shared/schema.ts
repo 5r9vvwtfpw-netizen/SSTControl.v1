@@ -946,6 +946,19 @@ export type SstEvidence = typeof sstEvidence.$inferSelect;
 export const vehicleOwnershipEnum = pgEnum("vehicle_ownership", ["propio", "arrendado", "contratado"]);
 export const vehicleStatusEnum = pgEnum("vehicle_status", ["activo", "mantenimiento", "inactivo", "dado-de-baja"]);
 export const vehicleTypeEnum = pgEnum("vehicle_type", ["automovil", "camioneta", "camion", "motocicleta", "bus", "otro"]);
+export const vehicleAssetCategoryValues = ["vehiculo_carretera", "maquinaria_amarilla", "equipo_especial"] as const;
+export const machineryTypeValues = [
+  "excavadora",
+  "excavadora_compacta",
+  "retroexcavadora",
+  "cargador",
+  "motoniveladora",
+  "bulldozer",
+  "grua",
+  "montacargas",
+  "compactador",
+  "otro",
+] as const;
 
 // Vehicles table - Fleet management
 export const vehicles = pgTable("vehicles", {
@@ -967,6 +980,10 @@ export const vehicles = pgTable("vehicles", {
   technicalReviewExpiry: date("technical_review_expiry"),
   status: vehicleStatusEnum("status").notNull().default("activo"),
   defaultMaxSpeed: integer("default_max_speed"),
+  assetCategory: text("asset_category").notNull().default("vehiculo_carretera"),
+  machineryType: text("machinery_type"),
+  serialNumber: text("serial_number"),
+  engineHours: integer("engine_hours"),
   observations: text("observations"),
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
@@ -1218,6 +1235,10 @@ export const insertVehicleSchema = createInsertSchema(vehicles)
     brand: z.string().min(1, "La marca del vehículo es obligatoria"),
     model: z.string().min(1, "El modelo del vehículo es obligatorio"),
     year: z.coerce.number().min(1900, "El año del vehículo es obligatorio"),
+    assetCategory: z.enum(vehicleAssetCategoryValues).default("vehiculo_carretera"),
+    machineryType: z.enum(machineryTypeValues).optional().nullable(),
+    serialNumber: z.string().optional().nullable(),
+    engineHours: z.coerce.number().min(0).optional().nullable(),
   });
 export type InsertVehicle = z.infer<typeof insertVehicleSchema>;
 export type Vehicle = typeof vehicles.$inferSelect;

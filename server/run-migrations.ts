@@ -14,6 +14,7 @@ import { syncQuoteColumns } from './migrations/sync-quote-columns';
 import { syncInvoiceSnapshotColumns } from './migrations/sync-invoice-snapshot-columns';
 import { syncVehicleMaintenancesColumns } from './migrations/sync-vehicle-maintenances-columns';
 import { syncVehicleDefaultMaxSpeed } from './migrations/sync-vehicle-default-max-speed';
+import { syncVehicleMachineryColumns } from './migrations/sync-vehicle-machinery-columns';
 import { createSstSpeedAlerts } from './migrations/create-sst-speed-alerts';
 import { syncSafeRoutesColumns } from './migrations/sync-safe-routes-columns';
 import { createCertificacionesProfesionales } from './migrations/create-certificaciones-profesionales';
@@ -90,6 +91,7 @@ export async function runMigrations() {
     await syncInvoiceSnapshotColumns();
     await syncVehicleMaintenancesColumns();
     await syncVehicleDefaultMaxSpeed();
+    await syncVehicleMachineryColumns();
     await createSstSpeedAlerts();
     await syncSafeRoutesColumns();
     await createCertificacionesProfesionales();

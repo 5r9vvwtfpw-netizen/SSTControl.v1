@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Plus, Search, Pencil, Trash2, ArrowLeft, FileDown, FileSpreadsheet, Download, Upload, AlertTriangle, CheckCircle2, Clock, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Vehicle, insertVehicleSchema } from "@shared/schema";
+import { Vehicle, insertVehicleSchema, vehicleAssetCategoryValues, machineryTypeValues } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useCompanyContext } from "@/hooks/use-company-context";
@@ -46,6 +46,10 @@ type VehicleFormData = {
   technicalReviewExpiry: string;
   status: Vehicle["status"];
   defaultMaxSpeed: number | string;
+  assetCategory: typeof vehicleAssetCategoryValues[number];
+  machineryType: typeof machineryTypeValues[number] | "";
+  serialNumber: string;
+  engineHours: number | string;
   observations: string;
 };
 
@@ -79,6 +83,10 @@ export default function PesvVehiculos() {
     technicalReviewExpiry: "",
     status: "activo" as const,
     defaultMaxSpeed: "" as number | string,
+    assetCategory: "vehiculo_carretera",
+    machineryType: "",
+    serialNumber: "",
+    engineHours: "" as number | string,
     observations: "",
   });
 
@@ -212,29 +220,38 @@ export default function PesvVehiculos() {
       toast({ title: "Campo requerido", description: "Ingrese la fecha de vencimiento del Seguro.", variant: "destructive" });
       return;
     }
-    if (!formData.soatExpiry) {
+    if (formData.assetCategory === "vehiculo_carretera" && !formData.soatExpiry) {
       toast({ title: "Campo requerido", description: "Ingrese la fecha de vencimiento del SOAT.", variant: "destructive" });
       return;
     }
-    if (!formData.technicalReviewExpiry) {
+    if (formData.assetCategory === "vehiculo_carretera" && !formData.technicalReviewExpiry) {
       toast({ title: "Campo requerido", description: "Ingrese la fecha de vencimiento de la Tecnicomecánica.", variant: "destructive" });
+      return;
+    }
+    if (formData.assetCategory !== "vehiculo_carretera" && !formData.machineryType) {
+      toast({ title: "Campo requerido", description: "Seleccione el tipo de maquinaria.", variant: "destructive" });
       return;
     }
     
     const capacityValue = formData.capacity === '' ? undefined : Number(formData.capacity);
     const mileageValue = formData.mileage === '' ? undefined : Number(formData.mileage);
     const defaultMaxSpeedValue = formData.defaultMaxSpeed === '' ? undefined : Number(formData.defaultMaxSpeed);
+    const engineHoursValue = formData.engineHours === '' ? undefined : Number(formData.engineHours);
     const data = {
       ...formData,
+      type: formData.assetCategory === "vehiculo_carretera" ? formData.type : "otro",
       capacity: capacityValue,
       mileage: mileageValue,
       defaultMaxSpeed: defaultMaxSpeedValue,
+      engineHours: engineHoursValue,
       color: formData.color || undefined,
       vin: formData.vin || undefined,
       insurancePolicy: formData.insurancePolicy || undefined,
       insuranceExpiry: formData.insuranceExpiry || undefined,
       soatExpiry: formData.soatExpiry || undefined,
       technicalReviewExpiry: formData.technicalReviewExpiry || undefined,
+      machineryType: formData.machineryType || undefined,
+      serialNumber: formData.serialNumber || undefined,
       observations: formData.observations || undefined,
     };
 
@@ -265,6 +282,10 @@ export default function PesvVehiculos() {
       technicalReviewExpiry: vehicle.technicalReviewExpiry || "",
       status: vehicle.status,
       defaultMaxSpeed: vehicle.defaultMaxSpeed ?? "",
+      assetCategory: vehicle.assetCategory || "vehiculo_carretera",
+      machineryType: vehicle.machineryType || "",
+      serialNumber: vehicle.serialNumber || "",
+      engineHours: vehicle.engineHours ?? "",
       observations: vehicle.observations || "",
     });
     setDialogOpen(true);
@@ -316,6 +337,10 @@ export default function PesvVehiculos() {
       technicalReviewExpiry: "",
       status: "activo",
       defaultMaxSpeed: "",
+      assetCategory: "vehiculo_carretera",
+      machineryType: "",
+      serialNumber: "",
+      engineHours: "",
       observations: "",
     });
   };
@@ -340,6 +365,25 @@ export default function PesvVehiculos() {
     };
     return labels[type] || type;
   };
+
+  const getAssetCategoryLabel = (category: string) => ({
+    vehiculo_carretera: "Vehículo de carretera",
+    maquinaria_amarilla: "Maquinaria amarilla",
+    equipo_especial: "Equipo especial",
+  }[category] || category);
+
+  const getMachineryTypeLabel = (type: string | null | undefined) => ({
+    excavadora: "Excavadora",
+    excavadora_compacta: "Excavadora compacta",
+    retroexcavadora: "Retroexcavadora",
+    cargador: "Cargador",
+    motoniveladora: "Motoniveladora",
+    bulldozer: "Bulldozer",
+    grua: "Grúa",
+    montacargas: "Montacargas",
+    compactador: "Compactador",
+    otro: "Otro",
+  }[type || ""] || type || "Sin clasificar");
 
   const getExpiryBadge = (dateStr: string | null | undefined) => {
     if (!dateStr) return (
@@ -586,6 +630,37 @@ export default function PesvVehiculos() {
                     />
                   </div>
                   <div className="space-y-2">
+                     <Label htmlFor="assetCategory">Categoría del activo *</Label>
+                     <Select
+                       value={formData.assetCategory}
+                       onValueChange={(value: VehicleFormData["assetCategory"]) => setFormData({ ...formData, assetCategory: value, type: value === "vehiculo_carretera" ? formData.type : "otro" })}
+                     >
+                       <SelectTrigger id="assetCategory" data-testid="select-asset-category"><SelectValue /></SelectTrigger>
+                       <SelectContent>
+                         <SelectItem value="vehiculo_carretera">Vehículo de carretera</SelectItem>
+                         <SelectItem value="maquinaria_amarilla">Maquinaria amarilla</SelectItem>
+                         <SelectItem value="equipo_especial">Equipo especial</SelectItem>
+                       </SelectContent>
+                     </Select>
+                   </div>
+                   {formData.assetCategory !== "vehiculo_carretera" && (
+                     <>
+                       <div className="space-y-2">
+                         <Label htmlFor="machineryType">Tipo de maquinaria *</Label>
+                         <Select value={formData.machineryType} onValueChange={(value) => setFormData({ ...formData, machineryType: value as VehicleFormData["machineryType"] })}>
+                           <SelectTrigger id="machineryType" data-testid="select-machinery-type"><SelectValue placeholder="Seleccione" /></SelectTrigger>
+                           <SelectContent>
+                             {machineryTypeValues.map((value) => <SelectItem key={value} value={value}>{getMachineryTypeLabel(value)}</SelectItem>)}
+                           </SelectContent>
+                         </Select>
+                       </div>
+                       <div className="space-y-2">
+                         <Label htmlFor="serialNumber">Número de serie del fabricante</Label>
+                         <Input id="serialNumber" value={formData.serialNumber} onChange={(e) => setFormData({ ...formData, serialNumber: e.target.value })} placeholder="Serial o identificación del fabricante" data-testid="input-serial-number" />
+                       </div>
+                     </>
+                   )}
+                   <div className="space-y-2">
                     <Label htmlFor="type">Tipo *</Label>
                     <Select
                       value={formData.type}
@@ -604,7 +679,7 @@ export default function PesvVehiculos() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2">
+                   {formData.assetCategory === "vehiculo_carretera" && <div className="space-y-2">
                     <Label htmlFor="ownership">Propiedad *</Label>
                     <Select
                       value={formData.ownership}
@@ -631,20 +706,20 @@ export default function PesvVehiculos() {
                       placeholder="5"
                       data-testid="input-capacity"
                     />
-                  </div>
+                   </div>}
                   <div className="space-y-2">
-                    <Label htmlFor="mileage">Kilometraje</Label>
+                     <Label htmlFor="mileage">{formData.assetCategory === "vehiculo_carretera" ? "Kilometraje" : "Horómetro (horas)"}</Label>
                     <Input
                       id="mileage"
                       type="number"
                       min="0"
-                      value={formData.mileage}
+                       value={formData.assetCategory === "vehiculo_carretera" ? formData.mileage : formData.engineHours}
                       onChange={(e) => setFormData({ ...formData, mileage: e.target.value === '' ? '' : e.target.value })}
-                      placeholder="50000"
+                       placeholder={formData.assetCategory === "vehiculo_carretera" ? "50000" : "1200"}
                       data-testid="input-mileage"
                     />
                   </div>
-                  <div className="space-y-2">
+                   {formData.assetCategory === "vehiculo_carretera" && <div className="space-y-2">
                     <Label htmlFor="defaultMaxSpeed">Velocidad Máxima Permitida (km/h)</Label>
                     <Input
                       id="defaultMaxSpeed"
@@ -656,8 +731,8 @@ export default function PesvVehiculos() {
                       placeholder="Ej: 80"
                       data-testid="input-default-max-speed"
                     />
-                  </div>
-                  <div className="space-y-2">
+                   </div>}
+                   {formData.assetCategory === "vehiculo_carretera" && <div className="space-y-2">
                     <Label htmlFor="color">Color</Label>
                     <Input
                       id="color"
@@ -666,7 +741,7 @@ export default function PesvVehiculos() {
                       placeholder="Blanco"
                       data-testid="input-color"
                     />
-                  </div>
+                   </div>}
                   <div className="space-y-2">
                     <Label htmlFor="vin">VIN</Label>
                     <Input
