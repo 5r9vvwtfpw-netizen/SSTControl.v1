@@ -9555,10 +9555,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         "Marca",
         "Modelo",
         "Año",
+        "Categoría",
         "Tipo",
+        "Tipo de Maquinaria",
         "Propiedad",
         "Capacidad",
         "Kilometraje",
+        "Horómetro",
+        "Número de Serie",
+        "Tipo de Combustible",
+        "Capacidad Operativa",
+        "Implementos Disponibles",
+        "Última Revisión",
+        "Próximo Mantenimiento",
+        "Frente de Trabajo",
         "Color",
         "VIN",
         "Póliza Seguro",
@@ -9567,6 +9577,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         "Vencimiento Tecnicomecánica",
         "Estado",
         "Velocidad Máxima Permitida",
+        "Observaciones Técnicas",
         "Observaciones",
       ];
       const worksheet = XLSX.utils.aoa_to_sheet([headers]);
@@ -9582,10 +9593,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         { Campo: "Marca", Descripción: "Marca comercial del vehículo.", Requerido: "Sí", "Valores válidos": "Texto libre", Ejemplo: "Toyota" },
         { Campo: "Modelo", Descripción: "Modelo o referencia del vehículo.", Requerido: "Sí", "Valores válidos": "Texto libre", Ejemplo: "Hilux" },
         { Campo: "Año", Descripción: "Año del vehículo.", Requerido: "Sí", "Valores válidos": "Número entero entre 1900 y el año siguiente", Ejemplo: "2024" },
+        { Campo: "Categoría", Descripción: "Clasificación general del activo.", Requerido: "Sí", "Valores válidos": "vehiculo_carretera, maquinaria_amarilla, equipo_especial", Ejemplo: "maquinaria_amarilla" },
         { Campo: "Tipo", Descripción: "Tipo de vehículo.", Requerido: "Sí", "Valores válidos": "automovil, camioneta, camion, motocicleta, bus, otro", Ejemplo: "camioneta" },
+        { Campo: "Tipo de Maquinaria", Descripción: "Obligatorio para maquinaria amarilla o equipo especial.", Requerido: "Condicional", "Valores válidos": "excavadora, excavadora_compacta, retroexcavadora, cargador, motoniveladora, bulldozer, grua, montacargas, compactador, otro", Ejemplo: "excavadora_compacta" },
         { Campo: "Propiedad", Descripción: "Forma de tenencia del vehículo.", Requerido: "Sí", "Valores válidos": "propio, arrendado, contratado", Ejemplo: "propio" },
         { Campo: "Capacidad", Descripción: "Número de pasajeros.", Requerido: "No", "Valores válidos": "Número entero mayor o igual a cero", Ejemplo: "5" },
         { Campo: "Kilometraje", Descripción: "Kilometraje actual del vehículo.", Requerido: "No", "Valores válidos": "Número entero mayor o igual a cero", Ejemplo: "50000" },
+        { Campo: "Horómetro", Descripción: "Horas acumuladas de operación de la maquinaria.", Requerido: "No", "Valores válidos": "Número entero mayor o igual a cero", Ejemplo: "1200" },
+        { Campo: "Número de Serie", Descripción: "Identificación asignada por el fabricante.", Requerido: "No", "Valores válidos": "Texto libre", Ejemplo: "HCM1..." },
+        { Campo: "Tipo de Combustible", Descripción: "Combustible o fuente de energía del equipo.", Requerido: "No", "Valores válidos": "Texto libre", Ejemplo: "Diésel" },
+        { Campo: "Capacidad Operativa", Descripción: "Capacidad técnica o de trabajo.", Requerido: "No", "Valores válidos": "Texto libre con unidad", Ejemplo: "3 toneladas" },
+        { Campo: "Implementos Disponibles", Descripción: "Implementos separados por coma.", Requerido: "No", "Valores válidos": "Texto libre", Ejemplo: "Balde, martillo hidráulico" },
+        { Campo: "Última Revisión", Descripción: "Fecha de la última revisión del equipo.", Requerido: "No", "Valores válidos": "AAAA-MM-DD o DD/MM/AAAA", Ejemplo: "2026-08-01" },
+        { Campo: "Próximo Mantenimiento", Descripción: "Fecha prevista del próximo mantenimiento.", Requerido: "No", "Valores válidos": "AAAA-MM-DD o DD/MM/AAAA", Ejemplo: "2026-12-01" },
+        { Campo: "Frente de Trabajo", Descripción: "Ubicación, sede, obra o frente de operación.", Requerido: "No", "Valores válidos": "Texto libre", Ejemplo: "Obra norte" },
         { Campo: "Color", Descripción: "Color del vehículo.", Requerido: "No", "Valores válidos": "Texto libre", Ejemplo: "Blanco" },
         { Campo: "VIN", Descripción: "Número de identificación vehicular.", Requerido: "No", "Valores válidos": "Texto libre", Ejemplo: "9BWZZZ..." },
         { Campo: "Póliza Seguro", Descripción: "Número de la póliza de seguro.", Requerido: "No", "Valores válidos": "Texto libre", Ejemplo: "POL-12345" },
@@ -9594,6 +9615,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         { Campo: "Vencimiento Tecnicomecánica", Descripción: "Fecha de vencimiento de la revisión tecnicomecánica.", Requerido: "Sí", "Valores válidos": "AAAA-MM-DD o DD/MM/AAAA", Ejemplo: "2026-08-20" },
         { Campo: "Estado", Descripción: "Estado operativo del vehículo.", Requerido: "Sí", "Valores válidos": "activo, mantenimiento, inactivo, dado-de-baja", Ejemplo: "activo" },
         { Campo: "Velocidad Máxima Permitida", Descripción: "Velocidad máxima configurada para el vehículo en km/h.", Requerido: "No", "Valores válidos": "Número entero entre 0 y 200", Ejemplo: "80" },
+        { Campo: "Observaciones Técnicas", Descripción: "Condición y restricciones técnicas del equipo.", Requerido: "No", "Valores válidos": "Texto libre", Ejemplo: "Uso exclusivo en obra" },
         { Campo: "Observaciones", Descripción: "Notas adicionales.", Requerido: "No", "Valores válidos": "Texto libre", Ejemplo: "Vehículo asignado a operación norte" },
       ];
       const instructionsSheet = XLSX.utils.json_to_sheet(instructions);
@@ -9714,6 +9736,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         motocicleta: "motocicleta", moto: "motocicleta",
         bus: "bus", otro: "otro",
       };
+      const categoryValues: Record<string, string> = {
+        "vehiculo carretera": "vehiculo_carretera", vehiculo: "vehiculo_carretera",
+        "maquinaria amarilla": "maquinaria_amarilla", maquinaria: "maquinaria_amarilla",
+        "equipo especial": "equipo_especial", equipo: "equipo_especial",
+      };
+      const machineryValues: Record<string, string> = {
+        excavadora: "excavadora", "excavadora compacta": "excavadora_compacta", "mini excavadora": "excavadora_compacta",
+        retroexcavadora: "retroexcavadora", cargador: "cargador", "cargador frontal": "cargador",
+        motoniveladora: "motoniveladora", bulldozer: "bulldozer", grua: "grua",
+        montacargas: "montacargas", compactador: "compactador", otro: "otro",
+      };
       const ownershipValues: Record<string, string> = {
         propio: "propio", propia: "propio",
         arrendado: "arrendado", arrendada: "arrendado", alquilado: "arrendado", alquilada: "arrendado",
@@ -9749,23 +9782,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
           platesInFile.add(plate);
 
+          const rawCategory = textValue(row, "Categoría", "Categoria");
+          const assetCategory = rawCategory
+            ? normalizeEnum(rawCategory, "Categoría", categoryValues)
+            : "vehiculo_carretera";
+          const isRoadVehicle = assetCategory === "vehiculo_carretera";
+          const rawMachineryType = textValue(row, "Tipo de Maquinaria", "Tipo Maquinaria");
           const vehicleData = {
             plate,
             brand: textValue(row, "Marca"),
             model: textValue(row, "Modelo"),
             year: parseInteger(readValue(row, "Año", "Ano"), "Año", true, 1900, new Date().getFullYear() + 1),
-            type: normalizeEnum(textValue(row, "Tipo"), "Tipo", typeValues),
+            assetCategory,
+            type: isRoadVehicle ? normalizeEnum(textValue(row, "Tipo"), "Tipo", typeValues) : "otro",
+            machineryType: isRoadVehicle ? undefined : normalizeEnum(rawMachineryType, "Tipo de Maquinaria", machineryValues),
             ownership: normalizeEnum(textValue(row, "Propiedad"), "Propiedad", ownershipValues),
             capacity: parseInteger(readValue(row, "Capacidad"), "Capacidad"),
             mileage: parseInteger(readValue(row, "Kilometraje"), "Kilometraje"),
+            engineHours: parseInteger(readValue(row, "Horómetro", "Horometro"), "Horómetro"),
+            serialNumber: textValue(row, "Número de Serie", "Numero de Serie", "Serial") || undefined,
+            fuelType: textValue(row, "Tipo de Combustible", "Combustible") || undefined,
+            operatingCapacity: textValue(row, "Capacidad Operativa") || undefined,
+            availableImplements: textValue(row, "Implementos Disponibles", "Implementos") || undefined,
+            lastInspectionDate: parseDate(readValue(row, "Última Revisión", "Ultima Revision"), "Última Revisión"),
+            nextMaintenanceDate: parseDate(readValue(row, "Próximo Mantenimiento", "Proximo Mantenimiento"), "Próximo Mantenimiento"),
+            workLocation: textValue(row, "Frente de Trabajo", "Ubicación", "Ubicacion") || undefined,
             color: textValue(row, "Color") || undefined,
             vin: textValue(row, "VIN") || undefined,
             insurancePolicy: textValue(row, "Póliza Seguro", "Poliza Seguro", "Póliza") || undefined,
             insuranceExpiry: parseDate(readValue(row, "Vencimiento Seguro"), "Vencimiento Seguro", true),
-            soatExpiry: parseDate(readValue(row, "Vencimiento SOAT"), "Vencimiento SOAT", true),
-            technicalReviewExpiry: parseDate(readValue(row, "Vencimiento Tecnicomecánica", "Vencimiento Tecnicomecanica"), "Vencimiento Tecnicomecánica", true),
+            soatExpiry: parseDate(readValue(row, "Vencimiento SOAT"), "Vencimiento SOAT", isRoadVehicle),
+            technicalReviewExpiry: parseDate(readValue(row, "Vencimiento Tecnicomecánica", "Vencimiento Tecnicomecanica"), "Vencimiento Tecnicomecánica", isRoadVehicle),
             status: normalizeEnum(textValue(row, "Estado"), "Estado", statusValues),
             defaultMaxSpeed: parseInteger(readValue(row, "Velocidad Máxima Permitida", "Velocidad Maxima Permitida", "Velocidad Máxima"), "Velocidad Máxima Permitida", false, 0, 200),
+            technicalObservations: textValue(row, "Observaciones Técnicas", "Observaciones Tecnicas") || undefined,
             observations: textValue(row, "Observaciones") || undefined,
           };
 

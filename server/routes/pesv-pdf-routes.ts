@@ -901,7 +901,7 @@ export function registerPesvPdfRoutes(app: Express) {
       const signers = await getSignersForCompany(companyId, true);
 
       let y = await addStandardHeader({
-        doc, company, documentTitle: 'PARQUE AUTOMOTOR - PESV',
+        doc, company, documentTitle: 'INVENTARIO DE VEHÍCULOS Y MAQUINARIA - PESV',
         documentCode: 'PESV-VEH', logoBuffer
       });
 
@@ -922,11 +922,34 @@ export function registerPesvPdfRoutes(app: Express) {
         return d < today ? '⚠ Vencido' : '';
       };
 
-      // Tabla 1: datos generales del vehículo
+      const categoryLabel = (value: string | null) => ({
+        vehiculo_carretera: 'Vehículo de carretera',
+        maquinaria_amarilla: 'Maquinaria amarilla',
+        equipo_especial: 'Equipo especial',
+      }[value || 'vehiculo_carretera'] || value || 'Vehículo de carretera');
+      const machineryLabel = (value: string | null) => ({
+        excavadora: 'Excavadora',
+        excavadora_compacta: 'Excavadora compacta',
+        retroexcavadora: 'Retroexcavadora',
+        cargador: 'Cargador frontal',
+        motoniveladora: 'Motoniveladora',
+        bulldozer: 'Bulldozer',
+        grua: 'Grúa',
+        montacargas: 'Montacargas',
+        compactador: 'Compactador',
+        otro: 'Otro',
+      }[value || ''] || value || 'Pendiente de clasificar');
+
+      // Tabla 1: datos generales del activo
       const rows = vehiculos.map(v => [
-        v.plate, v.type, v.brand, v.model, String(v.year ?? ''), v.status ?? ''
+        v.plate,
+        categoryLabel(v.assetCategory),
+        v.assetCategory === 'vehiculo_carretera' ? v.type : machineryLabel(v.machineryType),
+        v.brand,
+        v.model,
+        v.status ?? ''
       ]);
-      y = addSimpleTable(doc, ['Placa', 'Tipo', 'Marca', 'Modelo', 'Año', 'Estado'], rows, { y });
+      y = addSimpleTable(doc, ['Identificación', 'Categoría', 'Tipo', 'Marca', 'Modelo', 'Estado'], rows, { y });
 
       // Tabla 2: vencimientos de documentos (Seguro, SOAT y Revisión Técnico-Mecánica)
       y = addSectionBar(doc, 'VENCIMIENTOS DE DOCUMENTOS', y + 12);
@@ -934,10 +957,10 @@ export function registerPesvPdfRoutes(app: Express) {
         v.plate,
         fmtExpiry(v.insuranceExpiry),
         expiryLabel(v.insuranceExpiry),
-        fmtExpiry(v.soatExpiry),
-        expiryLabel(v.soatExpiry),
-        fmtExpiry(v.technicalReviewExpiry),
-        expiryLabel(v.technicalReviewExpiry),
+        v.assetCategory === 'vehiculo_carretera' ? fmtExpiry(v.soatExpiry) : 'No aplica',
+        v.assetCategory === 'vehiculo_carretera' ? expiryLabel(v.soatExpiry) : '—',
+        v.assetCategory === 'vehiculo_carretera' ? fmtExpiry(v.technicalReviewExpiry) : 'No aplica',
+        v.assetCategory === 'vehiculo_carretera' ? expiryLabel(v.technicalReviewExpiry) : '—',
       ]);
       y = addSimpleTable(
         doc,
@@ -982,28 +1005,58 @@ export function registerPesvPdfRoutes(app: Express) {
       const signers = await getSignersForCompany(companyId, true);
 
       let y = await addStandardHeader({
-        doc, company, documentTitle: `FICHA DE VEHÍCULO - ${vehicle.plate}`,
+        doc, company, documentTitle: `FICHA DEL ACTIVO - ${vehicle.plate}`,
         documentCode: 'PESV-VEH-IND', logoBuffer
       });
 
-      y = addSectionBar(doc, 'Datos del Vehículo', y);
-      y = addLabeledField(doc, 'Placa', vehicle.plate, { y });
+      const isRoadVehicle = vehicle.assetCategory === 'vehiculo_carretera';
+      const categoryNames: Record<string, string> = {
+        vehiculo_carretera: 'Vehículo de carretera',
+        maquinaria_amarilla: 'Maquinaria amarilla',
+        equipo_especial: 'Equipo especial',
+      };
+      const machineryNames: Record<string, string> = {
+        excavadora: 'Excavadora', excavadora_compacta: 'Excavadora compacta',
+        retroexcavadora: 'Retroexcavadora', cargador: 'Cargador frontal',
+        motoniveladora: 'Motoniveladora', bulldozer: 'Bulldozer', grua: 'Grúa',
+        montacargas: 'Montacargas', compactador: 'Compactador', otro: 'Otro',
+      };
+
+      y = addSectionBar(doc, 'Datos del Activo', y);
+      y = addLabeledField(doc, 'Placa / Identificación', vehicle.plate, { y });
+      y = addLabeledField(doc, 'Categoría', categoryNames[vehicle.assetCategory] || vehicle.assetCategory, { y });
       y = addLabeledField(doc, 'Marca', vehicle.brand, { y });
       y = addLabeledField(doc, 'Modelo', vehicle.model, { y });
       y = addLabeledField(doc, 'Año', String(vehicle.year), { y });
-      y = addLabeledField(doc, 'Tipo', vehicle.type, { y });
+      y = addLabeledField(doc, 'Tipo', isRoadVehicle ? vehicle.type : (machineryNames[vehicle.machineryType || ''] || 'Pendiente de clasificar'), { y });
       y = addLabeledField(doc, 'Propiedad', vehicle.ownership, { y });
       y = addLabeledField(doc, 'Estado', vehicle.status, { y });
-      y = addLabeledField(doc, 'Capacidad', vehicle.capacity ? String(vehicle.capacity) : '—', { y });
-      y = addLabeledField(doc, 'Kilometraje', vehicle.mileage ? String(vehicle.mileage) : '—', { y });
+      if (isRoadVehicle) {
+        y = addLabeledField(doc, 'Capacidad de pasajeros', vehicle.capacity ? String(vehicle.capacity) : '—', { y });
+        y = addLabeledField(doc, 'Kilometraje', vehicle.mileage ? String(vehicle.mileage) : '—', { y });
+      } else {
+        y = addLabeledField(doc, 'Número de serie', vehicle.serialNumber || '—', { y });
+        y = addLabeledField(doc, 'Horómetro', vehicle.engineHours != null ? `${vehicle.engineHours} horas` : '—', { y });
+        y = addLabeledField(doc, 'Combustible', vehicle.fuelType || '—', { y });
+        y = addLabeledField(doc, 'Capacidad operativa', vehicle.operatingCapacity || '—', { y });
+        y = addLabeledField(doc, 'Implementos', vehicle.availableImplements || '—', { y });
+        y = addLabeledField(doc, 'Frente de trabajo', vehicle.workLocation || '—', { y });
+        y = addLabeledField(doc, 'Última revisión', formatDate(vehicle.lastInspectionDate), { y });
+        y = addLabeledField(doc, 'Próximo mantenimiento', formatDate(vehicle.nextMaintenanceDate), { y });
+      }
       y = addLabeledField(doc, 'Color', vehicle.color || '—', { y });
       y = addLabeledField(doc, 'VIN', vehicle.vin || '—', { y });
 
       y = addSectionBar(doc, 'Documentación y Vigencias', y);
       y = addLabeledField(doc, 'Póliza de Seguro', vehicle.insurancePolicy || '—', { y });
       y = addLabeledField(doc, 'Vencimiento Seguro', formatDate(vehicle.insuranceExpiry), { y });
-      y = addLabeledField(doc, 'Vencimiento SOAT', formatDate(vehicle.soatExpiry), { y });
-      y = addLabeledField(doc, 'Vencimiento Revisión Técnico-Mecánica', formatDate(vehicle.technicalReviewExpiry), { y });
+      y = addLabeledField(doc, 'Vencimiento SOAT', isRoadVehicle ? formatDate(vehicle.soatExpiry) : 'No aplica', { y });
+      y = addLabeledField(doc, 'Vencimiento Revisión Técnico-Mecánica', isRoadVehicle ? formatDate(vehicle.technicalReviewExpiry) : 'No aplica', { y });
+
+      if (vehicle.technicalObservations) {
+        y = addSectionBar(doc, 'Observaciones Técnicas', y);
+        y = addParagraph(doc, vehicle.technicalObservations, { y });
+      }
 
       if (vehicle.observations) {
         y = addSectionBar(doc, 'Observaciones', y);

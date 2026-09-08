@@ -67,6 +67,9 @@ export default function PesvVehiculos() {
   const isAdmin = user?.role ? canWrite(user.role, 'vehicles') : false;
   const canViewGlobalFleet = user?.role === "superadmin";
   const [searchTerm, setSearchTerm] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("todos");
+  const [typeFilter, setTypeFilter] = useState("todos");
+  const [statusFilter, setStatusFilter] = useState("todos");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -273,6 +276,7 @@ export default function PesvVehiculos() {
       nextMaintenanceDate: formData.nextMaintenanceDate || undefined,
       workLocation: formData.workLocation || undefined,
       technicalObservations: formData.technicalObservations || undefined,
+      classificationStatus: "clasificado" as const,
       observations: formData.observations || undefined,
     };
 
@@ -303,8 +307,8 @@ export default function PesvVehiculos() {
       technicalReviewExpiry: vehicle.technicalReviewExpiry || "",
       status: vehicle.status,
       defaultMaxSpeed: vehicle.defaultMaxSpeed ?? "",
-      assetCategory: vehicle.assetCategory || "vehiculo_carretera",
-      machineryType: vehicle.machineryType || "",
+      assetCategory: (vehicle.assetCategory || "vehiculo_carretera") as VehicleFormData["assetCategory"],
+      machineryType: (vehicle.machineryType || "") as VehicleFormData["machineryType"],
       serialNumber: vehicle.serialNumber || "",
       engineHours: vehicle.engineHours ?? "",
       fuelType: vehicle.fuelType || "",
@@ -382,11 +386,18 @@ export default function PesvVehiculos() {
 
   const filteredVehicles = vehicles.filter((vehicle) => {
     const searchLower = searchTerm.toLowerCase();
-    return (
+    const matchesSearch = (
       vehicle.plate.toLowerCase().includes(searchLower) ||
       vehicle.brand.toLowerCase().includes(searchLower) ||
-      vehicle.model.toLowerCase().includes(searchLower)
+      vehicle.model.toLowerCase().includes(searchLower) ||
+      (vehicle.serialNumber || "").toLowerCase().includes(searchLower)
     );
+    const category = vehicle.assetCategory || "vehiculo_carretera";
+    const visibleType = category === "vehiculo_carretera" ? vehicle.type : vehicle.machineryType;
+    return matchesSearch
+      && (categoryFilter === "todos" || category === categoryFilter)
+      && (typeFilter === "todos" || visibleType === typeFilter)
+      && (statusFilter === "todos" || vehicle.status === statusFilter);
   });
 
   const getVehicleTypeLabel = (type: string) => {
@@ -695,7 +706,7 @@ export default function PesvVehiculos() {
                        </div>
                      </>
                    )}
-                   <div className="space-y-2">
+                   {formData.assetCategory === "vehiculo_carretera" && <div className="space-y-2">
                     <Label htmlFor="type">Tipo *</Label>
                     <Select
                       value={formData.type}
@@ -713,8 +724,8 @@ export default function PesvVehiculos() {
                         <SelectItem value="otro">Otro</SelectItem>
                       </SelectContent>
                     </Select>
-                  </div>
-                   {formData.assetCategory === "vehiculo_carretera" && <div className="space-y-2">
+                   </div>}
+                   <div className="space-y-2">
                     <Label htmlFor="ownership">Propiedad *</Label>
                     <Select
                       value={formData.ownership}
@@ -730,7 +741,7 @@ export default function PesvVehiculos() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2">
+                   {formData.assetCategory === "vehiculo_carretera" && <div className="space-y-2">
                     <Label htmlFor="capacity">Capacidad (pasajeros)</Label>
                     <Input
                       id="capacity"
@@ -749,12 +760,14 @@ export default function PesvVehiculos() {
                       type="number"
                       min="0"
                        value={formData.assetCategory === "vehiculo_carretera" ? formData.mileage : formData.engineHours}
-                      onChange={(e) => setFormData({ ...formData, mileage: e.target.value === '' ? '' : e.target.value })}
+                       onChange={(e) => formData.assetCategory === "vehiculo_carretera"
+                         ? setFormData({ ...formData, mileage: e.target.value })
+                         : setFormData({ ...formData, engineHours: e.target.value })}
                        placeholder={formData.assetCategory === "vehiculo_carretera" ? "50000" : "1200"}
                       data-testid="input-mileage"
                     />
                   </div>
-                   {formData.assetCategory === "vehiculo_carretera" && <div className="space-y-2">
+                   <div className="space-y-2">
                     <Label htmlFor="defaultMaxSpeed">Velocidad Máxima Permitida (km/h)</Label>
                     <Input
                       id="defaultMaxSpeed"
@@ -766,8 +779,8 @@ export default function PesvVehiculos() {
                       placeholder="Ej: 80"
                       data-testid="input-default-max-speed"
                     />
-                   </div>}
-                   {formData.assetCategory === "vehiculo_carretera" && <div className="space-y-2">
+                   </div>
+                   <div className="space-y-2">
                     <Label htmlFor="color">Color</Label>
                     <Input
                       id="color"
@@ -776,7 +789,7 @@ export default function PesvVehiculos() {
                       placeholder="Blanco"
                       data-testid="input-color"
                     />
-                   </div>}
+                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="vin">VIN</Label>
                     <Input
@@ -807,7 +820,7 @@ export default function PesvVehiculos() {
                       data-testid="input-insurance-expiry"
                     />
                   </div>
-                  <div className="space-y-2">
+                   {formData.assetCategory === "vehiculo_carretera" && <div className="space-y-2">
                     <Label htmlFor="soatExpiry">Vencimiento SOAT <span className="text-red-500">*</span></Label>
                     <Input
                       id="soatExpiry"
@@ -816,8 +829,8 @@ export default function PesvVehiculos() {
                       onChange={(e) => setFormData({ ...formData, soatExpiry: e.target.value })}
                       data-testid="input-soat-expiry"
                     />
-                  </div>
-                  <div className="space-y-2">
+                   </div>}
+                   {formData.assetCategory === "vehiculo_carretera" && <div className="space-y-2">
                     <Label htmlFor="technicalReviewExpiry">Vencimiento Tecnicomecánica <span className="text-red-500">*</span></Label>
                     <Input
                       id="technicalReviewExpiry"
@@ -826,7 +839,39 @@ export default function PesvVehiculos() {
                       onChange={(e) => setFormData({ ...formData, technicalReviewExpiry: e.target.value })}
                       data-testid="input-technical-review-expiry"
                     />
-                  </div>
+                   </div>}
+                   {formData.assetCategory !== "vehiculo_carretera" && (
+                     <>
+                       <div className="space-y-2">
+                         <Label htmlFor="fuelType">Tipo de combustible</Label>
+                         <Input id="fuelType" value={formData.fuelType} onChange={(e) => setFormData({ ...formData, fuelType: e.target.value })} placeholder="Diésel, gasolina, eléctrico..." data-testid="input-fuel-type" />
+                       </div>
+                       <div className="space-y-2">
+                         <Label htmlFor="operatingCapacity">Capacidad operativa</Label>
+                         <Input id="operatingCapacity" value={formData.operatingCapacity} onChange={(e) => setFormData({ ...formData, operatingCapacity: e.target.value })} placeholder="Ej: 0,09 m³ / 3 toneladas" data-testid="input-operating-capacity" />
+                       </div>
+                       <div className="space-y-2 col-span-2">
+                         <Label htmlFor="availableImplements">Implementos disponibles</Label>
+                         <Input id="availableImplements" value={formData.availableImplements} onChange={(e) => setFormData({ ...formData, availableImplements: e.target.value })} placeholder="Balde, martillo hidráulico, pinza..." data-testid="input-available-implements" />
+                       </div>
+                       <div className="space-y-2">
+                         <Label htmlFor="lastInspectionDate">Fecha de última revisión</Label>
+                         <Input id="lastInspectionDate" type="date" value={formData.lastInspectionDate} onChange={(e) => setFormData({ ...formData, lastInspectionDate: e.target.value })} data-testid="input-last-inspection-date" />
+                       </div>
+                       <div className="space-y-2">
+                         <Label htmlFor="nextMaintenanceDate">Próximo mantenimiento</Label>
+                         <Input id="nextMaintenanceDate" type="date" value={formData.nextMaintenanceDate} onChange={(e) => setFormData({ ...formData, nextMaintenanceDate: e.target.value })} data-testid="input-next-maintenance-date" />
+                       </div>
+                       <div className="space-y-2 col-span-2">
+                         <Label htmlFor="workLocation">Ubicación o frente de trabajo</Label>
+                         <Input id="workLocation" value={formData.workLocation} onChange={(e) => setFormData({ ...formData, workLocation: e.target.value })} placeholder="Obra, sede o frente de trabajo" data-testid="input-work-location" />
+                       </div>
+                       <div className="space-y-2 col-span-2">
+                         <Label htmlFor="technicalObservations">Observaciones técnicas</Label>
+                         <Textarea id="technicalObservations" value={formData.technicalObservations} onChange={(e) => setFormData({ ...formData, technicalObservations: e.target.value })} placeholder="Condición, restricciones e información técnica del equipo" data-testid="input-technical-observations" />
+                       </div>
+                     </>
+                   )}
                   <div className="space-y-2">
                     <Label htmlFor="status">Estado *</Label>
                     <Select
@@ -870,7 +915,7 @@ export default function PesvVehiculos() {
         )}
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -881,13 +926,51 @@ export default function PesvVehiculos() {
             data-testid="input-search"
           />
         </div>
+        <Select value={categoryFilter} onValueChange={(value) => { setCategoryFilter(value); setTypeFilter("todos"); }}>
+          <SelectTrigger className="w-[210px]" data-testid="filter-asset-category"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todas las categorías</SelectItem>
+            <SelectItem value="vehiculo_carretera">Vehículos de carretera</SelectItem>
+            <SelectItem value="maquinaria_amarilla">Maquinaria amarilla</SelectItem>
+            <SelectItem value="equipo_especial">Equipos especiales</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={typeFilter} onValueChange={setTypeFilter}>
+          <SelectTrigger className="w-[210px]" data-testid="filter-equipment-type"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todos los tipos</SelectItem>
+            {categoryFilter !== "maquinaria_amarilla" && categoryFilter !== "equipo_especial" && (
+              <>
+                <SelectItem value="automovil">Automóvil</SelectItem>
+                <SelectItem value="camioneta">Camioneta</SelectItem>
+                <SelectItem value="camion">Camión</SelectItem>
+                <SelectItem value="motocicleta">Motocicleta</SelectItem>
+                <SelectItem value="bus">Bus</SelectItem>
+              </>
+            )}
+            {categoryFilter !== "vehiculo_carretera" && machineryTypeValues.map((value) => (
+              <SelectItem key={value} value={value}>{getMachineryTypeLabel(value)}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-[180px]" data-testid="filter-vehicle-status"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todos los estados</SelectItem>
+            <SelectItem value="activo">Activo</SelectItem>
+            <SelectItem value="mantenimiento">Mantenimiento</SelectItem>
+            <SelectItem value="inactivo">Inactivo</SelectItem>
+            <SelectItem value="dado-de-baja">Dado de baja</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="border rounded-lg">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead data-testid="header-plate">Placa</TableHead>
+              <TableHead data-testid="header-plate">Placa / Identificación</TableHead>
+              <TableHead data-testid="header-category">Categoría</TableHead>
               <TableHead data-testid="header-brand">Marca</TableHead>
               <TableHead data-testid="header-model">Modelo</TableHead>
               <TableHead data-testid="header-type">Tipo</TableHead>
@@ -900,25 +983,35 @@ export default function PesvVehiculos() {
           <TableBody>
             {vehiclesLoading ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center" data-testid="text-loading">
+                <TableCell colSpan={9} className="text-center" data-testid="text-loading">
                   Cargando vehículos...
                 </TableCell>
               </TableRow>
             ) : filteredVehicles.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center" data-testid="text-no-vehicles">
+                <TableCell colSpan={9} className="text-center" data-testid="text-no-vehicles">
                   No se encontraron vehículos
                 </TableCell>
               </TableRow>
             ) : (
               filteredVehicles.map((vehicle) => (
                 <TableRow key={vehicle.id} data-testid={`row-vehicle-${vehicle.id}`}>
-                  <TableCell data-testid={`text-plate-${vehicle.id}`}>{vehicle.plate}</TableCell>
+                  <TableCell data-testid={`text-plate-${vehicle.id}`}>
+                    <div className="font-medium">{vehicle.plate}</div>
+                    {vehicle.serialNumber && <div className="text-xs text-muted-foreground">Serie: {vehicle.serialNumber}</div>}
+                  </TableCell>
+                  <TableCell data-testid={`text-category-${vehicle.id}`}>{getAssetCategoryLabel(vehicle.assetCategory || "vehiculo_carretera")}</TableCell>
                   <TableCell data-testid={`text-brand-${vehicle.id}`}>{vehicle.brand}</TableCell>
                   <TableCell data-testid={`text-model-${vehicle.id}`}>{vehicle.model}</TableCell>
-                  <TableCell data-testid={`text-type-${vehicle.id}`}>{getVehicleTypeLabel(vehicle.type)}</TableCell>
-                  <TableCell data-testid={`text-soat-${vehicle.id}`}>{getExpiryBadge(vehicle.soatExpiry)}</TableCell>
-                  <TableCell data-testid={`text-rtm-${vehicle.id}`}>{getExpiryBadge(vehicle.technicalReviewExpiry)}</TableCell>
+                  <TableCell data-testid={`text-type-${vehicle.id}`}>
+                    {vehicle.classificationStatus === "pendiente"
+                      ? <span className="text-amber-700 font-medium">Pendiente de clasificar</span>
+                      : (vehicle.assetCategory || "vehiculo_carretera") === "vehiculo_carretera"
+                        ? getVehicleTypeLabel(vehicle.type)
+                        : getMachineryTypeLabel(vehicle.machineryType)}
+                  </TableCell>
+                  <TableCell data-testid={`text-soat-${vehicle.id}`}>{(vehicle.assetCategory || "vehiculo_carretera") === "vehiculo_carretera" ? getExpiryBadge(vehicle.soatExpiry) : <span className="text-xs text-muted-foreground">No aplica</span>}</TableCell>
+                  <TableCell data-testid={`text-rtm-${vehicle.id}`}>{(vehicle.assetCategory || "vehiculo_carretera") === "vehiculo_carretera" ? getExpiryBadge(vehicle.technicalReviewExpiry) : <span className="text-xs text-muted-foreground">No aplica</span>}</TableCell>
                   <TableCell data-testid={`text-status-${vehicle.id}`}>{getStatusLabel(vehicle.status)}</TableCell>
                   {isAdmin && (
                     <TableCell>

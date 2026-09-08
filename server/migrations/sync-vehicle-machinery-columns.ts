@@ -25,6 +25,7 @@ export async function syncVehicleMachineryColumns() {
     ["next_maintenance_date", "DATE"],
     ["work_location", "TEXT"],
     ["technical_observations", "TEXT"],
+    ["classification_status", "TEXT NOT NULL DEFAULT 'clasificado'"],
   ] as const;
 
   for (const [name, definition] of columns) {
@@ -33,11 +34,20 @@ export async function syncVehicleMachineryColumns() {
     }
   }
 
+  await db.execute(sql`
+    UPDATE vehicles
+    SET classification_status = 'pendiente'
+    WHERE type = 'otro'
+      AND asset_category = 'vehiculo_carretera'
+      AND machinery_type IS NULL
+  `);
+
   // Clasificación determinista y reversible para la máquina ya identificada.
   await db.execute(sql`
     UPDATE vehicles
     SET asset_category = 'maquinaria_amarilla',
-        machinery_type = 'excavadora_compacta'
+        machinery_type = 'excavadora_compacta',
+        classification_status = 'clasificado'
     WHERE LOWER(brand) = 'hitachi'
       AND LOWER(model) LIKE '%zx30u-5b%'
       AND (asset_category = 'vehiculo_carretera' OR asset_category IS NULL)

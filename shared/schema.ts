@@ -991,6 +991,7 @@ export const vehicles = pgTable("vehicles", {
   nextMaintenanceDate: date("next_maintenance_date"),
   workLocation: text("work_location"),
   technicalObservations: text("technical_observations"),
+  classificationStatus: text("classification_status").notNull().default("clasificado"),
   observations: text("observations"),
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
@@ -1253,6 +1254,7 @@ export const insertVehicleSchema = createInsertSchema(vehicles)
     nextMaintenanceDate: z.string().optional().nullable(),
     workLocation: z.string().optional().nullable(),
     technicalObservations: z.string().optional().nullable(),
+    classificationStatus: z.enum(["clasificado", "pendiente"]).default("clasificado"),
   });
 export type InsertVehicle = z.infer<typeof insertVehicleSchema>;
 export type Vehicle = typeof vehicles.$inferSelect;
