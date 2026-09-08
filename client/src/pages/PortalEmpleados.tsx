@@ -36,7 +36,7 @@ import {
   History, Monitor, Smartphone, Tablet, Video, Heart, ClipboardList, Camera, Upload, Trash2, Loader2, Headphones, Car, Search, X,
   Brain, Pill, Wine, Thermometer, Moon, Truck, CheckSquare, XSquare, AlertTriangle
 } from "lucide-react";
-import { Link, useLocation } from "wouter";
+import { Link, useLocation, useSearch } from "wouter";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -981,9 +981,10 @@ const portalNavGroups = [
 function WorkerPortal() {
   const { user } = useAuth();
   const [location, setLocation] = useLocation();
+  const search = useSearch();
   const validPortalSections = new Set(portalNavGroups.flatMap(group => group.items.map(item => item.id)));
   const sectionFromUrl = () => {
-    const requestedSection = new URLSearchParams(window.location.search).get("section");
+    const requestedSection = new URLSearchParams(search).get("section");
     return requestedSection && validPortalSections.has(requestedSection) ? requestedSection : "contrato";
   };
   const [activeSection, setActiveSection] = useState(sectionFromUrl);
@@ -998,7 +999,7 @@ function WorkerPortal() {
   useEffect(() => {
     const requestedSection = sectionFromUrl();
     setActiveSection(requestedSection);
-  }, [location]);
+  }, [location, search]);
 
   // Tipo para elecciones con fechas
   type EleccionPortal = {
