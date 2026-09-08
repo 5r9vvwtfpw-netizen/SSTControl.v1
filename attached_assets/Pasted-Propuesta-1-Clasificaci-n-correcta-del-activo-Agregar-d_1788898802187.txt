@@ -1,0 +1,80 @@
+Propuesta
+1. Clasificación correcta del activo
+Agregar dos campos:
+
+Categoría
+
+Vehículo de carretera
+Maquinaria amarilla
+Equipo especial
+Tipo de maquinaria
+
+Excavadora
+Retroexcavadora
+Cargador frontal
+Motoniveladora
+Bulldozer
+Grúa
+Montacargas
+Compactador
+Otro
+Para este registro:
+
+Categoría: Maquinaria amarilla
+Tipo: Excavadora compacta
+Marca: Hitachi
+Modelo: ZX30U-5B
+Así dejaría de aparecer como “Otro”.
+
+2. Campos específicos para maquinaria
+Cuando se seleccione “Maquinaria amarilla”, mostraríamos:
+
+Número de serie o identificación del fabricante.
+Horómetro.
+Tipo de combustible.
+Capacidad operativa.
+Implementos disponibles, por ejemplo:
+Balde.
+Martillo hidráulico.
+Pinza.
+Fecha de última revisión.
+Fecha de próximo mantenimiento.
+Ubicación o frente de trabajo.
+Observaciones técnicas.
+El campo kilometraje se cambiaría por horómetro para maquinaria.
+
+3. Campos que no aplican
+Para maquinaria amarilla no tendría sentido obligar campos propios de automóviles. Por eso:
+
+SOAT: oculto o marcado como “No aplica”, según el caso.
+Tecnomecánica: oculto o marcado como “No aplica”, según el caso.
+Capacidad de pasajeros: oculto.
+Velocidad máxima: opcional.
+Póliza de seguro: se mantiene porque sí puede ser relevante.
+No eliminaríamos los campos actuales para no afectar los vehículos ya registrados.
+
+Corrección de los registros existentes
+Haría una migración segura que:
+
+Mantenga todos los datos actuales.
+Detecte modelos conocidos de maquinaria.
+Clasifique automáticamente los casos claros.
+Deje los casos dudosos en “Pendiente de clasificar”.
+Permita corregirlos manualmente desde el formulario.
+En este caso, el sistema podría clasificar automáticamente:
+
+Hitachi ZX30U-5B → Maquinaria amarilla → Excavadora compacta
+
+También mejoraría la visualización
+En el listado aparecerían columnas como:
+
+Categoría	Tipo	Marca	Modelo	Identificación
+Maquinaria amarilla	Excavadora compacta	Hitachi	ZX30U-5B	MC765924
+Y agregaríamos filtros por:
+
+Vehículos de carretera.
+Maquinaria amarilla.
+Tipo de equipo.
+Estado.
+Empresa.
+Mi recomendación es implementarlo de forma gradual: primero clasificación y campos básicos, después mantenimiento, horómetro e implementos. Así no se rompe la información actual ni los registros de vehículos existentes.
