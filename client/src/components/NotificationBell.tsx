@@ -52,7 +52,6 @@ type PortalNotificationCount = {
 };
 
 const workerPendingItems = [
-  { key: "messages", label: "Mensajes internos", description: "Mensajes que aún no has leído", path: "/mensajes-internos", icon: Mail },
   { key: "capacitacionesSst", label: "Capacitaciones SST", description: "Confirma o completa tus capacitaciones", section: "capacitaciones", icon: GraduationCap },
   { key: "capacitacionesPesv", label: "Capacitaciones PESV", description: "Confirma o completa tus capacitaciones viales", section: "capacitaciones-pesv", icon: GraduationCap },
   { key: "examenes", label: "Exámenes médicos", description: "Confirma la lectura de tus resultados", section: "mis-examenes-medicos", icon: Heart },
@@ -106,6 +105,7 @@ export function NotificationBell({ simple = false }: { simple?: boolean }) {
   const { data: messages, isLoading } = useQuery<InternalMessage[]>({
     queryKey: ["/api/internal-messages"],
     refetchInterval: 30000,
+    enabled: !isWorkerRole,
   });
 
   const markAsReadMutation = useMutation({
@@ -204,10 +204,6 @@ export function NotificationBell({ simple = false }: { simple?: boolean }) {
 
   const handleWorkerPendingClick = (item: typeof actionableWorkerItems[number]) => {
     setIsOpen(false);
-    if ("path" in item && item.path) {
-      setLocation(item.path);
-      return;
-    }
     if ("section" in item && item.section) {
       setLocation(`/portal-empleados?section=${encodeURIComponent(item.section)}`);
     }
@@ -219,7 +215,7 @@ export function NotificationBell({ simple = false }: { simple?: boolean }) {
         variant="ghost"
         size="icon"
         className="relative text-white hover:bg-white/20"
-        onClick={handleViewAll}
+        onClick={isWorkerRole ? () => setLocation("/portal-empleados") : handleViewAll}
         data-testid="button-notification-bell"
         aria-label={isWorkerRole ? "Ver acciones pendientes" : "Ver mensajes internos"}
       >

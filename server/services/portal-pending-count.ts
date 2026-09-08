@@ -106,13 +106,7 @@ export async function getPortalPendingCount(
         )
     )
     SELECT
-      (
-        SELECT count(*)::int
-        FROM internal_messages
-        WHERE receiver_id = ${userId}
-          AND company_id = ${companyId}
-          AND status = 'unread'
-      ) AS messages,
+      0::int AS messages,
       (SELECT count(*)::int FROM training_pending) AS capacitaciones,
       (SELECT count(*)::int FROM training_pending WHERE training_type = 'sst') AS capacitaciones_sst,
       (SELECT count(*)::int FROM training_pending WHERE training_type = 'pesv') AS capacitaciones_pesv,
