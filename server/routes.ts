@@ -8788,13 +8788,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       .orderBy(desc(schema.users.lastLoginAt));
 
       const authorizedIpResult = await db.execute(sql`
-        SELECT id, COALESCE(authorized_ips, '{}') AS authorized_ips
+        SELECT id,
+               COALESCE(authorized_ips, '{}') AS authorized_ips,
+               COALESCE(strict_ip_restriction, false) AS strict_ip_restriction
         FROM users
       `);
-      const authorizedIpsByUser = new Map(
+      const authorizedIpsByUser = new Map<string, {
+        authorizedIps: string[];
+        strictIpRestriction: boolean;
+      }>(
         ((authorizedIpResult as any).rows ?? []).map((row: any) => [
           row.id,
-          row.authorized_ips ?? [],
+          {
+            authorizedIps: row.authorized_ips ?? [],
+            strictIpRestriction: row.strict_ip_restriction === true,
+          },
         ]),
       );
       const sessionStatsResult = await db.execute(sql`
@@ -8827,7 +8835,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return {
             ...u,
             companyName,
-            authorizedIps: authorizedIpsByUser.get(u.id) ?? [],
+             authorizedIps: authorizedIpsByUser.get(u.id)?.authorizedIps ?? [],
+             strictIpRestriction: authorizedIpsByUser.get(u.id)?.strictIpRestriction ?? false,
             ...(sessionStatsByUser.get(u.id) ?? {
               sessionCount: 0,
               suspiciousCount: 0,
@@ -8901,8 +8910,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const bodySchema = z.object({
         authorizedIps: z.array(z.string().trim().min(1)).max(20),
+        strictIpRestriction: z.boolean().optional().default(false),
       });
-      const { authorizedIps } = bodySchema.parse(req.body);
+      const { authorizedIps, strictIpRestriction } = bodySchema.parse(req.body);
       const normalizedIps = Array.from(new Set(
         authorizedIps.map((ip) => ip.startsWith("::ffff:") ? ip.slice(7) : ip),
       ));
@@ -8922,13 +8932,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       await db.execute(sql`
         UPDATE users
-        SET authorized_ips = ARRAY[${authorizedIpsSql}]::text[]
+        SET authorized_ips = ARRAY[${authorizedIpsSql}]::text[],
+            strict_ip_restriction = ${strictIpRestriction}
         WHERE id = ${req.params.userId}
       `);
 
       res.json({
         userId: req.params.userId,
         authorizedIps: normalizedIps,
+        strictIpRestriction,
         monitoringEnabled: normalizedIps.length > 0,
       });
     } catch (error: any) {

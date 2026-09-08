@@ -40,6 +40,9 @@ export async function createUserSessionsLog() {
       ALTER TABLE users ADD COLUMN IF NOT EXISTS authorized_ips TEXT[] DEFAULT '{}'
     `);
     await db.execute(sql`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS strict_ip_restriction BOOLEAN NOT NULL DEFAULT false
+    `);
+    await db.execute(sql`
       ALTER TABLE user_sessions_log
         ADD COLUMN IF NOT EXISTS device_id TEXT,
         ADD COLUMN IF NOT EXISTS access_decision TEXT NOT NULL DEFAULT 'allowed',
@@ -57,7 +60,7 @@ export async function createUserSessionsLog() {
       ON user_sessions_log(user_id, login_at)
       WHERE alert_type = 'unauthorized_ip' AND access_decision = 'allowed'
     `);
-    console.log("[Migration] ✅ Tabla user_sessions_log y columna authorized_ips creadas");
+    console.log("[Migration] ✅ Tabla user_sessions_log y configuración de IP autorizada creadas");
   } catch (error: any) {
     console.error("[Migration] Error en create-user-sessions-log:", error.message);
   }

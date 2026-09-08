@@ -70,6 +70,7 @@ async function evaluateIpAccess(userId: string, ip: string): Promise<{
   const result = await db.execute(sql`
     SELECT
       COALESCE(u.authorized_ips, '{}') AS authorized_ips,
+      COALESCE(u.strict_ip_restriction, false) AS strict_ip_restriction,
       COUNT(s.id) FILTER (
         WHERE s.alert_type = 'unauthorized_ip'
           AND s.access_decision = 'allowed'
@@ -87,10 +88,12 @@ async function evaluateIpAccess(userId: string, ip: string): Promise<{
   `);
   const row: any = (result as any).rows?.[0];
   const authorizedIps: string[] = row?.authorized_ips ?? [];
+  const strictIpRestriction = row?.strict_ip_restriction === true;
   const monitored = authorizedIps.length > 0;
   const authorized = !monitored || authorizedIps.includes(ip);
   const attempts = Number(row?.allowed_unauthorized_attempts) || 0;
-  const blocked = monitored && !authorized && attempts >= UNAUTHORIZED_IP_ALLOWED_ATTEMPTS;
+  const blocked = monitored && !authorized &&
+    (strictIpRestriction || attempts >= UNAUTHORIZED_IP_ALLOWED_ATTEMPTS);
   const blockedUntil = blocked && row?.oldest_attempt
     ? new Date(new Date(row.oldest_attempt).getTime() + UNAUTHORIZED_IP_WINDOW_HOURS * 60 * 60 * 1000)
     : null;

@@ -46,6 +46,7 @@ interface LoginActivityUser {
   lastLoginIp: string | null;
   createdAt: string;
   authorizedIps: string[];
+  strictIpRestriction: boolean;
   sessionCount: number;
   suspiciousCount: number;
   activeSessionCount: number;
@@ -164,6 +165,7 @@ export default function AdminLoginActivity() {
   const [roleFilter, setRoleFilter] = useState("all");
   const [selectedUser, setSelectedUser] = useState<LoginActivityUser | null>(null);
   const [managedIps, setManagedIps] = useState<string[]>([]);
+  const [strictIpRestriction, setStrictIpRestriction] = useState(false);
   const [newIp, setNewIp] = useState("");
   const [ipToRemove, setIpToRemove] = useState<string | null>(null);
   const [alertFilter, setAlertFilter] = useState("all");
@@ -190,17 +192,23 @@ export default function AdminLoginActivity() {
       const response = await apiRequest(
         "PATCH",
         `/api/admin/login-activity/${selectedUser!.id}/authorized-ips`,
-        { authorizedIps: managedIps },
+        { authorizedIps: managedIps, strictIpRestriction },
       );
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/login-activity"] });
-      setSelectedUser((current) => current ? { ...current, authorizedIps: managedIps } : current);
+      setSelectedUser((current) => current ? {
+        ...current,
+        authorizedIps: managedIps,
+        strictIpRestriction,
+      } : current);
       toast({
         title: "IP autorizadas actualizadas",
         description: managedIps.length
-          ? "Los nuevos accesos se compararán con esta lista."
+          ? strictIpRestriction
+            ? "Solo estas IP podrán iniciar sesión en esta cuenta."
+            : "Los nuevos accesos se compararán con esta lista."
           : "La cuenta quedó sin restricción por IP.",
       });
     },
@@ -244,6 +252,7 @@ export default function AdminLoginActivity() {
   const openUserSecurity = (user: LoginActivityUser) => {
     setSelectedUser(user);
     setManagedIps(user.authorizedIps || []);
+    setStrictIpRestriction(user.strictIpRestriction === true);
     setNewIp("");
     setAlertFilter("all");
     setDateFilter("all");
@@ -411,7 +420,7 @@ export default function AdminLoginActivity() {
               Seguridad de {selectedUser?.fullName || selectedUser?.username}
             </DialogTitle>
             <DialogDescription>
-              Una IP nueva genera una alerta. Tras 3 accesos no autorizados en 24 horas, el siguiente intento se bloquea temporalmente.
+              Puedes monitorear las IP nuevas o bloquear inmediatamente cualquier IP que no esté autorizada.
             </DialogDescription>
           </DialogHeader>
 
@@ -459,6 +468,21 @@ export default function AdminLoginActivity() {
                     </div>
                   ))}
                 </div>
+                <label className="flex cursor-pointer items-start gap-2 rounded-md border border-red-200 bg-red-50 p-3 text-sm dark:border-red-900/50 dark:bg-red-950/20">
+                  <input
+                    type="checkbox"
+                    checked={strictIpRestriction}
+                    onChange={(event) => setStrictIpRestriction(event.target.checked)}
+                    className="mt-0.5"
+                    data-testid="checkbox-strict-ip-restriction"
+                  />
+                  <span>
+                    <span className="font-medium">Bloqueo estricto</span>
+                    <span className="mt-1 block text-xs text-muted-foreground">
+                      Bloquear inmediatamente cualquier IP que no esté en la lista.
+                    </span>
+                  </span>
+                </label>
                 <Button
                   className="w-full"
                   onClick={() => updateIpsMutation.mutate()}

@@ -13,4 +13,4 @@ La atribución combina cuenta, sesión, IP, navegador, identificador persistente
 
 La verificación de dos pasos por correo se exige en cada login a todos los roles excepto `superadmin`, `trabajador` y `tecnico_mecanico`; aplica también al portal de soporte.
 
-**How to apply:** Mantener la lista vacía como modo sin restricción. Enviar correo a superadmins por cada alerta en producción; las fallas de correo o GeoIP no deben interrumpir accesos legítimos.
+**How to apply:** Mantener la lista vacía como modo sin restricción. Enviar correo a superadmins por cada alerta en producción; las fallas de correo o GeoIP no deben interrumpir accesos legítimos. Cuando un superadmin activa la restricción estricta en una cuenta, cualquier IP fuera de la lista se bloquea inmediatamente; el modo gradual de tres intentos solo aplica a cuentas sin esa opción.
