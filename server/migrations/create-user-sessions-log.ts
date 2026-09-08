@@ -43,6 +43,9 @@ export async function createUserSessionsLog() {
       ALTER TABLE users ADD COLUMN IF NOT EXISTS strict_ip_restriction BOOLEAN NOT NULL DEFAULT false
     `);
     await db.execute(sql`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS ip_policy_updated_at TIMESTAMP NOT NULL DEFAULT now()
+    `);
+    await db.execute(sql`
       ALTER TABLE user_sessions_log
         ADD COLUMN IF NOT EXISTS device_id TEXT,
         ADD COLUMN IF NOT EXISTS access_decision TEXT NOT NULL DEFAULT 'allowed',

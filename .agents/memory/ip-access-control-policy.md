@@ -14,3 +14,7 @@ La atribución combina cuenta, sesión, IP, navegador, identificador persistente
 La verificación de dos pasos por correo se exige en cada login a todos los roles excepto `superadmin`, `trabajador` y `tecnico_mecanico`; aplica también al portal de soporte.
 
 **How to apply:** Mantener la lista vacía como modo sin restricción. Enviar correo a superadmins por cada alerta en producción; las fallas de correo o GeoIP no deben interrumpir accesos legítimos. Cuando un superadmin activa la restricción estricta en una cuenta, cualquier IP fuera de la lista se bloquea inmediatamente; el modo gradual de tres intentos solo aplica a cuentas sin esa opción.
+
+Cada vez que el superadmin guarda una lista de IP autorizadas, cambia el modo estricto o elimina todas las IP, empieza una nueva ventana de control. Los intentos no autorizados anteriores no pueden mantener bloqueada la cuenta después del cambio. Una lista vacía también debe apagar el modo estricto.
+
+**Why:** Autorizar una IP o retirar la restricción es una acción explícita de recuperación; conservar el contador de intentos previo deja bloqueados tanto a trabajadores como a cuentas de empresa aunque el administrador ya haya corregido la política.

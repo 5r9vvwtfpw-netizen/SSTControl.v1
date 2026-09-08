@@ -8916,6 +8916,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const normalizedIps = Array.from(new Set(
         authorizedIps.map((ip) => ip.startsWith("::ffff:") ? ip.slice(7) : ip),
       ));
+      // A strict restriction without any authorized IP would make the account
+      // impossible to recover. An empty list always means unrestricted access.
+      const effectiveStrictIpRestriction = normalizedIps.length > 0 && strictIpRestriction;
       const invalidIp = normalizedIps.find((ip) => isIP(ip) === 0);
       if (invalidIp) {
         return res.status(400).json({ error: `La dirección IP "${invalidIp}" no es válida` });
@@ -8933,14 +8936,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await db.execute(sql`
         UPDATE users
         SET authorized_ips = ARRAY[${authorizedIpsSql}]::text[],
-            strict_ip_restriction = ${strictIpRestriction}
+            strict_ip_restriction = ${effectiveStrictIpRestriction},
+            ip_policy_updated_at = now()
         WHERE id = ${req.params.userId}
       `);
 
       res.json({
         userId: req.params.userId,
         authorizedIps: normalizedIps,
-        strictIpRestriction,
+        strictIpRestriction: effectiveStrictIpRestriction,
         monitoringEnabled: normalizedIps.length > 0,
       });
     } catch (error: any) {

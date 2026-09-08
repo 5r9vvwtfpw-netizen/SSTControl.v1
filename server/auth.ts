@@ -71,15 +71,18 @@ async function evaluateIpAccess(userId: string, ip: string): Promise<{
     SELECT
       COALESCE(u.authorized_ips, '{}') AS authorized_ips,
       COALESCE(u.strict_ip_restriction, false) AS strict_ip_restriction,
+      u.ip_policy_updated_at,
       COUNT(s.id) FILTER (
         WHERE s.alert_type = 'unauthorized_ip'
           AND s.access_decision = 'allowed'
           AND s.login_at >= now() - (${UNAUTHORIZED_IP_WINDOW_HOURS} * interval '1 hour')
+          AND s.login_at >= u.ip_policy_updated_at
       )::int AS allowed_unauthorized_attempts,
       MIN(s.login_at) FILTER (
         WHERE s.alert_type = 'unauthorized_ip'
           AND s.access_decision = 'allowed'
           AND s.login_at >= now() - (${UNAUTHORIZED_IP_WINDOW_HOURS} * interval '1 hour')
+          AND s.login_at >= u.ip_policy_updated_at
       ) AS oldest_attempt
     FROM users u
     LEFT JOIN user_sessions_log s ON s.user_id = u.id
@@ -87,7 +90,9 @@ async function evaluateIpAccess(userId: string, ip: string): Promise<{
     GROUP BY u.id, u.authorized_ips
   `);
   const row: any = (result as any).rows?.[0];
-  const authorizedIps: string[] = row?.authorized_ips ?? [];
+  const authorizedIps: string[] = (row?.authorized_ips ?? [])
+    .map((authorizedIp: string) => normalizeClientIp(authorizedIp))
+    .filter((authorizedIp: string) => authorizedIp !== "unknown");
   const strictIpRestriction = row?.strict_ip_restriction === true;
   const monitored = authorizedIps.length > 0;
   const authorized = !monitored || authorizedIps.includes(ip);

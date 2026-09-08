@@ -189,27 +189,30 @@ export default function AdminLoginActivity() {
 
   const updateIpsMutation = useMutation({
     mutationFn: async () => {
+      const effectiveStrictIpRestriction = managedIps.length > 0 && strictIpRestriction;
       const response = await apiRequest(
         "PATCH",
         `/api/admin/login-activity/${selectedUser!.id}/authorized-ips`,
-        { authorizedIps: managedIps, strictIpRestriction },
+        { authorizedIps: managedIps, strictIpRestriction: effectiveStrictIpRestriction },
       );
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (updated: { authorizedIps: string[]; strictIpRestriction: boolean }) => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/login-activity"] });
+      setManagedIps(updated.authorizedIps);
+      setStrictIpRestriction(updated.strictIpRestriction);
       setSelectedUser((current) => current ? {
         ...current,
-        authorizedIps: managedIps,
-        strictIpRestriction,
+        authorizedIps: updated.authorizedIps,
+        strictIpRestriction: updated.strictIpRestriction,
       } : current);
       toast({
         title: "IP autorizadas actualizadas",
-        description: managedIps.length
-          ? strictIpRestriction
+        description: updated.authorizedIps.length
+          ? updated.strictIpRestriction
             ? "Solo estas IP podrán iniciar sesión en esta cuenta."
             : "Los nuevos accesos se compararán con esta lista."
-          : "La cuenta quedó sin restricción por IP.",
+          : "La cuenta quedó liberada y sin restricción por IP.",
       });
     },
     onError: (error: Error) => {
@@ -602,7 +605,13 @@ export default function AdminLoginActivity() {
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
-                setManagedIps((ips) => ips.filter((ip) => ip !== ipToRemove));
+                setManagedIps((ips) => {
+                  const remainingIps = ips.filter((ip) => ip !== ipToRemove);
+                  if (remainingIps.length === 0) {
+                    setStrictIpRestriction(false);
+                  }
+                  return remainingIps;
+                });
                 setIpToRemove(null);
               }}
             >
