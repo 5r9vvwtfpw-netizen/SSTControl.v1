@@ -175,12 +175,12 @@ doc.font("Helvetica").fontSize(9.5).fillColor(COLORS.text)
   );
 
 doc.font("Helvetica-Bold").fontSize(10).fillColor(COLORS.green)
-  .text("Aceptación de la propuesta", 54, 720);
+  .text("Aceptación de la propuesta", 54, 708);
 doc.font("Helvetica").fontSize(9.5).fillColor(COLORS.text)
   .text(
-    "La aceptación podrá confirmarse por escrito para coordinar la agenda de las sesiones virtuales y la habilitación del usuario.",
+    "El pago se realiza por adelantado. Una vez confirmado el pago, se enviará la agenda con la distribución de las 8 horas de capacitación para coordinar las sesiones virtuales y la habilitación del usuario.",
     54,
-    739,
+    727,
     { width: 487 },
   );
 
