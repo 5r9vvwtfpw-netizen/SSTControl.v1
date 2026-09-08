@@ -50,7 +50,7 @@ function header(title, subtitle) {
 }
 
 function footer() {
-  const y = doc.page.height - 43;
+  const y = doc.page.height - 66;
   doc.moveTo(54, y - 10).lineTo(doc.page.width - 54, y - 10)
     .strokeColor(COLORS.border).lineWidth(0.7).stroke();
   doc.font("Helvetica").fontSize(8).fillColor(COLORS.muted)
@@ -110,7 +110,7 @@ doc.font("Helvetica").fontSize(10.5).fillColor(COLORS.text)
   );
 
 sectionTitle("Alcance de la capacitación", 414);
-bullet("Capacitación virtual individual de hasta 4 horas.", 60, 442, 460);
+bullet("Capacitación virtual individual de hasta 8 horas, dividida en 4 sesiones de 2 horas diarias.", 60, 442, 460);
 bullet("Portal de la Empresa: usuarios, actividades, documentos, cronogramas y seguimiento.", 60, 466, 460);
 bullet("Portal LSO: estándares SST, evidencias, actividades pendientes, avances e informes.", 60, 490, 460);
 bullet("Portal de Empleados: inducciones, capacitaciones, evaluaciones y confirmaciones.", 60, 514, 460);
@@ -135,19 +135,19 @@ doc.font("Helvetica-Bold").fontSize(9).fillColor(COLORS.white)
 doc.rect(tableX, tableY + rowH, tableW, 48).fill(COLORS.pale)
   .strokeColor(COLORS.border).lineWidth(0.7).stroke();
 doc.font("Helvetica").fontSize(10).fillColor(COLORS.text)
-  .text("Capacitación virtual de transición SST/PESV y habilitación operativa", tableX + 14, tableY + 50, {
+  .text("Capacitación virtual de transición SST/PESV y habilitación operativa (8 horas)", tableX + 14, tableY + 50, {
     width: 350,
   })
-  .text(money(750000), tableX + 385, tableY + 50, { width: 88, align: "right" });
+  .text(money(1200000), tableX + 385, tableY + 50, { width: 88, align: "right" });
 doc.font("Helvetica").fontSize(10).fillColor(COLORS.text)
   .text("Subtotal", tableX + 280, tableY + 78, { width: 155, align: "right" })
-  .text(money(750000), tableX + 385, tableY + 78, { width: 88, align: "right" });
+  .text(money(1200000), tableX + 385, tableY + 78, { width: 88, align: "right" });
 doc.text("IVA 19%", tableX + 280, tableY + 98, { width: 155, align: "right" })
-  .text(money(142500), tableX + 385, tableY + 98, { width: 88, align: "right" });
+  .text(money(228000), tableX + 385, tableY + 98, { width: 88, align: "right" });
 doc.roundedRect(tableX + 270, tableY + 126, 217, 39, 6).fill(COLORS.gold);
 doc.font("Helvetica-Bold").fontSize(12).fillColor(COLORS.green)
   .text("TOTAL", tableX + 284, tableY + 139)
-  .text(money(892500), tableX + 385, tableY + 139, { width: 88, align: "right" });
+  .text(money(1428000), tableX + 385, tableY + 139, { width: 88, align: "right" });
 
 sectionTitle("Incluye", 393);
 bullet("Acceso habilitado únicamente para la operación de TRANSPORTES LIMICIO LTDA.", 60, 421, 460);
@@ -176,7 +176,6 @@ doc.font("Helvetica").fontSize(9.5).fillColor(COLORS.text)
     { width: 487 },
   );
 
-footer();
 footer();
 
 doc.end();
