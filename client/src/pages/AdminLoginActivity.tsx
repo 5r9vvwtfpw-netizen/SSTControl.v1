@@ -380,6 +380,7 @@ export default function AdminLoginActivity() {
                         {user.authorizedIps.length ? (
                           <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
                             {user.authorizedIps.length} autorizada{user.authorizedIps.length !== 1 ? "s" : ""}
+                            {user.strictIpRestriction ? " · estricto" : ""}
                           </Badge>
                         ) : (
                           <Badge variant="outline" className="text-muted-foreground">Sin restricción</Badge>
@@ -423,7 +424,8 @@ export default function AdminLoginActivity() {
               Seguridad de {selectedUser?.fullName || selectedUser?.username}
             </DialogTitle>
             <DialogDescription>
-              Puedes monitorear las IP nuevas o bloquear inmediatamente cualquier IP que no esté autorizada.
+              La IP es una señal de la conexión de red, no una identidad física. Puedes registrar IP nuevas
+              y activar una coincidencia estricta para bloquear cualquier cambio no autorizado.
             </DialogDescription>
           </DialogHeader>
 
@@ -435,7 +437,9 @@ export default function AdminLoginActivity() {
               <CardContent className="space-y-4">
                 <div className={`rounded-md border p-3 text-sm ${managedIps.length ? "border-green-200 bg-green-50 dark:bg-green-950/20" : "border-amber-200 bg-amber-50 dark:bg-amber-950/20"}`}>
                   {managedIps.length
-                    ? "Monitoreo activo: las IP nuevas se marcarán como sospechosas."
+                    ? strictIpRestriction
+                      ? "Restricción estricta activa: solo las IP exactas de esta lista podrán iniciar sesión."
+                      : "Monitoreo activo: una IP nueva se alertará; después de tres accesos permitidos no autorizados, el siguiente se bloquea temporalmente."
                     : "Sin restricción configurada: cualquier IP se considera permitida."}
                 </div>
                 <div className="space-y-2">
@@ -471,10 +475,11 @@ export default function AdminLoginActivity() {
                     </div>
                   ))}
                 </div>
-                <label className="flex cursor-pointer items-start gap-2 rounded-md border border-red-200 bg-red-50 p-3 text-sm dark:border-red-900/50 dark:bg-red-950/20">
+                <label className={`flex items-start gap-2 rounded-md border border-red-200 bg-red-50 p-3 text-sm dark:border-red-900/50 dark:bg-red-950/20 ${managedIps.length ? "cursor-pointer" : "cursor-not-allowed opacity-60"}`}>
                   <input
                     type="checkbox"
                     checked={strictIpRestriction}
+                    disabled={!managedIps.length}
                     onChange={(event) => setStrictIpRestriction(event.target.checked)}
                     className="mt-0.5"
                     data-testid="checkbox-strict-ip-restriction"
@@ -482,7 +487,9 @@ export default function AdminLoginActivity() {
                   <span>
                     <span className="font-medium">Bloqueo estricto</span>
                     <span className="mt-1 block text-xs text-muted-foreground">
-                      Bloquear inmediatamente cualquier IP que no esté en la lista.
+                      {managedIps.length
+                        ? "Bloquea inmediatamente cualquier IP que no esté en la lista."
+                        : "Agrega y guarda al menos una IP para activar esta opción."}
                     </span>
                   </span>
                 </label>

@@ -13,6 +13,7 @@ import * as schema from "@shared/schema";
 import { users } from "@shared/schema";
 import { eq, sql, and } from "drizzle-orm";
 import { z } from "zod";
+import { isIP } from "net";
 import { loginRateLimiter, passwordResetRateLimiter, registrationRateLimiter } from "./middleware/rate-limit";
 import logger from "./lib/logger";
 import { enrichSessionLocation, processSecurityAlert } from "./services/security-access";
@@ -35,12 +36,25 @@ function normalizeClientIp(value: string | string[] | undefined): string {
 }
 
 function getClientIp(req: Request): string {
-  return normalizeClientIp(
-    req.ip ||
-    req.headers["x-forwarded-for"] ||
-    req.connection?.remoteAddress ||
-    "unknown",
-  );
+  // Replit deployments expose the originating client through X-Forwarded-For.
+  // With more than one proxy, req.ip can stop at the nearest trusted proxy
+  // (for example, a Google edge), so it must not be preferred here.
+  const forwardedFor = req.headers["x-forwarded-for"];
+  const forwardedCandidates = (Array.isArray(forwardedFor) ? forwardedFor : [forwardedFor])
+    .filter((value): value is string => typeof value === "string")
+    .flatMap((value) => value.split(","));
+  const candidates = [
+    ...forwardedCandidates,
+    req.headers["x-real-ip"],
+    req.ip,
+    req.socket?.remoteAddress,
+  ];
+
+  for (const candidate of candidates) {
+    const normalized = normalizeClientIp(candidate);
+    if (isIP(normalized) !== 0) return normalized;
+  }
+  return "unknown";
 }
 
 function getOrCreateDeviceId(req: Request, res: Response): string {
@@ -92,7 +106,7 @@ async function evaluateIpAccess(userId: string, ip: string): Promise<{
   const row: any = (result as any).rows?.[0];
   const authorizedIps: string[] = (row?.authorized_ips ?? [])
     .map((authorizedIp: string) => normalizeClientIp(authorizedIp))
-    .filter((authorizedIp: string) => authorizedIp !== "unknown");
+    .filter((authorizedIp: string) => isIP(authorizedIp) !== 0);
   const strictIpRestriction = row?.strict_ip_restriction === true;
   const monitored = authorizedIps.length > 0;
   const authorized = !monitored || authorizedIps.includes(ip);
@@ -215,11 +229,16 @@ async function recordLoginSession(
       const ipResult = await db.execute(
         sql`SELECT authorized_ips FROM users WHERE id = ${userId} LIMIT 1`
       );
-      authorizedIps = (ipResult as any).rows?.[0]?.authorized_ips ?? [];
+    authorizedIps = (ipResult as any).rows?.[0]?.authorized_ips ?? [];
     } catch {
       // columna no existe aún (migración pendiente) — omitir check
     }
-    const ipAuthorized = authorizedIps.length === 0 || authorizedIps.includes(ip);
+    const normalizedIp = normalizeClientIp(ip);
+    const normalizedAuthorizedIps = authorizedIps
+      .map((authorizedIp) => normalizeClientIp(authorizedIp))
+      .filter((authorizedIp) => isIP(authorizedIp) !== 0);
+    const ipAuthorized = normalizedAuthorizedIps.length === 0 ||
+      normalizedAuthorizedIps.includes(normalizedIp);
 
     // 3. Registrar nueva sesión
     const insertResult = await db.execute(sql`
