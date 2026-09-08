@@ -18,6 +18,13 @@ export async function syncVehicleMachineryColumns() {
     ["machinery_type", "TEXT"],
     ["serial_number", "TEXT"],
     ["engine_hours", "INTEGER"],
+    ["fuel_type", "TEXT"],
+    ["operating_capacity", "TEXT"],
+    ["available_implements", "TEXT"],
+    ["last_inspection_date", "DATE"],
+    ["next_maintenance_date", "DATE"],
+    ["work_location", "TEXT"],
+    ["technical_observations", "TEXT"],
   ] as const;
 
   for (const [name, definition] of columns) {

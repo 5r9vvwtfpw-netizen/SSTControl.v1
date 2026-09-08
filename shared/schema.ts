@@ -984,6 +984,13 @@ export const vehicles = pgTable("vehicles", {
   machineryType: text("machinery_type"),
   serialNumber: text("serial_number"),
   engineHours: integer("engine_hours"),
+  fuelType: text("fuel_type"),
+  operatingCapacity: text("operating_capacity"),
+  availableImplements: text("available_implements"),
+  lastInspectionDate: date("last_inspection_date"),
+  nextMaintenanceDate: date("next_maintenance_date"),
+  workLocation: text("work_location"),
+  technicalObservations: text("technical_observations"),
   observations: text("observations"),
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
@@ -1239,6 +1246,13 @@ export const insertVehicleSchema = createInsertSchema(vehicles)
     machineryType: z.enum(machineryTypeValues).optional().nullable(),
     serialNumber: z.string().optional().nullable(),
     engineHours: z.coerce.number().min(0).optional().nullable(),
+    fuelType: z.string().optional().nullable(),
+    operatingCapacity: z.string().optional().nullable(),
+    availableImplements: z.string().optional().nullable(),
+    lastInspectionDate: z.string().optional().nullable(),
+    nextMaintenanceDate: z.string().optional().nullable(),
+    workLocation: z.string().optional().nullable(),
+    technicalObservations: z.string().optional().nullable(),
   });
 export type InsertVehicle = z.infer<typeof insertVehicleSchema>;
 export type Vehicle = typeof vehicles.$inferSelect;

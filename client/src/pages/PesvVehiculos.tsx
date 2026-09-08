@@ -50,6 +50,13 @@ type VehicleFormData = {
   machineryType: typeof machineryTypeValues[number] | "";
   serialNumber: string;
   engineHours: number | string;
+  fuelType: string;
+  operatingCapacity: string;
+  availableImplements: string;
+  lastInspectionDate: string;
+  nextMaintenanceDate: string;
+  workLocation: string;
+  technicalObservations: string;
   observations: string;
 };
 
@@ -87,6 +94,13 @@ export default function PesvVehiculos() {
     machineryType: "",
     serialNumber: "",
     engineHours: "" as number | string,
+    fuelType: "",
+    operatingCapacity: "",
+    availableImplements: "",
+    lastInspectionDate: "",
+    nextMaintenanceDate: "",
+    workLocation: "",
+    technicalObservations: "",
     observations: "",
   });
 
@@ -252,6 +266,13 @@ export default function PesvVehiculos() {
       technicalReviewExpiry: formData.technicalReviewExpiry || undefined,
       machineryType: formData.machineryType || undefined,
       serialNumber: formData.serialNumber || undefined,
+      fuelType: formData.fuelType || undefined,
+      operatingCapacity: formData.operatingCapacity || undefined,
+      availableImplements: formData.availableImplements || undefined,
+      lastInspectionDate: formData.lastInspectionDate || undefined,
+      nextMaintenanceDate: formData.nextMaintenanceDate || undefined,
+      workLocation: formData.workLocation || undefined,
+      technicalObservations: formData.technicalObservations || undefined,
       observations: formData.observations || undefined,
     };
 
@@ -286,6 +307,13 @@ export default function PesvVehiculos() {
       machineryType: vehicle.machineryType || "",
       serialNumber: vehicle.serialNumber || "",
       engineHours: vehicle.engineHours ?? "",
+      fuelType: vehicle.fuelType || "",
+      operatingCapacity: vehicle.operatingCapacity || "",
+      availableImplements: vehicle.availableImplements || "",
+      lastInspectionDate: vehicle.lastInspectionDate || "",
+      nextMaintenanceDate: vehicle.nextMaintenanceDate || "",
+      workLocation: vehicle.workLocation || "",
+      technicalObservations: vehicle.technicalObservations || "",
       observations: vehicle.observations || "",
     });
     setDialogOpen(true);
@@ -341,6 +369,13 @@ export default function PesvVehiculos() {
       machineryType: "",
       serialNumber: "",
       engineHours: "",
+      fuelType: "",
+      operatingCapacity: "",
+      availableImplements: "",
+      lastInspectionDate: "",
+      nextMaintenanceDate: "",
+      workLocation: "",
+      technicalObservations: "",
       observations: "",
     });
   };
