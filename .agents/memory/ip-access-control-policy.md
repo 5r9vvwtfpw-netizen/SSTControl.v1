@@ -18,3 +18,7 @@ La verificación de dos pasos por correo se exige en cada login a todos los role
 Cada vez que el superadmin guarda una lista de IP autorizadas, cambia el modo estricto o elimina todas las IP, empieza una nueva ventana de control. Los intentos no autorizados anteriores no pueden mantener bloqueada la cuenta después del cambio. Una lista vacía también debe apagar el modo estricto.
 
 **Why:** Autorizar una IP o retirar la restricción es una acción explícita de recuperación; conservar el contador de intentos previo deja bloqueados tanto a trabajadores como a cuentas de empresa aunque el administrador ya haya corregido la política.
+
+En despliegues Replit, la IP de cliente debe extraerse explícitamente de `X-Forwarded-For`; `req.ip` puede devolver el proxy intermedio cuando hay más de una capa.
+
+**Why:** La geolocalización de una IP de proxy puede atribuir el acceso a Google u otro proveedor en vez de a la red real del usuario, debilitando las alertas y las listas autorizadas.
