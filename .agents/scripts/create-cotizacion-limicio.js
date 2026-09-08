@@ -134,26 +134,28 @@ const tableX = 54;
 const tableY = 204;
 const tableW = 487;
 const rowH = 34;
+const amountX = tableX + 366;
+const amountW = 103;
 doc.roundedRect(tableX, tableY, tableW, 34).fill(COLORS.green);
 doc.font("Helvetica-Bold").fontSize(9).fillColor(COLORS.white)
   .text("CONCEPTO", tableX + 14, tableY + 12)
-  .text("VALOR", tableX + 385, tableY + 12, { width: 88, align: "right" });
+  .text("VALOR", amountX, tableY + 12, { width: amountW, align: "right" });
 doc.rect(tableX, tableY + rowH, tableW, 64).fill(COLORS.pale)
   .strokeColor(COLORS.border).lineWidth(0.7).stroke();
 doc.font("Helvetica").fontSize(10).fillColor(COLORS.text)
   .text("Capacitación virtual para reemplazo del Profesional en SST Hernan Valencia Gil (8 horas)", tableX + 14, tableY + 50, {
-    width: 350,
+    width: 345,
   })
-  .text(money(subtotal), tableX + 385, tableY + 50, { width: 88, align: "right" });
+  .text(money(subtotal), amountX, tableY + 50, { width: amountW, align: "right" });
 doc.font("Helvetica").fontSize(10).fillColor(COLORS.text)
   .text("Subtotal", tableX + 300, tableY + 108, { width: 135, align: "right" })
-  .text(money(subtotal), tableX + 430, tableY + 108, { width: 93, align: "right" });
+  .text(money(subtotal), amountX, tableY + 108, { width: amountW, align: "right" });
 doc.text("IVA 19%", tableX + 300, tableY + 136, { width: 135, align: "right" })
-  .text(money(iva), tableX + 430, tableY + 136, { width: 93, align: "right" });
+  .text(money(iva), amountX, tableY + 136, { width: amountW, align: "right" });
 doc.roundedRect(tableX + 270, tableY + 166, 217, 42, 6).fill(COLORS.gold);
 doc.font("Helvetica-Bold").fontSize(12).fillColor(COLORS.green)
   .text("TOTAL", tableX + 284, tableY + 181)
-  .text(money(total), tableX + 385, tableY + 181, { width: 138, align: "right" });
+  .text(money(total), amountX, tableY + 181, { width: amountW, align: "right" });
 
 sectionTitle("Incluye", 458);
 bullet("Acceso habilitado únicamente para la operación de TRANSPORTES LIMICIO LTDA.", 60, 486, 460);
