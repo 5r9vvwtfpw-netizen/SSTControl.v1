@@ -155,12 +155,6 @@ doc.font("Helvetica-Bold").fontSize(12).fillColor(COLORS.green)
   .text("TOTAL", tableX + 284, tableY + 181)
   .text(money(total), tableX + 385, tableY + 181, { width: 138, align: "right" });
 
-doc.font("Helvetica").fontSize(9).fillColor(COLORS.muted)
-  .text(`Base de cálculo: ${trainingHours} horas × ${money(hourlyRate)} por hora (valor de un día de trabajo).`, 54, 421, {
-    width: 487,
-    align: "right",
-  });
-
 sectionTitle("Incluye", 458);
 bullet("Acceso habilitado únicamente para la operación de TRANSPORTES LIMICIO LTDA.", 60, 486, 460);
 bullet("No incluye una licencia nueva ni una mensualidad adicional para la consultora.", 60, 510, 460);
