@@ -17,180 +17,210 @@ id = "zfo2unhJ0OjKHfLpC35u3"
 uri = "file://captcha-plugin-sst.txt"
 type = "text"
 title = "CAPTCHA SST - Plugin Completo (3 archivos)"
+logical_id = "2a948b77-2935-4968-bab1-a7ef5cac8a4d"
 
 [[outputs]]
 id = "ss03blIOiZyElIuOO68fw"
 uri = "file://Portafolio_SST_Colombia_Alpina.pdf"
 type = "pdf"
 title = "Portafolio SST-Colombia - Alpina (corregido sedes)"
+logical_id = "6f760734-39e6-4098-94e5-90657b4703da"
 
 [[outputs]]
 id = "SFcD5-YMQudGpinD4oj-h"
 uri = "file://docs/captcha-para-cloudbooks.md"
 type = "text"
 title = "Guía CAPTCHA para Cloud Books - Para pasar al otro agente"
+logical_id = "cb97f5a1-f479-474b-b238-72125bce3a34"
 
 [[outputs]]
 id = "ycSRds-rA_wAn88VLt8NB"
 uri = "file://attached_assets/acuerdo-lso-hernan-valencia.pdf"
 type = "pdf"
 title = "Acuerdo de Servicios — Tabla corregida"
+logical_id = "dce31fda-41ba-49ff-ae9f-d9e8c9425677"
 
 [[outputs]]
 id = "j5w4DoU9mdvTYvUJYdnYc"
 uri = "file://attached_assets/acuerdo-alianza-hernan-valencia.pdf"
 type = "pdf"
 title = "Acuerdo de Alianza — Sin menciones técnicas de pago"
+logical_id = "6bc5304c-0bc1-42f5-8e67-6c9b0e366250"
 
 [[outputs]]
 id = "6c62UU8RRhn8RpEpd4MBa"
 uri = "file://attached_assets/informe-ejecutivo-sst-colombia.pdf"
 type = "pdf"
 title = "Informe Ejecutivo SST-Colombia — 20 años corregido"
+logical_id = "386d8e6f-abcd-4caf-ab03-b8dda4344bc2"
 
 [[outputs]]
 id = "_9SfqTQmKE4EyQ2ZdLo4X"
 uri = "file://attached_assets/gmail-ad-header.png"
 type = "image"
 title = "Imagen de cabecera — horizontal (súbela en Medios → Imágenes)"
+logical_id = "50d7898e-ee9d-40b5-ac93-85d2d050dd4c"
 
 [[outputs]]
 id = "wpoz4OtwzKpQAdftbWO5K"
 uri = "file://attached_assets/gmail-ad-logo.png"
 type = "image"
 title = "Logo cuadrado — ícono de empresa (súbelo en Medios → Logo)"
+logical_id = "39d141a9-1101-41b9-8030-1d2a92eb80ae"
 
 [[outputs]]
 id = "X-H-YwToIdgd6mUImRhKj"
 uri = "file://attached_assets/pdfs_capacitacion/sst-presencial.pdf"
 type = "pdf"
 title = "SST — Induccion Presencial"
+logical_id = "7664a14f-3949-4074-a28e-91d890fcd35c"
 
 [[outputs]]
 id = "Y4Nl8p_urpNfA49gjMMmN"
 uri = "file://attached_assets/pdfs_capacitacion/sst-video.pdf"
 type = "pdf"
 title = "SST — Uso EPP - Video"
+logical_id = "72e2b385-1ee5-4532-b990-8733b396cddc"
 
 [[outputs]]
 id = "UlPYKwMkKMSPWOwZNhFn5"
 uri = "file://attached_assets/pdfs_capacitacion/sst-pdf.pdf"
 type = "pdf"
 title = "SST — Manejo Quimicos - PDF"
+logical_id = "9cb70b3b-f5f7-4bce-aec1-daacfe9b6435"
 
 [[outputs]]
 id = "sBWHv92b-KQCuPejeNYXU"
 uri = "file://attached_assets/pdfs_capacitacion/sst-formulario.pdf"
 type = "pdf"
 title = "SST — Trabajo en Alturas - Formulario"
+logical_id = "f8c5f957-cbef-40cb-a309-8ff6bb846678"
 
 [[outputs]]
 id = "jqkW1To2c9w0-OBrWqLdO"
 uri = "file://attached_assets/pdfs_capacitacion/sst-texto.pdf"
 type = "pdf"
 title = "SST — Primeros Auxilios - Texto"
+logical_id = "8f0d76f7-7785-42a4-8a01-fcbaff5003c2"
 
 [[outputs]]
 id = "n_UX5rWtWFXIbGTw8IFDF"
 uri = "file://attached_assets/pdfs_capacitacion/pesv-presencial.pdf"
 type = "pdf"
 title = "PESV — Seguridad Vial Presencial"
+logical_id = "c6729801-900b-4cff-8fbf-c703e17b0654"
 
 [[outputs]]
 id = "bq6bgPpUxpMlGUiErCwi3"
 uri = "file://attached_assets/pdfs_capacitacion/pesv-video.pdf"
 type = "pdf"
 title = "PESV — Manejo Defensivo - Video"
+logical_id = "9aea4acf-0f12-4588-b1c1-06ad7a2fdb2f"
 
 [[outputs]]
 id = "Nt7SJkFTJiWF2JPoQb62q"
 uri = "file://attached_assets/pdfs_capacitacion/pesv-pdf.pdf"
 type = "pdf"
 title = "PESV — Normas de Tránsito - PDF"
+logical_id = "73d53c65-58a5-472e-b2db-285e68cc2e49"
 
 [[outputs]]
 id = "Hhm1nAhwLwNPZ9Bnwl5bp"
 uri = "file://attached_assets/pdfs_capacitacion/pesv-formulario.pdf"
 type = "pdf"
 title = "PESV — Evaluación Primeros Auxilios"
+logical_id = "241eb42f-c7db-438e-9218-d159b88f9547"
 
 [[outputs]]
 id = "U_X_-fwhFv6bddiaEseLS"
 uri = "file://attached_assets/pdfs_capacitacion/pesv-texto.pdf"
 type = "pdf"
 title = "PESV — Fatiga y Somnolencia al Volante"
+logical_id = "09b89a59-2d3d-44d6-93b5-9aced4aac1c9"
 
 [[outputs]]
 id = "UgreAqg-nKQMJfAgF771Q"
 uri = "file://attached_assets/pdfs_capacitacion/pesv-eval-presencial.pdf"
 type = "pdf"
 title = "PESV — Seguridad Vial Presencial (desde admin)"
+logical_id = "4bec2dc3-71ae-4631-b532-5e4790cd5426"
 
 [[outputs]]
 id = "rf3G-50UXL1RAecSut77A"
 uri = "file://attached_assets/pdfs_capacitacion/pesv-eval-video.pdf"
 type = "pdf"
 title = "PESV — Manejo Defensivo - Video (desde admin)"
+logical_id = "15d2e070-4256-4a19-ab88-12f0ffe91c46"
 
 [[outputs]]
 id = "k9atKH3ONOVvi6VRESZb2"
 uri = "file://attached_assets/pdfs_capacitacion/pesv-eval-pdf.pdf"
 type = "pdf"
 title = "PESV — Normas de Tránsito - PDF (desde admin)"
+logical_id = "17cff14f-370a-43c0-8fe0-76bedf11dd60"
 
 [[outputs]]
 id = "MOmNwsRBlcSoq3Usr3Qf0"
 uri = "file://attached_assets/pdfs_capacitacion/pesv-eval-formulario.pdf"
 type = "pdf"
 title = "PESV — Evaluación Primeros Auxilios (desde admin)"
+logical_id = "72d64546-8ed8-4749-87a8-5e689066867b"
 
 [[outputs]]
 id = "De5gkbN84eOizNcRDZV-o"
 uri = "file://attached_assets/pdfs_capacitacion/pesv-eval-texto.pdf"
 type = "pdf"
 title = "PESV — Fatiga y Somnolencia al Volante (desde admin)"
+logical_id = "70442c8f-536c-45cc-993e-fbd68edc2a14"
 
 [[outputs]]
 id = "Q0TNrUXzJ8afIYz2EKAw2"
 uri = "file://folleto-sst-colombia.pdf"
 type = "pdf"
 title = "Folleto Comercial — SST Colombia"
+logical_id = "aa18c85d-3299-462a-8405-02bdc346a4b9"
 
 [[outputs]]
 id = "ZtrIXnUaD4cdSL8f1MnpZ"
 uri = "file://guia-llamadas-sst-colombia.pdf"
 type = "pdf"
 title = "Guía de Llamadas — 2 páginas exactas — SST Colombia"
+logical_id = "98f19e50-2728-4e2c-9744-e3b58d54a39a"
 
 [[outputs]]
 id = "FHWFBHiCEUkCYaiZWw_Fp"
 uri = "file://attached_assets/Portafolio_SST_Colombia.pdf"
 type = "pdf"
 title = "Portafolio SST Colombia — Verde corporativo"
+logical_id = "e580d3f7-dacc-4c10-a870-9c2a2946a84c"
 
 [[outputs]]
 id = "-TyD-oFL93zKU-RfgdRng"
 uri = "file://attached_assets/plan-mejoramiento-demo.pdf"
 type = "pdf"
 title = "Informe Unificado — Recomendaciones ARL y Plan de Mejoramiento"
+logical_id = "e9b15f6c-e0fd-4088-a08d-7a154cc72a4a"
 
 [[outputs]]
 id = "bW1qv2v13KNxJ1_HusatG"
 uri = "file://client/public/plan-mejoramiento-v2.pdf"
 type = "pdf"
 title = "Plan de Mejoramiento Consolidado — Vista previa"
+logical_id = "740de41c-c50a-4639-898a-0c52cfaecdc3"
 
 [[outputs]]
 id = "dhbJ6ZPyQmX24lfbg0JRc"
 uri = "file://propuesta-comercial.pdf"
 type = "pdf"
 title = "Propuesta Comercial SST — con Tarifa Profesional"
+logical_id = "b4ea27f9-1112-4d5e-aac1-1d7f9c305c83"
 
 [[outputs]]
 id = "8uM_XbF6eis6x9HhSwLT_"
 uri = "file://docs/cloud-books-issue-nit-9020363374.md"
 type = "text"
 title = "Reporte para Cloud Books - NIT 9020363374"
+logical_id = "ce739d02-fa45-4b04-a181-5ed567aca385"
 
 [[outputs]]
 id = "hX5xWRFacP6Vcqxnl2Qlo"
@@ -198,6 +228,7 @@ uri = "file://contrato-alianza.pdf"
 type = "pdf"
 title = "Contrato de Alianza — sin datos de VERTEX"
 description = "Todas las menciones a VERTEX GROUP, NIT y representante legal reemplazadas por JUAN / C.C. 0000."
+logical_id = "7a050944-9f27-4fdf-947b-b2507f192521"
 
 [[outputs]]
 id = "t3qbMvJ9D3SyidmFKIQYM"
@@ -205,3 +236,18 @@ uri = "file://alianza-sst.pdf"
 type = "pdf"
 title = "Alianza SST — Cláusula Décima actualizada"
 description = "Cláusula Décima reescrita con monitoreo de IPs, sesiones largas y acceso simultáneo."
+logical_id = "2a1523dd-8a9b-48ac-993f-363442de3483"
+
+[[outputs]]
+id = "bNjic13tn_--n4cmFEczY"
+uri = "file://documents/cotizacion-transicion-sst-pesv-transportes-limicio.pdf"
+type = "pdf"
+title = "Cotización estandarizada — Transportes Limicio"
+description = "PDF actualizado con 8 horas de capacitación, tarifa de $58.364 por hora equivalente a un día de trabajo, reemplazo operativo del LSO Hernán Valencia y total de $555.625 IVA incluido."
+logical_id = "8eb8e2c8-77cb-43df-be33-133530143b28"
+content_hash = "sha256:02d7b1df17ba5acc7cc6d6dd59740117994cce1b1ad43744f66fc36269446b7d"
+size = 6325
+mtime_ms = 1788882241478
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/8eb8e2c8-77cb-43df-be33-133530143b28/984f13a6-45dc-4905-b834-a3eaf192c02e"
+storage_version_token = "1788882347225482"
+content_type = "application/pdf"
