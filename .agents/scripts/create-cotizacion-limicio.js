@@ -134,8 +134,8 @@ const tableX = 54;
 const tableY = 204;
 const tableW = 487;
 const rowH = 34;
-const amountX = tableX + 366;
-const amountW = 103;
+const amountX = tableX + 376;
+const amountW = 93;
 doc.roundedRect(tableX, tableY, tableW, 34).fill(COLORS.green);
 doc.font("Helvetica-Bold").fontSize(9).fillColor(COLORS.white)
   .text("CONCEPTO", tableX + 14, tableY + 12)
@@ -148,9 +148,9 @@ doc.font("Helvetica").fontSize(10).fillColor(COLORS.text)
   })
   .text(money(subtotal), amountX, tableY + 50, { width: amountW, align: "right" });
 doc.font("Helvetica").fontSize(10).fillColor(COLORS.text)
-  .text("Subtotal", tableX + 300, tableY + 108, { width: 135, align: "right" })
+  .text("Subtotal", tableX + 275, tableY + 108, { width: 95, align: "right" })
   .text(money(subtotal), amountX, tableY + 108, { width: amountW, align: "right" });
-doc.text("IVA 19%", tableX + 300, tableY + 136, { width: 135, align: "right" })
+doc.text("IVA 19%", tableX + 275, tableY + 136, { width: 95, align: "right" })
   .text(money(iva), amountX, tableY + 136, { width: amountW, align: "right" });
 doc.roundedRect(tableX + 270, tableY + 166, 217, 42, 6).fill(COLORS.gold);
 doc.font("Helvetica-Bold").fontSize(12).fillColor(COLORS.green)
