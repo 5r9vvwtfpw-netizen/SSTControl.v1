@@ -980,8 +980,25 @@ const portalNavGroups = [
 
 function WorkerPortal() {
   const { user } = useAuth();
-  const [activeSection, setActiveSection] = useState("contrato");
+  const [location, setLocation] = useLocation();
+  const validPortalSections = new Set(portalNavGroups.flatMap(group => group.items.map(item => item.id)));
+  const sectionFromUrl = () => {
+    const requestedSection = new URLSearchParams(window.location.search).get("section");
+    return requestedSection && validPortalSections.has(requestedSection) ? requestedSection : "contrato";
+  };
+  const [activeSection, setActiveSection] = useState(sectionFromUrl);
   const [expandedBottomGroup, setExpandedBottomGroup] = useState<string | null>(null);
+
+  const navigateToSection = (section: string) => {
+    if (!validPortalSections.has(section)) return;
+    setActiveSection(section);
+    setLocation(`/portal-empleados?section=${encodeURIComponent(section)}`);
+  };
+
+  useEffect(() => {
+    const requestedSection = sectionFromUrl();
+    setActiveSection(requestedSection);
+  }, [location]);
 
   // Tipo para elecciones con fechas
   type EleccionPortal = {
@@ -1085,7 +1102,7 @@ function WorkerPortal() {
                     </div>
                   </div>
                   <Button 
-                    onClick={() => setActiveSection("elecciones-copasst")}
+                    onClick={() => navigateToSection("elecciones-copasst")}
                     className="bg-green-600 hover:bg-green-700"
                     data-testid="button-ir-elecciones-copasst"
                   >
@@ -1121,7 +1138,7 @@ function WorkerPortal() {
                     </div>
                   </div>
                   <Button 
-                    onClick={() => setActiveSection("elecciones-convivencia")}
+                    onClick={() => navigateToSection("elecciones-convivencia")}
                     className="bg-purple-600 hover:bg-purple-700"
                     data-testid="button-ir-elecciones-convivencia"
                   >
@@ -1178,7 +1195,7 @@ function WorkerPortal() {
                       return (
                         <DropdownMenuItem
                           key={item.id}
-                          onClick={() => setActiveSection(item.id)}
+                          onClick={() => navigateToSection(item.id)}
                           className={`cursor-pointer gap-3 ${isActive ? 'bg-accent' : ''}`}
                           data-testid={`nav-${item.id}`}
                         >
@@ -1252,7 +1269,7 @@ function WorkerPortal() {
                       <button
                         key={item.id}
                         onClick={() => {
-                          setActiveSection(item.id);
+                          navigateToSection(item.id);
                           setExpandedBottomGroup(null);
                         }}
                         className={`touch-manipulation flex flex-col items-center gap-1.5 p-3 rounded-xl text-xs transition-colors ${
@@ -1284,7 +1301,7 @@ function WorkerPortal() {
                   key={group.id}
                   onClick={() => {
                     if (group.items.length === 1) {
-                      setActiveSection(group.items[0].id);
+                      navigateToSection(group.items[0].id);
                       setExpandedBottomGroup(null);
                     } else {
                       setExpandedBottomGroup(isExpanded ? null : group.id);
@@ -2355,6 +2372,7 @@ function MisCapacitacionesTab() {
       apiRequest("POST", `/api/portal/capacitaciones/${asistenciaId}/confirmar`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/portal/mis-capacitaciones"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/portal/notification-count"] });
       toast({
         title: "Asistencia confirmada",
         description: "Ha confirmado su asistencia a esta capacitación",
@@ -3833,6 +3851,7 @@ function EleccionesCopasstTab() {
       setSelectedCandidatos([]);
       refetchMiVoto();
       refetchCandidatos();
+      queryClient.invalidateQueries({ queryKey: ["/api/portal/notification-count"] });
     },
     onError: (error: any) => {
       toast({ title: "Error", description: error.message || "Error al registrar el voto", variant: "destructive" });
@@ -4280,6 +4299,7 @@ function EleccionesConvivenciaTab() {
       setSelectedCandidatos([]);
       refetchMiVoto();
       refetchCandidatos();
+      queryClient.invalidateQueries({ queryKey: ["/api/portal/notification-count"] });
     },
     onError: (error: any) => {
       toast({ title: "Error", description: error.message || "Error al registrar el voto", variant: "destructive" });
@@ -4674,6 +4694,7 @@ function MisExamenesMedicosTab() {
       apiRequest("POST", `/api/portal/mis-examenes-medicos/${examId}/confirmar-lectura`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/portal/mis-examenes-medicos"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/portal/notification-count"] });
       toast({
         title: "Lectura confirmada",
         description: "Ha confirmado la lectura de este examen médico",
@@ -5333,6 +5354,7 @@ function MisCapacitacionesPesvTab() {
       apiRequest("POST", `/api/portal/pesv-capacitaciones/${attendeeId}/confirmar`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/portal/worker/pesv-capacitaciones"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/portal/notification-count"] });
       toast({ title: "Asistencia confirmada", description: "Ha confirmado su asistencia a la capacitación PESV." });
     },
     onError: (err: any) => {
@@ -5721,6 +5743,7 @@ function InspeccionVehiculoPortalTab() {
       setResultadoEnvio(data.result);
       setEnviadoFecha(getTodayDateString());
       queryClient.invalidateQueries({ queryKey: ["/api/portal/mis-inspecciones-vehiculo"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/portal/notification-count"] });
       toast({
         title: data.result === 'apto' ? "Vehículo APTO" : data.result === 'apto-con-observaciones' ? "Vehículo APTO con observaciones" : "Vehículo NO APTO",
         description: "Inspección registrada exitosamente.",
@@ -6059,6 +6082,7 @@ function EncuestaConductorPortalTab() {
       setEnviadoFecha(getTodayDateString());
       setResultadoEnvio(data.resultado);
       queryClient.invalidateQueries({ queryKey: ["/api/portal/mis-encuestas-conductor"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/portal/notification-count"] });
       toast({
         title: data.resultado === 'apto' ? "Encuesta enviada — APTO" : "Encuesta enviada — NO APTO",
         description: data.resultado === 'apto'

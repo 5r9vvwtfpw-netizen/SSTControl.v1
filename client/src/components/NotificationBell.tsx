@@ -1,6 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { Bell, MessageSquare, Clock, Mail, MailOpen, Archive, Send, CheckCheck } from "lucide-react";
+import {
+  Bell, MessageSquare, Clock, Mail, MailOpen, Archive, Send, CheckCheck,
+  GraduationCap, Heart, Monitor, Headphones, Vote, ClipboardList, Truck, ChevronRight,
+} from "lucide-react";
 import { playNotificationSound } from "@/lib/notification-sound";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -33,14 +36,35 @@ const priorityLabels: Record<string, string> = {
 type PortalNotificationCount = {
   messages: number;
   capacitaciones: number;
+  capacitacionesSst: number;
+  capacitacionesPesv: number;
   examenes: number;
   inducciones: number;
+  induccionesSst: number;
+  induccionesPesv: number;
   audiometrias: number;
   elecciones: number;
+  eleccionesCopasst: number;
+  eleccionesConvivencia: number;
   encuestaDiaria: number;
   inspeccionesVehiculo: number;
   total: number;
 };
+
+const workerPendingItems = [
+  { key: "messages", label: "Mensajes internos", description: "Mensajes que aún no has leído", path: "/mensajes-internos", icon: Mail },
+  { key: "capacitacionesSst", label: "Capacitaciones SST", description: "Confirma o completa tus capacitaciones", section: "capacitaciones", icon: GraduationCap },
+  { key: "capacitacionesPesv", label: "Capacitaciones PESV", description: "Confirma o completa tus capacitaciones viales", section: "capacitaciones-pesv", icon: GraduationCap },
+  { key: "examenes", label: "Exámenes médicos", description: "Confirma la lectura de tus resultados", section: "mis-examenes-medicos", icon: Heart },
+  { key: "induccionesSst", label: "Inducciones SST", description: "Completa tu inducción o reinducción", section: "inducciones-virtuales", icon: Monitor },
+  { key: "induccionesPesv", label: "Inducción PESV", description: "Completa tu inducción de seguridad vial", section: "induccion-pesv", icon: Monitor },
+  { key: "audiometrias", label: "Audiometrías", description: "Revisa tus audiometrías programadas", section: "mis-audiometrias", icon: Headphones },
+  { key: "eleccionesCopasst", label: "Elección COPASST", description: "Participa en la votación abierta", section: "elecciones-copasst", icon: Vote },
+  { key: "eleccionesConvivencia", label: "Elección de Convivencia", description: "Participa en la votación abierta", section: "elecciones-convivencia", icon: Vote },
+  { key: "encuestaDiaria", label: "Encuesta diaria", description: "Registra tu encuesta de conductor", section: "encuesta-conductor", icon: ClipboardList },
+  { key: "inspeccionesVehiculo", label: "Inspección vehicular", description: "Completa la inspección pendiente de hoy", section: "inspeccion-vehiculo", icon: Truck },
+] as const;
+
 export function NotificationBell({ simple = false }: { simple?: boolean }) {
   const { user } = useAuth();
   const [location, setLocation] = useLocation();
@@ -135,6 +159,10 @@ export function NotificationBell({ simple = false }: { simple?: boolean }) {
     ?.filter(m => m.status !== 'archived')
     .slice(0, 5) || [];
 
+  const actionableWorkerItems = workerPendingItems
+    .map(item => ({ ...item, count: portalCountData?.[item.key] ?? 0 }))
+    .filter(item => item.count > 0);
+
   const handleMarkAsRead = (e: React.MouseEvent, messageId: string) => {
     e.preventDefault();
     e.stopPropagation();
@@ -174,6 +202,17 @@ export function NotificationBell({ simple = false }: { simple?: boolean }) {
     setLocation(`/mensajes-internos?new=true&t=${Date.now()}`);
   };
 
+  const handleWorkerPendingClick = (item: typeof actionableWorkerItems[number]) => {
+    setIsOpen(false);
+    if ("path" in item && item.path) {
+      setLocation(item.path);
+      return;
+    }
+    if ("section" in item && item.section) {
+      setLocation(`/portal-empleados?section=${encodeURIComponent(item.section)}`);
+    }
+  };
+
   if (simple) {
     return (
       <Button
@@ -182,7 +221,7 @@ export function NotificationBell({ simple = false }: { simple?: boolean }) {
         className="relative text-white hover:bg-white/20"
         onClick={handleViewAll}
         data-testid="button-notification-bell"
-        aria-label="Ver mensajes internos"
+        aria-label={isWorkerRole ? "Ver acciones pendientes" : "Ver mensajes internos"}
       >
         <Bell className="h-5 w-5" />
         {unreadCount > 0 && (
@@ -225,19 +264,56 @@ export function NotificationBell({ simple = false }: { simple?: boolean }) {
         {/* Header */}
         <div className="flex items-center justify-between border-b p-3">
           <div className="flex items-center gap-2">
-            <MessageSquare className="h-4 w-4 text-primary" />
-            <span className="font-semibold">Mensajes Internos</span>
+            {isWorkerRole ? <Bell className="h-4 w-4 text-primary" /> : <MessageSquare className="h-4 w-4 text-primary" />}
+            <span className="font-semibold">{isWorkerRole ? "Acciones pendientes" : "Mensajes Internos"}</span>
           </div>
           {unreadCount > 0 && (
             <Badge variant="secondary" className="text-xs">
-              {unreadCount} sin leer
+              {unreadCount} {isWorkerRole ? (unreadCount === 1 ? "pendiente" : "pendientes") : "sin leer"}
             </Badge>
           )}
         </div>
 
-        {/* Messages List */}
+        {/* Pending actions for workers / internal messages for other roles */}
         <ScrollArea className="max-h-80">
-          {isLoading ? (
+          {isWorkerRole ? (
+            actionableWorkerItems.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
+                <CheckCheck className="h-8 w-8 mb-2 opacity-50" />
+                <p className="text-sm font-medium">Estás al día</p>
+                <p className="text-xs mt-1">No tienes acciones pendientes</p>
+              </div>
+            ) : (
+              <div className="divide-y">
+                {actionableWorkerItems.map((item) => {
+                  const ItemIcon = item.icon;
+                  return (
+                    <button
+                      type="button"
+                      key={item.key}
+                      onClick={() => handleWorkerPendingClick(item)}
+                      className="w-full p-3 text-left hover-elevate transition-colors"
+                      data-testid={`portal-pending-${item.key}`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="rounded-full bg-primary/10 p-2 text-primary">
+                          <ItemIcon className="h-4 w-4" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-sm font-medium">{item.label}</span>
+                            <Badge variant="secondary">{item.count}</Badge>
+                          </div>
+                          <p className="mt-0.5 text-xs text-muted-foreground">{item.description}</p>
+                        </div>
+                        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )
+          ) : isLoading ? (
             <div className="flex items-center justify-center py-8">
               <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
             </div>
