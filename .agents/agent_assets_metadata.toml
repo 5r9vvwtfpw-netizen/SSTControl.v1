@@ -251,3 +251,17 @@ mtime_ms = 1788895049368
 storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/8eb8e2c8-77cb-43df-be33-133530143b28/ae8135fd-62f5-4a88-86b9-5b4ce964667c"
 storage_version_token = "1788895054111594"
 content_type = "application/pdf"
+
+[[outputs]]
+id = "pu0MOouCyfMoLdDTnqY0Z"
+uri = "file://cotizacion-transicion-sst-pesv-transportes-limicio.pdf"
+type = "pdf"
+title = "Cotización Transportes Limicio — archivo en la raíz"
+description = "Versión final corregida, guardada en la raíz del proyecto."
+logical_id = "bef81038-b917-4633-993d-ab303d832f91"
+content_hash = "sha256:7a41d0929c684575a4a18efc070b88c8ab124e6d7d8c22acb37ef50329f23df9"
+size = 6245
+mtime_ms = 1788895108855
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/bef81038-b917-4633-993d-ab303d832f91/7773767b-611b-4288-b0ff-68740e0ff76c"
+storage_version_token = "1788895116730764"
+content_type = "application/pdf"
