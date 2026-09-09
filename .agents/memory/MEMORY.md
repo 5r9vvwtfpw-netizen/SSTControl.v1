@@ -36,3 +36,4 @@
 - [Worker acknowledgment instead of signature](worker-acknowledgment-policy.md) — inducciones y futuras actas de comités usan confirmación de lectura del empleado, no firma manuscrita en el portal.
 - [EPP delivery act grouping](epp-delivery-act-grouping.md) — un acta agrupa varias filas EPP; editar debe conservar IDs y metadatos de auditoría de cada elemento.
 - [DEMO-PRUEBA test retention](demo-prueba-test-retention.md) — conservar los datos creados en pruebas funcionales de esta empresa para revisión del usuario.
+- [Global menu route permissions](menu-route-permissions.md) — toda ruta nueva del menú PHVA debe registrarse en routePermissions o se oculta por defecto.
