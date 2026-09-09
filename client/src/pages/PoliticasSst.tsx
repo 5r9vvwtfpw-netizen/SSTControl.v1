@@ -161,18 +161,32 @@ export default function PoliticasSstPage() {
 
   // Obtener el responsable SST activo (el más reciente con status activo)
   const activeResponsible = useMemo(() => {
-    const activos = responsibleDesignations.filter((d) => d.status === "activo");
-    if (activos.length === 0 || !workers) return null;
-    // Ordenar por fecha de designación descendente para obtener el más reciente
-    activos.sort((a, b) => new Date(b.designationDate).getTime() - new Date(a.designationDate).getTime());
+    const activos = responsibleDesignations
+      .filter((d) => {
+        if (d.status !== "activo") return false;
+        const position = d.position.toLowerCase();
+        return position.includes("sg-sst") || position.includes("responsable sst");
+      })
+      .sort((a, b) => {
+        const byDesignationDate = new Date(b.designationDate).getTime() - new Date(a.designationDate).getTime();
+        if (byDesignationDate !== 0) return byDesignationDate;
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+    if (activos.length === 0) return null;
     const designacion = activos[0];
-    const worker = workers.find((w) => w.id === designacion.workerId);
-    if (!worker) return null;
+    const worker = workers?.find((w) => w.id === designacion.workerId);
+    const name =
+      worker?.name ||
+      designacion.externalLsoName ||
+      designacion.licenciaSstTitular;
+    if (!name) return null;
     return {
-      workerId: worker.id,
-      name: worker.name,
-      position: worker.position || "", // Usar posición del trabajador para que coincida con el Select
+      workerId: worker?.id || null,
+      name,
+      position: designacion.position,
       licenciaSst: designacion.licenciaSstNumero || "",
+      value: `${name} - ${designacion.position}`,
+      isExternal: !worker,
     };
   }, [responsibleDesignations, workers]);
 
@@ -354,10 +368,7 @@ export default function PoliticasSstPage() {
       const nextYearStr = nextYear.toLocaleDateString('en-CA', { timeZone: 'America/Bogota' });
       
       // Pre-poblar el responsable SST si existe una designación activa
-      // El valor del Select es "${worker.name} - ${worker.position}"
-      const responsableSstDefault = activeResponsible 
-        ? `${activeResponsible.name} - ${activeResponsible.position}` 
-        : "";
+      const responsableSstDefault = activeResponsible?.value || "";
       const licenciaSstDefault = activeResponsible?.licenciaSst || "";
       
       setFormData({
@@ -1032,7 +1043,15 @@ export default function PoliticasSstPage() {
                           <SelectValue placeholder="Seleccione responsable SST" />
                         </SelectTrigger>
                         <SelectContent>
-                          {workers?.map((worker) => (
+                          {activeResponsible && (
+                            <SelectItem value={activeResponsible.value}>
+                              {activeResponsible.name} - {activeResponsible.position}
+                              {activeResponsible.isExternal ? " (profesional SST designado)" : " (designado)"}
+                            </SelectItem>
+                          )}
+                          {workers
+                            ?.filter((worker) => `${worker.name} - ${worker.position}` !== activeResponsible?.value)
+                            .map((worker) => (
                             <SelectItem key={worker.id} value={`${worker.name} - ${worker.position}`}>
                               {worker.name} - {worker.position}
                             </SelectItem>
