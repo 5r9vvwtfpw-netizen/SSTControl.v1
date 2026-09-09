@@ -576,16 +576,22 @@ export default function InduccionVirtualPublica() {
           <Card className="text-center">
             <CardHeader>
               <CheckCircle2 className="h-20 w-20 text-green-500 mx-auto mb-4" />
-              <CardTitle className="text-2xl text-green-600">Inducción Completada</CardTitle>
+              <CardTitle className="text-2xl text-green-600">
+                {data.sesion.tipoInduccion === "pesv" ? "Inducción PESV Completada" : "Inducción Completada"}
+              </CardTitle>
               <CardDescription className="text-base">
-                Ha finalizado exitosamente la inducción de Seguridad y Salud en el Trabajo.
+                {data.sesion.tipoInduccion === "pesv"
+                  ? "Ha finalizado exitosamente la inducción del Plan Estratégico de Seguridad Vial."
+                  : "Ha finalizado exitosamente la inducción de Seguridad y Salud en el Trabajo."}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
                 <p className="text-green-800">
                   Su registro de inducción ha sido guardado automáticamente.
-                  El área de SST recibirá una notificación de su completación.
+                  {data.sesion.tipoInduccion === "pesv"
+                    ? "El área responsable del PESV recibirá una notificación de su finalización."
+                    : "El área de SST recibirá una notificación de su finalización."}
                 </p>
               </div>
               <a href="/portal-empleados">

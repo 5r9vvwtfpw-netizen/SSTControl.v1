@@ -37,10 +37,21 @@ const PLANTILLA_PESV: PlantillaPesv = {
       titulo: "¿Qué es el PESV? — Resolución 40595/2022",
       descripcion:
         "Introducción al Plan Estratégico de Seguridad Vial: obligatoriedad, objetivos y pilares según la Resolución 40595 de 2022 del Ministerio de Transporte.",
-      tipoContenido: "video",
+      tipoContenido: "texto",
       urlVideo: "",
       urlDocumento: "",
-      contenidoTexto: "",
+      contenidoTexto: `PLAN ESTRATÉGICO DE SEGURIDAD VIAL (PESV)
+
+El PESV es la herramienta de gestión mediante la cual la organización identifica, controla y reduce los riesgos asociados a sus desplazamientos laborales. Su metodología está definida por la Resolución 40595 de 2022 del Ministerio de Transporte.
+
+Sus objetivos principales son:
+• Prevenir muertes y lesiones graves en siniestros viales.
+• Promover comportamientos seguros de conductores, pasajeros, peatones y demás actores viales.
+• Mantener vehículos y equipos en condiciones seguras.
+• Planificar desplazamientos y rutas teniendo en cuenta sus riesgos.
+• Investigar incidentes y aplicar acciones de mejora.
+
+Todo trabajador debe cumplir la política de seguridad vial, participar en las actividades del PESV, reportar peligros e incidentes y abstenerse de conducir cuando exista una condición que comprometa la seguridad.`,
       duracionMinutos: 10,
       estado: "borrador",
       obligatorio: 1,
@@ -50,10 +61,30 @@ const PLANTILLA_PESV: PlantillaPesv = {
       titulo: "Factores de riesgo vial en el trabajo",
       descripcion:
         "Identificación de los principales factores de riesgo vial: velocidad, fatiga, distracción, alcohol/drogas, condiciones del vehículo y del entorno vial.",
-      tipoContenido: "video",
+      tipoContenido: "texto",
       urlVideo: "",
       urlDocumento: "",
-      contenidoTexto: "",
+      contenidoTexto: `FACTORES DE RIESGO VIAL EN EL TRABAJO
+
+Los siniestros viales pueden originarse por la interacción entre la persona, el vehículo y el entorno.
+
+Factores humanos:
+• Exceso de velocidad.
+• Fatiga, somnolencia o jornadas prolongadas.
+• Distracción por celular, alimentos u otros elementos.
+• Consumo de alcohol, medicamentos o sustancias psicoactivas.
+• Maniobras inseguras y desconocimiento de la ruta.
+
+Factores del vehículo:
+• Fallas en frenos, dirección, llantas, luces o cinturones.
+• Mantenimiento vencido o inspección preoperacional incompleta.
+• Carga mal distribuida o sin asegurar.
+
+Factores del entorno:
+• Lluvia, baja visibilidad, vías en mal estado y tráfico.
+• Señalización deficiente, obras o presencia de peatones.
+
+Antes de cada desplazamiento se debe evaluar la condición del conductor, inspeccionar el vehículo y revisar ruta, clima y tiempo disponible.`,
       duracionMinutos: 12,
       estado: "borrador",
       obligatorio: 1,
@@ -63,10 +94,27 @@ const PLANTILLA_PESV: PlantillaPesv = {
       titulo: "Política de seguridad vial de la empresa",
       descripcion:
         "Política corporativa de seguridad vial: compromisos, responsabilidades de trabajadores y empleador en la gestión del riesgo vial.",
-      tipoContenido: "documento",
+      tipoContenido: "texto",
       urlVideo: "",
       urlDocumento: "",
-      contenidoTexto: "",
+      contenidoTexto: `POLÍTICA DE SEGURIDAD VIAL
+
+La organización se compromete a proteger la vida y la integridad de todas las personas durante los desplazamientos relacionados con el trabajo.
+
+Responsabilidades del trabajador:
+• Cumplir las normas de tránsito y los límites de velocidad.
+• Usar siempre el cinturón de seguridad y exigirlo a los pasajeros.
+• No conducir bajo efectos de alcohol, sustancias psicoactivas o medicamentos que alteren la capacidad.
+• No manipular el celular mientras conduce.
+• Realizar la inspección preoperacional y reportar fallas.
+• Respetar los tiempos de descanso y detenerse ante señales de fatiga.
+• Informar incidentes, comparendos y condiciones inseguras.
+
+Responsabilidades de la empresa:
+• Proporcionar vehículos seguros y mantenimiento oportuno.
+• Capacitar y verificar la competencia de quienes conducen.
+• Planificar rutas, jornadas y controles de riesgo.
+• Investigar eventos viales y ejecutar acciones correctivas.`,
       duracionMinutos: 8,
       estado: "borrador",
       obligatorio: 1,
@@ -114,10 +162,22 @@ const PLANTILLA_PESV: PlantillaPesv = {
       titulo: "Protocolo de reporte de accidentes de tránsito",
       descripcion:
         "Pasos a seguir ante un accidente de tránsito en misión o in itinere: reporte a la empresa, ARL, autoridades y manejo de la documentación.",
-      tipoContenido: "documento",
+      tipoContenido: "texto",
       urlVideo: "",
       urlDocumento: "",
-      contenidoTexto: "",
+      contenidoTexto: `PROTOCOLO DE REPORTE DE ACCIDENTES DE TRÁNSITO
+
+Ante un siniestro vial relacionado con el trabajo:
+
+1. Deténgase en un lugar seguro, encienda las luces de emergencia y señalice la zona.
+2. Verifique el estado de las personas. Solicite ayuda al 123 cuando sea necesario y no mueva a una persona lesionada salvo peligro inminente.
+3. Informe de inmediato al responsable definido por la empresa.
+4. No abandone el lugar ni acepte acuerdos informales que impidan documentar el evento.
+5. Registre fotografías, ubicación, hora, placas, datos de involucrados, testigos y autoridades que atienden.
+6. Siga las instrucciones de la autoridad de tránsito, aseguradora y ARL.
+7. Entregue la documentación solicitada y participe en la investigación interna.
+
+El reporte oportuno permite activar la atención, conservar evidencia y prevenir nuevos eventos. La prioridad siempre es proteger la vida.`,
       duracionMinutos: 7,
       estado: "borrador",
       obligatorio: 1,
