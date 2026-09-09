@@ -1070,6 +1070,9 @@ const catalogoEppMaestro = [
   { id: "epp-cuerpo-004", category: "proteccion_corporal", name: "Bata de laboratorio", description: "Bata blanca para laboratorio y áreas limpias", material: "Algodón o poliéster", vidaUtil: "12 meses", frecuenciaCambio: "Según manchas permanentes", riesgosProtegidos: ["Salpicaduras", "Contaminación cruzada"], tallasDisponibles: ["S", "M", "L", "XL"], activo: true, esPersonalizado: false },
   { id: "epp-cuerpo-005", category: "proteccion_corporal", name: "Traje Tyvek desechable", description: "Overol desechable contra partículas y salpicaduras leves", normaAplicable: "EN 13034 Tipo 6", material: "Tyvek", vidaUtil: "1 uso", frecuenciaCambio: "Por procedimiento", riesgosProtegidos: ["Partículas", "Salpicaduras ligeras", "Contaminación"], tallasDisponibles: ["M", "L", "XL", "XXL"], activo: true, esPersonalizado: false },
   { id: "epp-cuerpo-006", category: "proteccion_corporal", name: "Delantal impermeable PVC", description: "Delantal largo impermeable para trabajo húmedo", material: "PVC", vidaUtil: "12 meses", frecuenciaCambio: "Según grietas o perforaciones", riesgosProtegidos: ["Agua", "Salpicaduras químicas", "Grasa"], tallasDisponibles: ["Unitalla"], activo: true, esPersonalizado: false },
+  { id: "epp-cuerpo-007", category: "proteccion_corporal", name: "Camiseta tipo polo", description: "Camiseta tipo polo para dotación y presentación corporativa", material: "Algodón, poliéster o mezcla", vidaUtil: "6-12 meses", frecuenciaCambio: "Según desgaste, manchas o rotura", riesgosProtegidos: ["Suciedad", "Exposición ambiental leve"], tallasDisponibles: ["S", "M", "L", "XL", "XXL"], activo: true, esPersonalizado: false },
+  { id: "epp-cuerpo-008", category: "proteccion_corporal", name: "Jeans con reflectivos", description: "Pantalón jeans de trabajo con bandas reflectivas de alta visibilidad", material: "Denim con cintas reflectivas", vidaUtil: "6-12 meses", frecuenciaCambio: "Según desgaste de la tela o pérdida de reflectividad", riesgosProtegidos: ["Baja visibilidad", "Suciedad", "Abrasión leve"], tallasDisponibles: ["28", "30", "32", "34", "36", "38", "40", "42", "44"], activo: true, esPersonalizado: false },
+  { id: "epp-cuerpo-009", category: "proteccion_corporal", name: "Jeans sin reflectivos", description: "Pantalón jeans de trabajo para dotación de uso general", material: "Denim", vidaUtil: "6-12 meses", frecuenciaCambio: "Según desgaste, rotura o pérdida de ajuste", riesgosProtegidos: ["Suciedad", "Abrasión leve"], tallasDisponibles: ["28", "30", "32", "34", "36", "38", "40", "42", "44"], activo: true, esPersonalizado: false },
   
   // =============== PROTECCIÓN CONTRA CAÍDAS ===============
   { id: "epp-caidas-001", category: "proteccion_caidas", name: "Arnés de cuerpo completo", description: "Arnés anticaídas con puntos de anclaje dorsal y frontal", normaAplicable: "ANSI Z359.11, NTC 2037", nivelProteccion: "Fuerza de frenado máx 8kN", material: "Poliéster con herrajes de acero", vidaUtil: "5 años (sin uso)", frecuenciaCambio: "Inspección semestral, cambio tras caída", riesgosProtegidos: ["Caída de altura"], tallasDisponibles: ["S/M", "L/XL", "XXL"], activo: true, esPersonalizado: false },
@@ -1141,14 +1144,14 @@ async function seedEppCatalog() {
       return;
     }
     
-    // Verificar si ya hay datos
+    // Insertar cualquier elemento maestro que aún no exista. No se retorna
+    // cuando el catálogo ya tiene datos porque pueden agregarse nuevos EPP.
     const existingCount = await db.select({ count: sql`count(*)` }).from(schema.eppCatalog);
     if (existingCount[0]?.count && Number(existingCount[0].count) > 0) {
       console.log(`✅ Catálogo EPP ya existe con ${existingCount[0].count} elementos`);
-      return;
     }
     
-    // Insertar catálogo de EPP
+    // Insertar catálogo de EPP sin sobrescribir registros existentes
     for (const epp of catalogoEppMaestro) {
       await db.insert(schema.eppCatalog).values(epp).onConflictDoNothing();
     }
