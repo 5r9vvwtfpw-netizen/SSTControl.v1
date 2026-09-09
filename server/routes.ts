@@ -50157,21 +50157,89 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         documentCode: "SST-EPP", logoBuffer,
       });
 
-      y = addLabeledField(doc, "Trabajador", row.worker?.name || "—", { y });
-      y = addLabeledField(doc, "Cédula", row.worker?.identificationNumber || "—", { y });
-      y = addLabeledField(doc, "Cargo", row.worker?.position || "—", { y });
-      y = addLabeledField(doc, "EPP Entregado", row.delivery.eppName, { y });
-      y = addLabeledField(doc, "Categoría", row.delivery.eppCategory, { y });
-      y = addLabeledField(doc, "Fecha de Entrega", formatDate(row.delivery.deliveryDate), { y });
-      y = addLabeledField(doc, "Cantidad", String(row.delivery.quantity || 1), { y });
-      if (row.delivery.size) y = addLabeledField(doc, "Talla", row.delivery.size, { y });
+      y = addSectionBar(doc, "Datos del trabajador", y);
+      y = addSimpleTable(doc, ["Trabajador", "Identificación", "Cargo"], [[
+        row.worker?.name || "—",
+        row.worker?.identificationNumber || "—",
+        row.worker?.position || "—",
+      ]], { y, columnWidths: [210, 140, 192] });
+
+      y = addSectionBar(doc, "Elemento entregado", y + 4);
+      y = addSimpleTable(doc, ["Elemento", "Categoría", "Fecha", "Cantidad", "Talla"], [[
+        row.delivery.eppName,
+        row.delivery.eppCategory,
+        formatDate(row.delivery.deliveryDate),
+        String(row.delivery.quantity || 1),
+        row.delivery.size || "—",
+      ]], { y, columnWidths: [180, 125, 90, 65, 82] });
+
       if (row.delivery.serialNumber) y = addLabeledField(doc, "No. Serie", row.delivery.serialNumber, { y });
       if (row.delivery.lotNumber) y = addLabeledField(doc, "No. Lote", row.delivery.lotNumber, { y });
       if (row.delivery.deliveryReason) y = addLabeledField(doc, "Motivo de Entrega", row.delivery.deliveryReason, { y });
       if (row.delivery.expirationDate) y = addLabeledField(doc, "Fecha de Vencimiento", formatDate(row.delivery.expirationDate), { y });
-      y = addLabeledField(doc, "Firma del Trabajador", row.delivery.workerSignature ? "Firmado" : "Pendiente", { y });
-      if (row.delivery.deliveredBy) y = addLabeledField(doc, "Entregado Por", row.delivery.deliveredBy, { y });
       if (row.delivery.observations) y = addLabeledField(doc, "Observaciones", row.delivery.observations, { y });
+
+      y = addSectionBar(doc, "Constancia de entrega", y + 4);
+      y = addParagraph(
+        doc,
+        "El trabajador declara haber recibido el elemento descrito en buen estado y haber recibido información sobre su uso, cuidado, almacenamiento y reposición. Se compromete a utilizarlo durante la jornada laboral y a informar oportunamente cualquier deterioro o pérdida.",
+        { y, fontSize: 8 },
+      );
+
+      y = checkPageBreak(doc, 135, y + 6);
+      y = addSectionBar(doc, "Firmas de recibido y entrega", y);
+
+      const signatureX = PDF_CONFIG.MARGIN;
+      const signatureGap = 12;
+      const signatureWidth = (doc.page.width - PDF_CONFIG.MARGIN * 2 - signatureGap) / 2;
+      const signatureHeight = 95;
+      const rightSignatureX = signatureX + signatureWidth + signatureGap;
+
+      doc
+        .lineWidth(0.7)
+        .strokeColor(PDF_COLORS.GREEN_PRIMARY)
+        .rect(signatureX, y, signatureWidth, signatureHeight)
+        .stroke()
+        .rect(rightSignatureX, y, signatureWidth, signatureHeight)
+        .stroke();
+
+      doc.font("Helvetica-Bold").fontSize(8).fillColor(PDF_COLORS.GREEN_DARK);
+      doc.text("RECIBÍ CONFORME — TRABAJADOR", signatureX + 8, y + 8, {
+        width: signatureWidth - 16,
+        align: "center",
+      });
+      doc.text("ENTREGADO POR", rightSignatureX + 8, y + 8, {
+        width: signatureWidth - 16,
+        align: "center",
+      });
+
+      const signatureLineY = y + 57;
+      doc
+        .strokeColor(PDF_COLORS.BLACK)
+        .moveTo(signatureX + 18, signatureLineY)
+        .lineTo(signatureX + signatureWidth - 18, signatureLineY)
+        .stroke()
+        .moveTo(rightSignatureX + 18, signatureLineY)
+        .lineTo(rightSignatureX + signatureWidth - 18, signatureLineY)
+        .stroke();
+
+      doc.font("Helvetica").fontSize(7).fillColor(PDF_COLORS.BLACK);
+      doc.text(row.worker?.name || "Nombre del trabajador", signatureX + 8, signatureLineY + 5, {
+        width: signatureWidth - 16,
+        align: "center",
+      });
+      doc.text(`C.C. ${row.worker?.identificationNumber || "________________"}`, signatureX + 8, signatureLineY + 17, {
+        width: signatureWidth - 16,
+        align: "center",
+      });
+      doc.text(row.delivery.deliveredBy || "Nombre y cargo de quien entrega", rightSignatureX + 8, signatureLineY + 5, {
+        width: signatureWidth - 16,
+        align: "center",
+      });
+      doc.text("Fecha: ____ / ____ / ______", rightSignatureX + 8, signatureLineY + 17, {
+        width: signatureWidth - 16,
+        align: "center",
+      });
 
       await addSignatureFooter(doc, signers, false);
       doc.end();
