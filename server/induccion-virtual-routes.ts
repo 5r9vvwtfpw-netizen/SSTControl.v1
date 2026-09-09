@@ -109,6 +109,32 @@ async function getEstablishedQuestions(companyId: string, tipoInduccion: Inducti
   }));
 }
 
+async function getEstablishedSstContents(companyId: string, tipoInduccion: "induccion" | "reinduccion") {
+  const [company] = await db.select({ riskLevel: schema.companies.riskLevel })
+    .from(schema.companies)
+    .where(eq(schema.companies.id, companyId))
+    .limit(1);
+  const riskLevel = company?.riskLevel || "I";
+
+  return getPlantillasPorNivel(riskLevel).contenidos.map((contenido, index) => ({
+    id: `sst-content-established-${riskLevel}-${index + 1}`,
+    companyId,
+    titulo: contenido.titulo,
+    descripcion: contenido.descripcion,
+    tipoContenido: contenido.tipoContenido,
+    urlVideo: contenido.urlVideo,
+    urlDocumento: contenido.urlDocumento,
+    contenidoTexto: contenido.contenidoTexto,
+    duracionMinutos: contenido.duracionMinutos,
+    estado: "publicado",
+    obligatorio: contenido.obligatorio,
+    orden: index + 1,
+    tipoInduccion,
+    createdAt: new Date(0),
+    updatedAt: new Date(0),
+  }));
+}
+
 async function getEstablishedSessionQuestions(sesion: schema.SesionInduccionVirtual) {
   const preguntas = await getEstablishedQuestions(
     sesion.companyId,
@@ -174,7 +200,12 @@ async function buildSessionSnapshot(companyId: string, tipoInduccion: InductionT
 async function getSessionContents(sesion: schema.SesionInduccionVirtual) {
   const snapshot = parseSessionSnapshot(sesion.datosAdicionales);
   if (snapshot) {
-    if (snapshot.contenidoIds.length === 0) return [];
+    if (snapshot.contenidoIds.length === 0) {
+      if (sesion.tipoInduccion === "induccion" || sesion.tipoInduccion === "reinduccion") {
+        return getEstablishedSstContents(sesion.companyId, sesion.tipoInduccion);
+      }
+      return [];
+    }
     const contenidos = await db.select()
       .from(schema.contenidosInduccion)
       .where(and(
@@ -191,7 +222,7 @@ async function getSessionContents(sesion: schema.SesionInduccionVirtual) {
 
   // Legacy sessions did not store a snapshot. Never attach content published
   // after the session was sent.
-  return db.select()
+  const contenidos = await db.select()
     .from(schema.contenidosInduccion)
     .where(and(
       eq(schema.contenidosInduccion.companyId, sesion.companyId),
@@ -202,6 +233,10 @@ async function getSessionContents(sesion: schema.SesionInduccionVirtual) {
       isRenderableInductionContent()
     ))
     .orderBy(schema.contenidosInduccion.orden);
+  if (contenidos.length === 0 && (sesion.tipoInduccion === "induccion" || sesion.tipoInduccion === "reinduccion")) {
+    return getEstablishedSstContents(sesion.companyId, sesion.tipoInduccion);
+  }
+  return contenidos;
 }
 
 async function getSessionQuestions(sesion: schema.SesionInduccionVirtual) {
@@ -257,7 +292,7 @@ export function registerInduccionVirtualRoutes(app: Express) {
       if (!companyId) {
         return res.status(401).send("No autorizado");
       }
-      
+
       const tipoInduccion = parseInductionType(req.query.tipo, "induccion");
       if (!tipoInduccion) {
         return res.status(400).json({ error: "Tipo de inducción inválido" });
@@ -405,6 +440,18 @@ export function registerInduccionVirtualRoutes(app: Express) {
         return res.status(400).json({ error: "Tipo de inducción inválido" });
       }
 
+      if (tipoInduccion === "induccion" || tipoInduccion === "reinduccion") {
+        const preguntas = await getEstablishedQuestions(companyId, tipoInduccion);
+        return res.json(preguntas.map(pregunta => ({
+          ...pregunta,
+          companyId,
+          contenidoId: null,
+          opciones: JSON.stringify(pregunta.opciones),
+          activa: 1,
+          createdAt: null,
+        })));
+      }
+
       const preguntas = await db.select()
         .from(schema.preguntasInduccion)
         .where(and(
@@ -412,7 +459,6 @@ export function registerInduccionVirtualRoutes(app: Express) {
           eq(schema.preguntasInduccion.tipoInduccion, tipoInduccion)
         ))
         .orderBy(schema.preguntasInduccion.orden);
-      
       res.json(preguntas);
     } catch (error: any) {
       console.error("Error fetching preguntas induccion:", error);
@@ -843,7 +889,7 @@ export function registerInduccionVirtualRoutes(app: Express) {
       const fechaExpiracion = new Date();
       fechaExpiracion.setDate(fechaExpiracion.getDate() + 7);
       const sessionSnapshot = await buildSessionSnapshot(companyId, tipoInduccion);
-      if (sessionSnapshot.contenidoIds.length === 0) {
+      if (tipoInduccion === "pesv" && sessionSnapshot.contenidoIds.length === 0) {
         return res.status(400).json({
           error: "No hay contenido de inducción publicado y válido para este tipo. Configure el contenido antes de asignarla.",
         });
@@ -914,7 +960,7 @@ export function registerInduccionVirtualRoutes(app: Express) {
       const [company] = await db.select().from(schema.companies).where(eq(schema.companies.id, companyId));
       const baseUrl = process.env.REPLIT_DEPLOYMENT_URL || process.env.APP_URL || 'https://sst-colombia.com';
       const sessionSnapshot = await buildSessionSnapshot(companyId, tipoInduccion);
-      if (sessionSnapshot.contenidoIds.length === 0) {
+      if (tipoInduccion === "pesv" && sessionSnapshot.contenidoIds.length === 0) {
         return res.status(400).json({
           error: "No hay contenido de inducción publicado y válido para este tipo. Configure el contenido antes del envío masivo.",
         });

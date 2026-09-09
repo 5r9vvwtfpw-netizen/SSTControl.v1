@@ -278,12 +278,6 @@ export default function ConfiguracionInduccion() {
       for (const contenido of plantillas.contenidos) {
         await apiRequest("POST", "/api/contenidos-induccion", contenido);
       }
-      for (const pregunta of plantillas.preguntas) {
-        await apiRequest("POST", "/api/preguntas-induccion", {
-          ...pregunta,
-          opciones: JSON.stringify(pregunta.opciones),
-        });
-      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/contenidos-induccion?tipo=${tipoInduccion}`] });
@@ -291,7 +285,7 @@ export default function ConfiguracionInduccion() {
       setPlantillaDialogOpen(false);
       toast({
         title: "Plantilla cargada exitosamente",
-        description: `Se crearon ${plantillas.contenidos.length} contenidos y ${plantillas.preguntas.length} preguntas de evaluación. Revise y publique los contenidos antes de enviar inducciones.`,
+        description: `Se crearon ${plantillas.contenidos.length} contenidos opcionales. La evaluación ya utiliza preguntas predeterminadas.`,
       });
       setActiveTab("contenidos");
     },
@@ -543,7 +537,7 @@ export default function ConfiguracionInduccion() {
               Cargar Plantilla por Nivel de Riesgo ARL
             </DialogTitle>
             <DialogDescription>
-              Carga automática de contenidos y preguntas de evaluación adaptados al nivel de riesgo de su empresa.
+              Carga contenidos complementarios adaptados al nivel de riesgo de su empresa. La evaluación ya está predeterminada.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -555,15 +549,15 @@ export default function ConfiguracionInduccion() {
                     <p className="text-2xl font-bold text-primary">{riskLevel}</p>
                   </div>
                   <div className="text-right text-sm text-muted-foreground">
-                    <p><strong>{plantillas.contenidos.length}</strong> contenidos educativos</p>
-                    <p><strong>{plantillas.preguntas.length}</strong> preguntas de evaluación</p>
+                    <p><strong>{plantillas.contenidos.length}</strong> contenidos complementarios</p>
+                    <p><strong>{plantillas.preguntas.length}</strong> preguntas predeterminadas</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             <div className="space-y-2">
-              <p className="text-sm font-medium">Contenidos que se crearán:</p>
+              <p className="text-sm font-medium">Contenidos opcionales que se crearán:</p>
               <ScrollArea className="h-40 border rounded-md p-3">
                 <ul className="space-y-1">
                   {plantillas.contenidos.map((c, i) => (
@@ -576,32 +570,18 @@ export default function ConfiguracionInduccion() {
               </ScrollArea>
             </div>
 
-            <div className="space-y-2">
-              <p className="text-sm font-medium">Preguntas de evaluación que se crearán:</p>
-              <ScrollArea className="h-40 border rounded-md p-3">
-                <ul className="space-y-1">
-                  {plantillas.preguntas.map((p, i) => (
-                    <li key={i} className="text-sm flex items-center gap-2">
-                      <GraduationCap className="h-3 w-3 text-primary shrink-0" />
-                      {p.pregunta}
-                    </li>
-                  ))}
-                </ul>
-              </ScrollArea>
-            </div>
-
-            {(contenidos.length > 0 || preguntas.length > 0) && (
+            {contenidos.length > 0 && (
               <Card className="bg-red-50 dark:bg-red-950/20 border-red-300 dark:border-red-700">
                 <CardContent className="pt-4">
                   <div className="flex items-start gap-3">
                     <AlertCircle className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" />
                     <div>
                       <p className="text-sm font-semibold text-red-700 dark:text-red-400 mb-1">
-                        Plantillas ya cargadas
+                        Contenidos ya cargados
                       </p>
                       <p className="text-sm text-red-600 dark:text-red-300">
-                        Ya tiene <strong>{contenidos.length}</strong> contenido(s) y <strong>{preguntas.length}</strong> pregunta(s) configuradas.
-                        Cargar nuevamente crearía duplicados. Si desea reiniciar desde la plantilla, elimine primero los contenidos y preguntas existentes.
+                        Ya tiene <strong>{contenidos.length}</strong> contenido(s) propio(s).
+                        Cargar nuevamente crearía duplicados. Si desea reiniciar desde la plantilla, elimine primero esos contenidos.
                       </p>
                     </div>
                   </div>
@@ -613,7 +593,7 @@ export default function ConfiguracionInduccion() {
               <CardContent className="pt-4">
                 <p className="text-sm text-amber-700 dark:text-amber-400">
                   Los contenidos se crearán en estado <strong>Borrador</strong>. Revise y personalice cada uno antes de publicarlos.
-                  Las preguntas se crearán activas pero puede editarlas según las necesidades de su empresa.
+                  Si no publica contenido propio, la inducción utilizará automáticamente el contenido y las preguntas predeterminadas.
                 </p>
               </CardContent>
             </Card>
@@ -624,7 +604,7 @@ export default function ConfiguracionInduccion() {
             </Button>
             <Button
               onClick={() => cargarPlantillaMutation.mutate()}
-              disabled={cargarPlantillaMutation.isPending || contenidos.length > 0 || preguntas.length > 0}
+              disabled={cargarPlantillaMutation.isPending || contenidos.length > 0}
               data-testid="button-confirmar-plantilla"
             >
               {cargarPlantillaMutation.isPending ? (
@@ -632,7 +612,7 @@ export default function ConfiguracionInduccion() {
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Cargando...
                 </>
-              ) : (contenidos.length > 0 || preguntas.length > 0) ? (
+              ) : contenidos.length > 0 ? (
                 <>
                   <AlertCircle className="h-4 w-4 mr-2" />
                   Ya hay plantillas cargadas
@@ -640,7 +620,7 @@ export default function ConfiguracionInduccion() {
               ) : (
                 <>
                   <Wand2 className="h-4 w-4 mr-2" />
-                  Cargar {plantillas.contenidos.length} contenidos y {plantillas.preguntas.length} preguntas
+                  Cargar {plantillas.contenidos.length} contenidos opcionales
                 </>
               )}
             </Button>
@@ -654,15 +634,15 @@ export default function ConfiguracionInduccion() {
         
         const camposSugeridos = [{
           campo: 'autoCrear',
-          valor: `${plantillas.contenidos.length} contenidos educativos y ${plantillas.preguntas.length} preguntas de evaluación según nivel de riesgo ARL ${riskLevel}`,
+           valor: `${plantillas.contenidos.length} contenidos educativos opcionales; la evaluación usa preguntas predeterminadas para riesgo ARL ${riskLevel}`,
           normativaReferencia: 'Decreto 1072/2015, Art. 2.2.4.6.11 | Resolución 0312/2019'
         }];
 
         const plantillasInduccion: PlantillaInfo[] = [
           {
             id: 'todo-induccion-sst',
-            nombre: `Crear todo automáticamente (${plantillas.contenidos.length} contenidos + ${plantillas.preguntas.length} preguntas)`,
-            descripcion: `Crea automáticamente todos los contenidos educativos y preguntas de evaluación requeridos para inducción SST según nivel de riesgo ARL ${riskLevel}. No requiere digitar nada.`,
+             nombre: `Cargar ${plantillas.contenidos.length} contenidos opcionales`,
+             descripcion: `Agrega contenidos educativos complementarios para la inducción SST. Las preguntas de evaluación son predeterminadas y no requieren configuración.`,
             campos: {
               tipo: 'auto-crear-todo',
             },
@@ -876,9 +856,9 @@ export default function ConfiguracionInduccion() {
             <Card>
               <CardContent className="py-12 text-center">
                 <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Sin contenidos</h3>
+                <h3 className="text-lg font-semibold mb-2">Contenido SST predeterminado</h3>
                 <p className="text-muted-foreground mb-4">
-                  Agregue videos, documentos o textos para la inducción virtual.
+                  La inducción puede enviarse ahora. El sistema utilizará el contenido y la evaluación predeterminados; agregar material propio es opcional.
                 </p>
               </CardContent>
             </Card>
@@ -945,7 +925,10 @@ export default function ConfiguracionInduccion() {
         </TabsContent>
 
         <TabsContent value="preguntas" className="space-y-4 mt-4">
-          <div className="flex justify-end">
+          <div className="rounded-md border bg-muted/40 p-4 text-sm text-muted-foreground">
+            Esta evaluación es predeterminada según el nivel de riesgo ARL de la empresa. No necesita crear, editar ni ordenar preguntas.
+          </div>
+          <div className="hidden">
             <Dialog open={preguntaDialogOpen} onOpenChange={(open) => {
               setPreguntaDialogOpen(open);
               if (!open) {
@@ -1067,7 +1050,7 @@ export default function ConfiguracionInduccion() {
                   <CardHeader className="py-4">
                     <div className="flex items-start justify-between">
                       <div className="flex items-start gap-3 flex-1">
-                        <div className="flex flex-col gap-0.5">
+                        <div className="hidden">
                           <Button
                             variant="ghost"
                             size="icon"
@@ -1111,21 +1094,8 @@ export default function ConfiguracionInduccion() {
                       </div>
                       <div className="flex items-center gap-2">
                         <Badge variant={pregunta.activa ? "default" : "secondary"}>
-                          {pregunta.activa ? "Activa" : "Inactiva"}
+                          Predeterminada
                         </Badge>
-                        <Button variant="ghost" size="icon" onClick={() => handleEditPregunta(pregunta)}>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            setItemToDelete({ type: "pregunta", id: pregunta.id });
-                            setDeleteDialogOpen(true);
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4 text-red-500" />
-                        </Button>
                       </div>
                     </div>
                   </CardHeader>
