@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -7,8 +7,9 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle2, Play, FileText, Video, BookOpen, AlertCircle, ArrowRight, ArrowLeft, Award, Loader2, PenLine } from "lucide-react";
+import { CheckCircle2, Play, FileText, Video, BookOpen, AlertCircle, ArrowRight, ArrowLeft, Award, Loader2 } from "lucide-react";
 
 type Contenido = {
   id: string;
@@ -55,14 +56,12 @@ type InduccionData = {
 export default function InduccionVirtualPublica() {
   const { token } = useParams<{ token: string }>();
   const { toast } = useToast();
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [isDrawing, setIsDrawing] = useState(false);
   
-  const [step, setStep] = useState<"bienvenida" | "contenido" | "evaluacion" | "firma" | "completado">("bienvenida");
+  const [step, setStep] = useState<"bienvenida" | "contenido" | "evaluacion" | "confirmacion" | "completado">("bienvenida");
   const [currentContentIndex, setCurrentContentIndex] = useState(0);
   const [contenidosVistos, setContenidosVistos] = useState<string[]>([]);
   const [respuestas, setRespuestas] = useState<Record<string, number>>({});
-  const [firmaBase64, setFirmaBase64] = useState<string>("");
+  const [lecturaConfirmada, setLecturaConfirmada] = useState(false);
 
   const { data, isLoading, error, refetch } = useQuery<InduccionData>({
     queryKey: ["/api/induccion-publica", token],
@@ -93,7 +92,7 @@ export default function InduccionVirtualPublica() {
   });
 
   const completarMutation = useMutation({
-    mutationFn: async (datos: { respuestas: Record<string, number>; firmaDigital: string }) => {
+    mutationFn: async (datos: { respuestas: Record<string, number>; lecturaConfirmada: boolean }) => {
       const res = await fetch(`/api/induccion-publica/${token}/completar`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -158,88 +157,18 @@ export default function InduccionVirtualPublica() {
     });
   };
 
-  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    setIsDrawing(true);
-    const rect = canvas.getBoundingClientRect();
-    
-    let clientX: number, clientY: number;
-    if ("touches" in e) {
-      clientX = e.touches[0].clientX;
-      clientY = e.touches[0].clientY;
-    } else {
-      clientX = e.clientX;
-      clientY = e.clientY;
-    }
-    
-    ctx.beginPath();
-    ctx.moveTo(clientX - rect.left, clientY - rect.top);
-  };
-
-  const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-    if (!isDrawing) return;
-    
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const rect = canvas.getBoundingClientRect();
-    
-    let clientX: number, clientY: number;
-    if ("touches" in e) {
-      clientX = e.touches[0].clientX;
-      clientY = e.touches[0].clientY;
-      e.preventDefault();
-    } else {
-      clientX = e.clientX;
-      clientY = e.clientY;
-    }
-    
-    ctx.lineWidth = 2;
-    ctx.lineCap = "round";
-    ctx.strokeStyle = "#1e3a5f";
-    ctx.lineTo(clientX - rect.left, clientY - rect.top);
-    ctx.stroke();
-  };
-
-  const stopDrawing = () => {
-    setIsDrawing(false);
-    const canvas = canvasRef.current;
-    if (canvas) {
-      setFirmaBase64(canvas.toDataURL("image/png"));
-    }
-  };
-
-  const limpiarFirma = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    setFirmaBase64("");
-  };
-
   const handleCompletarInduccion = () => {
-    if (!firmaBase64) {
+    if (!lecturaConfirmada) {
       toast({
-        title: "Firma requerida",
-        description: "Por favor firme en el recuadro antes de completar",
+        title: "Confirmación requerida",
+        description: "Confirme que revisó el contenido antes de completar la inducción",
         variant: "destructive",
       });
       return;
     }
     completarMutation.mutate({
       respuestas,
-      firmaDigital: firmaBase64,
+      lecturaConfirmada: true,
     });
   };
 
@@ -299,7 +228,7 @@ export default function InduccionVirtualPublica() {
   }
 
   const progresoTotal = data.contenidos.length + data.preguntas.length + 1;
-  const progresoActual = contenidosVistos.length + Object.keys(respuestas).length + (step === "firma" || step === "completado" ? 1 : 0);
+  const progresoActual = contenidosVistos.length + Object.keys(respuestas).length + (step === "confirmacion" || step === "completado" ? 1 : 0);
   const porcentajeProgreso = Math.round((progresoActual / progresoTotal) * 100);
   const noHayPreguntas = data.preguntas.length === 0;
   const tipoSesionLabel = data.sesion.tipoInduccion === "pesv"
@@ -438,7 +367,7 @@ export default function InduccionVirtualPublica() {
                     {data.preguntas.length > 0 && (
                       <li>Responda la evaluación ({data.preguntas.length} preguntas)</li>
                     )}
-                    <li>Firme digitalmente al finalizar</li>
+                    <li>Confirme la revisión del contenido al finalizar</li>
                     {data.preguntas.length > 0 && (
                       <li>Debe obtener mínimo 80% para aprobar</li>
                     )}
@@ -522,7 +451,7 @@ export default function InduccionVirtualPublica() {
               <div className="bg-orange-50 border border-orange-200 p-4 rounded-lg mb-4">
                 <p className="font-medium text-orange-800">Evaluación no disponible</p>
                 <p className="text-sm text-orange-700">
-                  No fue posible cargar las preguntas establecidas. No puede continuar a firma.
+                  No fue posible cargar las preguntas establecidas. No puede continuar a la confirmación.
                 </p>
               </div>
             )}
@@ -572,57 +501,44 @@ export default function InduccionVirtualPublica() {
                 Volver
               </Button>
               <Button
-                onClick={() => setStep("firma")}
+                onClick={() => setStep("confirmacion")}
                 disabled={noHayPreguntas || Object.keys(respuestas).length < data.preguntas.length}
-                data-testid="button-ir-firma"
+                data-testid="button-ir-confirmacion"
               >
-                Continuar a Firma
+                Continuar
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             </div>
           </div>
         )}
 
-        {step === "firma" && (
+        {step === "confirmacion" && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <PenLine className="h-5 w-5" />
-                Firma Digital
+                <CheckCircle2 className="h-5 w-5" />
+                Confirmación de finalización
               </CardTitle>
               <CardDescription>
-                Firme en el recuadro a continuación para confirmar que ha completado la inducción.
+                Revise sus datos y confirme que completó el contenido y la evaluación.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-2 bg-white">
-                <canvas
-                  ref={canvasRef}
-                  width={400}
-                  height={150}
-                  className="w-full touch-none cursor-crosshair"
-                  onMouseDown={startDrawing}
-                  onMouseMove={draw}
-                  onMouseUp={stopDrawing}
-                  onMouseLeave={stopDrawing}
-                  onTouchStart={startDrawing}
-                  onTouchMove={draw}
-                  onTouchEnd={stopDrawing}
-                />
-              </div>
-              <div className="flex justify-center">
-                <Button variant="outline" size="sm" onClick={limpiarFirma}>
-                  Limpiar Firma
-                </Button>
-              </div>
               <div className="bg-gray-50 p-4 rounded-lg text-sm space-y-2">
                 <p><strong>Nombre:</strong> {data.worker.nombre}</p>
                 <p><strong>Identificación:</strong> {data.worker.identificacion}</p>
                 <p><strong>Fecha:</strong> {new Date().toLocaleDateString("es-CO")}</p>
-                <p className="text-xs text-muted-foreground mt-4">
-                  Al firmar, declaro que he recibido, comprendido y acepto cumplir con las normas
-                  de seguridad y salud en el trabajo establecidas por la empresa.
-                </p>
+              </div>
+              <div className="flex items-start gap-3 rounded-lg border p-4">
+                <Checkbox
+                  id="confirmar-lectura"
+                  checked={lecturaConfirmada}
+                  onCheckedChange={(checked) => setLecturaConfirmada(checked === true)}
+                  data-testid="checkbox-confirmar-lectura"
+                />
+                <Label htmlFor="confirmar-lectura" className="cursor-pointer leading-relaxed">
+                  Confirmo que revisé el contenido de la inducción y respondí personalmente la evaluación.
+                </Label>
               </div>
             </CardContent>
             <CardFooter className="flex justify-between gap-4">
@@ -632,7 +548,7 @@ export default function InduccionVirtualPublica() {
               </Button>
               <Button
                 onClick={handleCompletarInduccion}
-                disabled={!firmaBase64 || completarMutation.isPending}
+                disabled={!lecturaConfirmada || completarMutation.isPending}
                 data-testid="button-completar-induccion"
               >
                 {completarMutation.isPending ? (

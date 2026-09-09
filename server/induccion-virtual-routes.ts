@@ -1030,7 +1030,7 @@ export function registerInduccionVirtualRoutes(app: Express) {
   app.post("/api/induccion-publica/:token/completar", async (req: Request, res: Response) => {
     try {
       const { token } = req.params;
-      const { respuestas, firmaDigital } = req.body;
+      const { respuestas, lecturaConfirmada } = req.body;
 
       const [sesion] = await db.select()
         .from(schema.sesionesInduccionVirtual)
@@ -1058,12 +1058,8 @@ export function registerInduccionVirtualRoutes(app: Express) {
         });
       }
 
-      if (
-        typeof firmaDigital !== "string" ||
-        !/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(firmaDigital) ||
-        firmaDigital.length > 2_000_000
-      ) {
-        return res.status(400).json({ error: "La firma digital es obligatoria y debe ser una imagen PNG válida" });
+      if (lecturaConfirmada !== true) {
+        return res.status(400).json({ error: "Debe confirmar la revisión del contenido para completar la inducción" });
       }
 
       let correctas = 0;
@@ -1124,8 +1120,6 @@ export function registerInduccionVirtualRoutes(app: Express) {
           progresoEvaluacion: JSON.stringify(respuestas || {}),
           puntajeEvaluacion: puntaje,
           aprobado,
-          firmaDigital,
-          fechaFirma: new Date(),
           ipFirma,
           userAgentFirma,
           registroInduccionId: registroInduccion.id,
@@ -1341,7 +1335,7 @@ export function registerInduccionVirtualRoutes(app: Express) {
       const sigW = 180;
       const sigH = 60;
 
-      // Columna izquierda — firma del trabajador
+      // Columna izquierda — firma histórica o confirmación digital
       if (sesion.firmaDigital) {
         try {
           // firmaDigital es data:image/png;base64,<datos>
@@ -1351,10 +1345,18 @@ export function registerInduccionVirtualRoutes(app: Express) {
         } catch {
           // Si falla, dejamos solo la línea
         }
+        doc.moveTo(50, sigY + sigH + 5).lineTo(50 + sigW, sigY + sigH + 5).strokeColor('#333').lineWidth(1).stroke();
+        doc.font('Helvetica').fontSize(8).fillColor('#444')
+          .text(`Firma histórica del trabajador\n${worker?.name || ''}`, 50, sigY + sigH + 10, { width: sigW, align: 'center' });
+      } else {
+        doc.roundedRect(50, sigY, sigW, sigH + 5, 4).fillAndStroke('#F0FDF4', '#86EFAC');
+        doc.font('Helvetica-Bold').fontSize(9).fillColor('#166534')
+          .text('CONFIRMACIÓN DIGITAL', 58, sigY + 15, { width: sigW - 16, align: 'center' });
+        doc.font('Helvetica').fontSize(8).fillColor('#444')
+          .text('Contenido revisado y evaluación completada', 58, sigY + 32, { width: sigW - 16, align: 'center' });
+        doc.font('Helvetica').fontSize(8).fillColor('#444')
+          .text(worker?.name || '', 50, sigY + sigH + 10, { width: sigW, align: 'center' });
       }
-      doc.moveTo(50, sigY + sigH + 5).lineTo(50 + sigW, sigY + sigH + 5).strokeColor('#333').lineWidth(1).stroke();
-      doc.font('Helvetica').fontSize(8).fillColor('#444')
-        .text(`Firma del Trabajador\n${worker?.name || ''}`, 50, sigY + sigH + 10, { width: sigW, align: 'center' });
 
       // Columna derecha — firma del LSO/Responsable SST
       const rightX = 50 + pageW - sigW;
@@ -1817,17 +1819,25 @@ export function registerInduccionVirtualRoutes(app: Express) {
       const sigW = 180;
       const sigH = 60;
 
-      // Columna izquierda — firma del trabajador
+      // Columna izquierda — firma histórica o confirmación digital
       if (sesion.firmaDigital) {
         try {
           const base64Data = (sesion.firmaDigital as string).replace(/^data:image\/\w+;base64,/, '');
           const sigBuf = Buffer.from(base64Data, 'base64');
           doc.image(sigBuf, 50, sigY, { width: sigW, height: sigH, fit: [sigW, sigH] });
         } catch {}
+        doc.moveTo(50, sigY + sigH + 5).lineTo(50 + sigW, sigY + sigH + 5).strokeColor('#333').lineWidth(1).stroke();
+        doc.font('Helvetica').fontSize(8).fillColor('#444')
+          .text(`Firma histórica del trabajador\n${worker?.name || ''}`, 50, sigY + sigH + 10, { width: sigW, align: 'center' });
+      } else {
+        doc.roundedRect(50, sigY, sigW, sigH + 5, 4).fillAndStroke('#F0FDF4', '#86EFAC');
+        doc.font('Helvetica-Bold').fontSize(9).fillColor('#166534')
+          .text('CONFIRMACIÓN DIGITAL', 58, sigY + 15, { width: sigW - 16, align: 'center' });
+        doc.font('Helvetica').fontSize(8).fillColor('#444')
+          .text('Contenido revisado y evaluación completada', 58, sigY + 32, { width: sigW - 16, align: 'center' });
+        doc.font('Helvetica').fontSize(8).fillColor('#444')
+          .text(worker?.name || '', 50, sigY + sigH + 10, { width: sigW, align: 'center' });
       }
-      doc.moveTo(50, sigY + sigH + 5).lineTo(50 + sigW, sigY + sigH + 5).strokeColor('#333').lineWidth(1).stroke();
-      doc.font('Helvetica').fontSize(8).fillColor('#444')
-        .text(`Firma del Trabajador\n${worker?.name || ''}`, 50, sigY + sigH + 10, { width: sigW, align: 'center' });
 
       // Columna derecha — firma del responsable PESV
       const rightX = 50 + pageW - sigW;

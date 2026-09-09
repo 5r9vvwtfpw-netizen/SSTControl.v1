@@ -33,3 +33,4 @@
 - [SST and PESV designation acts](sst-pesv-designation-acts.md) — son documentos distintos; el portal LSO debe mostrar y firmar ambos sin reutilizar títulos ni normativa.
 - [Training confirmation scope](training-confirmation-scope.md) — Confirmar en el Portal de Empleados solo confirma una capacitación programada; nunca depende de inducciones SST/PESV.
 - [Employee portal pending badge](employee-portal-pending-badge.md) — campana, PWA y Web Push cuentan obligaciones accionables del portal; Mensajes Internos nunca suma para trabajadores.
+- [Worker acknowledgment instead of signature](worker-acknowledgment-policy.md) — inducciones y futuras actas de comités usan confirmación de lectura del empleado, no firma manuscrita en el portal.
