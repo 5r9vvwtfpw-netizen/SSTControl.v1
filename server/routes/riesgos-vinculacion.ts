@@ -12,8 +12,11 @@ function getEffectiveCompanyId(req: any): string | null {
   const user = req.user;
   if (!user) return null;
   const lsoRoles = ['lso', 'lso_externo'];
-  if (lsoRoles.includes(user.role) && req.query.companyId) {
-    return req.query.companyId as string;
+  if (lsoRoles.includes(user.role)) {
+    return req.validatedLsoCompanyId || null;
+  }
+  if (user.role === "superadmin") {
+    return req.headers["x-company-id"] || req.query.companyId || user.adminCompanyId || user.companyId || null;
   }
   return user.adminCompanyId || user.companyId || null;
 }

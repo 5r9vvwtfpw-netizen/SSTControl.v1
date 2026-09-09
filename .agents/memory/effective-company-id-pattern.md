@@ -7,24 +7,13 @@ Roles like `superadmin`, `lso`, and `lso_externo` don't belong to a single compa
 
 **Why:** This was the root cause of a global bug where superadmin appeared "blocked" from many company modules across the app (billing, induction, subscription limits, stripe/wompi payment routes, etc.) — each route independently reimplemented the same wrong pattern.
 
-**How to apply:** Any route/middleware that needs "the company currently being viewed" must resolve it via a helper, not raw `req.user.companyId`:
+**How to apply:** Any route/middleware that needs "the company currently being viewed" must resolve it via a helper, not raw `req.user.companyId`. Superadmin may select any company. LSO and LSO externo may select only a company backed by an active professional assignment; validate once in middleware and make downstream resolvers consume that validated value.
 
-```ts
-function getEffectiveCompanyId(req: any): string | null {
-  const globalRoles = ['superadmin', 'lso', 'lso_externo'];
-  if (globalRoles.includes(req.user?.role)) {
-    const headerCompanyId = req.headers['x-company-id'] as string | undefined;
-    const queryCompanyId = req.query?.companyId as string | undefined;
-    if (headerCompanyId) return headerCompanyId;
-    if (queryCompanyId) return queryCompanyId;
-  }
-  return req.user?.companyId || null;
-}
-```
+The frontend must send `X-Company-Id` header (or `?companyId=` query) when a global-role user is viewing a specific company. If both selectors are present, reject contradictory values rather than validating one and letting a downstream handler consume the other.
 
-The frontend must send `X-Company-Id` header (or `?companyId=` query) when a global-role user is viewing a specific company (e.g. via the "Company Vault" pattern used in pages like PESV Evaluaciones / EvaluacionesSst).
+Some route modules duplicate their own resolver. They must never reinterpret raw headers, query parameters, or body fields for LSO after middleware validation; consume the validated context exclusively.
 
-This helper is duplicated locally in several files (`server/routes.ts`, `server/routes/billing.ts`, `server/middleware/subscription-limits.ts`, `server/induccion-virtual-routes.ts`, `server/routes/stripe.ts`, `server/routes/wompi.ts`, `server/routes/licensed-professionals.ts`, `server/routes/lso-directory-external.ts`) rather than centralized — when adding new routes, copy this exact pattern rather than reading `req.user.companyId` directly. Some older files use a slightly different role list (e.g. `['superadmin','admin','asesor']` or a `hasGlobalAccess()` helper) — match whatever pattern already exists in that file if present.
+**Why:** Trusting raw company selectors for LSO created a tenant-IDOR risk: a professional could request a company to which they had no active assignment, or validate one selector while a handler consumed another.
 
 For global list endpoints, "global role" must not automatically mean "return all companies." If an effective company context is present, use the company-scoped query; only return the global list when no company context was supplied.
 

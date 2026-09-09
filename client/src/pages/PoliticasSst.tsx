@@ -191,7 +191,7 @@ export default function PoliticasSstPage() {
   }, [responsibleDesignations, workers]);
 
   useEffect(() => {
-    if (!dialogOpen || !activeResponsible) return;
+    if (!dialogOpen || editingPolitica || !activeResponsible) return;
     setFormData((current) => {
       if (
         current.responsableSst === activeResponsible.value &&
@@ -207,7 +207,7 @@ export default function PoliticasSstPage() {
         elaboradoPorId: activeResponsible.workerId || "",
       };
     });
-  }, [dialogOpen, activeResponsible]);
+  }, [dialogOpen, editingPolitica, activeResponsible]);
 
   // Filtrar trabajadores que tienen contratos activos
   const workersConContrato = useMemo(() => {
@@ -273,7 +273,7 @@ export default function PoliticasSstPage() {
         }),
         // Convert empty strings to null for optional fields
         licenciaSst: data.licenciaSst?.trim() || null,
-        elaboradoPorId: activeResponsible?.workerId || null,
+        elaboradoPorId: data.elaboradoPorId?.trim() || null,
         autorizadoPorId: data.autorizadoPorId?.trim() || null,
         aprobadoPorId: data.aprobadoPorId?.trim() || null,
         observaciones: data.observaciones?.trim() || null,
@@ -1104,7 +1104,7 @@ export default function PoliticasSstPage() {
                         <Input
                           id="elaboradoPorAsignado"
                           data-testid="input-elaborado-por-lso-asignado"
-                          value={activeResponsible?.value || ""}
+                          value={formData.responsableSst}
                           readOnly
                           placeholder="No hay un Responsable del SG-SST designado"
                           className="bg-muted"

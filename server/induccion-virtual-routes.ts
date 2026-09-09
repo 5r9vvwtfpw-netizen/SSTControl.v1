@@ -9,6 +9,7 @@ import { objectStorageService } from "./objectStorage";
 import { getPlantillaPesv } from "../client/src/data/induccion-plantillas-pesv";
 import { getPlantillasPorNivel } from "../client/src/data/induccion-plantillas-arl";
 import { sendWorkerPortalPush } from "./services/web-push";
+import { requireAnyPermission } from "./auth";
 
 const VALID_INDUCTION_TYPES = ["induccion", "reinduccion", "pesv"] as const;
 type InductionType = typeof VALID_INDUCTION_TYPES[number];
@@ -65,12 +66,14 @@ function generateToken(): string {
 }
 
 function getEffectiveCompanyId(req: any): string | null {
-  const globalRoles = ['superadmin', 'lso', 'lso_externo'];
-  if (globalRoles.includes(req.user?.role)) {
+  if (req.user?.role === "superadmin") {
     const headerCompanyId = req.headers['x-company-id'] as string | undefined;
     const queryCompanyId = req.query?.companyId as string | undefined;
     if (headerCompanyId) return headerCompanyId;
     if (queryCompanyId) return queryCompanyId;
+  }
+  if (req.user?.role === "lso" || req.user?.role === "lso_externo") {
+    return req.validatedLsoCompanyId || null;
   }
   return req.user?.companyId || null;
 }
@@ -219,6 +222,27 @@ export function registerInduccionVirtualRoutes(app: Express) {
     return;
   }
   console.log("[Inducción Virtual Plugin] Habilitado");
+
+  const inductionAdminPrefixes = [
+    "/api/contenidos-induccion",
+    "/api/preguntas-induccion",
+    "/api/sesiones-induccion-virtual",
+    "/api/sesiones-induccion-pesv",
+  ];
+  const requireInductionView = requireAnyPermission([
+    "sst_management:view",
+    "road_safety_trainings:view",
+  ]);
+  const requireInductionWrite = requireAnyPermission([
+    "sst_management:create",
+    "sst_management:edit",
+    "road_safety_trainings:create",
+    "road_safety_trainings:edit",
+  ]);
+  app.use(inductionAdminPrefixes, (req, res, next) => {
+    const guard = req.method === "GET" ? requireInductionView : requireInductionWrite;
+    return guard(req, res, next);
+  });
 
   // ============================================================================
   // CONTENIDOS DE INDUCCIÓN - CRUD para administradores
@@ -1612,6 +1636,11 @@ export function registerInduccionVirtualRoutes(app: Express) {
       const allWorkers = await db.select().from(schema.workers)
         .where(eq(schema.workers.companyId, companyId));
       const sessionSnapshot = await buildSessionSnapshot(companyId, "pesv");
+      if (sessionSnapshot.contenidoIds.length === 0) {
+        return res.status(400).json({
+          error: "No hay contenido de inducción PESV publicado y válido. Configure el contenido antes de asignarla.",
+        });
+      }
 
       let enviados = 0; let errores = 0;
       for (const worker of allWorkers) {

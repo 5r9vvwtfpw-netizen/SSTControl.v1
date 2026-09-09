@@ -510,10 +510,10 @@ export default function PesvConductores() {
 
   const handleDownloadTemplate = async () => {
     try {
-      const url = user?.companyId
-        ? `/api/drivers/template/download?companyId=${encodeURIComponent(user.companyId)}`
-        : "/api/drivers/template/download";
-      const response = await fetch(url, { credentials: "include" });
+      const response = await fetch("/api/drivers/template/download", {
+        credentials: "include",
+        headers: activeCompanyId ? { "X-Company-Id": activeCompanyId } : undefined,
+      });
       if (!response.ok) {
         throw new Error(await response.text() || "Error al descargar la plantilla");
       }
@@ -540,10 +540,10 @@ export default function PesvConductores() {
     mutationFn: async (file: File) => {
       const formDataUpload = new FormData();
       formDataUpload.append("file", file);
-      const query = user?.companyId ? `?companyId=${encodeURIComponent(user.companyId)}` : "";
-      const response = await fetch(`/api/drivers/import${query}`, {
+      const response = await fetch("/api/drivers/import", {
         method: "POST",
         credentials: "include",
+        headers: activeCompanyId ? { "X-Company-Id": activeCompanyId } : undefined,
         body: formDataUpload,
       });
       if (!response.ok) {

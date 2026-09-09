@@ -1509,8 +1509,8 @@ function getEffectiveCompanyId(req: Request): string {
     return req.mechanicEffectiveCompanyId;
   }
   
-  // For superadmins and LSO professionals (both internal and external), check for X-Company-Id header first
-  if (user.role === 'superadmin' || user.role === 'lso' || user.role === 'lso_externo') {
+  // Superadmins can select any company context.
+  if (user.role === 'superadmin') {
     const headerCompanyId = req.headers['x-company-id'];
     if (headerCompanyId && typeof headerCompanyId === 'string') {
       return headerCompanyId;
@@ -1520,8 +1520,12 @@ function getEffectiveCompanyId(req: Request): string {
     if (queryCompanyId && typeof queryCompanyId === 'string') {
       return queryCompanyId;
     }
-    // Fallback to user's companyId if no header or query
     return user.companyId || "";
+  }
+
+  // LSO contexts are set only by the assignment-validation middleware below.
+  if (user.role === 'lso' || user.role === 'lso_externo') {
+    return (req as any).validatedLsoCompanyId || "";
   }
   
   // For regular users, use their assigned companyId
@@ -1536,6 +1540,10 @@ function getEffectiveCompanyId(req: Request): string {
  */
 function hasSupportAccess(role: UserRole): boolean {
   return role === 'superadmin' || role === 'soporte';
+}
+
+function isLsoSupportUser(role: UserRole): boolean {
+  return role === 'lso' || role === 'lso_externo';
 }
 
 /**
@@ -1571,6 +1579,59 @@ function canAccessMedicalData(role: UserRole): boolean {
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
   setupAuth(app);
+
+  // Validate tenant selection once for every subsequent API route. LSO users
+  // may only act in companies where they have an active assignment.
+  app.use("/api", async (req, res, next) => {
+    const user = req.user;
+    if (!user || (user.role !== "lso" && user.role !== "lso_externo")) {
+      return next();
+    }
+
+    // These portal endpoints derive the allowed companies from the LSO's own
+    // assignments and are needed before a company context can be selected.
+    const contextBootstrapPrefixes = [
+      "/portal-licenciado",
+      "/support-tickets",
+      "/internal-messages",
+    ];
+    if (contextBootstrapPrefixes.some((prefix) =>
+      req.path === prefix || req.path.startsWith(`${prefix}/`)
+    )) {
+      return next();
+    }
+
+    const headerCompanyId = req.headers["x-company-id"];
+    const queryCompanyId = req.query.companyId;
+    if (
+      typeof headerCompanyId === "string" &&
+      typeof queryCompanyId === "string" &&
+      headerCompanyId !== queryCompanyId
+    ) {
+      return res.status(400).json({ error: "El contexto de empresa de la solicitud es contradictorio" });
+    }
+    const selectedCompanyId =
+      (typeof headerCompanyId === "string" && headerCompanyId) ||
+      (typeof queryCompanyId === "string" && queryCompanyId) ||
+      user.companyId ||
+      "";
+
+    if (!selectedCompanyId) {
+      return res.status(403).json({ error: "Seleccione una empresa asignada" });
+    }
+
+    try {
+      if (!(await assertLsoAssignedToCompany(user.id, selectedCompanyId))) {
+        return res.status(403).json({ error: "No tiene una asignación activa para esta empresa" });
+      }
+    } catch (error) {
+      return next(error);
+    }
+
+    (req as any).validatedLsoCompanyId = selectedCompanyId;
+    next();
+  });
+
   app.use(mechanicCompanyContextMiddleware);
   registerMechanicAccessRoutes(app);
 
@@ -9681,7 +9742,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const XLSX = await import("xlsx");
       const workbook = XLSX.read(req.file.buffer, { type: "buffer", cellDates: false });
-      const sheetName = workbook.SheetNames[0];
+      const sheetName =
+        workbook.SheetNames.find((name) =>
+          name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim() === "vehiculos"
+        ) || workbook.SheetNames[0];
       if (!sheetName) {
         return res.status(400).json({ error: "El archivo no contiene ninguna hoja" });
       }
@@ -44838,7 +44902,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
           } catch { return { ...t, userRole: 'unknown' }; }
         }));
         res.json(enrichedTickets);
-      } else if (userRole === 'lso') {
+      } else if (isLsoSupportUser(userRole as UserRole)) {
         const allTickets = await db.select().from(schema.supportTickets)
           .where(eq(schema.supportTickets.userId, userId))
           .orderBy(desc(schema.supportTickets.createdAt));
@@ -44893,7 +44957,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const userId = req.user!.id;
       
       if (!hasSupportAccess(userRole)) {
-        if (userRole === 'lso') {
+        if (isLsoSupportUser(userRole)) {
           if (ticket.userId !== userId) {
             return res.status(403).send("No tiene permisos para ver este ticket");
           }
@@ -45052,7 +45116,10 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const userCompanyId = user.companyId;
       
       // Solo el dueño del ticket o staff de soporte puede subir archivos
-      if (!hasSupportAccess(user.role) && userCompanyId !== ticket.companyId) {
+      const canAccessTicket = isLsoSupportUser(user.role)
+        ? ticket.userId === user.id
+        : userCompanyId === ticket.companyId;
+      if (!hasSupportAccess(user.role) && !canAccessTicket) {
         cleanupFiles();
         return res.status(403).send("No tiene permisos para subir archivos a este ticket");
       }
@@ -45118,8 +45185,12 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const userCompanyId = user.companyId;
       const userId = user.id;
       
-      // Superadmin/soporte can update any ticket, users can only update their company's
-      if (!hasSupportAccess(userRole) && userCompanyId !== ticket.companyId) {
+      // Support can update any ticket; LSO users only their own; other users
+      // remain scoped to tickets from their company.
+      const canAccessTicket = isLsoSupportUser(userRole)
+        ? ticket.userId === userId
+        : userCompanyId === ticket.companyId;
+      if (!hasSupportAccess(userRole) && !canAccessTicket) {
         return res.status(403).send("No tiene permisos para actualizar este ticket");
       }
 
@@ -45319,7 +45390,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       
       // Check permissions: support staff can respond to all, LSOs only their own, others only company tickets
       if (!hasSupportAccess(userRole)) {
-        if (userRole === 'lso') {
+        if (isLsoSupportUser(userRole)) {
           if (ticket.userId !== userId) {
             return res.status(403).send("No tiene permisos para responder a este ticket");
           }
