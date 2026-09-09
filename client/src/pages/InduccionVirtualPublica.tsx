@@ -231,6 +231,7 @@ export default function InduccionVirtualPublica() {
   const progresoActual = contenidosVistos.length + Object.keys(respuestas).length + (step === "confirmacion" || step === "completado" ? 1 : 0);
   const porcentajeProgreso = Math.round((progresoActual / progresoTotal) * 100);
   const noHayPreguntas = data.preguntas.length === 0;
+  const noHayContenidos = data.contenidos.length === 0;
   const tipoSesionLabel = data.sesion.tipoInduccion === "pesv"
     ? "Inducción PESV"
     : data.sesion.tipoInduccion === "induccion"
@@ -344,14 +345,18 @@ export default function InduccionVirtualPublica() {
                 <p className="text-sm"><strong>Identificación:</strong> {data.worker.identificacion}</p>
                 <p className="text-sm"><strong>Cargo:</strong> {data.worker.cargo}</p>
               </div>
-              {noHayPreguntas ? (
+              {noHayContenidos || noHayPreguntas ? (
                 <div className="bg-orange-50 border border-orange-200 p-4 rounded-lg">
                   <div className="flex items-start gap-3">
                     <AlertCircle className="h-5 w-5 text-orange-500 mt-0.5 flex-shrink-0" />
                     <div>
-                      <p className="text-sm font-medium text-orange-800 mb-1">Evaluación no disponible</p>
+                      <p className="text-sm font-medium text-orange-800 mb-1">
+                        {noHayContenidos ? "Contenido de inducción no disponible" : "Evaluación no disponible"}
+                      </p>
                       <p className="text-sm text-orange-700">
-                        No fue posible cargar las preguntas establecidas para esta evaluación.
+                        {noHayContenidos
+                          ? "Esta sesión no tiene contenido de inducción publicado y válido."
+                          : "No fue posible cargar las preguntas establecidas para esta evaluación."}
                         Por favor contacte al responsable PESV o SST antes de continuar.
                       </p>
                     </div>
@@ -362,7 +367,7 @@ export default function InduccionVirtualPublica() {
                   <p className="text-sm font-medium text-yellow-800 mb-2">Instrucciones:</p>
                   <ul className="text-sm text-yellow-700 space-y-1 list-disc list-inside">
                     {data.contenidos.length > 0 && (
-                      <li>Revise todo el contenido de capacitación ({data.contenidos.length} módulos)</li>
+                      <li>Revise todo el contenido propio de la inducción ({data.contenidos.length} módulos)</li>
                     )}
                     {data.preguntas.length > 0 && (
                       <li>Responda la evaluación ({data.preguntas.length} preguntas)</li>
@@ -379,7 +384,7 @@ export default function InduccionVirtualPublica() {
               <Button 
                 className="w-full" 
                 size="lg"
-                disabled={noHayPreguntas}
+                disabled={noHayContenidos || noHayPreguntas}
                 onClick={() => setStep(data.contenidos.length > 0 ? "contenido" : "evaluacion")}
                 data-testid="button-comenzar-induccion"
               >

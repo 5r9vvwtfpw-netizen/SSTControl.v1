@@ -14,18 +14,40 @@ const VALID_INDUCTION_TYPES = ["induccion", "reinduccion", "pesv"] as const;
 type InductionType = typeof VALID_INDUCTION_TYPES[number];
 
 function isNotTrainingModuleContent() {
-  return sql`NOT EXISTS (
-    SELECT 1
-    FROM trainings training
-    WHERE training.company_id = ${schema.contenidosInduccion.companyId}
-      AND NULLIF(TRIM(training.content_url), '') IS NOT NULL
-      AND TRIM(training.content_url) = TRIM(
-        COALESCE(
-          NULLIF(${schema.contenidosInduccion.urlVideo}, ''),
-          NULLIF(${schema.contenidosInduccion.urlDocumento}, ''),
-          ''
-        )
-      )
+  const inductionUrl = sql`TRIM(
+    COALESCE(
+      NULLIF(${schema.contenidosInduccion.urlVideo}, ''),
+      NULLIF(${schema.contenidosInduccion.urlDocumento}, ''),
+      ''
+    )
+  )`;
+
+  return sql`
+    NOT EXISTS (
+      SELECT 1
+      FROM trainings training
+      WHERE training.company_id = ${schema.contenidosInduccion.companyId}
+        AND NULLIF(TRIM(training.content_url), '') IS NOT NULL
+        AND TRIM(training.content_url) = ${inductionUrl}
+    )
+    AND NOT EXISTS (
+      SELECT 1
+      FROM road_safety_trainings training
+      WHERE training.company_id = ${schema.contenidosInduccion.companyId}
+        AND NULLIF(TRIM(training.content_url), '') IS NOT NULL
+        AND TRIM(training.content_url) = ${inductionUrl}
+    )
+  `;
+}
+
+function isRenderableInductionContent() {
+  return sql`(
+    (${schema.contenidosInduccion.tipoContenido} = 'video'
+      AND NULLIF(TRIM(${schema.contenidosInduccion.urlVideo}), '') IS NOT NULL)
+    OR (${schema.contenidosInduccion.tipoContenido} = 'documento'
+      AND NULLIF(TRIM(${schema.contenidosInduccion.urlDocumento}), '') IS NOT NULL)
+    OR (${schema.contenidosInduccion.tipoContenido} IN ('texto', 'presentacion')
+      AND NULLIF(TRIM(${schema.contenidosInduccion.contenidoTexto}), '') IS NOT NULL)
   )`;
 }
 
@@ -132,7 +154,8 @@ async function buildSessionSnapshot(companyId: string, tipoInduccion: InductionT
         eq(schema.contenidosInduccion.companyId, companyId),
         eq(schema.contenidosInduccion.estado, "publicado"),
         eq(schema.contenidosInduccion.tipoInduccion, tipoInduccion),
-        isNotTrainingModuleContent()
+        isNotTrainingModuleContent(),
+        isRenderableInductionContent()
       ))
       .orderBy(schema.contenidosInduccion.orden),
     getEstablishedQuestions(companyId, tipoInduccion),
@@ -156,7 +179,8 @@ async function getSessionContents(sesion: schema.SesionInduccionVirtual) {
         eq(schema.contenidosInduccion.estado, "publicado"),
         eq(schema.contenidosInduccion.tipoInduccion, sesion.tipoInduccion),
         inArray(schema.contenidosInduccion.id, snapshot.contenidoIds),
-        isNotTrainingModuleContent()
+        isNotTrainingModuleContent(),
+        isRenderableInductionContent()
       ));
     const order = new Map(snapshot.contenidoIds.map((id, index) => [id, index]));
     return contenidos.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
@@ -171,7 +195,8 @@ async function getSessionContents(sesion: schema.SesionInduccionVirtual) {
       eq(schema.contenidosInduccion.estado, "publicado"),
       eq(schema.contenidosInduccion.tipoInduccion, sesion.tipoInduccion),
       lte(schema.contenidosInduccion.createdAt, sesion.fechaEnvio),
-      isNotTrainingModuleContent()
+      isNotTrainingModuleContent(),
+      isRenderableInductionContent()
     ))
     .orderBy(schema.contenidosInduccion.orden);
 }
@@ -794,6 +819,11 @@ export function registerInduccionVirtualRoutes(app: Express) {
       const fechaExpiracion = new Date();
       fechaExpiracion.setDate(fechaExpiracion.getDate() + 7);
       const sessionSnapshot = await buildSessionSnapshot(companyId, tipoInduccion);
+      if (sessionSnapshot.contenidoIds.length === 0) {
+        return res.status(400).json({
+          error: "No hay contenido de inducción publicado y válido para este tipo. Configure el contenido antes de asignarla.",
+        });
+      }
 
       const [sesion] = await db.insert(schema.sesionesInduccionVirtual)
         .values({
@@ -860,6 +890,11 @@ export function registerInduccionVirtualRoutes(app: Express) {
       const [company] = await db.select().from(schema.companies).where(eq(schema.companies.id, companyId));
       const baseUrl = process.env.REPLIT_DEPLOYMENT_URL || process.env.APP_URL || 'https://sst-colombia.com';
       const sessionSnapshot = await buildSessionSnapshot(companyId, tipoInduccion);
+      if (sessionSnapshot.contenidoIds.length === 0) {
+        return res.status(400).json({
+          error: "No hay contenido de inducción publicado y válido para este tipo. Configure el contenido antes del envío masivo.",
+        });
+      }
 
       let enviados = 0;
       const errores: string[] = [];
@@ -1523,6 +1558,11 @@ export function registerInduccionVirtualRoutes(app: Express) {
       }
 
       const sessionSnapshot = await buildSessionSnapshot(companyId, "pesv");
+      if (sessionSnapshot.contenidoIds.length === 0) {
+        return res.status(400).json({
+          error: "No hay contenido de inducción PESV publicado y válido. Configure el contenido antes de asignarla.",
+        });
+      }
 
       let enviados = 0;
       let errores = 0;
