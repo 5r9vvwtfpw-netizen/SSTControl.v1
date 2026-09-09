@@ -40,19 +40,10 @@ const PLANTILLA_PESV: PlantillaPesv = {
       tipoContenido: "texto",
       urlVideo: "",
       urlDocumento: "",
-      contenidoTexto: `PLAN ESTRATÉGICO DE SEGURIDAD VIAL (PESV)
-
-El PESV es la herramienta de gestión mediante la cual la organización identifica, controla y reduce los riesgos asociados a sus desplazamientos laborales. Su metodología está definida por la Resolución 40595 de 2022 del Ministerio de Transporte.
-
-Sus objetivos principales son:
-• Prevenir muertes y lesiones graves en siniestros viales.
-• Promover comportamientos seguros de conductores, pasajeros, peatones y demás actores viales.
-• Mantener vehículos y equipos en condiciones seguras.
-• Planificar desplazamientos y rutas teniendo en cuenta sus riesgos.
-• Investigar incidentes y aplicar acciones de mejora.
-
-Todo trabajador debe cumplir la política de seguridad vial, participar en las actividades del PESV, reportar peligros e incidentes y abstenerse de conducir cuando exista una condición que comprometa la seguridad.`,
-      duracionMinutos: 10,
+      contenidoTexto: `El PESV ayuda a prevenir accidentes y lesiones durante los desplazamientos relacionados con el trabajo.
+Cumpla las normas de tránsito, cuide a todos los actores viales y mantenga una conducta segura.
+Reporte peligros, fallas del vehículo e incidentes antes de continuar el recorrido.`,
+      duracionMinutos: 2,
       estado: "borrador",
       obligatorio: 1,
       tipoInduccion: "pesv",
@@ -64,28 +55,10 @@ Todo trabajador debe cumplir la política de seguridad vial, participar en las a
       tipoContenido: "texto",
       urlVideo: "",
       urlDocumento: "",
-      contenidoTexto: `FACTORES DE RIESGO VIAL EN EL TRABAJO
-
-Los siniestros viales pueden originarse por la interacción entre la persona, el vehículo y el entorno.
-
-Factores humanos:
-• Exceso de velocidad.
-• Fatiga, somnolencia o jornadas prolongadas.
-• Distracción por celular, alimentos u otros elementos.
-• Consumo de alcohol, medicamentos o sustancias psicoactivas.
-• Maniobras inseguras y desconocimiento de la ruta.
-
-Factores del vehículo:
-• Fallas en frenos, dirección, llantas, luces o cinturones.
-• Mantenimiento vencido o inspección preoperacional incompleta.
-• Carga mal distribuida o sin asegurar.
-
-Factores del entorno:
-• Lluvia, baja visibilidad, vías en mal estado y tráfico.
-• Señalización deficiente, obras o presencia de peatones.
-
-Antes de cada desplazamiento se debe evaluar la condición del conductor, inspeccionar el vehículo y revisar ruta, clima y tiempo disponible.`,
-      duracionMinutos: 12,
+      contenidoTexto: `La velocidad, la fatiga, el celular, el alcohol y las maniobras inseguras aumentan el riesgo vial.
+Antes de salir, revise su estado físico, el vehículo, la carga, la ruta y el clima.
+No inicie o detenga el recorrido si alguna condición puede poner en riesgo la vida.`,
+      duracionMinutos: 2,
       estado: "borrador",
       obligatorio: 1,
       tipoInduccion: "pesv",
@@ -97,25 +70,10 @@ Antes de cada desplazamiento se debe evaluar la condición del conductor, inspec
       tipoContenido: "texto",
       urlVideo: "",
       urlDocumento: "",
-      contenidoTexto: `POLÍTICA DE SEGURIDAD VIAL
-
-La organización se compromete a proteger la vida y la integridad de todas las personas durante los desplazamientos relacionados con el trabajo.
-
-Responsabilidades del trabajador:
-• Cumplir las normas de tránsito y los límites de velocidad.
-• Usar siempre el cinturón de seguridad y exigirlo a los pasajeros.
-• No conducir bajo efectos de alcohol, sustancias psicoactivas o medicamentos que alteren la capacidad.
-• No manipular el celular mientras conduce.
-• Realizar la inspección preoperacional y reportar fallas.
-• Respetar los tiempos de descanso y detenerse ante señales de fatiga.
-• Informar incidentes, comparendos y condiciones inseguras.
-
-Responsabilidades de la empresa:
-• Proporcionar vehículos seguros y mantenimiento oportuno.
-• Capacitar y verificar la competencia de quienes conducen.
-• Planificar rutas, jornadas y controles de riesgo.
-• Investigar eventos viales y ejecutar acciones correctivas.`,
-      duracionMinutos: 8,
+      contenidoTexto: `La empresa y los trabajadores comparten el compromiso de proteger la vida en cada desplazamiento.
+Use el cinturón, respete la velocidad, evite el celular y nunca conduzca bajo efectos de alcohol o sustancias.
+Realice la inspección preoperacional y reporte fallas, fatiga o condiciones inseguras.`,
+      duracionMinutos: 2,
       estado: "borrador",
       obligatorio: 1,
       tipoInduccion: "pesv",
@@ -127,33 +85,10 @@ Responsabilidades de la empresa:
       tipoContenido: "texto",
       urlVideo: "",
       urlDocumento: "",
-      contenidoTexto: `NORMAS DE TRÁNSITO CLAVE PARA EL TRABAJO
-
-1. VELOCIDADES MÁXIMAS (Código Nacional de Tránsito - Ley 769/2002)
-   • Zona residencial / escolar: 30 km/h
-   • Zona urbana: 50 km/h
-   • Carretera primaria: 80 km/h
-   • Autopistas: 120 km/h
-
-2. USO OBLIGATORIO DEL CINTURÓN
-   El cinturón debe usarse en todo momento mientras el vehículo está en movimiento, en TODOS los asientos (Art. 82 Ley 769/2002).
-
-3. PROHIBICIONES AL CONDUCIR
-   • Usar el celular sin manos libres.
-   • Conducir bajo efectos de alcohol o sustancias psicoactivas.
-   • Consumir alimentos o bebidas.
-
-4. ACCIDENTE EN MISIÓN
-   Si ocurre un accidente durante el trabajo:
-   a) Garantice la seguridad de los involucrados.
-   b) Llame a emergencias (123) y a la empresa de inmediato.
-   c) No mueva los vehículos hasta que llegue la autoridad (salvo riesgo inminente).
-   d) Reporte a la ARL dentro de las 24 horas.
-
-5. DESCANSO Y FATIGA
-   • No conduzca si siente sueño o cansancio extremo.
-   • En trayectos largos, detenga el vehículo cada 2 horas y descanse.`,
-      duracionMinutos: 10,
+      contenidoTexto: `Respete siempre las señales y los límites de velocidad; en zonas residenciales y escolares el máximo es 30 km/h.
+Use el cinturón en todos los asientos y no manipule el celular mientras conduce.
+Si siente sueño o fatiga, deténgase en un lugar seguro y descanse antes de continuar.`,
+      duracionMinutos: 2,
       estado: "borrador",
       obligatorio: 1,
       tipoInduccion: "pesv",
@@ -165,20 +100,10 @@ Responsabilidades de la empresa:
       tipoContenido: "texto",
       urlVideo: "",
       urlDocumento: "",
-      contenidoTexto: `PROTOCOLO DE REPORTE DE ACCIDENTES DE TRÁNSITO
-
-Ante un siniestro vial relacionado con el trabajo:
-
-1. Deténgase en un lugar seguro, encienda las luces de emergencia y señalice la zona.
-2. Verifique el estado de las personas. Solicite ayuda al 123 cuando sea necesario y no mueva a una persona lesionada salvo peligro inminente.
-3. Informe de inmediato al responsable definido por la empresa.
-4. No abandone el lugar ni acepte acuerdos informales que impidan documentar el evento.
-5. Registre fotografías, ubicación, hora, placas, datos de involucrados, testigos y autoridades que atienden.
-6. Siga las instrucciones de la autoridad de tránsito, aseguradora y ARL.
-7. Entregue la documentación solicitada y participe en la investigación interna.
-
-El reporte oportuno permite activar la atención, conservar evidencia y prevenir nuevos eventos. La prioridad siempre es proteger la vida.`,
-      duracionMinutos: 7,
+      contenidoTexto: `Ante un accidente, deténgase con seguridad, señalice la zona y solicite ayuda al 123 si es necesario.
+Informe de inmediato a la empresa y siga las instrucciones de las autoridades, la aseguradora y la ARL.
+Tome evidencias sin poner en riesgo su vida y no abandone el lugar ni altere la información.`,
+      duracionMinutos: 2,
       estado: "borrador",
       obligatorio: 1,
       tipoInduccion: "pesv",

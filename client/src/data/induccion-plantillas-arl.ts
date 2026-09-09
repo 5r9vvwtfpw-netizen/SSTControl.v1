@@ -25,32 +25,10 @@ const contenidosBase: PlantillaContenido[] = [
     tipoContenido: "texto",
     urlVideo: "",
     urlDocumento: "",
-    contenidoTexto: `La Política de Seguridad y Salud en el Trabajo (SST) es el compromiso formal de la alta dirección de la empresa con la protección de la vida, la integridad física y mental de todos los trabajadores, conforme al Decreto 1072 de 2015, Libro 2, Parte 2, Título 4, Capítulo 6.
-
-Esta política debe:
-- Establecer el compromiso de la empresa con la implementación del Sistema de Gestión de Seguridad y Salud en el Trabajo (SG-SST).
-- Ser específica y apropiada para la naturaleza de los peligros y el tamaño de la organización.
-- Ser concisa, estar fechada y firmada por el representante legal de la empresa.
-- Incluir el compromiso con la identificación de peligros, evaluación y valoración de riesgos, y establecer los controles necesarios.
-- Comprometerse con la protección de la seguridad y salud de todos los trabajadores, incluyendo contratistas y subcontratistas.
-- Cumplir con la normatividad nacional vigente aplicable en materia de riesgos laborales.
-- Ser comunicada a todos los niveles de la organización y estar accesible a todas las partes interesadas.
-- Ser revisada como mínimo una vez al año y actualizada si es necesario.
-
-Derechos del trabajador en SST:
-- Conocer los riesgos a los que está expuesto en su puesto de trabajo.
-- Recibir capacitación y entrenamiento en SST.
-- Participar en las actividades de prevención y promoción.
-- Reportar condiciones y actos inseguros sin temor a represalias.
-- Negarse a realizar tareas que pongan en riesgo su vida o salud cuando no se cuente con las medidas de protección adecuadas.
-
-Deberes del trabajador en SST:
-- Cumplir las normas y procedimientos de seguridad establecidos.
-- Usar adecuadamente los Elementos de Protección Personal (EPP).
-- Reportar de manera inmediata cualquier condición o acto inseguro.
-- Participar activamente en las capacitaciones y actividades del SG-SST.
-- Informar al empleador sobre cualquier cambio en su estado de salud relacionado con el trabajo.`,
-    duracionMinutos: 15,
+    contenidoTexto: `La empresa se compromete a proteger su seguridad y salud durante el trabajo.
+Conozca los riesgos de su labor, cumpla las medidas de prevención y use correctamente sus elementos de protección.
+Reporte de inmediato cualquier peligro, incidente o condición que pueda afectar su salud o la de sus compañeros.`,
+    duracionMinutos: 2,
     estado: "borrador",
     obligatorio: 1,
   },
@@ -60,35 +38,10 @@ Deberes del trabajador en SST:
     tipoContenido: "texto",
     urlVideo: "",
     urlDocumento: "",
-    contenidoTexto: `La identificación de peligros y la evaluación de riesgos es un proceso fundamental del SG-SST establecido en el Decreto 1072 de 2015, Artículo 2.2.4.6.15, y desarrollado mediante la Guía Técnica Colombiana GTC 45.
-
-¿Qué es un peligro?
-Es una fuente, situación o acto con potencial de causar daño en la salud de los trabajadores, en los equipos o en las instalaciones. Los peligros se clasifican en:
-- Biológicos: virus, bacterias, hongos, parásitos.
-- Físicos: ruido, iluminación, temperaturas extremas, vibraciones, radiaciones.
-- Químicos: gases, vapores, polvos, líquidos, humos.
-- Psicosociales: estrés, carga mental, acoso laboral, jornadas extensas.
-- Biomecánicos: posturas prolongadas, movimientos repetitivos, manipulación de cargas.
-- Condiciones de seguridad: trabajo en alturas, espacios confinados, máquinas y herramientas, eléctrico.
-- Fenómenos naturales: sismos, inundaciones, tormentas eléctricas.
-
-¿Qué es un riesgo?
-Es la combinación de la probabilidad de que ocurra un evento peligroso y la severidad de las lesiones o daños que pueda causar.
-
-¿Cómo identificar peligros en su puesto de trabajo?
-1. Observe su entorno laboral e identifique fuentes de peligro.
-2. Revise los procedimientos y tareas que realiza diariamente.
-3. Consulte la matriz de identificación de peligros y evaluación de riesgos (IPER) de su área.
-4. Reporte cualquier peligro no identificado al responsable de SST o al COPASST/Vigía.
-5. Participe en las inspecciones de seguridad programadas.
-
-Jerarquía de controles (de mayor a menor efectividad):
-1. Eliminación del peligro.
-2. Sustitución por materiales o procesos menos peligrosos.
-3. Controles de ingeniería (guardas, ventilación, aislamiento).
-4. Controles administrativos (señalización, procedimientos, capacitación).
-5. Elementos de Protección Personal (EPP).`,
-    duracionMinutos: 15,
+    contenidoTexto: `Observe su lugar de trabajo e identifique todo lo que pueda causar una lesión o enfermedad.
+Antes de iniciar una tarea, aplique los controles indicados y utilice los elementos de protección requeridos.
+Si encuentra un peligro nuevo o una condición insegura, suspenda la actividad cuando sea necesario y repórtela.`,
+    duracionMinutos: 2,
     estado: "borrador",
     obligatorio: 1,
   },
@@ -98,38 +51,10 @@ Jerarquía de controles (de mayor a menor efectividad):
     tipoContenido: "texto",
     urlVideo: "",
     urlDocumento: "",
-    contenidoTexto: `El Plan de Emergencias y Contingencias es un requisito del Decreto 1072 de 2015, Artículo 2.2.4.6.25, y debe incluir la identificación de amenazas, análisis de vulnerabilidad, procedimientos operativos normalizados y programas de capacitación.
-
-Tipos de emergencias más comunes:
-- Incendios y explosiones.
-- Sismos y terremotos.
-- Inundaciones.
-- Derrames de sustancias químicas.
-- Emergencias médicas (accidentes de trabajo, enfermedades súbitas).
-- Amenazas de bomba o actos terroristas.
-
-¿Qué hacer en caso de emergencia?
-1. Mantenga la calma y no corra.
-2. Active la alarma de emergencia si es el primero en detectar la situación.
-3. Siga las instrucciones del coordinador de evacuación o brigadista.
-4. Diríjase por la ruta de evacuación señalizada hacia el punto de encuentro asignado.
-5. No use ascensores durante la evacuación.
-6. Ayude a las personas con discapacidad o movilidad reducida si puede hacerlo de forma segura.
-7. Una vez en el punto de encuentro, repórtese con el coordinador de evacuación.
-8. No regrese al edificio hasta que se dé la orden de retorno por el comité de emergencias.
-
-Brigadas de emergencia:
-- Brigada de prevención y control de incendios.
-- Brigada de primeros auxilios.
-- Brigada de evacuación y rescate.
-- Brigada de comunicaciones.
-
-Es obligación de todos los trabajadores:
-- Conocer las rutas de evacuación y puntos de encuentro.
-- Participar en los simulacros de evacuación (mínimo uno al año según Resolución 0312/2019).
-- Conocer la ubicación de extintores, botiquines y camillas.
-- Reportar cualquier obstrucción en las rutas de evacuación.`,
-    duracionMinutos: 12,
+    contenidoTexto: `En una emergencia mantenga la calma, active la alarma y siga las instrucciones del brigadista.
+Evacúe por la ruta señalizada hasta el punto de encuentro, sin correr ni devolverse.
+Conozca previamente las salidas de emergencia y reporte cualquier ruta bloqueada.`,
+    duracionMinutos: 2,
     estado: "borrador",
     obligatorio: 1,
   },
@@ -139,35 +64,10 @@ Es obligación de todos los trabajadores:
     tipoContenido: "texto",
     urlVideo: "",
     urlDocumento: "",
-    contenidoTexto: `Los Elementos de Protección Personal (EPP) son dispositivos, accesorios y vestimentas que porta el trabajador para protegerlo de los riesgos que puedan amenazar su seguridad y salud en el trabajo, conforme al Decreto 1072 de 2015, Artículo 2.2.4.6.24.
-
-Los EPP son el último recurso en la jerarquía de controles y deben usarse cuando los riesgos no pueden eliminarse o controlarse por otros medios.
-
-Tipos de EPP según la parte del cuerpo que protegen:
-- Protección de la cabeza: cascos de seguridad, gorras con protección.
-- Protección auditiva: tapones, orejeras.
-- Protección visual y facial: gafas de seguridad, caretas, protectores faciales.
-- Protección respiratoria: mascarillas, respiradores, equipos de aire autónomo.
-- Protección de manos: guantes de diferentes materiales según el riesgo.
-- Protección de pies: botas de seguridad con puntera de acero, botas dieléctricas, botas antideslizantes.
-- Protección corporal: overoles, delantales, chalecos reflectivos.
-- Protección contra caídas: arnés de cuerpo completo, líneas de vida, conectores.
-
-Responsabilidades del trabajador con los EPP:
-- Usar los EPP proporcionados de manera correcta durante toda la jornada laboral cuando sea requerido.
-- Mantener los EPP en buen estado, limpios y almacenados adecuadamente.
-- Inspeccionar los EPP antes de cada uso y reportar cualquier daño o deterioro.
-- No modificar ni alterar los EPP.
-- Solicitar el reemplazo cuando presenten desgaste o daño.
-- Participar en las capacitaciones sobre uso correcto de EPP.
-
-Responsabilidades del empleador:
-- Suministrar los EPP adecuados según los riesgos identificados, sin costo para el trabajador.
-- Garantizar que los EPP cumplan con las normas técnicas colombianas (NTC) aplicables.
-- Capacitar al trabajador en el uso correcto de los EPP.
-- Reponer los EPP cuando sea necesario.
-- Llevar registro de entrega de EPP firmado por el trabajador.`,
-    duracionMinutos: 12,
+    contenidoTexto: `Use siempre los elementos de protección definidos para su tarea.
+Revise su estado antes de utilizarlos y no los modifique ni los comparta cuando sean de uso personal.
+Reporte daños o desgaste y solicite su reemplazo antes de continuar la labor.`,
+    duracionMinutos: 2,
     estado: "borrador",
     obligatorio: 1,
   },
@@ -177,28 +77,10 @@ Responsabilidades del empleador:
     tipoContenido: "texto",
     urlVideo: "",
     urlDocumento: "",
-    contenidoTexto: `El reporte oportuno de incidentes y accidentes de trabajo es una obligación legal tanto del empleador como del trabajador, establecida en el Decreto 1072 de 2015 y la Resolución 0312 de 2019.
-
-Definiciones clave:
-- Incidente de trabajo: Suceso acaecido en el curso del trabajo o en relación con este, que tuvo el potencial de ser un accidente, en el que hubo personas involucradas sin que sufrieran lesiones o se presentaran daños a la propiedad y/o pérdida en los procesos (Resolución 1401 de 2007).
-- Accidente de trabajo: Todo suceso repentino que sobrevenga por causa o con ocasión del trabajo, y que produzca en el trabajador una lesión orgánica, una perturbación funcional o psiquiátrica, una invalidez o la muerte (Ley 1562 de 2012, Artículo 3).
-- Enfermedad laboral: La contraída como resultado de la exposición a factores de riesgo inherentes a la actividad laboral o del medio en el que el trabajador se ha visto obligado a trabajar (Ley 1562 de 2012, Artículo 4).
-
-¿Cuándo reportar?
-- Los incidentes deben reportarse de manera INMEDIATA al jefe directo y al responsable de SST.
-- Los accidentes de trabajo deben reportarse al empleador de forma INMEDIATA y este debe notificar a la ARL y a la EPS dentro de los dos (2) días hábiles siguientes.
-- Los accidentes graves y mortales deben reportarse además a la Dirección Territorial del Ministerio del Trabajo dentro de los dos (2) días hábiles siguientes.
-
-Procedimiento de reporte:
-1. Brinde o busque primeros auxilios si hay lesionados.
-2. Informe inmediatamente a su jefe directo o supervisor.
-3. Notifique al responsable de SST o al COPASST/Vigía.
-4. Preserve la escena del accidente sin alterar evidencias.
-5. Colabore con la investigación del accidente o incidente.
-6. Proporcione información veraz y completa sobre lo ocurrido.
-
-La investigación de accidentes es obligatoria según la Resolución 1401 de 2007 y debe realizarse dentro de los 15 días calendario siguientes al evento.`,
-    duracionMinutos: 12,
+    contenidoTexto: `Reporte inmediatamente todo incidente o accidente a su jefe y al responsable de SST.
+Si hay una persona lesionada, solicite ayuda y no la mueva salvo que exista un peligro mayor.
+No altere el lugar del evento y entregue información clara para facilitar la investigación.`,
+    duracionMinutos: 2,
     estado: "borrador",
     obligatorio: 1,
   },
@@ -208,38 +90,10 @@ La investigación de accidentes es obligatoria según la Resolución 1401 de 200
     tipoContenido: "texto",
     urlVideo: "",
     urlDocumento: "",
-    contenidoTexto: `La legislación colombiana establece un marco de derechos y deberes tanto para empleadores como para trabajadores en materia de Seguridad y Salud en el Trabajo, fundamentado en el Decreto 1072 de 2015, la Ley 1562 de 2012 y la Resolución 0312 de 2019.
-
-Derechos del trabajador:
-- Derecho a trabajar en un ambiente seguro y saludable (Constitución Política, Art. 25).
-- Derecho a conocer los riesgos a los que está expuesto en su puesto de trabajo.
-- Derecho a recibir inducción y capacitación continua en SST.
-- Derecho a participar en las actividades del COPASST o Vigía de SST.
-- Derecho a recibir los Elementos de Protección Personal (EPP) sin costo alguno.
-- Derecho a negarse a realizar tareas que pongan en peligro su vida o su salud cuando no existan medidas de protección adecuadas (Decreto 1072/2015, Art. 2.2.4.6.10).
-- Derecho a ser informado sobre los resultados de los exámenes médicos ocupacionales.
-- Derecho a reportar condiciones inseguras sin temor a represalias.
-- Derecho a la prestación de primeros auxilios en caso de accidente de trabajo.
-- Derecho a la cobertura del Sistema General de Riesgos Laborales (SGRL).
-
-Deberes del trabajador (Decreto 1072/2015, Art. 2.2.4.6.10):
-- Procurar el cuidado integral de su salud.
-- Suministrar información clara, veraz y completa sobre su estado de salud.
-- Cumplir las normas, reglamentos e instrucciones del SG-SST.
-- Informar oportunamente al empleador sobre peligros y riesgos latentes en su puesto de trabajo.
-- Participar en las actividades de capacitación en SST definidas en el plan de capacitación.
-- Participar y contribuir al cumplimiento de los objetivos del SG-SST.
-- Usar adecuadamente los EPP suministrados por el empleador.
-- Reportar inmediatamente todo accidente e incidente de trabajo.
-
-Deberes del empleador:
-- Definir, firmar y divulgar la política de SST.
-- Asignar y comunicar responsabilidades en SST a todos los niveles de la organización.
-- Rendir cuentas al interior de la empresa sobre el desarrollo del SG-SST.
-- Garantizar la capacitación de los trabajadores en SST.
-- Implementar y mantener el SG-SST conforme a la normativa vigente.
-- Garantizar la disponibilidad de recursos financieros, técnicos y humanos para el SG-SST.`,
-    duracionMinutos: 15,
+    contenidoTexto: `Tiene derecho a conocer los riesgos de su trabajo, recibir protección y reportar condiciones inseguras.
+Debe cuidar su salud, cumplir las normas de seguridad y usar correctamente los elementos de protección.
+Participe en las actividades de prevención e informe de inmediato cualquier incidente, accidente o peligro.`,
+    duracionMinutos: 2,
     estado: "borrador",
     obligatorio: 1,
   },
