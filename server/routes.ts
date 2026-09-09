@@ -25815,7 +25815,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      const doc = new PDFDocument({ size: 'letter', margins: { top: 25, bottom: 25, left: 25, right: 25 } });
+      const doc = new PDFDocument({ size: 'LETTER', margin: PDF_CONFIG.MARGIN });
       
       // Add trial watermark if subscription is in trial period
       const pdf20005_subscription = await storage.getSubscriptionByCompany(companyId);
@@ -25878,20 +25878,90 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const recursosConEmpresa = reemplazarPlaceholders(politica.recursos);
       const revisionConEmpresa = reemplazarPlaceholders(politica.revisionComunicacion);
 
+      // Cuerpo estandarizado. La política se presenta una sola vez y todos los
+      // saltos de página se delegan a los helpers compartidos.
+      let standardY = addSectionBar(doc, 'Información del documento', contentStartY);
+      standardY = addSimpleTable(doc, ['Estado', 'Fecha de emisión', 'Próxima revisión'], [[
+        politica.estado.toUpperCase(),
+        formatDate(politica.fechaEmision),
+        formatDate(politica.fechaProximaRevision),
+      ]], {
+        y: standardY,
+        columnWidths: [180, 181, 181],
+      });
+
+      const addTextSection = (title: string, text: string) => {
+        standardY = addSectionBar(doc, title, standardY + 2);
+        standardY = addParagraph(doc, text || 'No aplica.', { y: standardY, fontSize: 8 });
+      };
+
+      const addNumberedSection = (title: string, items: string[]) => {
+        standardY = addSectionBar(doc, title, standardY + 2);
+        if (items.length === 0) {
+          standardY = addParagraph(doc, 'No se registraron elementos.', { y: standardY, fontSize: 8 });
+          return;
+        }
+        items.forEach((item, index) => {
+          standardY = addParagraph(doc, `${index + 1}. ${item}`, {
+            y: standardY,
+            fontSize: 8,
+            indent: 8,
+          });
+        });
+      };
+
+      addTextSection('Declaración de compromiso', declaracionConEmpresa);
+      addNumberedSection('Objetivos', objetivos);
+      addTextSection('Alcance', alcanceConEmpresa);
+
+      standardY = addSectionBar(doc, 'Responsabilidades', standardY + 2);
+      [
+        ['Alta Dirección', responsabilidades.altaDireccion],
+        ['Responsable del SG-SST', responsabilidades.responsableSst],
+        ['Trabajadores', responsabilidades.trabajadores],
+      ].forEach(([label, value]) => {
+        standardY = addParagraph(doc, label, { y: standardY, fontSize: 8, bold: true });
+        standardY = addParagraph(doc, value || 'No aplica.', {
+          y: standardY,
+          fontSize: 8,
+          indent: 8,
+        });
+      });
+
+      addNumberedSection('Compromisos específicos', compromisos);
+      addTextSection('Recursos', recursosConEmpresa);
+      addTextSection('Revisión y comunicación', revisionConEmpresa);
+
+      standardY = addSectionBar(doc, 'Aprobación de la política', standardY + 2);
+      standardY = addSimpleTable(doc, ['Representante legal', 'Identificación', 'Responsable SG-SST', 'Fecha de firma'], [[
+        politica.representanteLegal || aproboName || '—',
+        politica.cedulaRepresentante || '—',
+        politica.responsableSst || autorizoName || '—',
+        formatDate(politica.fechaFirma),
+      ]], {
+        y: standardY,
+        columnWidths: [150, 110, 172, 110],
+      });
+
+      await addSignatureFooter(doc, signers, true, { startY: standardY + 5 });
+      doc.end();
+      return;
+
+      const legacyPolitica = politica!;
       // Metadata section
       doc.fontSize(9).font('Helvetica-Bold').fillColor('#1e7e34').text('INFORMACIÓN DEL DOCUMENTO', margin, currentY);
       currentY = doc.y + 8;
 
       doc.fontSize(8).font('Helvetica-Bold').fillColor('#000000').text('Estado: ', margin, currentY, { continued: true });
-      doc.font('Helvetica').text(politica.estado.toUpperCase());
+      doc.font('Helvetica').text(legacyPolitica.estado.toUpperCase());
       currentY = doc.y + 8;
 
       doc.font('Helvetica-Bold').text('Fecha de Emisión: ', margin, currentY, { continued: true });
-      doc.font('Helvetica').text(new Date(politica.fechaEmision).toLocaleDateString('es-CO'));
+      doc.font('Helvetica').text(new Date(legacyPolitica.fechaEmision).toLocaleDateString('es-CO'));
       currentY = doc.y + 8;
 
       doc.font('Helvetica-Bold').text('Próxima Revisión: ', margin, currentY, { continued: true });
-      doc.font('Helvetica').text(new Date(politica.fechaProximaRevision).toLocaleDateString('es-CO'));
+      doc.font('Helvetica').text(new Date(legacyPolitica.fechaProximaRevision).toLocaleDateString('es-CO'));
       currentY = doc.y + 20;
 
       // Declaración de Compromiso
@@ -27020,25 +27090,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       currentY = doc.y + 15;
 
       doc.fontSize(8).font('Helvetica-Bold').fillColor('#000000').text('Representante Legal: ', margin, currentY, { continued: true });
-      doc.font('Helvetica').text(politica.representanteLegal);
+      doc.font('Helvetica').text(legacyPolitica.representanteLegal);
       currentY = doc.y + 8;
 
       doc.font('Helvetica-Bold').text('Cédula: ', margin, currentY, { continued: true });
-      doc.font('Helvetica').text(politica.cedulaRepresentante);
+      doc.font('Helvetica').text(legacyPolitica.cedulaRepresentante);
       currentY = doc.y + 8;
 
       doc.font('Helvetica-Bold').text('Responsable SG-SST: ', margin, currentY, { continued: true });
-      doc.font('Helvetica').text(politica.responsableSst);
+      doc.font('Helvetica').text(legacyPolitica.responsableSst);
       currentY = doc.y + 8;
 
-      if (politica.licenciaSst) {
+      if (legacyPolitica.licenciaSst) {
         doc.font('Helvetica-Bold').text('Licencia SST: ', margin, currentY, { continued: true });
-        doc.font('Helvetica').text(politica.licenciaSst);
+        doc.font('Helvetica').text(legacyPolitica.licenciaSst || '');
         currentY = doc.y + 8;
       }
 
       doc.font('Helvetica-Bold').text('Fecha de Firma: ', margin, currentY, { continued: true });
-      doc.font('Helvetica').text(new Date(politica.fechaFirma).toLocaleDateString('es-CO'));
+      doc.font('Helvetica').text(new Date(legacyPolitica.fechaFirma).toLocaleDateString('es-CO'));
 
       // Add standardized signature footer (no LSO required)
       await addSignatureFooter(doc, signers, true);
