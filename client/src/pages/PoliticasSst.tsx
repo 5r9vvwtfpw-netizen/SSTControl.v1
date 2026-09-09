@@ -190,6 +190,25 @@ export default function PoliticasSstPage() {
     };
   }, [responsibleDesignations, workers]);
 
+  useEffect(() => {
+    if (!dialogOpen || !activeResponsible) return;
+    setFormData((current) => {
+      if (
+        current.responsableSst === activeResponsible.value &&
+        current.licenciaSst === activeResponsible.licenciaSst &&
+        current.elaboradoPorId === (activeResponsible.workerId || "")
+      ) {
+        return current;
+      }
+      return {
+        ...current,
+        responsableSst: activeResponsible.value,
+        licenciaSst: activeResponsible.licenciaSst,
+        elaboradoPorId: activeResponsible.workerId || "",
+      };
+    });
+  }, [dialogOpen, activeResponsible]);
+
   // Filtrar trabajadores que tienen contratos activos
   const workersConContrato = useMemo(() => {
     if (!workers || !contracts) return [];
@@ -214,7 +233,7 @@ export default function PoliticasSstPage() {
         }),
         // Convert empty strings to null for optional fields
         licenciaSst: data.licenciaSst?.trim() || null,
-        elaboradoPorId: data.elaboradoPorId?.trim() || null,
+        elaboradoPorId: activeResponsible?.workerId || null,
         autorizadoPorId: data.autorizadoPorId?.trim() || null,
         aprobadoPorId: data.aprobadoPorId?.trim() || null,
         observaciones: data.observaciones?.trim() || null,
@@ -254,7 +273,7 @@ export default function PoliticasSstPage() {
         }),
         // Convert empty strings to null for optional fields
         licenciaSst: data.licenciaSst?.trim() || null,
-        elaboradoPorId: data.elaboradoPorId?.trim() || null,
+        elaboradoPorId: activeResponsible?.workerId || null,
         autorizadoPorId: data.autorizadoPorId?.trim() || null,
         aprobadoPorId: data.aprobadoPorId?.trim() || null,
         observaciones: data.observaciones?.trim() || null,
@@ -391,7 +410,7 @@ export default function PoliticasSstPage() {
         responsableSst: responsableSstDefault,
         licenciaSst: licenciaSstDefault,
         fechaFirma: todayStr,
-        elaboradoPorId: "",
+        elaboradoPorId: activeResponsible?.workerId || "",
         autorizadoPorId: "",
         aprobadoPorId: "",
       });
@@ -1035,29 +1054,17 @@ export default function PoliticasSstPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="responsableSst">Responsable SG-SST *</Label>
-                      <Select
+                      <Input
+                        id="responsableSst"
+                        data-testid="input-responsable-sst-asignado"
                         value={formData.responsableSst}
-                        onValueChange={(value) => setFormData({ ...formData, responsableSst: value })}
-                      >
-                        <SelectTrigger id="responsableSst" data-testid="select-responsable-sst">
-                          <SelectValue placeholder="Seleccione responsable SST" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {activeResponsible && (
-                            <SelectItem value={activeResponsible.value}>
-                              {activeResponsible.name} - {activeResponsible.position}
-                              {activeResponsible.isExternal ? " (profesional SST designado)" : " (designado)"}
-                            </SelectItem>
-                          )}
-                          {workers
-                            ?.filter((worker) => `${worker.name} - ${worker.position}` !== activeResponsible?.value)
-                            .map((worker) => (
-                            <SelectItem key={worker.id} value={`${worker.name} - ${worker.position}`}>
-                              {worker.name} - {worker.position}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        readOnly
+                        placeholder="No hay un responsable SG-SST designado"
+                        className="bg-muted"
+                      />
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Se obtiene automáticamente de la designación activa del Responsable del SG-SST.
+                      </p>
                     </div>
                     <div>
                       <Label htmlFor="licenciaSst">Licencia SST (opcional)</Label>
@@ -1065,8 +1072,9 @@ export default function PoliticasSstPage() {
                         id="licenciaSst"
                         data-testid="input-licencia-sst"
                         value={formData.licenciaSst}
-                        onChange={(e) => setFormData({ ...formData, licenciaSst: e.target.value })}
                         placeholder="Número de licencia"
+                        readOnly
+                        className="bg-muted"
                       />
                     </div>
                   </div>
@@ -1082,32 +1090,28 @@ export default function PoliticasSstPage() {
                     />
                   </div>
 
-                  {/* Firmas de Aprobación - Solo trabajadores con contratos activos */}
+                  {/* Firmas de Aprobación */}
                   <div className="border-t pt-4 space-y-4">
                     <h3 className="font-semibold text-sm">Firmas de Aprobación</h3>
                     {workersConContrato.length === 0 && (
                       <p className="text-sm text-muted-foreground">
-                        No hay trabajadores con contratos activos. Primero registre contratos en el módulo de Contratos.
+                        No hay trabajadores con contratos activos para seleccionar como autorizador o aprobador.
                       </p>
                     )}
                     <div className="grid grid-cols-1 gap-3">
                       <div>
-                        <Label htmlFor="elaboradoPorId">Elaborado por</Label>
-                        <Select
-                          value={formData.elaboradoPorId}
-                          onValueChange={(value) => setFormData({ ...formData, elaboradoPorId: value })}
-                        >
-                          <SelectTrigger id="elaboradoPorId" data-testid="select-elaborado-por-worker">
-                            <SelectValue placeholder="Seleccione trabajador con contrato" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {workersConContrato.map((worker) => (
-                              <SelectItem key={`elaborado-${worker.id}`} value={worker.id}>
-                                {worker.name} - {worker.position}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <Label htmlFor="elaboradoPorAsignado">Elaborado por — LSO asignado</Label>
+                        <Input
+                          id="elaboradoPorAsignado"
+                          data-testid="input-elaborado-por-lso-asignado"
+                          value={activeResponsible?.value || ""}
+                          readOnly
+                          placeholder="No hay un Responsable del SG-SST designado"
+                          className="bg-muted"
+                        />
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Este dato se carga automáticamente y no se selecciona de la lista de trabajadores.
+                        </p>
                       </div>
 
                       <div>
