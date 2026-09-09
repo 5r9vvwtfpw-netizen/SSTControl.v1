@@ -361,8 +361,9 @@ export default function PesvInduccionVirtual() {
 
   // ── Derived data ────────────────────────────────────────────────────────
   const sesionesConActiva = (sesiones as any[]).filter(s => s.estado === "pendiente" || s.estado === "en_progreso");
-  const activosIds = new Set(sesionesConActiva.map((s: any) => s.workerId));
-  const availableWorkers = (workers as any[]).filter(w => !activosIds.has(w.id));
+  // Las inducciones PESV pueden repetirse. Una sesión activa anterior no debe
+  // ocultar al trabajador ni impedir que se le asigne una nueva.
+  const availableWorkers = workers as any[];
 
   // ── Render ───────────────────────────────────────────────────────────────
   return (
@@ -421,7 +422,7 @@ export default function PesvInduccionVirtual() {
                     </SelectContent>
                   </Select>
                   {availableWorkers.length === 0 && (
-                    <p className="text-xs text-muted-foreground">Todos los trabajadores ya tienen sesión activa.</p>
+                    <p className="text-xs text-muted-foreground">No hay trabajadores registrados.</p>
                   )}
                 </div>
               </div>
@@ -459,7 +460,7 @@ export default function PesvInduccionVirtual() {
                   <span className="font-bold text-green-600 text-lg">{availableWorkers.length}</span>
                 </div>
                 {availableWorkers.length === 0 && (
-                  <p className="text-sm text-muted-foreground mt-2 text-center">Todos los trabajadores ya tienen sesión PESV activa.</p>
+                  <p className="text-sm text-muted-foreground mt-2 text-center">No hay trabajadores registrados.</p>
                 )}
               </div>
               <DialogFooter>
