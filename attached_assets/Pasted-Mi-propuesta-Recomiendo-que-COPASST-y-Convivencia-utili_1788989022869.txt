@@ -1,0 +1,177 @@
+Mi propuesta
+Recomiendo que COPASST y Convivencia utilicen el mismo formato guiado, adaptando únicamente el lenguaje y los tipos de reunión.
+1. Encabezado automático
+El sistema debería completar automáticamente:
+* Nombre de la empresa.
+* NIT.
+* Nombre del comité.
+* Número consecutivo del acta.
+* Fecha.
+* Hora de inicio.
+* Hora de finalización.
+* Lugar o modalidad:
+    * Presencial.
+    * Virtual.
+    * Mixta.
+* Periodo del comité.
+* Tipo de reunión:
+    * Ordinaria.
+    * Extraordinaria.
+    * Constitución.
+    * Elección.
+    * Seguimiento.
+    * Investigación o tratamiento de una situación, cuando corresponda.
+El cliente sólo seleccionaría fecha, horas, lugar y tipo.
+2. Participantes seleccionados
+En lugar de escribir nombres, debería aparecer la lista de miembros vigentes:
+Representantes del empleador
+* Nombre.
+* Cargo en la empresa.
+* Rol dentro del comité.
+* Principal o suplente.
+Representantes de los trabajadores
+* Nombre.
+* Cargo.
+* Rol dentro del comité.
+* Principal o suplente.
+El usuario marcaría:
+* Asistió.
+* No asistió.
+* Asistió como invitado.
+* Suplente que reemplazó al principal.
+También permitiría agregar invitados que no pertenezcan al comité.
+Con esto, el sistema podría calcular automáticamente si existe quórum.
+3. Inicio del acta generado automáticamente
+Por ejemplo:
+En la ciudad de Bogotá D. C., siendo las 8:00 a. m. del 9 de septiembre de 2026, se reunieron los integrantes del Comité Paritario de Seguridad y Salud en el Trabajo — COPASST de la empresa DEMO-PRUEBA, en modalidad presencial, con el propósito de realizar la reunión ordinaria correspondiente al mes de septiembre de 2026.
+Después:
+Se verificó la asistencia de los representantes del empleador y de los trabajadores, determinándose que existe quórum para deliberar y tomar decisiones.
+Ese texto no lo escribe el cliente. Se construye con los datos seleccionados.
+4. Orden del día guiado
+El sistema podría proponer automáticamente:
+1. Verificación de asistencia y quórum.
+2. Lectura y aprobación del acta anterior.
+3. Revisión de compromisos pendientes.
+4. Presentación de temas de la reunión.
+5. Proposiciones y varios.
+6. Definición de compromisos.
+7. Lectura y aprobación del acta.
+8. Cierre.
+El cliente puede agregar, eliminar o reordenar puntos.
+5. Registro sencillo de lo tratado
+Para cada punto del orden del día, el cliente únicamente escribiría algo como:
+Se revisaron los accidentes del último mes. No se presentaron accidentes, pero se identificaron dos actos inseguros en el área de producción.
+El sistema lo convertiría en una sección formal:
+3. Revisión de accidentes e incidentes
+El comité realizó la revisión de los accidentes e incidentes reportados durante el periodo. Se informó que no se presentaron accidentes de trabajo; sin embargo, fueron identificados dos actos inseguros en el área de producción, sobre los cuales se definieron las acciones descritas posteriormente.
+Podríamos incluir un botón:
+“Mejorar redacción del acta”
+La inteligencia artificial mejoraría ortografía y formalidad, pero sin inventar decisiones ni información.
+6. Acuerdos y compromisos estructurados
+En vez de poner todos los acuerdos en un párrafo, cada compromiso tendría:
+* Descripción.
+* Responsable.
+* Fecha límite.
+* Tipo:
+    * Acción.
+    * Recomendación.
+    * Solicitud.
+    * Seguimiento.
+* Estado inicial.
+* Evidencia esperada.
+Ejemplo:
+Compromiso	Responsable	Fecha
+Instalar señalización en producción	Jefe de mantenimiento	20/09/2026
+Socializar procedimiento de trabajo seguro	Responsable SST	25/09/2026
+Estos compromisos deberían aparecer automáticamente en la siguiente reunión como:
+* Pendientes.
+* Cumplidos.
+* Vencidos.
+* Reprogramados.
+Esto evitaría que el acta quede simplemente archivada.
+7. Cierre automático
+El sistema generaría un cierre como:
+No existiendo otros asuntos por tratar, se dio por finalizada la reunión a las 10:15 a. m. del 9 de septiembre de 2026. Los participantes manifiestan que el contenido del acta corresponde a lo tratado y acordado durante la sesión.
+Después aparecerían los firmantes.
+
+Firma de los miembros elegidos
+Esta parte es especialmente importante.
+Selección de firmantes
+Al elaborar el acta, el administrador elegiría quién debe firmar:
+* Presidente.
+* Secretario.
+* Representante del empleador.
+* Representante de los trabajadores.
+* Todos los asistentes, opcionalmente.
+Los firmantes sólo podrían seleccionarse entre:
+* Miembros vigentes del comité.
+* Participantes registrados en esa reunión.
+* Invitados autorizados, si se habilita esa opción.
+Flujo de firma recomendado
+1. El acta queda en Borrador.
+2. El responsable termina de registrar los acuerdos.
+
+Se genera el PDF definitivo.
+Una vez cerrada, no debería poder editarse. Si se necesita corregir algo, debería generarse una nueva versión o una constancia de corrección.
+Estados sugeridos
+* Borrador.
+* Pendiente de revisión.
+* Pendiente de firmas.
+* Parcialmente firmada.
+* Rechazada o con correcciones solicitadas.
+* Firmada.
+* Cerrada.
+* Anulada.
+
+Diferencias entre COPASST y Convivencia
+La estructura general puede ser igual, pero no conviene que el contenido sea idéntico.
+COPASST
+Puede incluir secciones especiales para:
+* Accidentes e incidentes.
+* Inspecciones.
+* Condiciones inseguras.
+* Capacitaciones.
+* Recomendaciones de trabajadores.
+* Seguimiento al plan de trabajo.
+* Indicadores SST.
+* Compromisos preventivos.
+Comité de Convivencia
+Puede incluir:
+* Actividades de prevención.
+* Capacitaciones de convivencia.
+* Seguimiento general.
+* Campañas de buen trato.
+* Recomendaciones organizacionales.
+Las quejas y casos personales necesitan tratamiento especial. El acta general no debería mostrar detalles sensibles de una persona. Para esos casos recomiendo:
+* Expediente confidencial separado.
+* Acta con información resumida.
+* Acceso restringido.
+* Firmantes específicamente autorizados.
+* PDF sin datos sensibles innecesarios.
+
+Cómo debería verse para el cliente
+El formulario podría dividirse en pasos:
+Paso 1 — Información de la reunión
+Fecha, hora, lugar, modalidad y tipo.
+Paso 2 — Participantes
+Seleccionar miembros del empleador, trabajadores, suplentes e invitados.
+Paso 3 — Orden del día
+Aceptar la plantilla o modificarla.
+Paso 4 — Lo tratado
+Escribir únicamente lo ocurrido en cada punto.
+Paso 5 — Acuerdos
+Compromiso, responsable y fecha límite.
+Paso 6 — Firmantes
+Elegir quiénes deben firmar.
+Paso 7 — Vista previa
+Mostrar el acta formal exactamente como quedará.
+Mi recomendación
+No intentaría mejorar solamente el campo actual de “contenido”. Crearía un constructor guiado de actas, compartido por COPASST y Convivencia.
+Así el cliente no redactaría documentos. Sólo registraría hechos:
+* Quién asistió.
+* Qué se trató.
+* Qué se decidió.
+* Quién quedó responsable.
+* Cuándo debe cumplir.
+* Quién debe firmar.
+El sistema se encargaría de convertir eso en un acta formal, coherente, numerada, firmada y lista para PDF. Esto representa exactamente lo que entiendo que estás buscando.
