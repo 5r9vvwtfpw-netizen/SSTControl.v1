@@ -81,8 +81,7 @@ export async function generateCotizacionTransicionPdf(
     ? `${formatDate(params.fechaInicio, new Date())}${params.fechaFin ? ` al ${formatDate(params.fechaFin, new Date())}` : ""}`
     : "A coordinar con la empresa";
   const subtotal = tarifaHora * horasMinimas;
-  const iva = Math.round(subtotal * 0.19);
-  const total = subtotal + iva;
+  const total = subtotal;
   const mensajePrincipal = params.mensajePrincipal?.trim() ||
     `Capacitar y habilitar al equipo designado por ${empresa} para reemplazar al Profesional en SST y continuar directamente la gestión SST y PESV dentro de la infraestructura digital de SST Colombia, utilizando la suscripción que la empresa ya tiene activa.`;
   const cotizacionNo = `COT-${dateKey(fecha)}-01`;
@@ -191,12 +190,10 @@ export async function generateCotizacionTransicionPdf(
     .text(money(tarifaHora), amountX, tableY + 108, { width: amountW, align: "right" });
   doc.text("Subtotal", tableX + 275, tableY + 136, { width: 95, align: "right" })
     .text(money(subtotal), amountX, tableY + 136, { width: amountW, align: "right" });
-  doc.text("IVA 19%", tableX + 275, tableY + 164, { width: 95, align: "right" })
-    .text(money(iva), amountX, tableY + 164, { width: amountW, align: "right" });
-  doc.roundedRect(tableX + 270, tableY + 194, 217, 42, 6).fill(C.gold);
+  doc.roundedRect(tableX + 270, tableY + 166, 217, 42, 6).fill(C.gold);
   doc.font("Helvetica-Bold").fontSize(12).fillColor(C.green)
-    .text("TOTAL", tableX + 284, tableY + 209)
-    .text(money(total), amountX, tableY + 209, { width: amountW, align: "right" });
+    .text("TOTAL", tableX + 284, tableY + 181)
+    .text(money(total), amountX, tableY + 181, { width: amountW, align: "right" });
 
   sectionTitle("Incluye", 458);
   bullet(`Acceso habilitado únicamente para la operación de ${empresa}.`, 486);

@@ -128,8 +128,7 @@ sectionTitle("Inversión", 174);
 const hourlyRate = 50000;
 const trainingHours = 8;
 const subtotal = hourlyRate * trainingHours;
-const iva = Math.round(subtotal * 0.19);
-const total = subtotal + iva;
+const total = subtotal;
 const tableX = 54;
 const tableY = 204;
 const tableW = 487;
@@ -150,8 +149,6 @@ doc.font("Helvetica").fontSize(10).fillColor(COLORS.text)
 doc.font("Helvetica").fontSize(10).fillColor(COLORS.text)
   .text("Subtotal", tableX + 275, tableY + 108, { width: 95, align: "right" })
   .text(money(subtotal), amountX, tableY + 108, { width: amountW, align: "right" });
-doc.text("IVA 19%", tableX + 275, tableY + 136, { width: 95, align: "right" })
-  .text(money(iva), amountX, tableY + 136, { width: amountW, align: "right" });
 doc.roundedRect(tableX + 270, tableY + 166, 217, 42, 6).fill(COLORS.gold);
 doc.font("Helvetica-Bold").fontSize(12).fillColor(COLORS.green)
   .text("TOTAL", tableX + 284, tableY + 181)
