@@ -34,3 +34,4 @@
 - [Training confirmation scope](training-confirmation-scope.md) — Confirmar en el Portal de Empleados solo confirma una capacitación programada; nunca depende de inducciones SST/PESV.
 - [Employee portal pending badge](employee-portal-pending-badge.md) — campana, PWA y Web Push cuentan obligaciones accionables del portal; Mensajes Internos nunca suma para trabajadores.
 - [Worker acknowledgment instead of signature](worker-acknowledgment-policy.md) — inducciones y futuras actas de comités usan confirmación de lectura del empleado, no firma manuscrita en el portal.
+- [EPP delivery act grouping](epp-delivery-act-grouping.md) — un acta agrupa varias filas EPP; editar debe conservar IDs y metadatos de auditoría de cada elemento.

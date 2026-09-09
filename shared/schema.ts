@@ -9428,6 +9428,7 @@ export type EppCatalog = typeof eppCatalog.$inferSelect;
 // Registro de entregas de EPP a trabajadores
 export const eppDeliveries = pgTable("epp_deliveries", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  deliveryGroupId: varchar("delivery_group_id").notNull().default(sql`gen_random_uuid()`),
   companyId: varchar("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
   workerId: varchar("worker_id").notNull().references(() => workers.id, { onDelete: "cascade" }),
   

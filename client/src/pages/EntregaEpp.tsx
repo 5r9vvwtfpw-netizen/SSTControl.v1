@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { getTodayDateString } from "@/lib/utils/formatters";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -17,33 +17,26 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { useCompanyContext } from "@/hooks/use-company-context";
-import { queryClient, apiRequest } from "@/lib/queryClient";
-import { 
-  Plus, Edit, Trash2, HardHat, Glasses, Search, Filter,
-  Wind, Footprints, Shirt, ShieldCheck, ArrowLeft, Sparkles, Bot,
-  UserPlus, CalendarDays, RefreshCw, AlertTriangle, Clock, ArrowUpDown, Briefcase, FileText, FileDown, Printer
-} from "lucide-react";
+import { queryClient, apiRequest, buildHeaders } from "@/lib/queryClient";
+import { Plus, Edit, Trash2, HardHat, Glasses, Search, Filter, Wind, Footprints, Shirt, ShieldCheck, ArrowLeft, Bot, UserPlus, CalendarDays, RefreshCw, AlertTriangle, Clock, ArrowUpDown, Briefcase, FileText, FileDown, Printer, X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { useLocation, Link } from "wouter";
+import { useLocation } from "wouter";
 import { LuEar, LuHand } from "react-icons/lu";
-import type { EppDelivery, EppCatalog, Worker } from "@shared/schema";
+import type { EppCatalog, Worker } from "@shared/schema";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 
+const categories = ["proteccion_cabeza", "proteccion_visual", "proteccion_auditiva", "proteccion_respiratoria", "proteccion_manos", "proteccion_pies", "proteccion_corporal", "proteccion_caidas", "proteccion_facial", "otro"] as const;
 const formSchema = z.object({
   workerId: z.string().min(1, "Seleccione un trabajador"),
-  eppCatalogId: z.string().optional(),
-  eppName: z.string().min(1, "Nombre del EPP requerido"),
-  eppCategory: z.enum(["proteccion_cabeza", "proteccion_visual", "proteccion_auditiva", "proteccion_respiratoria", "proteccion_manos", "proteccion_pies", "proteccion_corporal", "proteccion_caidas", "proteccion_facial", "otro"]),
   deliveryDate: z.string().min(1, "Fecha requerida"),
-  quantity: z.coerce.number().min(1, "Mínimo 1"),
-  size: z.string().optional(),
-  deliveryReason: z.string().optional(),
+  deliveryReason: z.string().min(1, "Seleccione un motivo"),
   workerSignature: z.boolean().default(false),
   observations: z.string().optional(),
 });
-
 type FormData = z.infer<typeof formSchema>;
+type ActItem = { id?: string; eppCatalogId?: string | null; eppName: string; eppCategory: string; quantity: number; size?: string; serialNumber?: string; lotNumber?: string; expirationDate?: string };
+type DeliveryAct = { id: string; deliveryGroupId?: string; companyId?: string; workerId: string; deliveryDate: string; deliveryReason?: string; workerSignature?: boolean; observations?: string; deliveredBy?: string; worker?: Worker; items: ActItem[] };
 
 const eppCategories: Record<string, { label: string; icon: any; color: string }> = {
   proteccion_cabeza: { label: "Cabeza", icon: HardHat, color: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400" },
@@ -57,345 +50,157 @@ const eppCategories: Record<string, { label: string; icon: any; color: string }>
   proteccion_caidas: { label: "Caídas", icon: ShieldCheck, color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" },
   otro: { label: "Otros", icon: ShieldCheck, color: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400" },
 };
-
-const deliveryReasonOptions: Record<string, { label: string; description: string; icon: LucideIcon }> = {
-  dotacion_inicial: { 
-    label: "Dotación Inicial", 
-    description: "Primera entrega al ingresar a la empresa",
-    icon: UserPlus
-  },
-  dotacion_periodica: { 
-    label: "Dotación Periódica", 
-    description: "Entrega programada cada 4 meses (Art. 230 CST)",
-    icon: CalendarDays
-  },
-  reposicion_desgaste: { 
-    label: "Reposición por Desgaste", 
-    description: "Desgaste natural por uso según vida útil",
-    icon: RefreshCw
-  },
-  reposicion_dano: { 
-    label: "Reposición por Daño", 
-    description: "Daño durante labores que lo hace inservible",
-    icon: AlertTriangle
-  },
-  vencimiento: { 
-    label: "Vencimiento de Vida Útil", 
-    description: "EPP ha cumplido su período de vida útil",
-    icon: Clock
-  },
-  perdida: { 
-    label: "Pérdida", 
-    description: "EPP extraviado o robado",
-    icon: Search
-  },
-  cambio_size: { 
-    label: "Cambio de Talla", 
-    description: "Cambio por size inadecuada",
-    icon: ArrowUpDown
-  },
-  cambio_puesto: { 
-    label: "Cambio de Puesto", 
-    description: "Nuevo EPP por cambio de funciones",
-    icon: Briefcase
-  },
-  actualizacion_normativa: { 
-    label: "Actualización Normativa", 
-    description: "Nueva norma técnica exige EPP diferente",
-    icon: FileText
-  },
+const reasons: Record<string, { label: string; description: string; icon: LucideIcon }> = {
+  dotacion_inicial: { label: "Dotación Inicial", description: "Primera entrega al ingresar a la empresa", icon: UserPlus },
+  dotacion_periodica: { label: "Dotación Periódica", description: "Entrega programada cada 4 meses", icon: CalendarDays },
+  reposicion_desgaste: { label: "Reposición por Desgaste", description: "Desgaste natural por uso", icon: RefreshCw },
+  reposicion_dano: { label: "Reposición por Daño", description: "Daño durante labores", icon: AlertTriangle },
+  vencimiento: { label: "Vencimiento de Vida Útil", description: "Cumplió su período de vida útil", icon: Clock },
+  perdida: { label: "Pérdida", description: "EPP extraviado o robado", icon: Search },
+  cambio_size: { label: "Cambio de Talla", description: "Cambio por talla inadecuada", icon: ArrowUpDown },
+  cambio_puesto: { label: "Cambio de Puesto", description: "Nuevo EPP por cambio de funciones", icon: Briefcase },
+  actualizacion_normativa: { label: "Actualización Normativa", description: "Nueva norma técnica", icon: FileText },
 };
 
 export default function EntregaEpp() {
   const { toast } = useToast();
   const { user } = useAuth();
-  const { selectedCompany, isLoading: isCompanyLoading } = useCompanyContext();
+  const { selectedCompany, isLoading: companyLoading } = useCompanyContext();
   const [, setLocation] = useLocation();
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState<string>("todos");
-  const [manualEntry, setManualEntry] = useState(false);
-  const [catalogSearchTerm, setCatalogSearchTerm] = useState("");
-  const [workerSearchTerm, setWorkerSearchTerm] = useState("");
-
   const companyId = selectedCompany?.id || user?.companyId;
+  const [dialogOpen, setDialogOpen] = useState(false), [editingId, setEditingId] = useState<string | null>(null);
+  const [items, setItems] = useState<ActItem[]>([]), [manualEntry, setManualEntry] = useState(false);
+  const [searchTerm, setSearchTerm] = useState(""), [categoryFilter, setCategoryFilter] = useState("todos");
+  const [catalogSearchTerm, setCatalogSearchTerm] = useState(""), [workerSearchTerm, setWorkerSearchTerm] = useState("");
+  const [draft, setDraft] = useState<ActItem>({ eppName: "", eppCategory: "proteccion_cabeza", quantity: 1, size: "" });
+  const { data: deliveries = [], isLoading } = useQuery<DeliveryAct[]>({ queryKey: ["/api/epp/deliveries", { companyId }], queryFn: async () => { const r = await fetch("/api/epp/deliveries", { credentials: "include", headers: buildHeaders(false) }); if (!r.ok) throw new Error("Error al cargar actas"); return r.json(); }, enabled: !!companyId });
+  const { data: catalog = [] } = useQuery<EppCatalog[]>({ queryKey: ["/api/epp/catalog"] });
+  const { data: workers = [] } = useQuery<Worker[]>({ queryKey: ["/api/workers"], enabled: !!companyId });
+  const form = useForm<FormData>({ resolver: zodResolver(formSchema), defaultValues: { workerId: "", deliveryDate: getTodayDateString(), deliveryReason: "dotacion_inicial", workerSignature: true, observations: "" } });
 
-  const { data: deliveries = [], isLoading } = useQuery<EppDelivery[]>({
-    queryKey: ["/api/epp/deliveries", { companyId }],
-    queryFn: async () => {
-      const res = await fetch("/api/epp/deliveries", { credentials: "include" });
-      if (!res.ok) throw new Error("Error al cargar entregas");
-      return res.json();
-    },
-    enabled: !!companyId,
-  });
+  const filteredWorkers = useMemo(() => { const t = workerSearchTerm.toLowerCase(); return t ? workers.filter(w => w.name?.toLowerCase().includes(t) || w.position?.toLowerCase().includes(t) || w.identificationNumber?.toLowerCase().includes(t)) : workers; }, [workers, workerSearchTerm]);
+  const filteredCatalog = useMemo(() => { const t = catalogSearchTerm.toLowerCase(); return t ? catalog.filter(c => c.name?.toLowerCase().includes(t) || eppCategories[c.category]?.label.toLowerCase().includes(t) || c.description?.toLowerCase().includes(t)) : catalog; }, [catalog, catalogSearchTerm]);
+  const filteredDeliveries = useMemo(() => deliveries.filter(d => {
+    const names = d.items?.map(i => i.eppName).join(" ") || "";
+    return (d.worker?.name || "").toLowerCase().includes(searchTerm.toLowerCase()) || names.toLowerCase().includes(searchTerm.toLowerCase()) || searchTerm === "";
+  }).filter(d => categoryFilter === "todos" || d.items?.some(i => i.eppCategory === categoryFilter)), [deliveries, searchTerm, categoryFilter]);
 
-  const { data: catalog = [] } = useQuery<EppCatalog[]>({
-    queryKey: ["/api/epp/catalog"],
-  });
-
-  const { data: workers = [] } = useQuery<Worker[]>({
-    queryKey: ["/api/workers"],
-    enabled: !!companyId,
-  });
-
-  const form = useForm<FormData>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      workerId: "",
-      eppCatalogId: "",
-      eppName: "",
-      eppCategory: "proteccion_cabeza",
-      deliveryDate: getTodayDateString(),
-      quantity: 1,
-      size: "",
-      deliveryReason: "dotacion_inicial",
-      workerSignature: true,
-      observations: "",
-    },
-  });
-
-  const filteredDeliveries = useMemo(() => {
-    return deliveries.filter((delivery: any) => {
-      const workerName = delivery.worker?.name || "";
-      const matchesSearch = workerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        delivery.eppName?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCategory = categoryFilter === "todos" || delivery.eppCategory === categoryFilter;
-      return matchesSearch && matchesCategory;
-    });
-  }, [deliveries, searchTerm, categoryFilter]);
-
-  const filteredWorkers = useMemo(() => {
-    if (!workerSearchTerm.trim()) return workers;
-    const term = workerSearchTerm.toLowerCase();
-    return workers.filter(w => 
-      w.name?.toLowerCase().includes(term) || 
-      w.position?.toLowerCase().includes(term) ||
-      w.identificationNumber?.toLowerCase().includes(term)
-    );
-  }, [workers, workerSearchTerm]);
-
-  const filteredCatalog = useMemo(() => {
-    if (!catalogSearchTerm.trim()) return catalog;
-    const term = catalogSearchTerm.toLowerCase();
-    return catalog.filter(c => 
-      c.name?.toLowerCase().includes(term) || 
-      eppCategories[c.category]?.label.toLowerCase().includes(term) ||
-      c.description?.toLowerCase().includes(term)
-    );
-  }, [catalog, catalogSearchTerm]);
-
-  const createMutation = useMutation({
-    mutationFn: async (data: FormData) => {
+  const resetEditor = () => { form.reset({ workerId: "", deliveryDate: getTodayDateString(), deliveryReason: "dotacion_inicial", workerSignature: true, observations: "" }); setItems([]); setDraft({ eppName: "", eppCategory: "proteccion_cabeza", quantity: 1, size: "" }); setManualEntry(false); };
+  const closeEditor = () => { setDialogOpen(false); setEditingId(null); resetEditor(); };
+  const mutation = useMutation({
+    mutationFn: async (data: { id?: string; form: FormData; items: ActItem[] }) => {
+      if (!data.items.length) throw new Error("Agregue al menos un elemento al acta");
       const payload = {
-        ...data,
+        ...data.form,
         companyId,
-        eppCatalogId: data.eppCatalogId || null,
+        items: data.items.map(item => ({
+          ...item,
+          eppCatalogId: item.eppCatalogId || null,
+        })),
       };
-      const res = await apiRequest("POST", "/api/epp/deliveries", payload);
-      return res.json();
+      const r = await apiRequest(data.id ? "PATCH" : "POST", data.id ? `/api/epp/deliveries/${data.id}` : "/api/epp/deliveries", payload); return r.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/epp/deliveries"] });
-      toast({ title: "Entrega registrada", description: "El registro se ha guardado exitosamente" });
-      setDialogOpen(false);
-      form.reset();
-      setManualEntry(false);
-    },
-    onError: (error: Error) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/epp/deliveries"] }); toast({ title: editingId ? "Acta actualizada" : "Acta registrada", description: "Los cambios se guardaron exitosamente" }); closeEditor(); },
+    onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
-
-  const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<FormData> }) => {
-      const payload = {
-        ...data,
-        eppCatalogId: data.eppCatalogId || null,
-      };
-      const res = await apiRequest("PATCH", `/api/epp/deliveries/${id}`, payload);
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/epp/deliveries"] });
-      toast({ title: "Entrega actualizada", description: "Los cambios se han guardado exitosamente" });
-      setDialogOpen(false);
-      setEditingId(null);
-      form.reset();
-      setManualEntry(false);
-    },
-    onError: (error: Error) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      await apiRequest("DELETE", `/api/epp/deliveries/${id}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/epp/deliveries"] });
-      toast({ title: "Entrega eliminada" });
-    },
-  });
-
-  const onSubmit = (data: FormData) => {
-    if (editingId) {
-      updateMutation.mutate({ id: editingId, data });
-    } else {
-      createMutation.mutate(data);
+  const deleteMutation = useMutation({ mutationFn: (id: string) => apiRequest("DELETE", `/api/epp/deliveries/${id}`), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/epp/deliveries"] }); toast({ title: "Acta eliminada" }); } });
+  const handleNew = () => { resetEditor(); setEditingId(null); setDialogOpen(true); };
+  const handleEdit = (act: DeliveryAct) => { setEditingId(act.id); form.reset({ workerId: act.workerId, deliveryDate: act.deliveryDate?.slice(0, 10), deliveryReason: act.deliveryReason || "dotacion_inicial", workerSignature: act.workerSignature ?? true, observations: act.observations || "" }); setItems(act.items || []); setDialogOpen(true); };
+  const selectCatalog = (id: string) => { if (id === "manual") { setManualEntry(true); setDraft({ eppName: "", eppCategory: "proteccion_cabeza", quantity: 1, size: "" }); } else { const c = catalog.find(x => x.id === id); if (c) { setManualEntry(false); setDraft({ eppName: c.name, eppCategory: c.category, quantity: 1, size: "", eppCatalogId: c.id }); } } setCatalogSearchTerm(""); };
+  const addItem = () => { if (!draft.eppName.trim() || !draft.quantity || draft.quantity < 1) { toast({ title: "Complete el elemento", description: "Nombre y cantidad son requeridos", variant: "destructive" }); return; } setItems(old => [...old, { ...draft, quantity: Number(draft.quantity) }]); setDraft({ eppName: "", eppCategory: "proteccion_cabeza", quantity: 1, size: "" }); setManualEntry(false); };
+  const formatDate = (date?: string) => date ? new Date(date).toLocaleDateString("es-CO") : "—";
+  const download = async (url: string, filename: string) => {
+    try {
+      const response = await fetch(url, { credentials: "include", headers: buildHeaders(false) });
+      if (!response.ok) throw new Error((await response.text()) || "No fue posible generar el PDF");
+      const objectUrl = URL.createObjectURL(await response.blob());
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(objectUrl);
+    } catch (error: any) {
+      toast({ title: "Error al descargar", description: error.message, variant: "destructive" });
     }
   };
 
-  const handleEdit = (delivery: EppDelivery) => {
-    setEditingId(delivery.id);
-    const hasManualEntry = !delivery.eppCatalogId;
-    setManualEntry(hasManualEntry);
-    form.reset({
-      workerId: delivery.workerId,
-      eppCatalogId: delivery.eppCatalogId || "",
-      eppName: delivery.eppName,
-      eppCategory: delivery.eppCategory as any,
-      deliveryDate: delivery.deliveryDate,
-      quantity: delivery.quantity || 1,
-      size: delivery.size || "",
-      deliveryReason: delivery.deliveryReason || "",
-      workerSignature: delivery.workerSignature ?? true,
-      observations: delivery.observations || "",
-    });
-    setDialogOpen(true);
-  };
-
-  const handleDownloadPdf = (url: string, filename: string) => {
-    const link = document.createElement('a');
-    link.href = url;
-    link.target = '_blank';
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const handleNew = () => {
-    setEditingId(null);
-    setManualEntry(false);
-    form.reset({
-      workerId: "",
-      eppCatalogId: "",
-      eppName: "",
-      eppCategory: "proteccion_cabeza",
-      deliveryDate: getTodayDateString(),
-      quantity: 1,
-      size: "",
-      deliveryReason: "dotacion_inicial",
-      workerSignature: true,
-      observations: "",
-    });
-    setDialogOpen(true);
-  };
-
-  const handleCatalogSelect = (catalogId: string) => {
-    if (catalogId === "manual") {
-      setManualEntry(true);
-      form.setValue("eppCatalogId", "");
-      form.setValue("eppName", "");
-      form.setValue("eppCategory", "proteccion_cabeza");
-      return;
-    }
-    
-    setManualEntry(false);
-    const selectedEpp = catalog.find(c => c.id === catalogId);
-    if (selectedEpp) {
-      form.setValue("eppCatalogId", catalogId);
-      form.setValue("eppName", selectedEpp.name);
-      form.setValue("eppCategory", selectedEpp.category as any);
-    }
-  };
-
-  const formatDate = (date: string | null | undefined) => {
-    if (!date) return "—";
-    return new Date(date).toLocaleDateString("es-CO");
-  };
-
-  if (isCompanyLoading) {
+  if (companyLoading) {
     return (
-      <div className="container mx-auto py-6 flex items-center justify-center min-h-[400px]">
-        <div className="text-center space-y-4">
-          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto"></div>
-          <p className="text-muted-foreground">Cargando...</p>
-        </div>
+      <div className="container mx-auto flex min-h-[400px] items-center justify-center py-6">
+        <p>Cargando...</p>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
- <div className="flex items-center gap-4 flex-wrap">
+    <div className="container mx-auto space-y-6 py-6">
+      <div className="flex flex-wrap items-center gap-4">
         <BackToEvaluationButton />
         <BackToCronogramaButton />
       </div>
-      <div className="flex items-center justify-between flex-wrap gap-4">
+
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setLocation("/evaluaciones-sst")}
             data-testid="button-back-evaluacion"
-            className="shrink-0"
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
+            <h1 className="flex items-center gap-2 text-2xl font-bold">
               <HardHat className="h-6 w-6 text-primary" />
-              Entrega de EPP
+              Actas de EPP
             </h1>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-sm text-muted-foreground">
               Registro y control de elementos de protección personal
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex gap-2">
           <Button
             variant="outline"
-            onClick={() => handleDownloadPdf('/api/epp/deliveries/pdf', 'entregas-epp.pdf')}
+            onClick={() => download("/api/epp/deliveries/pdf", "actas-epp.pdf")}
             data-testid="button-download-epp-pdf"
           >
-            <FileDown className="h-4 w-4 mr-2" />
+            <FileDown className="mr-2 h-4 w-4" />
             Descargar PDF
           </Button>
           <Button onClick={handleNew} data-testid="button-new-delivery">
-            <Plus className="h-4 w-4 mr-2" />
-            Nueva Entrega
+            <Plus className="mr-2 h-4 w-4" />
+            Nueva Acta
           </Button>
         </div>
       </div>
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <CardTitle className="text-lg">Registro de Entregas</CardTitle>
-            <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <CardTitle className="text-lg">Registro de Actas</CardTitle>
+            <div className="flex flex-wrap gap-2">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   placeholder="Buscar trabajador o EPP..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9 w-[200px]"
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  className="w-[220px] pl-9"
                   data-testid="input-search"
                 />
               </div>
               <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger className="w-[200px]" data-testid="select-category-filter">
-                  <Filter className="h-4 w-4 mr-2" />
+                <SelectTrigger className="w-[190px]" data-testid="select-category-filter">
+                  <Filter className="mr-2 h-4 w-4" />
                   <SelectValue placeholder="Categoría" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todos">Todas las categorías</SelectItem>
-                  {Object.entries(eppCategories).map(([key, val]) => (
-                    <SelectItem key={key} value={key}>{val.label}</SelectItem>
+                  {Object.entries(eppCategories).map(([key, value]) => (
+                    <SelectItem key={key} value={key}>{value.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -404,16 +209,14 @@ export default function EntregaEpp() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full"></div>
-            </div>
+            <div className="py-8 text-center">Cargando...</div>
           ) : filteredDeliveries.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <HardHat className="h-12 w-12 mx-auto mb-4 opacity-20" />
-              <p>No hay entregas registradas</p>
+            <div className="py-8 text-center text-muted-foreground">
+              <HardHat className="mx-auto mb-4 h-12 w-12 opacity-20" />
+              <p>No hay actas registradas</p>
               <Button variant="outline" className="mt-4" onClick={handleNew}>
-                <Plus className="h-4 w-4 mr-2" />
-                Registrar primera entrega
+                <Plus className="mr-2 h-4 w-4" />
+                Registrar primera acta
               </Button>
             </div>
           ) : (
@@ -422,67 +225,50 @@ export default function EntregaEpp() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Trabajador</TableHead>
-                    <TableHead>EPP</TableHead>
-                    <TableHead>Categoría</TableHead>
+                    <TableHead>Elementos</TableHead>
+                    <TableHead>Motivo</TableHead>
                     <TableHead>Fecha</TableHead>
                     <TableHead className="text-center">Cantidad</TableHead>
-                    <TableHead>Talla</TableHead>
                     <TableHead className="text-right">Acciones</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredDeliveries.map((delivery: any) => {
-                    const categoryInfo = eppCategories[delivery.eppCategory] || eppCategories.otro;
-                    const CategoryIcon = categoryInfo?.icon || ShieldCheck;
-
+                  {filteredDeliveries.map((act) => {
+                    const total = act.items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
                     return (
-                      <TableRow key={delivery.id} data-testid={`row-delivery-${delivery.id}`}>
+                      <TableRow key={act.id} data-testid={`row-delivery-${act.id}`}>
                         <TableCell>
-                          <div>
-                            <div className="font-medium">{delivery.worker?.name || "—"}</div>
-                            <div className="text-xs text-muted-foreground">{delivery.worker?.position || ""}</div>
+                          <div className="font-medium">{act.worker?.name || "—"}</div>
+                          <div className="text-xs text-muted-foreground">{act.worker?.position || ""}</div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="font-medium">
+                            {act.items?.[0]?.eppName || "—"}
+                            {(act.items?.length || 0) > 1 && (
+                              <span className="text-muted-foreground"> + {(act.items?.length || 0) - 1} más</span>
+                            )}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {act.items?.length || 0} elemento(s)
                           </div>
                         </TableCell>
-                        <TableCell>
-                          <div>
-                            <div className="font-medium">{delivery.eppName}</div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={`${categoryInfo?.color || 'bg-gray-100 text-gray-700'} flex items-center gap-1 w-fit`}>
-                            <CategoryIcon className="h-3 w-3" />
-                            {categoryInfo?.label || delivery.eppCategory}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{formatDate(delivery.deliveryDate)}</TableCell>
-                        <TableCell className="text-center">
-                          <span className="font-bold">{delivery.quantity || 1}</span>
-                        </TableCell>
-                        <TableCell>{delivery.size || "—"}</TableCell>
+                        <TableCell>{reasons[act.deliveryReason || ""]?.label || act.deliveryReason || "—"}</TableCell>
+                        <TableCell>{formatDate(act.deliveryDate)}</TableCell>
+                        <TableCell className="text-center font-bold">{total}</TableCell>
                         <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-1">
+                          <div className="flex justify-end gap-1">
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => handleDownloadPdf(`/api/epp/deliveries/${delivery.id}/pdf`, `entrega-epp-${delivery.worker?.identificationNumber || delivery.id}.pdf`)}
-                              data-testid={`button-pdf-${delivery.id}`}
+                              onClick={() => download(`/api/epp/deliveries/${act.id}/pdf`, `acta-epp-${act.id}.pdf`)}
+                              data-testid={`button-pdf-${act.id}`}
                             >
                               <Printer className="h-4 w-4" />
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleEdit(delivery)}
-                              data-testid={`button-edit-${delivery.id}`}
-                            >
+                            <Button variant="ghost" size="icon" onClick={() => handleEdit(act)} data-testid={`button-edit-${act.id}`}>
                               <Edit className="h-4 w-4" />
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => deleteMutation.mutate(delivery.id)}
-                              data-testid={`button-delete-${delivery.id}`}
-                            >
+                            <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(act.id)} data-testid={`button-delete-${act.id}`}>
                               <Trash2 className="h-4 w-4 text-red-500" />
                             </Button>
                           </div>
@@ -497,13 +283,16 @@ export default function EntregaEpp() {
         </CardContent>
       </Card>
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <Dialog open={dialogOpen} onOpenChange={(open) => open ? setDialogOpen(true) : closeEditor()}>
+        <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editingId ? "Editar Entrega de EPP" : "Nueva Entrega de EPP"}</DialogTitle>
+            <DialogTitle>{editingId ? "Editar Acta de EPP" : "Nueva Acta de EPP"}</DialogTitle>
           </DialogHeader>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit, (errors) => console.log("Form validation errors:", errors))} className="space-y-4">
+            <form
+              onSubmit={form.handleSubmit((data) => mutation.mutate({ id: editingId || undefined, form: data, items }))}
+              className="space-y-4"
+            >
               <FormField
                 control={form.control}
                 name="workerId"
@@ -511,38 +300,16 @@ export default function EntregaEpp() {
                   <FormItem>
                     <FormLabel>Trabajador *</FormLabel>
                     <Select onValueChange={(value) => { field.onChange(value); setWorkerSearchTerm(""); }} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger data-testid="select-worker">
-                          <SelectValue placeholder="Seleccione trabajador" />
-                        </SelectTrigger>
-                      </FormControl>
+                      <FormControl><SelectTrigger data-testid="select-worker"><SelectValue placeholder="Seleccione trabajador" /></SelectTrigger></FormControl>
                       <SelectContent>
-                        <div className="px-2 pb-2 sticky top-0 bg-popover z-10">
-                          <div className="relative">
-                            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
-                            <Input
-                              placeholder="Buscar trabajador..."
-                              value={workerSearchTerm}
-                              onChange={(e) => setWorkerSearchTerm(e.target.value)}
-                              className="pl-7 h-8 text-sm"
-                              data-testid="input-search-worker"
-                            />
-                          </div>
+                        <div className="sticky top-0 bg-popover p-2">
+                          <Input placeholder="Buscar trabajador..." value={workerSearchTerm} onChange={(event) => setWorkerSearchTerm(event.target.value)} data-testid="input-search-worker" />
                         </div>
-                        {filteredWorkers.length === 0 ? (
-                          <div className="py-4 text-center text-sm text-muted-foreground">
-                            No se encontraron trabajadores
-                          </div>
-                        ) : (
-                          filteredWorkers.map(w => (
-                            <SelectItem key={w.id} value={w.id}>
-                              <div className="flex flex-col">
-                                <span className="font-medium">{w.name}</span>
-                                <span className="text-xs text-muted-foreground">{w.position || "Sin cargo"}</span>
-                              </div>
-                            </SelectItem>
-                          ))
-                        )}
+                        {filteredWorkers.map((worker) => (
+                          <SelectItem key={worker.id} value={worker.id}>
+                            <div><div className="font-medium">{worker.name}</div><div className="text-xs text-muted-foreground">{worker.position || "Sin cargo"}</div></div>
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -550,326 +317,66 @@ export default function EntregaEpp() {
                 )}
               />
 
-              <div className="rounded-lg border-2 border-dashed border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/20 p-4">
-                <div className="flex items-start gap-4">
-                  <div className="p-3 rounded-lg bg-blue-100 dark:bg-blue-900 shrink-0">
-                    <Bot className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <div className="flex-1 space-y-3">
-                    <div>
-                      <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-1">Asistente Inteligente de EPP</h3>
-                      <p className="text-sm text-blue-700 dark:text-blue-300">
-                        Seleccione del catálogo con {catalog.length} elementos de protección según normativa colombiana (Decreto 1072/2015, Resolución 2400/1979, normas NTC/ANSI/EN).
-                      </p>
-                    </div>
-                    <Select 
-                      onValueChange={(value) => { handleCatalogSelect(value); setCatalogSearchTerm(""); }} 
-                      value={manualEntry ? "manual" : form.watch("eppCatalogId") || ""}
-                    >
-                      <SelectTrigger data-testid="select-catalog" className="bg-white dark:bg-slate-900">
-                        <SelectValue placeholder="Busque o seleccione EPP del catálogo" />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-[300px] z-50 overflow-hidden" position="popper" sideOffset={5}>
-                        <div className="px-2 py-2 border-b bg-popover">
-                          <div className="relative">
-                            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
-                            <Input
-                              placeholder="Buscar EPP por nombre o categoría..."
-                              value={catalogSearchTerm}
-                              onChange={(e) => setCatalogSearchTerm(e.target.value)}
-                              className="pl-7 h-8 text-sm"
-                              data-testid="input-search-catalog"
-                            />
-                          </div>
-                        </div>
-                        <div className="max-h-[240px] overflow-y-auto">
-                        <SelectItem value="manual" className="border-b mb-1">
-                          <div className="flex items-center gap-2">
-                            <Plus className="h-4 w-4" />
-                            <span>Agregar manualmente (EPP no está en catálogo)</span>
-                          </div>
-                        </SelectItem>
-                        {filteredCatalog.length === 0 ? (
-                          <div className="py-4 text-center text-sm text-muted-foreground">
-                            No se encontraron EPP en el catálogo
-                          </div>
-                        ) : (
-                          filteredCatalog.map(c => {
-                            const catInfo = eppCategories[c.category];
-                            const CatIcon = catInfo?.icon || ShieldCheck;
-                            return (
-                              <SelectItem key={c.id} value={c.id}>
-                                <div className="flex items-center gap-2">
-                                  <CatIcon className={`h-4 w-4 ${catInfo?.color?.split(' ')[1] || 'text-muted-foreground'}`} />
-                                  <div className="flex flex-col">
-                                    <span className="font-medium">{c.name}</span>
-                                    <span className="text-xs text-muted-foreground">{catInfo?.label || c.category}</span>
-                                  </div>
-                                </div>
-                              </SelectItem>
-                            );
-                          })
-                        )}
-                        </div>
-                      </SelectContent>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <FormField control={form.control} name="deliveryDate" render={({ field }) => (
+                  <FormItem><FormLabel>Fecha del Acta *</FormLabel><FormControl><Input type="date" {...field} data-testid="input-fecha-entrega" /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={form.control} name="deliveryReason" render={({ field }) => (
+                  <FormItem><FormLabel>Motivo *</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger data-testid="select-motivo"><SelectValue placeholder="Seleccione motivo" /></SelectTrigger></FormControl><SelectContent>{Object.entries(reasons).map(([key, reason]) => <SelectItem key={key} value={key}><div className="font-medium">{reason.label}<div className="text-xs text-muted-foreground">{reason.description}</div></div></SelectItem>)}</SelectContent></Select><FormMessage /></FormItem>
+                )} />
+              </div>
+
+              <div className="space-y-3 rounded-lg border-2 border-dashed border-blue-200 bg-blue-50/50 p-4 dark:bg-blue-950/20">
+                <div className="flex items-center gap-2"><Bot className="h-5 w-5 text-blue-600" /><h3 className="font-semibold">Agregar elemento al acta</h3></div>
+                <Select onValueChange={selectCatalog} value={manualEntry ? "manual" : draft.eppCatalogId || ""}>
+                  <SelectTrigger data-testid="select-catalog"><SelectValue placeholder="Busque o seleccione EPP del catálogo" /></SelectTrigger>
+                  <SelectContent className="max-h-[320px]">
+                    <div className="sticky top-0 bg-popover p-2"><Input placeholder="Buscar EPP..." value={catalogSearchTerm} onChange={(event) => setCatalogSearchTerm(event.target.value)} data-testid="input-search-catalog" /></div>
+                    <SelectItem value="manual"><Plus className="mr-2 inline h-4 w-4" />Agregar manualmente</SelectItem>
+                    {filteredCatalog.map((entry) => <SelectItem key={entry.id} value={entry.id}>{entry.name} — {eppCategories[entry.category]?.label || entry.category}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                {manualEntry && (
+                  <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                    <Input placeholder="Nombre del EPP *" value={draft.eppName} onChange={(event) => setDraft((value) => ({ ...value, eppName: event.target.value }))} data-testid="input-epp-nombre" />
+                    <Select value={draft.eppCategory} onValueChange={(value) => setDraft((draftValue) => ({ ...draftValue, eppCategory: value }))}>
+                      <SelectTrigger data-testid="select-categoria"><SelectValue placeholder="Categoría" /></SelectTrigger>
+                      <SelectContent>{categories.map((category) => <SelectItem key={category} value={category}>{eppCategories[category].label}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
+                )}
+                <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
+                  <Input type="number" min={1} placeholder="Cantidad *" value={draft.quantity} onChange={(event) => setDraft((value) => ({ ...value, quantity: Number(event.target.value) }))} data-testid="input-quantity" />
+                  {(() => {
+                    const selected = catalog.find((entry) => entry.id === draft.eppCatalogId);
+                    const sizes = selected?.tallasDisponibles || [];
+                    return sizes.length > 0 ? (
+                      <Select value={draft.size || ""} onValueChange={(size) => setDraft((value) => ({ ...value, size }))}>
+                        <SelectTrigger data-testid="select-size"><SelectValue placeholder="Seleccione talla" /></SelectTrigger>
+                        <SelectContent>{sizes.map((size) => <SelectItem key={size} value={size}>{size}</SelectItem>)}</SelectContent>
+                      </Select>
+                    ) : <Input placeholder="Talla (opcional)" value={draft.size || ""} onChange={(event) => setDraft((value) => ({ ...value, size: event.target.value }))} data-testid="input-size" />;
+                  })()}
+                  <Button type="button" onClick={addItem} data-testid="button-add-item"><Plus className="mr-2 h-4 w-4" />Agregar elemento</Button>
                 </div>
               </div>
 
-              {!manualEntry && form.watch("eppCatalogId") ? (
-                (() => {
-                  const selectedEpp = catalog.find(c => c.id === form.watch("eppCatalogId"));
-                  const catInfo = selectedEpp ? eppCategories[selectedEpp.category] : null;
-                  const CatIcon = catInfo?.icon || ShieldCheck;
-                  return selectedEpp ? (
-                    <div className="rounded-lg border bg-muted/50 p-4 space-y-3">
-                      <div className="flex items-start gap-3">
-                        <div className={`p-2 rounded-lg ${catInfo?.color?.split(' ')[0] || 'bg-gray-100'}`}>
-                          <CatIcon className={`h-5 w-5 ${catInfo?.color?.split(' ')[1] || 'text-gray-600'}`} />
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-semibold">{selectedEpp.name}</h4>
-                          <p className="text-sm text-muted-foreground">{catInfo?.label || selectedEpp.category}</p>
-                          {selectedEpp.description && (
-                            <p className="text-xs text-muted-foreground mt-1">{selectedEpp.description}</p>
-                          )}
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-                        {selectedEpp.normaAplicable && (
-                          <div className="bg-background rounded p-2">
-                            <span className="text-muted-foreground block">Norma:</span>
-                            <span className="font-medium">{selectedEpp.normaAplicable}</span>
-                          </div>
-                        )}
-                        {selectedEpp.material && (
-                          <div className="bg-background rounded p-2">
-                            <span className="text-muted-foreground block">Material:</span>
-                            <span className="font-medium">{selectedEpp.material}</span>
-                          </div>
-                        )}
-                        {selectedEpp.vidaUtil && (
-                          <div className="bg-background rounded p-2">
-                            <span className="text-muted-foreground block">Vida útil:</span>
-                            <span className="font-medium">{selectedEpp.vidaUtil}</span>
-                          </div>
-                        )}
-                        {selectedEpp.tallasDisponibles && selectedEpp.tallasDisponibles.length > 0 && (
-                          <div className="bg-background rounded p-2">
-                            <span className="text-muted-foreground block">Tallas:</span>
-                            <span className="font-medium">{selectedEpp.tallasDisponibles.join(", ")}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ) : null;
-                })()
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="eppName"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Nombre del EPP *</FormLabel>
-                        <FormControl>
-                          <Input 
-                            {...field} 
-                            placeholder="Ej: Casco de seguridad" 
-                            data-testid="input-epp-nombre"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="eppCategory"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Categoría *</FormLabel>
-                        <Select 
-                          onValueChange={field.onChange} 
-                          value={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger data-testid="select-categoria">
-                              <SelectValue />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {Object.entries(eppCategories).map(([key, val]) => (
-                              <SelectItem key={key} value={key}>{val.label}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <FormField
-                  control={form.control}
-                  name="deliveryDate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Fecha de Entrega *</FormLabel>
-                      <FormControl>
-                        <Input type="date" {...field} data-testid="input-fecha-entrega" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="quantity"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Cantidad *</FormLabel>
-                      <FormControl>
-                        <Input type="number" min={1} {...field} data-testid="input-quantity" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="size"
-                  render={({ field }) => {
-                    const selectedEpp = catalog.find(c => c.id === form.watch("eppCatalogId"));
-                    const tallasDisponibles = selectedEpp?.tallasDisponibles || [];
-                    const hasTallas = !manualEntry && tallasDisponibles.length > 0;
-                    
-                    return (
-                      <FormItem>
-                        <FormLabel>Talla</FormLabel>
-                        {hasTallas ? (
-                          <Select onValueChange={field.onChange} value={field.value || ""}>
-                            <FormControl>
-                              <SelectTrigger data-testid="select-size">
-                                <SelectValue placeholder="Seleccione size" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {tallasDisponibles.map((size: string) => (
-                                <SelectItem key={size} value={size}>{size}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        ) : (
-                          <FormControl>
-                            <Input {...field} placeholder="Ej: M, L, 42" data-testid="input-size" />
-                          </FormControl>
-                        )}
-                        <FormMessage />
-                      </FormItem>
-                    );
-                  }}
-                />
+              <div className="space-y-2">
+                <FormLabel>Elementos del acta ({items.length}) *</FormLabel>
+                {items.length === 0 ? <div className="rounded border border-dashed p-4 text-center text-sm text-muted-foreground">Agregue al menos un elemento</div> : (
+                  <div className="overflow-x-auto rounded border"><Table><TableHeader><TableRow><TableHead>EPP</TableHead><TableHead>Categoría</TableHead><TableHead>Cantidad</TableHead><TableHead>Talla</TableHead><TableHead /></TableRow></TableHeader><TableBody>
+                    {items.map((item, index) => <TableRow key={`${item.id || "new"}-${index}`}><TableCell>{item.eppName}</TableCell><TableCell><Badge className={eppCategories[item.eppCategory]?.color}>{eppCategories[item.eppCategory]?.label || item.eppCategory}</Badge></TableCell><TableCell>{item.quantity}</TableCell><TableCell>{item.size || "—"}</TableCell><TableCell><Button type="button" variant="ghost" size="icon" onClick={() => setItems((current) => current.filter((_, itemIndex) => itemIndex !== index))} data-testid={`button-remove-item-${index}`}><X className="h-4 w-4 text-red-500" /></Button></TableCell></TableRow>)}
+                  </TableBody></Table></div>
+                )}
               </div>
 
-              <FormField
-                  control={form.control}
-                  name="deliveryReason"
-                  render={({ field }) => {
-                    const selectedMotivo = field.value ? deliveryReasonOptions[field.value] : null;
-                    return (
-                      <FormItem>
-                        <FormLabel>Motivo de Entrega *</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value || ""}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-motivo">
-                              <SelectValue placeholder="Seleccione motivo">
-                                {selectedMotivo && (
-                                  <div className="flex items-center gap-2">
-                                    <selectedMotivo.icon className="h-4 w-4 text-muted-foreground" />
-                                    <span>{selectedMotivo.label}</span>
-                                  </div>
-                                )}
-                              </SelectValue>
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent className="max-h-[300px]">
-                            {Object.entries(deliveryReasonOptions).map(([key, val]) => {
-                              const OptionIcon = val.icon;
-                              return (
-                                <SelectItem key={key} value={key} className="py-2.5">
-                                  <div className="flex items-start gap-3">
-                                    <OptionIcon className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
-                                    <div className="flex flex-col gap-0.5">
-                                      <span className="font-medium">{val.label}</span>
-                                      <span className="text-xs text-muted-foreground">{val.description}</span>
-                                    </div>
-                                  </div>
-                                </SelectItem>
-                              );
-                            })}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    );
-                  }}
-                />
-
-              <FormField
-                control={form.control}
-                name="workerSignature"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                        data-testid="checkbox-capacitacion"
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>Capacitación de uso proporcionada</FormLabel>
-                      <p className="text-sm text-muted-foreground">
-                        El trabajador recibió instrucciones sobre el uso correcto del EPP
-                      </p>
-                    </div>
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="observations"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Observaciones</FormLabel>
-                    <FormControl>
-                      <Textarea {...field} placeholder="Notas adicionales..." data-testid="input-observations" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} data-testid="button-cancel">
-                  Cancelar
-                </Button>
-                <Button 
-                  type="submit" 
-                  disabled={createMutation.isPending || updateMutation.isPending}
-                  data-testid="button-submit-delivery"
-                >
-                  {(createMutation.isPending || updateMutation.isPending) ? "Guardando..." : "Guardar"}
-                </Button>
-              </DialogFooter>
+              <FormField control={form.control} name="workerSignature" render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} data-testid="checkbox-capacitacion" /></FormControl><div><FormLabel>Capacitación de uso proporcionada</FormLabel><p className="text-sm text-muted-foreground">El trabajador recibió instrucciones sobre el uso correcto del EPP</p></div></FormItem>
+              )} />
+              <FormField control={form.control} name="observations" render={({ field }) => (
+                <FormItem><FormLabel>Observaciones</FormLabel><FormControl><Textarea {...field} placeholder="Notas adicionales..." data-testid="input-observations" /></FormControl></FormItem>
+              )} />
+              <DialogFooter><Button type="button" variant="outline" onClick={closeEditor} data-testid="button-cancel">Cancelar</Button><Button type="submit" disabled={mutation.isPending || items.length === 0} data-testid="button-submit-delivery">{mutation.isPending ? "Guardando..." : editingId ? "Actualizar acta" : "Guardar acta"}</Button></DialogFooter>
             </form>
           </Form>
         </DialogContent>

@@ -49799,6 +49799,83 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // EPP - ENTREGA DE ELEMENTOS DE PROTECCIÓN PERSONAL
   // =============================================================================
 
+  const eppDeliveryItemPayloadSchema = z.object({
+    id: z.string().optional(),
+    eppCatalogId: z.string().optional().nullable(),
+    eppName: z.string().trim().min(1, "Nombre del EPP requerido"),
+    eppCategory: z.enum([
+      "proteccion_cabeza", "proteccion_visual", "proteccion_auditiva",
+      "proteccion_respiratoria", "proteccion_manos", "proteccion_pies",
+      "proteccion_corporal", "proteccion_caidas", "proteccion_facial", "otro",
+    ]),
+    quantity: z.coerce.number().int().min(1),
+    size: z.string().optional().nullable(),
+    serialNumber: z.string().optional().nullable(),
+    lotNumber: z.string().optional().nullable(),
+    expirationDate: z.string().optional().nullable(),
+  });
+
+  const eppDeliveryActPayloadSchema = z.object({
+    workerId: z.string().min(1, "Seleccione un trabajador"),
+    deliveryDate: z.string().min(1, "Fecha requerida"),
+    deliveryReason: z.string().optional().nullable(),
+    workerSignature: z.boolean().default(false),
+    observations: z.string().optional().nullable(),
+    items: z.array(eppDeliveryItemPayloadSchema).min(1, "Agregue al menos un elemento"),
+  });
+
+  const legacyEppDeliveryPatchSchema = z.object({
+    workerId: z.string().optional(),
+    eppCatalogId: z.string().optional().nullable(),
+    eppName: z.string().trim().min(1).optional(),
+    eppCategory: eppDeliveryItemPayloadSchema.shape.eppCategory.optional(),
+    deliveryDate: z.string().optional(),
+    quantity: z.coerce.number().int().min(1).optional(),
+    size: z.string().optional().nullable(),
+    serialNumber: z.string().optional().nullable(),
+    lotNumber: z.string().optional().nullable(),
+    expirationDate: z.string().optional().nullable(),
+    deliveryReason: z.string().optional().nullable(),
+    workerSignature: z.boolean().optional(),
+    observations: z.string().optional().nullable(),
+  }).strict();
+
+  const validateEppActReferences = async (
+    queryDb: any,
+    companyId: string,
+    workerId: string,
+    items: z.infer<typeof eppDeliveryItemPayloadSchema>[],
+  ) => {
+    const [worker] = await queryDb.select({
+      id: schema.workers.id,
+      companyId: schema.workers.companyId,
+    }).from(schema.workers).where(eq(schema.workers.id, workerId)).limit(1);
+
+    if (!worker || worker.companyId !== companyId) {
+      const error: any = new Error("El trabajador no pertenece a la empresa seleccionada");
+      error.statusCode = 403;
+      throw error;
+    }
+
+    const catalogIds = Array.from(new Set(items.map(item => item.eppCatalogId).filter(Boolean))) as string[];
+    if (catalogIds.length === 0) return;
+
+    const catalogItems = await queryDb.select({
+      id: eppCatalog.id,
+      esPersonalizado: eppCatalog.esPersonalizado,
+      companyId: eppCatalog.companyId,
+    }).from(eppCatalog).where(inArray(eppCatalog.id, catalogIds));
+
+    const permittedIds = new Set(catalogItems
+      .filter((item: any) => !item.esPersonalizado || item.companyId === companyId)
+      .map((item: any) => item.id));
+    if (catalogIds.some(id => !permittedIds.has(id))) {
+      const error: any = new Error("Uno de los elementos no pertenece al catálogo autorizado de la empresa");
+      error.statusCode = 403;
+      throw error;
+    }
+  };
+
   // GET /api/epp/catalog - Obtener catálogo de EPP (maestro + personalizados de la empresa)
   app.get("/api/epp/catalog", requireAuth, async (req, res) => {
     try {
@@ -49926,14 +50003,43 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       
       const deliveries = await deliveriesQuery;
       
-      // Flatten the response to match frontend expectations
-      const flattenedDeliveries = deliveries.map((d: any) => ({
-        ...d.delivery,
-        worker: d.worker,
-        catalogItem: d.catalogItem,
-      }));
-      
-      res.json(flattenedDeliveries);
+      const grouped = new Map<string, any>();
+      for (const d of deliveries as any[]) {
+        const groupId = d.delivery.deliveryGroupId || d.delivery.id;
+        if (!grouped.has(groupId)) {
+          grouped.set(groupId, {
+            id: groupId,
+            deliveryGroupId: groupId,
+            companyId: d.delivery.companyId,
+            workerId: d.delivery.workerId,
+            deliveryDate: d.delivery.deliveryDate,
+            deliveryReason: d.delivery.deliveryReason,
+            workerSignature: d.delivery.workerSignature,
+            workerSignatureDate: d.delivery.workerSignatureDate,
+            deliveredBy: d.delivery.deliveredBy,
+            observations: d.delivery.observations,
+            createdAt: d.delivery.createdAt,
+            worker: d.worker,
+            items: [],
+          });
+        }
+        grouped.get(groupId).items.push({
+          id: d.delivery.id,
+          eppCatalogId: d.delivery.eppCatalogId,
+          eppName: d.delivery.eppName,
+          eppCategory: d.delivery.eppCategory,
+          quantity: d.delivery.quantity,
+          size: d.delivery.size,
+          serialNumber: d.delivery.serialNumber,
+          lotNumber: d.delivery.lotNumber,
+          expirationDate: d.delivery.expirationDate,
+          returnDate: d.delivery.returnDate,
+          status: d.delivery.status,
+          catalogItem: d.catalogItem,
+        });
+      }
+
+      res.json(Array.from(grouped.values()));
     } catch (error: any) {
       console.error("[GET /api/epp/deliveries] Error:", error.message);
       res.status(500).send("Error al obtener entregas de EPP");
@@ -49950,28 +50056,63 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(400).send("Se requiere empresa asociada para registrar entrega de EPP");
       }
       
-      const validatedData = insertEppDeliverySchema.parse({
-        ...req.body,
-        companyId: effectiveCompanyId,
-        deliveredBy: req.user!.username || "admin",
+      const backwardCompatibleBody = Array.isArray(req.body.items)
+        ? req.body
+        : {
+            workerId: req.body.workerId,
+            deliveryDate: req.body.deliveryDate,
+            deliveryReason: req.body.deliveryReason,
+            workerSignature: req.body.workerSignature,
+            observations: req.body.observations,
+            items: [{
+              eppCatalogId: req.body.eppCatalogId,
+              eppName: req.body.eppName,
+              eppCategory: req.body.eppCategory,
+              quantity: req.body.quantity,
+              size: req.body.size,
+              serialNumber: req.body.serialNumber,
+              lotNumber: req.body.lotNumber,
+              expirationDate: req.body.expirationDate,
+            }],
+          };
+      const act = eppDeliveryActPayloadSchema.parse(backwardCompatibleBody);
+      const deliveryGroupId = randomUUID();
+      const deliveredBy = req.user!.fullName || req.user!.username || "admin";
+
+      const createdItems = await db.transaction(async (tx) => {
+        await validateEppActReferences(tx, effectiveCompanyId, act.workerId, act.items);
+        const result = [];
+        for (const item of act.items) {
+          const [created] = await tx.insert(eppDeliveries).values({
+            deliveryGroupId,
+            companyId: effectiveCompanyId,
+            workerId: act.workerId,
+            deliveryDate: act.deliveryDate,
+            deliveryReason: act.deliveryReason || null,
+            workerSignature: act.workerSignature,
+            observations: act.observations || null,
+            deliveredBy,
+            eppCatalogId: item.eppCatalogId || null,
+            eppName: item.eppName,
+            eppCategory: item.eppCategory,
+            quantity: item.quantity,
+            size: item.size || null,
+            serialNumber: item.serialNumber || null,
+            lotNumber: item.lotNumber || null,
+            expirationDate: item.expirationDate || null,
+          }).returning();
+          result.push(created);
+        }
+        return result;
       });
-      
-      const { deliveryDate, expirationDate, returnDate, ...deliveryFields } = validatedData;
-      const [newDelivery] = await db.insert(eppDeliveries)
-        .values({
-          ...deliveryFields,
-          deliveryDate: deliveryDate instanceof Date ? deliveryDate.toISOString().slice(0, 10) : deliveryDate,
-          expirationDate: expirationDate instanceof Date ? expirationDate.toISOString().slice(0, 10) : expirationDate,
-          returnDate: returnDate instanceof Date ? returnDate.toISOString().slice(0, 10) : returnDate,
-        })
-        .returning();
-      
-      res.status(201).json(newDelivery);
+
+      res.status(201).json({ id: deliveryGroupId, deliveryGroupId, items: createdItems });
     } catch (error: any) {
       console.error("[POST /api/epp/deliveries] Error:", error.message);
       if (error.name === 'ZodError') {
         return res.status(400).json({ error: "Datos inválidos", details: error.errors });
       }
+      if (error.statusCode) return res.status(error.statusCode).send(error.message);
       res.status(500).send("Error al registrar entrega de EPP");
     }
   });
@@ -49980,44 +50121,135 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   app.patch("/api/epp/deliveries/:id", requireAuth, async (req, res) => {
     try {
       const effectiveCompanyId = getEffectiveCompanyId(req);
-      const isAdmin = hasGlobalAccess(req.user!.role);
       const { id } = req.params;
+      if (!effectiveCompanyId) {
+        return res.status(400).send("Se requiere una empresa seleccionada");
+      }
       
-      // Get the delivery to verify ownership
+      // Get any item from the act to verify ownership
       const [delivery] = await db.select()
         .from(eppDeliveries)
-        .where(eq(eppDeliveries.id, id));
+        .where(and(
+          or(eq(eppDeliveries.id, id), eq(eppDeliveries.deliveryGroupId, id)),
+          eq(eppDeliveries.companyId, effectiveCompanyId),
+        ))
+        .limit(1);
       
       if (!delivery) {
         return res.status(404).send("Entrega de EPP no encontrada");
       }
       
-      // Check tenant isolation
-      if (!isAdmin && delivery.companyId !== effectiveCompanyId) {
-        return res.status(403).send("No autorizado para actualizar esta entrega");
+      if (!Array.isArray(req.body.items)) {
+        const parsedDelivery = legacyEppDeliveryPatchSchema.parse(req.body);
+        const updatedDelivery = await db.transaction(async (tx) => {
+          const mergedItem = {
+            eppCatalogId: parsedDelivery.eppCatalogId !== undefined
+              ? parsedDelivery.eppCatalogId
+              : delivery.eppCatalogId,
+            eppName: parsedDelivery.eppName || delivery.eppName,
+            eppCategory: parsedDelivery.eppCategory || delivery.eppCategory,
+            quantity: parsedDelivery.quantity || delivery.quantity,
+            size: parsedDelivery.size !== undefined ? parsedDelivery.size : delivery.size,
+            serialNumber: parsedDelivery.serialNumber !== undefined ? parsedDelivery.serialNumber : delivery.serialNumber,
+            lotNumber: parsedDelivery.lotNumber !== undefined ? parsedDelivery.lotNumber : delivery.lotNumber,
+            expirationDate: parsedDelivery.expirationDate !== undefined
+              ? parsedDelivery.expirationDate
+              : delivery.expirationDate,
+          };
+          await validateEppActReferences(
+            tx,
+            effectiveCompanyId,
+            parsedDelivery.workerId || delivery.workerId,
+            [mergedItem],
+          );
+          const [updated] = await tx.update(eppDeliveries)
+            .set(parsedDelivery)
+            .where(and(
+              eq(eppDeliveries.id, delivery.id),
+              eq(eppDeliveries.companyId, effectiveCompanyId),
+            ))
+            .returning();
+          return updated;
+        });
+        return res.json(updatedDelivery);
       }
-      
-      // Validate partial data
-      const parsedDelivery = insertEppDeliverySchema.partial().parse(req.body);
-      const { deliveryDate, expirationDate, returnDate, ...deliveryFields } = parsedDelivery;
-      const validatedData = {
-        ...deliveryFields,
-        deliveryDate: deliveryDate instanceof Date ? deliveryDate.toISOString().slice(0, 10) : deliveryDate,
-        expirationDate: expirationDate instanceof Date ? expirationDate.toISOString().slice(0, 10) : expirationDate,
-        returnDate: returnDate instanceof Date ? returnDate.toISOString().slice(0, 10) : returnDate,
-      };
-      
-      const [updatedDelivery] = await db.update(eppDeliveries)
-        .set(validatedData)
-        .where(eq(eppDeliveries.id, id))
-        .returning();
-      
-      res.json(updatedDelivery);
+
+      const act = eppDeliveryActPayloadSchema.parse(req.body);
+      const deliveryGroupId = delivery.deliveryGroupId || delivery.id;
+      const deliveredBy = delivery.deliveredBy || req.user!.fullName || req.user!.username || "admin";
+
+      const updatedItems = await db.transaction(async (tx) => {
+        await validateEppActReferences(tx, effectiveCompanyId, act.workerId, act.items);
+        const existingItems = await tx.select().from(eppDeliveries).where(and(
+          eq(eppDeliveries.deliveryGroupId, deliveryGroupId),
+          eq(eppDeliveries.companyId, effectiveCompanyId),
+        ));
+        const existingIds = new Set(existingItems.map((item: any) => item.id));
+        const submittedIds = act.items.map(item => item.id).filter(Boolean) as string[];
+        if (new Set(submittedIds).size !== submittedIds.length || submittedIds.some(itemId => !existingIds.has(itemId))) {
+          const error: any = new Error("El acta contiene elementos inválidos o pertenecientes a otra entrega");
+          error.statusCode = 400;
+          throw error;
+        }
+
+        const result = [];
+        for (const item of act.items) {
+          const mutableFields = {
+            workerId: act.workerId,
+            deliveryDate: act.deliveryDate,
+            deliveryReason: act.deliveryReason || null,
+            workerSignature: act.workerSignature,
+            observations: act.observations || null,
+            deliveredBy,
+            eppCatalogId: item.eppCatalogId || null,
+            eppName: item.eppName,
+            eppCategory: item.eppCategory,
+            quantity: item.quantity,
+            size: item.size || null,
+            serialNumber: item.serialNumber || null,
+            lotNumber: item.lotNumber || null,
+            expirationDate: item.expirationDate || null,
+          };
+          if (item.id) {
+            const [updated] = await tx.update(eppDeliveries)
+              .set(mutableFields)
+              .where(and(
+                eq(eppDeliveries.id, item.id),
+                eq(eppDeliveries.deliveryGroupId, deliveryGroupId),
+                eq(eppDeliveries.companyId, effectiveCompanyId),
+              ))
+              .returning();
+            result.push(updated);
+          } else {
+            const [created] = await tx.insert(eppDeliveries).values({
+              ...mutableFields,
+              deliveryGroupId,
+              companyId: effectiveCompanyId,
+            }).returning();
+            result.push(created);
+          }
+        }
+
+        const submittedIdSet = new Set(submittedIds);
+        for (const existingItem of existingItems) {
+          if (!submittedIdSet.has(existingItem.id)) {
+            await tx.delete(eppDeliveries).where(and(
+              eq(eppDeliveries.id, existingItem.id),
+              eq(eppDeliveries.deliveryGroupId, deliveryGroupId),
+              eq(eppDeliveries.companyId, effectiveCompanyId),
+            ));
+          }
+        }
+        return result;
+      });
+
+      res.json({ id: deliveryGroupId, deliveryGroupId, items: updatedItems });
     } catch (error: any) {
       console.error("[PATCH /api/epp/deliveries/:id] Error:", error.message);
       if (error.name === 'ZodError') {
         return res.status(400).json({ error: "Datos inválidos", details: error.errors });
       }
+      if (error.statusCode) return res.status(error.statusCode).send(error.message);
       res.status(500).send("Error al actualizar entrega de EPP");
     }
   });
@@ -50026,25 +50258,29 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   app.delete("/api/epp/deliveries/:id", requireAuth, async (req, res) => {
     try {
       const effectiveCompanyId = getEffectiveCompanyId(req);
-      const isAdmin = hasGlobalAccess(req.user!.role);
       const { id } = req.params;
+      if (!effectiveCompanyId) {
+        return res.status(400).send("Se requiere una empresa seleccionada");
+      }
       
       // Get the delivery to verify ownership
       const [delivery] = await db.select()
         .from(eppDeliveries)
-        .where(eq(eppDeliveries.id, id));
+        .where(and(
+          or(eq(eppDeliveries.id, id), eq(eppDeliveries.deliveryGroupId, id)),
+          eq(eppDeliveries.companyId, effectiveCompanyId),
+        ))
+        .limit(1);
       
       if (!delivery) {
         return res.status(404).send("Entrega de EPP no encontrada");
       }
       
-      // Check tenant isolation
-      if (!isAdmin && delivery.companyId !== effectiveCompanyId) {
-        return res.status(403).send("No autorizado para eliminar esta entrega");
-      }
-      
       await db.delete(eppDeliveries)
-        .where(eq(eppDeliveries.id, id));
+        .where(and(
+          eq(eppDeliveries.deliveryGroupId, delivery.deliveryGroupId || delivery.id),
+          eq(eppDeliveries.companyId, effectiveCompanyId),
+        ));
       
       res.sendStatus(204);
     } catch (error: any) {
@@ -50084,7 +50320,6 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
       const logoBuffer = await loadCompanyLogo(company.logoUrl);
       const signers = await getSignersForCompany(effectiveCompanyId, false);
-
       let y = await addStandardHeader({
         doc, company, documentTitle: "REGISTRO DE ENTREGA DE ELEMENTOS DE PROTECCIÓN PERSONAL",
         documentCode: "SST-EPP", logoBuffer,
@@ -50096,18 +50331,26 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       if (rows.length === 0) {
         y = addParagraph(doc, "No se han registrado entregas de EPP.", { y });
       } else {
-        y = addSectionBar(doc, `Registro de Entregas (${rows.length})`, y);
-        const tableRows = rows.map(r => [
-          r.worker?.name || "—",
-          r.delivery.eppName,
-          r.delivery.eppCategory,
-          formatDate(r.delivery.deliveryDate),
-          String(r.delivery.quantity || 1),
-          r.delivery.size || "—",
-          r.delivery.workerSignature ? "Sí" : "No",
-        ]);
-        y = addSimpleTable(doc, ["Trabajador", "EPP", "Categoría", "Fecha", "Cant.", "Talla", "Firmó"], tableRows, {
-          y, columnWidths: [110, 110, 90, 60, 40, 60, 45],
+        const groupedRows = new Map<string, typeof rows>();
+        for (const row of rows) {
+          const groupId = row.delivery.deliveryGroupId || row.delivery.id;
+          const group = groupedRows.get(groupId) || [];
+          group.push(row);
+          groupedRows.set(groupId, group);
+        }
+        y = addSectionBar(doc, `Registro de Actas (${groupedRows.size})`, y);
+        const tableRows = Array.from(groupedRows.values()).map(group => {
+          const first = group[0];
+          return [
+            first.worker?.name || "—",
+            group.map(item => `${item.delivery.eppName} (${item.delivery.quantity || 1})`).join(", "),
+            formatDate(first.delivery.deliveryDate),
+            first.delivery.deliveryReason || "—",
+            first.delivery.workerSignature ? "Sí" : "Pendiente",
+          ];
+        });
+        y = addSimpleTable(doc, ["Trabajador", "Elementos del acta", "Fecha", "Motivo", "Firma"], tableRows, {
+          y, columnWidths: [115, 205, 65, 100, 57],
         });
       }
 
@@ -50128,15 +50371,28 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const [company] = await db.select().from(schema.companies).where(eq(schema.companies.id, effectiveCompanyId)).limit(1);
       if (!company) return res.status(404).send("Empresa no encontrada");
 
-      const [row] = await db.select({
+      const [anchor] = await db.select()
+        .from(eppDeliveries)
+        .where(and(
+          or(eq(eppDeliveries.id, id), eq(eppDeliveries.deliveryGroupId, id)),
+          eq(eppDeliveries.companyId, effectiveCompanyId),
+        ))
+        .limit(1);
+      if (!anchor) return res.status(404).send("Acta de entrega de EPP no encontrada");
+
+      const actItems = await db.select({
         delivery: eppDeliveries,
         worker: { name: schema.workers.name, identificationNumber: schema.workers.identificationNumber, position: schema.workers.position },
       })
         .from(eppDeliveries)
         .leftJoin(schema.workers, eq(eppDeliveries.workerId, schema.workers.id))
-        .where(and(eq(eppDeliveries.id, id), eq(eppDeliveries.companyId, effectiveCompanyId)))
-        .limit(1);
-      if (!row) return res.status(404).send("Entrega de EPP no encontrada");
+        .where(and(
+          eq(eppDeliveries.deliveryGroupId, anchor.deliveryGroupId || anchor.id),
+          eq(eppDeliveries.companyId, effectiveCompanyId),
+        ))
+        .orderBy(eppDeliveries.createdAt);
+      const row = actItems[0];
+      if (!row) return res.status(404).send("Acta de entrega de EPP no encontrada");
 
       const { default: PDFDocument } = await import("pdfkit");
       const doc = new PDFDocument({ margin: 35, size: "LETTER" });
@@ -50150,10 +50406,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       doc.pipe(res);
 
       const logoBuffer = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(effectiveCompanyId, false);
 
       let y = await addStandardHeader({
-        doc, company, documentTitle: "ENTREGA DE ELEMENTO DE PROTECCIÓN PERSONAL",
+        doc, company, documentTitle: "ACTA DE ENTREGA DE ELEMENTOS DE PROTECCIÓN PERSONAL",
         documentCode: "SST-EPP", logoBuffer,
       });
 
@@ -50163,26 +50418,24 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         row.worker?.identificationNumber || "—",
         row.worker?.position || "—",
       ]], { y, columnWidths: [210, 140, 192] });
+      y = addLabeledField(doc, "Fecha del Acta", formatDate(row.delivery.deliveryDate), { y });
 
-      y = addSectionBar(doc, "Elemento entregado", y + 4);
-      y = addSimpleTable(doc, ["Elemento", "Categoría", "Fecha", "Cantidad", "Talla"], [[
-        row.delivery.eppName,
-        row.delivery.eppCategory,
-        formatDate(row.delivery.deliveryDate),
-        String(row.delivery.quantity || 1),
-        row.delivery.size || "—",
-      ]], { y, columnWidths: [180, 125, 90, 65, 82] });
+      y = addSectionBar(doc, `Elementos entregados (${actItems.length})`, y + 4);
+      y = addSimpleTable(doc, ["Elemento", "Categoría", "Cantidad", "Talla", "Serie / Lote"], actItems.map(item => [
+        item.delivery.eppName,
+        item.delivery.eppCategory,
+        String(item.delivery.quantity || 1),
+        item.delivery.size || "—",
+        [item.delivery.serialNumber, item.delivery.lotNumber].filter(Boolean).join(" / ") || "—",
+      ]), { y, columnWidths: [190, 125, 65, 70, 92] });
 
-      if (row.delivery.serialNumber) y = addLabeledField(doc, "No. Serie", row.delivery.serialNumber, { y });
-      if (row.delivery.lotNumber) y = addLabeledField(doc, "No. Lote", row.delivery.lotNumber, { y });
       if (row.delivery.deliveryReason) y = addLabeledField(doc, "Motivo de Entrega", row.delivery.deliveryReason, { y });
-      if (row.delivery.expirationDate) y = addLabeledField(doc, "Fecha de Vencimiento", formatDate(row.delivery.expirationDate), { y });
       if (row.delivery.observations) y = addLabeledField(doc, "Observaciones", row.delivery.observations, { y });
 
       y = addSectionBar(doc, "Constancia de entrega", y + 4);
       y = addParagraph(
         doc,
-        "El trabajador declara haber recibido el elemento descrito en buen estado y haber recibido información sobre su uso, cuidado, almacenamiento y reposición. Se compromete a utilizarlo durante la jornada laboral y a informar oportunamente cualquier deterioro o pérdida.",
+        "El trabajador declara haber recibido los elementos descritos en buen estado y haber recibido información sobre su uso, cuidado, almacenamiento y reposición. Se compromete a utilizarlos durante la jornada laboral y a informar oportunamente cualquier deterioro o pérdida.",
         { y, fontSize: 8 },
       );
 
@@ -50241,7 +50494,6 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         align: "center",
       });
 
-      await addSignatureFooter(doc, signers, false);
       doc.end();
     } catch (error) {
       handlePdfError(error, res, "epp-delivery-individual");
