@@ -279,3 +279,17 @@ mtime_ms = 1788933890993
 storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/93e268d4-c4ca-44f0-83a3-48cdc3e81fd4/959a971b-dd0f-4682-a5c1-cb0aacd0191c"
 storage_version_token = "1788933896566465"
 content_type = "text/html"
+
+[[outputs]]
+id = "yo_-jaRyrn5JHBI82O6DR"
+uri = "file://documents/informe-pruebas-de-lanzamiento-h04-h05-preoperacional.html"
+type = "text"
+title = "Informe de pruebas de lanzamiento"
+description = "Segunda ronda funcional en DEMO-PRUEBA: H04, H05, Portal de Empleados y revisión administrativa, con IDs y verificaciones."
+logical_id = "82fa7a3c-b621-427b-8cc3-acdb9847a22d"
+content_hash = "sha256:ab7a294609d5f954b118cb98ec02882f4e1a4dae83061470c7ece14332dc0a78"
+size = 5355
+mtime_ms = 1788934615588
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/82fa7a3c-b621-427b-8cc3-acdb9847a22d/c9b09e6d-06dc-4388-b14a-b03e8d14b485"
+storage_version_token = "1788934622525648"
+content_type = "text/html"

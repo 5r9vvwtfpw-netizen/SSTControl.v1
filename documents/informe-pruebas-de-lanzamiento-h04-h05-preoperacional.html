@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Pruebas de lanzamiento H04, H05 y preoperacional</title>
+  <style>
+    :root{font-family:Inter,Arial,sans-serif;color:#17221a;background:#f3f7f4}
+    body{margin:0;padding:32px}.page{max-width:980px;margin:auto;background:#fff;padding:40px;border-radius:16px;box-shadow:0 12px 35px #173d2420}
+    h1{margin:0;color:#176b3a}h2{margin-top:30px;border-bottom:2px solid #dce9e0;padding-bottom:8px}
+    .meta,.summary{background:#edf7f0;border-left:5px solid #23894b;padding:16px;border-radius:8px;margin:18px 0}
+    .test{border:1px solid #dbe5de;border-radius:12px;padding:20px;margin:16px 0}
+    .ok{display:inline-block;background:#198754;color:#fff;padding:5px 10px;border-radius:999px;font-weight:700}
+    table{width:100%;border-collapse:collapse;margin:14px 0}th,td{text-align:left;border-bottom:1px solid #e2e8e4;padding:10px;vertical-align:top}
+    th{background:#f1f6f3}code{background:#edf1ee;padding:2px 5px;border-radius:4px;overflow-wrap:anywhere}
+    ul{line-height:1.6}.footer{margin-top:36px;color:#526258;font-size:13px}
+  </style>
+</head>
+<body>
+  <main class="page">
+    <h1>Informe de pruebas de lanzamiento</h1>
+    <p>Segunda ronda funcional independiente de H04, H05 e inspección preoperacional.</p>
+    <div class="meta">
+      <strong>Empresa:</strong> DEMO-PRUEBA<br>
+      <strong>Empresa ID:</strong> <code>demo-company-001</code><br>
+      <strong>Fecha:</strong> 9 de septiembre de 2026<br>
+      <strong>Resultado general:</strong> APROBADO
+    </div>
+
+    <section class="test">
+      <span class="ok">PRUEBA DE LANZAMIENTO 1 — APROBADA</span>
+      <h2>H04 — Nuevo activo</h2>
+      <ul>
+        <li>Activo: <strong>PRUEBA DE LANZAMIENTO 1-MAQ-002</strong>.</li>
+        <li>Categoría: Maquinaria amarilla; tipo: Cargador.</li>
+        <li>Serie: PRUEBA DE LANZAMIENTO 1-SER-002-2026.</li>
+        <li>Horómetro inicial: 2.200 h.</li>
+        <li>SOAT y tecnomecánica: No aplica; pasajeros no requerido.</li>
+      </ul>
+      <p><strong>ID:</strong> <code>a75daf33-a501-4996-b0fb-790afc11ee8f</code></p>
+      <p><strong>Ruta:</strong> <code>/pesv/vehiculos</code></p>
+    </section>
+
+    <section class="test">
+      <span class="ok">PRUEBA DE LANZAMIENTO 2 — APROBADA</span>
+      <h2>H05 — Mantenimiento por horómetro</h2>
+      <ul>
+        <li>Descripción iniciada por PRUEBA DE LANZAMIENTO 2.</li>
+        <li>Asociado al nuevo cargador de la prueba 1.</li>
+        <li>Horómetro: 2.200 h; próximo mantenimiento: 2.500 h.</li>
+        <li>Kilometraje inicial y próximo kilometraje vacíos.</li>
+        <li>Costo: $475.000.</li>
+      </ul>
+      <p><strong>ID:</strong> <code>38875cd1-9535-4d1a-9ca8-5ec9f7bff5f9</code></p>
+      <p><strong>Ruta:</strong> <code>/pesv/mantenimiento</code></p>
+    </section>
+
+    <section class="test">
+      <span class="ok">PRUEBA DE LANZAMIENTO 3 — APROBADA</span>
+      <h2>Portal de Empleados — Inspección preoperacional</h2>
+      <ul>
+        <li>El selector mostró únicamente los dos activos asignados al trabajador.</li>
+        <li>Activo inspeccionado: PRUEBA DE LANZAMIENTO 1-MAQ-002.</li>
+        <li>Turno: nocturno; horómetro: 2.200 h.</li>
+        <li>Respuestas: 10 Conforme, 1 Falla y 1 No aplica.</li>
+        <li>La falla exigió el comentario PRUEBA DE LANZAMIENTO 3.</li>
+        <li>Resultado automático y persistido: <strong>NO APTA</strong>.</li>
+        <li>El historial mostró la inspección y el botón quedó bloqueado contra duplicados.</li>
+      </ul>
+      <p><strong>ID:</strong> <code>eb052350-370d-4e62-ae4a-75cd9adf54b8</code></p>
+      <p><strong>Ruta:</strong> <code>/portal-empleados?section=inspeccion-maquinaria</code></p>
+    </section>
+
+    <section class="test">
+      <span class="ok">PRUEBA DE LANZAMIENTO 4 — APROBADA</span>
+      <h2>H05 — Revisión administrativa</h2>
+      <ul>
+        <li>Equipo: PRUEBA DE LANZAMIENTO 1-MAQ-002.</li>
+        <li>Trabajador: ANDRES PEREZ.</li>
+        <li>Turno: nocturno.</li>
+        <li>Horómetro: 2.200 h.</li>
+        <li>Resultado visible: NO APTA.</li>
+      </ul>
+      <p><strong>Ruta:</strong> <code>/pesv/mantenimiento</code>, sección “Inspecciones preoperacionales de maquinaria”.</p>
+    </section>
+
+    <h2>Comprobación final</h2>
+    <table>
+      <thead><tr><th>Control</th><th>Resultado</th></tr></thead>
+      <tbody>
+        <tr><td>Aislamiento</td><td>Todos los registros pertenecen a <code>demo-company-001</code>.</td></tr>
+        <tr><td>Asociación H05 → H04</td><td>Confirmada para el nuevo cargador.</td></tr>
+        <tr><td>Asignación vigente</td><td><code>c226ebcf-0da8-4b83-a086-ca89c5fb1d14</code>.</td></tr>
+        <tr><td>Checklist</td><td>Versión <code>maquinaria-amarilla-v1</code>; exactamente 12 respuestas históricas.</td></tr>
+        <tr><td>Duplicados</td><td>Exactamente una inspección para equipo, fecha y turno.</td></tr>
+      </tbody>
+    </table>
+
+    <div class="summary">
+      Los registros anteriores y esta nueva ronda permanecen guardados en DEMO-PRUEBA para revisión manual.
+    </div>
+    <p class="footer">Evidencia obtenida mediante navegación funcional real, comprobación visual y consultas finales de base de datos.</p>
+  </main>
+</body>
+</html>
