@@ -1051,34 +1051,6 @@ export default function PoliticasSstPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="responsableSst">Responsable SG-SST *</Label>
-                      <Input
-                        id="responsableSst"
-                        data-testid="input-responsable-sst-asignado"
-                        value={formData.responsableSst}
-                        readOnly
-                        placeholder="No hay un responsable SG-SST designado"
-                        className="bg-muted"
-                      />
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        Se obtiene automáticamente de la designación activa del Responsable del SG-SST.
-                      </p>
-                    </div>
-                    <div>
-                      <Label htmlFor="licenciaSst">Licencia SST (opcional)</Label>
-                      <Input
-                        id="licenciaSst"
-                        data-testid="input-licencia-sst"
-                        value={formData.licenciaSst}
-                        placeholder="Número de licencia"
-                        readOnly
-                        className="bg-muted"
-                      />
-                    </div>
-                  </div>
-
                   <div>
                     <Label htmlFor="fechaFirma">Fecha de Firma *</Label>
                     <Input
