@@ -321,15 +321,6 @@ export default function PesvConductores() {
 
   // Handler para seleccionar trabajador y auto-llenar datos
   const handleWorkerSelect = (workerId: string) => {
-    if (workerId === "manual") {
-      setFormData({
-        ...formData,
-        workerId: "",
-        name: "",
-        identificationNumber: "",
-      });
-      return;
-    }
     const selectedWorker = workers.find(w => w.id === workerId);
     if (selectedWorker) {
       setFormData({
@@ -761,14 +752,13 @@ export default function PesvConductores() {
                     <div className="space-y-2 col-span-2">
                       <Label htmlFor="workerSelect">Seleccionar Trabajador (Integración SST)</Label>
                       <Select
-                        value={formData.workerId || "manual"}
+                        value={formData.workerId || undefined}
                         onValueChange={handleWorkerSelect}
                       >
                         <SelectTrigger id="workerSelect" data-testid="select-worker">
-                          <SelectValue placeholder="Seleccione un trabajador o ingrese manualmente" />
+                          <SelectValue placeholder="Seleccione un trabajador" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="manual">-- Ingresar datos manualmente --</SelectItem>
                           {workers.map((worker) => (
                             <SelectItem key={worker.id} value={worker.id}>
                               {worker.name} - {worker.identificationNumber}
