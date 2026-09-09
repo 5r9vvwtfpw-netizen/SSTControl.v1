@@ -14576,6 +14576,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/resource-allocations/signers", requirePermission("companies:view"), async (req, res) => {
+    const companyId = getEffectiveCompanyId(req);
+    if (!companyId) {
+      return res.status(403).send("Usuario no asociado a una empresa");
+    }
+
+    const signers = await getSignersForCompany(companyId, true);
+    res.json({
+      elaboro: {
+        name: signers.elaboro.name,
+        role: 'Sistema Automatizado',
+      },
+      autorizo: signers.lso ? {
+        name: signers.lso.name,
+        role: 'Licenciado SST',
+        licenseNumber: signers.lso.licenseNumber,
+      } : null,
+      aprobo: signers.aprobo,
+    });
+  });
+
   // Generate PDF Summary Report of all Resource Allocations (Estándar 1.1.3)
   app.get("/api/resource-allocations/resumen-pdf", requirePermission("companies:view"), async (req, res) => {
     try {
@@ -14628,7 +14649,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Preload company logo and worker photo from Object Storage
       const logo = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId);
+      const signers = await getSignersForCompany(companyId, true);
       // Worker photo not needed for muestreo PDF
 
       // Standard Header
@@ -14882,7 +14903,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Preload company logo and worker photo from Object Storage
       const logo = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId);
+      const signers = await getSignersForCompany(companyId, true);
+      const resourceSigners = {
+        elaboro: {
+          name: signers.elaboro.name,
+          role: 'Sistema Automatizado',
+        },
+        autorizo: signers.lso ? {
+          name: signers.lso.name,
+          role: `Licenciado SST${signers.lso.licenseNumber ? ` — Lic. ${signers.lso.licenseNumber}` : ''}`,
+          signatureUrl: signers.lso.signatureUrl,
+        } : {
+          name: 'Pendiente de asignación',
+          role: 'Licenciado SST',
+        },
+        aprobo: signers.aprobo,
+      };
       // Worker photo not needed for muestreo PDF
 
       // Standard Header with logo, company info, and version table
@@ -15021,7 +15057,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.text('• Resolución 0312 de 2019 - Estándares Mínimos del SG-SST', margin + 10, currentY);
 
       // Agregar footer con firmantes ISO 45001:2018
-      await addSignatureFooter(doc, signers, false);
+      await addSignatureFooter(doc, resourceSigners, false);
 
       doc.end();
 

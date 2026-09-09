@@ -4,7 +4,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Calendar, Plus, Search, Pencil, Trash2, User, Printer, Bot, DollarSign, Users, Wrench, FileText, TrendingUp, CalendarDays, Target } from "lucide-react";
+import { Calendar, Plus, Search, Pencil, Trash2, User, Printer, Bot, DollarSign, Users, Wrench, FileText, TrendingUp, CalendarDays, Target, Monitor, Shield, UserCheck, AlertTriangle } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -160,6 +160,12 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
+type ResourceSigners = {
+  elaboro: { name: string; role: string };
+  autorizo: { name: string; role: string; licenseNumber?: string } | null;
+  aprobo: { name: string; role: string };
+};
+
 const predefinedResources = [
   { id: 'humano', nombre: 'Recurso Humano - Personal SST', tipo: 'humano', objetivo: 'Asignación de recurso humano capacitado para el desarrollo, implementación y mantenimiento del Sistema de Gestión de SST según Decreto 1072/2015, Art. 2.2.4.6.8' },
   { id: 'financiero', nombre: 'Recurso Financiero - Presupuesto SST', tipo: 'financiero', objetivo: 'Asignación de presupuesto para el desarrollo de actividades del SG-SST: capacitación, EPP, señalización, exámenes médicos, equipos de emergencia y auditorías según Decreto 1072/2015, Art. 2.2.4.6.8' },
@@ -180,6 +186,10 @@ export default function ResourceAllocation() {
 
   const { data: workers = [] } = useQuery<Worker[]>({
     queryKey: ["/api/workers"],
+  });
+
+  const { data: resourceSigners } = useQuery<ResourceSigners>({
+    queryKey: ["/api/resource-allocations/signers"],
   });
 
   const { data: adquisicionItems = [] } = useQuery<AdquisicionItem[]>({
@@ -435,10 +445,10 @@ export default function ResourceAllocation() {
       inversionEstimada: data.inversionEstimada || undefined,
       fechaDesembolso: data.fechaDesembolso || undefined,
       objetivoGeneral: data.objetivoGeneral || undefined,
-      // Campos de aprobación - convertir "" a undefined para evitar error FK
-      elaboradoPorId: data.elaboradoPorId || undefined,
-      autorizadoPorId: data.autorizadoPorId || undefined,
-      aprobadoPorId: data.aprobadoPorId || undefined,
+      // Los firmantes se resuelven automáticamente según la empresa.
+      elaboradoPorId: undefined,
+      autorizadoPorId: undefined,
+      aprobadoPorId: undefined,
     };
 
     if (editingAllocation) {
@@ -1233,82 +1243,41 @@ export default function ResourceAllocation() {
 
                 {/* Firmas de Aprobación */}
                 <div className="space-y-4 border-t pt-4">
-                  <h3 className="font-semibold text-lg">Firmas de Aprobación (Opcional)</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="elaboradoPorId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Elaborado por</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger data-testid="select-elaborado-por">
-                                <SelectValue placeholder="Seleccione trabajador" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {workers.map((worker) => (
-                                <SelectItem key={`elaborado-${worker.id}`} value={worker.id}>
-                                  {worker.name} - {worker.position}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                  <h3 className="font-semibold text-lg">Firmantes del Acta</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Los firmantes se asignan automáticamente con la información vigente de la empresa.
+                  </p>
+                  <div className="grid grid-cols-1 gap-3">
+                    <div>
+                      <FormLabel>Elaborado por</FormLabel>
+                      <div className="mt-1.5 flex items-center gap-2 rounded-md border bg-muted/50 p-2" data-testid="text-elaborado-por">
+                        <Monitor className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">{resourceSigners?.elaboro.name || 'SST-Colombia'} — Sistema Automatizado</span>
+                      </div>
+                    </div>
 
-                    <FormField
-                      control={form.control}
-                      name="autorizadoPorId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Autorizado por</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger data-testid="select-autorizado-por">
-                                <SelectValue placeholder="Seleccione trabajador" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {workers.map((worker) => (
-                                <SelectItem key={`autorizado-${worker.id}`} value={worker.id}>
-                                  {worker.name} - {worker.position}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
+                    <div>
+                      <FormLabel>Autorizado por (LSO)</FormLabel>
+                      {resourceSigners?.autorizo ? (
+                        <div className="mt-1.5 flex items-center gap-2 rounded-md border bg-muted/50 p-2" data-testid="text-autorizado-por">
+                          <Shield className="h-4 w-4 text-green-600" />
+                          <span className="text-sm">{resourceSigners.autorizo.name} — Licenciado SST</span>
+                        </div>
+                      ) : (
+                        <div className="mt-1.5 flex items-center gap-2 rounded-md border border-yellow-200 bg-yellow-50 p-2 dark:border-yellow-800 dark:bg-yellow-900/20">
+                          <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                          <span className="text-sm text-yellow-700 dark:text-yellow-400">Pendiente — Asigne un LSO activo a la empresa</span>
+                        </div>
                       )}
-                    />
+                    </div>
 
-                    <FormField
-                      control={form.control}
-                      name="aprobadoPorId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Aprobado por</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger data-testid="select-aprobado-por">
-                                <SelectValue placeholder="Seleccione trabajador" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {workers.map((worker) => (
-                                <SelectItem key={`aprobado-${worker.id}`} value={worker.id}>
-                                  {worker.name} - {worker.position}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    <div>
+                      <FormLabel>Aprobado por (Gerente/Representante Legal)</FormLabel>
+                      <div className="mt-1.5 flex items-center gap-2 rounded-md border bg-muted/50 p-2" data-testid="text-aprobado-por">
+                        <UserCheck className="h-4 w-4 text-blue-600" />
+                        <span className="text-sm">{resourceSigners?.aprobo.name || 'Pendiente de registro'} — {resourceSigners?.aprobo.role || 'Representante Legal'}</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
