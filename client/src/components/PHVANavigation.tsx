@@ -77,6 +77,7 @@ const phvaMenus: Record<PHVASection, MenuGroup[]> = {
       items: [
         { label: "Panel de Facturación", path: "/dashboard-facturacion" },
         { label: "Propuesta Comercial", path: "/propuesta-comercial" },
+        { label: "Cotización Transición SST/PESV", path: "/cotizacion-transicion" },
         { label: "Alianza Consultores SST", path: "/alianza-consultores-sst" },
         { label: "Confidencialidad Asistentes", path: "/confidencialidad-asistentes" },
         { label: "Promociones", path: "/admin-promociones" },
