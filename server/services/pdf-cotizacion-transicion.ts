@@ -92,12 +92,12 @@ export async function generateCotizacionTransicionPdf(
   };
 
   const footer = () => {
-    const y = doc.page.height - 66;
+    const y = doc.page.height - 90;
     doc.moveTo(54, y - 10).lineTo(doc.page.width - 54, y - 10)
       .strokeColor(C.border).lineWidth(0.7).stroke();
-    doc.font("Helvetica").fontSize(8).fillColor(C.muted)
-      .text(`${nombreProveedor} · NIT ${nitProveedor} · ${ciudad}`, 54, y, { width: 300 });
-    doc.text(`${email} · ${whatsapp}`, 300, y, { width: 258, align: "right" });
+    doc.font("Helvetica").fontSize(7).fillColor(C.muted)
+      .text(`${nombreProveedor} · NIT ${nitProveedor}`, 54, y, { width: 280, lineBreak: false });
+    doc.text(`${ciudad} · ${email} · ${whatsapp}`, 335, y, { width: 206, align: "right", lineBreak: false });
   };
 
   const sectionTitle = (text: string, y: number) => {
@@ -177,20 +177,20 @@ export async function generateCotizacionTransicionPdf(
     .text("TOTAL", tableX + 284, tableY + 209)
     .text(money(total), amountX, tableY + 209, { width: amountW, align: "right" });
 
-  sectionTitle("Incluye", 470);
-  bullet(`Acceso habilitado únicamente para la operación de ${empresa}.`, 498);
-  bullet("No incluye una licencia nueva ni una mensualidad adicional para la consultora.", 522);
-  doc.roundedRect(54, 568, 487, 122, 8).fill(C.warning)
+  sectionTitle("Incluye", 446);
+  bullet(`Acceso habilitado únicamente para la operación de ${empresa}.`, 474);
+  bullet("No incluye una licencia nueva ni una mensualidad adicional para la consultora.", 498);
+  doc.roundedRect(54, 538, 487, 112, 8).fill(C.warning)
     .strokeColor(C.warningBorder).lineWidth(1).stroke();
-  doc.font("Helvetica-Bold").fontSize(11).fillColor(C.green).text("Precisión importante", 70, 586);
+  doc.font("Helvetica-Bold").fontSize(11).fillColor(C.green).text("Precisión importante", 70, 556);
   doc.font("Helvetica").fontSize(9.5).fillColor(C.text).text(
     "Esta capacitación se limita al uso de la plataforma y a la transferencia operativa del estado del programa. No sustituye los requisitos profesionales, académicos, de experiencia o de licencia que puedan resultar exigibles para asumir formalmente funciones de SST o PESV. La empresa contratante debe verificar que el perfil de la nueva responsable sea adecuado.",
-    70, 610, { width: 455, lineGap: 3.5 },
+    70, 580, { width: 455, lineGap: 3.5 },
   );
-  doc.font("Helvetica-Bold").fontSize(10).fillColor(C.green).text("Aceptación de la propuesta", 54, 714);
+  doc.font("Helvetica-Bold").fontSize(10).fillColor(C.green).text("Aceptación de la propuesta", 54, 674);
   doc.font("Helvetica").fontSize(9.5).fillColor(C.text).text(
     `El pago se realiza por adelantado. Una vez confirmado, se coordinarán las ${sesiones} sesiones virtuales de ${horasPorSesion} horas diarias para completar las ${horasMinimas} horas mínimas de capacitación.`,
-    54, 733, { width: 487 },
+    54, 693, { width: 487 },
   );
   footer();
   doc.end();
