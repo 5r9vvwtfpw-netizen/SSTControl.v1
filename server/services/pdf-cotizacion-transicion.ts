@@ -8,6 +8,8 @@ export interface CotizacionTransicionParams {
   horasMinimas?: string | number;
   horasPorSesion?: string | number;
   vigenciaDias?: string | number;
+  fechaInicio?: string;
+  fechaFin?: string;
   nombreProveedor?: string;
   nitProveedor?: string;
   email?: string;
@@ -38,6 +40,18 @@ const numberValue = (value: string | number | undefined, fallback: number) => {
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
 };
 
+const formatDate = (value: string | undefined, fallback: Date) => {
+  const parts = value?.split("-").map(Number);
+  const date = parts?.length === 3 && parts.every(Number.isFinite)
+    ? new Date(parts[0], parts[1] - 1, parts[2])
+    : fallback;
+  return date.toLocaleDateString("es-CO", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+};
+
 export async function generateCotizacionTransicionPdf(
   params: CotizacionTransicionParams,
 ): Promise<Buffer> {
@@ -54,13 +68,12 @@ export async function generateCotizacionTransicionPdf(
   const email = params.email?.trim() || "legal@sst-colombia.com";
   const whatsapp = params.whatsapp?.trim() || "+57 300 522 0679";
   const fecha = params.fechaEmision
-    ? new Date(params.fechaEmision)
-    : new Date();
-  const fechaTexto = fecha.toLocaleDateString("es-CO", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+    ? params.fechaEmision
+    : undefined;
+  const fechaTexto = formatDate(fecha, new Date());
+  const periodoCapacitacion = params.fechaInicio || params.fechaFin
+    ? `${formatDate(params.fechaInicio, new Date())}${params.fechaFin ? ` al ${formatDate(params.fechaFin, new Date())}` : ""}`
+    : "A coordinar con la empresa";
   const subtotal = tarifaHora * horasMinimas;
   const iva = Math.round(subtotal * 0.19);
   const total = subtotal + iva;
@@ -134,6 +147,8 @@ export async function generateCotizacionTransicionPdf(
   if (nit) {
     doc.font("Helvetica").fontSize(8).fillColor(C.muted).text(`NIT ${nit}`, 70, 318, { width: 220 });
   }
+  doc.font("Helvetica").fontSize(8).fillColor(C.muted)
+    .text(`Periodo previsto de capacitación: ${periodoCapacitacion}`, 310, 318, { width: 205 });
 
   sectionTitle("Objeto de la propuesta", 338);
   doc.font("Helvetica").fontSize(10.5).fillColor(C.text)

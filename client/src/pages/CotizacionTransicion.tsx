@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Download, FileText, Loader2, RefreshCw } from "lucide-react";
 
@@ -16,12 +15,12 @@ type FormData = {
   horasMinimas: string;
   horasPorSesion: string;
   vigenciaDias: string;
-  nombreProveedor: string;
-  nitProveedor: string;
-  email: string;
-  whatsapp: string;
-  mensajePrincipal: string;
+  fechaEmision: string;
+  fechaInicio: string;
+  fechaFin: string;
 };
+
+const today = new Date().toISOString().slice(0, 10);
 
 const DEFAULTS: FormData = {
   empresa: "",
@@ -31,11 +30,9 @@ const DEFAULTS: FormData = {
   horasMinimas: "8",
   horasPorSesion: "2",
   vigenciaDias: "15",
-  nombreProveedor: "SISTEMA AUTOMATIZADO DE GESTION INTEGRAL S.A.S",
-  nitProveedor: "902.036.337-4",
-  email: "legal@sst-colombia.com",
-  whatsapp: "+57 300 522 0679",
-  mensajePrincipal: "",
+  fechaEmision: today,
+  fechaInicio: "",
+  fechaFin: "",
 };
 
 export default function CotizacionTransicion() {
@@ -132,9 +129,9 @@ export default function CotizacionTransicion() {
       <Card className="border-green-200 bg-green-50/30">
         <CardHeader>
           <CardTitle className="text-base text-green-800">Condiciones de capacitación</CardTitle>
-          <CardDescription>La propuesta calcula automáticamente subtotal, IVA y total.</CardDescription>
+          <CardDescription>La propuesta calcula automáticamente subtotal, IVA y total. El contenido estándar queda fijo.</CardDescription>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-4">
+        <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div className="space-y-1.5">
             <Label htmlFor="transicion-tarifa">Valor por hora (COP)</Label>
             <Input id="transicion-tarifa" type="number" min="0" value={data.tarifaHora} onChange={setField("tarifaHora")} />
@@ -151,7 +148,19 @@ export default function CotizacionTransicion() {
             <Label htmlFor="transicion-vigencia">Vigencia (días)</Label>
             <Input id="transicion-vigencia" type="number" min="1" value={data.vigenciaDias} onChange={setField("vigenciaDias")} />
           </div>
-          <div className="rounded-md border bg-white p-3 text-sm sm:col-span-4">
+          <div className="space-y-1.5">
+            <Label htmlFor="transicion-fecha-emision">Fecha de emisión</Label>
+            <Input id="transicion-fecha-emision" type="date" value={data.fechaEmision} onChange={setField("fechaEmision")} />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="transicion-fecha-inicio">Inicio capacitación</Label>
+            <Input id="transicion-fecha-inicio" type="date" value={data.fechaInicio} onChange={setField("fechaInicio")} />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="transicion-fecha-fin">Fin capacitación</Label>
+            <Input id="transicion-fecha-fin" type="date" value={data.fechaFin} onChange={setField("fechaFin")} />
+          </div>
+          <div className="rounded-md border bg-white p-3 text-sm sm:col-span-3">
             <strong>Resumen:</strong> {data.horasMinimas || 0} horas en {Math.ceil((Number(data.horasMinimas) || 0) / (Number(data.horasPorSesion) || 1))} sesiones.{" "}
             <strong>Subtotal:</strong> ${subtotal.toLocaleString("es-CO")} · <strong>Total con IVA:</strong> ${(subtotal + iva).toLocaleString("es-CO")}
           </div>
@@ -160,35 +169,25 @@ export default function CotizacionTransicion() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Datos del proveedor</CardTitle>
+          <CardTitle className="text-base">Contenido fijo de la propuesta</CardTitle>
+          <CardDescription>Este texto se incluye automáticamente en todas las cotizaciones de transición.</CardDescription>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <Label htmlFor="transicion-proveedor">Razón social</Label>
-            <Input id="transicion-proveedor" value={data.nombreProveedor} onChange={setField("nombreProveedor")} />
+        <CardContent className="space-y-4 text-sm">
+          <div>
+            <p className="font-semibold text-green-800">Objetivo</p>
+            <p className="mt-1 text-muted-foreground">
+              Capacitar y habilitar al equipo designado para reemplazar al Profesional en SST y continuar directamente la gestión SST y PESV dentro de la infraestructura digital de SST Colombia.
+            </p>
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="transicion-nit-proveedor">NIT proveedor</Label>
-            <Input id="transicion-nit-proveedor" value={data.nitProveedor} onChange={setField("nitProveedor")} />
+          <div>
+            <p className="font-semibold text-green-800">Alcance de la capacitación</p>
+            <ul className="mt-1 list-disc space-y-1 pl-5 text-muted-foreground">
+              <li>Enseñanza de los tres portales en un mínimo de 8 horas.</li>
+              <li>Portal de la Empresa, portal de gestión SST y Portal de Empleados.</li>
+              <li>Ejercicios prácticos con la información de la empresa.</li>
+              <li>Una sesión virtual de seguimiento de hasta 30 minutos.</li>
+            </ul>
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="transicion-email">Correo</Label>
-            <Input id="transicion-email" value={data.email} onChange={setField("email")} />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="transicion-whatsapp">WhatsApp</Label>
-            <Input id="transicion-whatsapp" value={data.whatsapp} onChange={setField("whatsapp")} />
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Objeto de la propuesta</CardTitle>
-          <CardDescription>Opcional. Si queda vacío, se genera un texto estándar con la empresa.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Textarea value={data.mensajePrincipal} onChange={setField("mensajePrincipal")} rows={4} placeholder="Capacitar y habilitar al equipo..." />
         </CardContent>
       </Card>
 

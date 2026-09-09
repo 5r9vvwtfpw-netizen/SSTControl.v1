@@ -21,6 +21,8 @@ export function registerCotizacionTransicionRoutes(app: Express) {
           horasMinimas: body.horasMinimas,
           horasPorSesion: body.horasPorSesion,
           vigenciaDias: body.vigenciaDias,
+          fechaInicio: body.fechaInicio,
+          fechaFin: body.fechaFin,
           nombreProveedor: body.nombreProveedor,
           nitProveedor: body.nitProveedor,
           email: body.email,
