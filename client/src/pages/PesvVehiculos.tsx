@@ -60,6 +60,102 @@ type VehicleFormData = {
   observations: string;
 };
 
+const FUEL_TYPE_OPTIONS = [
+  "Diésel (ACPM)",
+  "Gasolina corriente",
+  "Gasolina extra",
+  "Gas natural vehicular (GNV)",
+  "Gas licuado de petróleo (GLP)",
+  "Biodiésel",
+  "Etanol",
+  "Eléctrico",
+  "Híbrido gasolina-eléctrico",
+  "Híbrido diésel-eléctrico",
+  "Hidrógeno",
+  "Solar",
+  "Batería recargable",
+  "Manual / Sin combustible",
+  "Otro",
+];
+
+const OPERATING_CAPACITY_OPTIONS = [
+  "Hasta 250 kg",
+  "Hasta 500 kg",
+  "Hasta 1 tonelada",
+  "Hasta 2 toneladas",
+  "Hasta 3 toneladas",
+  "Hasta 5 toneladas",
+  "Hasta 7 toneladas",
+  "Hasta 10 toneladas",
+  "Hasta 15 toneladas",
+  "Hasta 20 toneladas",
+  "Hasta 30 toneladas",
+  "Hasta 40 toneladas",
+  "Hasta 50 toneladas",
+  "Más de 50 toneladas",
+  "0,05 m³",
+  "0,09 m³",
+  "0,25 m³",
+  "0,50 m³",
+  "0,75 m³",
+  "1 m³",
+  "1,5 m³",
+  "2 m³",
+  "3 m³",
+  "5 m³",
+  "10 m³",
+  "Hasta 5 personas",
+  "De 6 a 10 personas",
+  "De 11 a 20 personas",
+  "Más de 20 personas",
+  "No aplica",
+  "Otra",
+];
+
+const IMPLEMENT_OPTIONS = [
+  "Balde estándar",
+  "Balde de excavación",
+  "Balde de limpieza",
+  "Balde trapezoidal",
+  "Balde para roca",
+  "Balde de alto volteo",
+  "Martillo hidráulico",
+  "Pinza hidráulica",
+  "Pinza forestal",
+  "Garra para troncos",
+  "Pulgar hidráulico",
+  "Cizalla hidráulica",
+  "Triturador de concreto",
+  "Fresadora",
+  "Ahoyador / Barrena",
+  "Ripper / Escarificador",
+  "Hoja topadora",
+  "Hoja niveladora",
+  "Hoja quitanieves",
+  "Rodillo compactador",
+  "Placa compactadora",
+  "Horquillas para carga",
+  "Brazo telescópico",
+  "Pluma grúa",
+  "Gancho de izaje",
+  "Cabrestante / Winche",
+  "Cucharón mezclador",
+  "Barredora",
+  "Zanjadora",
+  "Desbrozadora",
+  "Trituradora",
+  "Arado",
+  "Rastrillo",
+  "Estabilizadores",
+  "Canasta para personal",
+  "Tanque de agua",
+  "Tanque de combustible",
+  "Compresor",
+  "Generador eléctrico",
+  "Sin implementos",
+  "Otro",
+];
+
 export default function PesvVehiculos() {
   const { user } = useAuth();
   const { selectedCompany: currentCompany, effectiveCompanyId } = useCompanyContext();
@@ -844,15 +940,51 @@ export default function PesvVehiculos() {
                      <>
                        <div className="space-y-2">
                          <Label htmlFor="fuelType">Tipo de combustible</Label>
-                         <Input id="fuelType" value={formData.fuelType} onChange={(e) => setFormData({ ...formData, fuelType: e.target.value })} placeholder="Diésel, gasolina, eléctrico..." data-testid="input-fuel-type" />
+                          <Select value={formData.fuelType || undefined} onValueChange={(value) => setFormData({ ...formData, fuelType: value })}>
+                            <SelectTrigger id="fuelType" data-testid="select-fuel-type">
+                              <SelectValue placeholder="Seleccione el combustible" />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-72">
+                              {formData.fuelType && !FUEL_TYPE_OPTIONS.includes(formData.fuelType) && (
+                                <SelectItem value={formData.fuelType}>{formData.fuelType}</SelectItem>
+                              )}
+                              {FUEL_TYPE_OPTIONS.map((option) => (
+                                <SelectItem key={option} value={option}>{option}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                        </div>
                        <div className="space-y-2">
                          <Label htmlFor="operatingCapacity">Capacidad operativa</Label>
-                         <Input id="operatingCapacity" value={formData.operatingCapacity} onChange={(e) => setFormData({ ...formData, operatingCapacity: e.target.value })} placeholder="Ej: 0,09 m³ / 3 toneladas" data-testid="input-operating-capacity" />
+                          <Select value={formData.operatingCapacity || undefined} onValueChange={(value) => setFormData({ ...formData, operatingCapacity: value })}>
+                            <SelectTrigger id="operatingCapacity" data-testid="select-operating-capacity">
+                              <SelectValue placeholder="Seleccione la capacidad" />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-72">
+                              {formData.operatingCapacity && !OPERATING_CAPACITY_OPTIONS.includes(formData.operatingCapacity) && (
+                                <SelectItem value={formData.operatingCapacity}>{formData.operatingCapacity}</SelectItem>
+                              )}
+                              {OPERATING_CAPACITY_OPTIONS.map((option) => (
+                                <SelectItem key={option} value={option}>{option}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                        </div>
                        <div className="space-y-2 col-span-2">
                          <Label htmlFor="availableImplements">Implementos disponibles</Label>
-                         <Input id="availableImplements" value={formData.availableImplements} onChange={(e) => setFormData({ ...formData, availableImplements: e.target.value })} placeholder="Balde, martillo hidráulico, pinza..." data-testid="input-available-implements" />
+                          <Select value={formData.availableImplements || undefined} onValueChange={(value) => setFormData({ ...formData, availableImplements: value })}>
+                            <SelectTrigger id="availableImplements" data-testid="select-available-implements">
+                              <SelectValue placeholder="Seleccione el implemento principal" />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-72">
+                              {formData.availableImplements && !IMPLEMENT_OPTIONS.includes(formData.availableImplements) && (
+                                <SelectItem value={formData.availableImplements}>{formData.availableImplements}</SelectItem>
+                              )}
+                              {IMPLEMENT_OPTIONS.map((option) => (
+                                <SelectItem key={option} value={option}>{option}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                        </div>
                        <div className="space-y-2">
                          <Label htmlFor="lastInspectionDate">Fecha de última revisión</Label>
