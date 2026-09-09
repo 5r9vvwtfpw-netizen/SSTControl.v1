@@ -176,15 +176,18 @@ export default function CotizacionTransicion() {
           <div>
             <p className="font-semibold text-green-800">Objetivo</p>
             <p className="mt-1 text-muted-foreground">
-              Capacitar y habilitar al equipo designado para reemplazar al Profesional en SST y continuar directamente la gestión SST y PESV dentro de la infraestructura digital de SST Colombia.
+              Capacitar y habilitar al equipo designado para reemplazar al Profesional en SST y continuar directamente la gestión SST y PESV dentro de la infraestructura digital de SST Colombia, utilizando la suscripción que la empresa ya tiene activa.
             </p>
           </div>
           <div>
             <p className="font-semibold text-green-800">Alcance de la capacitación</p>
             <ul className="mt-1 list-disc space-y-1 pl-5 text-muted-foreground">
               <li>Enseñanza de los tres portales en un mínimo de 8 horas.</li>
-              <li>Portal de la Empresa, portal de gestión SST y Portal de Empleados.</li>
-              <li>Ejercicios prácticos con la información de la empresa.</li>
+              <li>Transferencia operativa para reemplazar al Profesional en SST.</li>
+              <li>Portal de la Empresa: usuarios, actividades, documentos, cronogramas y seguimiento.</li>
+              <li>Portal de gestión SST: estándares, evidencias, actividades pendientes, avances e informes.</li>
+              <li>Portal de Empleados: inducciones, capacitaciones, evaluaciones y confirmaciones.</li>
+              <li>Ejercicio práctico utilizando la información de la empresa.</li>
               <li>Una sesión virtual de seguimiento de hasta 30 minutos.</li>
             </ul>
           </div>
