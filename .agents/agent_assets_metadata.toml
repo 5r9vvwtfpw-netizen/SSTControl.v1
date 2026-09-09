@@ -265,3 +265,17 @@ mtime_ms = 1788895153399
 storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/bef81038-b917-4633-993d-ab303d832f91/592d2dfd-2dfd-42f7-8283-b936093b2006"
 storage_version_token = "1788895159563763"
 content_type = "application/pdf"
+
+[[outputs]]
+id = "yJEx4SuCJSyTH4--onBQ9"
+uri = "file://documents/informe-pruebas-h04-h05-maquinaria-demo-prueba.html"
+type = "text"
+title = "Informe PRUEBAS H04, H05 y preoperacional"
+description = "Resultados funcionales PRUEBA 1 a PRUEBA 4 en DEMO-PRUEBA, con IDs, rutas, hallazgo corregido y verificación de base de datos."
+logical_id = "93e268d4-c4ca-44f0-83a3-48cdc3e81fd4"
+content_hash = "sha256:022e66da8c1ee6d76e9d181baa5a289dcc999aa98440beb90d213f537f266ff3"
+size = 6097
+mtime_ms = 1788933890993
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/93e268d4-c4ca-44f0-83a3-48cdc3e81fd4/959a971b-dd0f-4682-a5c1-cb0aacd0191c"
+storage_version_token = "1788933896566465"
+content_type = "text/html"

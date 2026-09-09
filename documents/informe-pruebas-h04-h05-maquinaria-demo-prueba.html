@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Informe de pruebas H04, H05 y encuesta preoperacional</title>
+  <style>
+    :root{font-family:Inter,Arial,sans-serif;color:#17221a;background:#f4f7f5}
+    body{margin:0;padding:32px}.page{max-width:980px;margin:auto;background:white;padding:40px;border-radius:16px;box-shadow:0 12px 35px #173d2420}
+    h1{margin:0 0 8px;color:#176b3a}h2{margin-top:34px;border-bottom:2px solid #dce9e0;padding-bottom:8px}
+    .meta,.note{background:#edf7f0;border-left:5px solid #23894b;padding:16px;border-radius:8px;margin:18px 0}
+    .test{border:1px solid #dbe5de;border-radius:12px;padding:20px;margin:16px 0}
+    .ok{display:inline-block;background:#198754;color:white;padding:5px 10px;border-radius:999px;font-weight:700}
+    .fixed{display:inline-block;background:#b76a00;color:white;padding:5px 10px;border-radius:999px;font-weight:700}
+    table{width:100%;border-collapse:collapse;margin:14px 0}th,td{text-align:left;border-bottom:1px solid #e2e8e4;padding:10px;vertical-align:top}
+    th{background:#f1f6f3}code{background:#edf1ee;padding:2px 5px;border-radius:4px;overflow-wrap:anywhere}
+    ul{line-height:1.6}.small{font-size:13px;color:#526258}.footer{margin-top:36px;color:#526258;font-size:13px}
+  </style>
+</head>
+<body>
+  <main class="page">
+    <h1>Informe de pruebas funcionales</h1>
+    <p>Pasos PESV H04, H05 e inspección preoperacional de maquinaria</p>
+    <div class="meta">
+      <strong>Empresa:</strong> DEMO-PRUEBA<br>
+      <strong>Identificador de empresa:</strong> <code>demo-company-001</code><br>
+      <strong>Fecha:</strong> 9 de septiembre de 2026<br>
+      <strong>Entorno:</strong> Desarrollo
+    </div>
+
+    <section class="test">
+      <span class="ok">PRUEBA 1 — APROBADA</span>
+      <h2>H04 — Gestión de maquinaria</h2>
+      <ul>
+        <li>Activo creado: <strong>PRUEBA 1-MAQ-001</strong>.</li>
+        <li>Categoría: Maquinaria amarilla.</li>
+        <li>Tipo: Excavadora compacta.</li>
+        <li>Serie: PRUEBA 1-SER-001-2026.</li>
+        <li>SOAT y tecnomecánica mostrados como “No aplica”.</li>
+        <li>No se exigió capacidad de pasajeros.</li>
+      </ul>
+      <p><strong>ID:</strong> <code>ed471426-18cd-4731-8090-e77bf0ee30f2</code></p>
+      <p><strong>Ruta de revisión:</strong> <code>/pesv/vehiculos</code></p>
+    </section>
+
+    <section class="test">
+      <span class="ok">PRUEBA 2 — APROBADA</span>
+      <h2>H05 — Mantenimiento de maquinaria</h2>
+      <ul>
+        <li>Mantenimiento preventivo asociado al activo PRUEBA 1.</li>
+        <li>Descripción iniciada por <strong>PRUEBA 2</strong>.</li>
+        <li>Horómetro del mantenimiento: 1.200 h.</li>
+        <li>Próximo mantenimiento: 1.500 h.</li>
+        <li>Los campos de kilometraje quedaron vacíos.</li>
+      </ul>
+      <p><strong>ID:</strong> <code>ad2a059b-c2f4-4100-b562-0df8bb878483</code></p>
+      <p><strong>Ruta de revisión:</strong> <code>/pesv/mantenimiento</code></p>
+    </section>
+
+    <section class="test">
+      <span class="fixed">HALLAZGO CORREGIDO</span>
+      <h2>Incidencia encontrada durante PRUEBA 3</h2>
+      <p>El primer envío detectó un error SQL al guardar un arreglo vacío de evidencias. Se corrigió la serialización, se verificó la compilación y se reinició la aplicación antes de repetir únicamente el flujo afectado.</p>
+    </section>
+
+    <section class="test">
+      <span class="ok">PRUEBA 3 — APROBADA</span>
+      <h2>Portal — Inspección preoperacional</h2>
+      <ul>
+        <li>El trabajador sólo vio la maquinaria PRUEBA 1 asignada y vigente.</li>
+        <li>Fecha 2026-09-09, turno diurno y horómetro 1.200.</li>
+        <li>Frente, observaciones y comentario identificados como <strong>PRUEBA 3</strong>.</li>
+        <li>Una respuesta marcada como falla exigió comentario.</li>
+        <li>Resultado automático: <strong>NO APTA</strong>.</li>
+        <li>El registro apareció en el historial propio.</li>
+        <li>El botón quedó deshabilitado para impedir un duplicado del mismo equipo, fecha y turno.</li>
+      </ul>
+      <p><strong>ID:</strong> <code>29671ffd-7707-45d2-9ea8-9180f2597670</code></p>
+      <p><strong>Ruta de revisión:</strong> <code>/portal-empleados?section=inspeccion-maquinaria</code></p>
+    </section>
+
+    <section class="test">
+      <span class="ok">PRUEBA 4 — APROBADA</span>
+      <h2>H05 — Revisión administrativa</h2>
+      <ul>
+        <li>La inspección PRUEBA 3 aparece en la sección administrativa.</li>
+        <li>Equipo: PRUEBA 1-MAQ-001.</li>
+        <li>Trabajador: ANDRES PEREZ.</li>
+        <li>Turno: diurno; horómetro: 1.200 h.</li>
+        <li>Resultado visible: NO APTA.</li>
+      </ul>
+      <p><strong>Ruta de revisión:</strong> <code>/pesv/mantenimiento</code>, sección “Inspecciones preoperacionales de maquinaria”.</p>
+    </section>
+
+    <h2>Verificación de base de datos</h2>
+    <table>
+      <thead><tr><th>Control</th><th>Resultado</th></tr></thead>
+      <tbody>
+        <tr><td>Aislamiento empresarial</td><td>Todos los registros usan <code>demo-company-001</code>.</td></tr>
+        <tr><td>Asociación H05 → H04</td><td>PRUEBA 2 apunta al activo PRUEBA 1.</td></tr>
+        <tr><td>Asignación vigente</td><td><code>6d28fe31-fcaf-47c7-a4fc-729a0a6d3e4b</code>, activa y sin fecha de finalización.</td></tr>
+        <tr><td>Checklist versionado</td><td>Versión <code>maquinaria-amarilla-v1</code> con exactamente 12 respuestas históricas.</td></tr>
+        <tr><td>Resultado</td><td><code>no_apta</code>.</td></tr>
+        <tr><td>Duplicidad</td><td>Exactamente un registro para equipo, fecha y turno.</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note">
+      Todos los registros de PRUEBA 1, PRUEBA 2, PRUEBA 3 y PRUEBA 4 quedaron guardados en DEMO-PRUEBA para revisión manual.
+    </div>
+    <p class="footer">Evidencia generada mediante navegación funcional, comprobación visual y consultas finales de sólo lectura.</p>
+  </main>
+</body>
+</html>

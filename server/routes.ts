@@ -43817,11 +43817,14 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
           sql`(${schema.driverVehicleAssignments.endDate} IS NULL OR ${schema.driverVehicleAssignments.endDate} >= ${inspectionDate}::date)`)).limit(1);
       if (!assignment[0]) return res.status(403).json({ error: "La asignación no está vigente o el equipo no está permitido" });
       const result = Object.values(normalizedAnswers).some((a: any) => a.value === "falla") ? "no_apta" : "apta";
+      const normalizedEvidenceUrls = Array.isArray(evidenceUrls)
+        ? evidenceUrls.filter((url: unknown): url is string => typeof url === "string" && url.trim().length > 0)
+        : [];
       const created = await db.transaction(async (tx) => {
         const inserted = await tx.execute(sql`
           INSERT INTO maquinaria_inspecciones
             (company_id, worker_id, equipment_id, assignment_id, inspection_date, shift, engine_hours, work_front, result, checklist_version, answers, observations, evidence_urls)
-          VALUES (${user.companyId}, ${worker.id}, ${assignment[0].equipmentId}, ${assignmentId}, ${inspectionDate}::date, ${shift}, ${Number(engineHours)}, ${workFront || null}, ${result}, 'maquinaria-amarilla-v1', ${JSON.stringify(normalizedAnswers)}::jsonb, ${observations || null}, ${Array.isArray(evidenceUrls) ? evidenceUrls : []})
+          VALUES (${user.companyId}, ${worker.id}, ${assignment[0].equipmentId}, ${assignmentId}, ${inspectionDate}::date, ${shift}, ${Number(engineHours)}, ${workFront || null}, ${result}, 'maquinaria-amarilla-v1', ${JSON.stringify(normalizedAnswers)}::jsonb, ${observations || null}, ARRAY(SELECT jsonb_array_elements_text(${JSON.stringify(normalizedEvidenceUrls)}::jsonb)))
           RETURNING *
         `);
         const inspection = (inserted as any).rows?.[0];
