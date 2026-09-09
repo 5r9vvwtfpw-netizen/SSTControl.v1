@@ -221,5 +221,8 @@ Tome evidencias sin poner en riesgo su vida y no abandone el lugar ni altere la 
 };
 
 export function getPlantillaPesv(): PlantillaPesv {
-  return PLANTILLA_PESV;
+  return {
+    contenidos: [PLANTILLA_PESV.contenidos[0]],
+    preguntas: PLANTILLA_PESV.preguntas,
+  };
 }

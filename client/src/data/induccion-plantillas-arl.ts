@@ -471,11 +471,11 @@ const preguntasNivelIV: PlantillaPregunta[] = [
 ];
 
 export const plantillasContenido: Record<string, PlantillaContenido[]> = {
-  "I": [...contenidosBase],
-  "II": [...contenidosBase],
-  "III": [...contenidosBase, ...contenidosNivelIII],
-  "IV": [...contenidosBase, ...contenidosNivelIII, ...contenidosNivelIV],
-  "V": [...contenidosBase, ...contenidosNivelIII, ...contenidosNivelIV],
+  "I": [contenidosBase[0]],
+  "II": [contenidosBase[0]],
+  "III": [contenidosBase[0]],
+  "IV": [contenidosBase[0]],
+  "V": [contenidosBase[0]],
 };
 
 export const plantillasPreguntas: Record<string, PlantillaPregunta[]> = {
