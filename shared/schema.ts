@@ -1759,7 +1759,78 @@ export const insertResourceAllocationSchema = createInsertSchema(resourceAllocat
 export type InsertResourceAllocation = z.infer<typeof insertResourceAllocationSchema>;
 export type ResourceAllocation = typeof resourceAllocations.$inferSelect;
 
-// Actas de Constitución del COPASST - Módulo Planear (Resolución 2013/1986)
+// Datos estructurados compartidos por las actas guiadas de COPASST y Convivencia.
+export const committeeActaParticipantSchema = z.object({
+  workerId: z.string().optional(),
+  name: z.string(),
+  position: z.string().optional(),
+  representation: z.string().optional(),
+  role: z.string().optional(),
+  attendance: z.enum(["asistio", "no_asistio", "invitado", "suplente"]).default("asistio"),
+});
+export type CommitteeActaParticipant = z.infer<typeof committeeActaParticipantSchema>;
+
+export const committeeActaAgendaItemSchema = z.object({
+  id: z.string(),
+  title: z.string().min(1),
+  notes: z.string().default(""),
+});
+export type CommitteeActaAgendaItem = z.infer<typeof committeeActaAgendaItemSchema>;
+
+export const committeeActaCommitmentSchema = z.object({
+  id: z.string(),
+  description: z.string().min(1),
+  responsible: z.string().default(""),
+  dueDate: z.string().optional(),
+  type: z.enum(["accion", "recomendacion", "solicitud", "seguimiento"]).default("accion"),
+  status: z.enum(["pendiente", "cumplida", "vencida", "reprogramada"]).default("pendiente"),
+  evidence: z.string().optional(),
+});
+export type CommitteeActaCommitment = z.infer<typeof committeeActaCommitmentSchema>;
+
+export const committeeActaSignerSchema = z.object({
+  workerId: z.string().optional(),
+  name: z.string(),
+  position: z.string().optional(),
+  role: z.string().optional(),
+  signed: z.boolean().default(false),
+  signedAt: z.string().optional(),
+});
+export type CommitteeActaSigner = z.infer<typeof committeeActaSignerSchema>;
+
+export const committeeActaEstadoSchema = z.enum([
+  "borrador",
+  "pendiente_revision",
+  "pendiente_firmas",
+  "parcialmente_firmada",
+  "firmada",
+  "cerrada",
+  "anulada",
+]);
+export type CommitteeActaEstado = z.infer<typeof committeeActaEstadoSchema>;
+
+export const committeeActaModalidadSchema = z.enum(["presencial", "virtual", "mixta"]);
+export type CommitteeActaModalidad = z.infer<typeof committeeActaModalidadSchema>;
+
+export const committeeActaStructuredFields = {
+  horaInicio: text("hora_inicio"),
+  horaFin: text("hora_fin"),
+  lugar: text("lugar"),
+  modalidad: text("modalidad").notNull().default("presencial"),
+  periodoComite: text("periodo_comite"),
+  tipoReunion: text("tipo_reunion").notNull().default("ordinaria"),
+  participantes: jsonb("participantes").$type<CommitteeActaParticipant[]>().notNull().default(sql`'[]'::jsonb`),
+  invitados: jsonb("invitados").$type<string[]>().notNull().default(sql`'[]'::jsonb`),
+  ordenDia: jsonb("orden_dia").$type<CommitteeActaAgendaItem[]>().notNull().default(sql`'[]'::jsonb`),
+  compromisos: jsonb("compromisos").$type<CommitteeActaCommitment[]>().notNull().default(sql`'[]'::jsonb`),
+  firmantes: jsonb("firmantes").$type<CommitteeActaSigner[]>().notNull().default(sql`'[]'::jsonb`),
+  proximaReunion: date("proxima_reunion"),
+  estado: text("estado").notNull().default("borrador"),
+  version: integer("version").notNull().default(1),
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+};
+
+// Actas de reuniones del COPASST - Módulo Planear (Resolución 2013/1986)
 export const copasstActas = pgTable("copasst_actas", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   companyId: varchar("company_id").notNull().references(() => companies.id),
@@ -1772,12 +1843,22 @@ export const copasstActas = pgTable("copasst_actas", {
   secretaria: text("secretaria"), // Nombre del secretario/a
   archivoAdjuntoUrl: text("archivo_adjunto_url"), // URL del archivo PDF firmado adjunto (SST-2025-0039, SST-2025-0042)
   archivoAdjuntoNombre: text("archivo_adjunto_nombre"), // Nombre original del archivo
+  ...committeeActaStructuredFields,
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
 
 export const insertCopasstActaSchema = createInsertSchema(copasstActas).omit({ id: true, createdAt: true, companyId: true, numeroActa: true }).extend({
   fecha: z.string().min(1, "La fecha es obligatoria"),
   notas: z.string().min(1, "El contenido del acta es obligatorio"),
+  modalidad: committeeActaModalidadSchema.default("presencial"),
+  tipoReunion: z.string().min(1).default("ordinaria"),
+  participantes: z.array(committeeActaParticipantSchema).default([]),
+  invitados: z.array(z.string()).default([]),
+  ordenDia: z.array(committeeActaAgendaItemSchema).default([]),
+  compromisos: z.array(committeeActaCommitmentSchema).default([]),
+  firmantes: z.array(committeeActaSignerSchema).default([]),
+  estado: committeeActaEstadoSchema.default("borrador"),
+  version: z.number().int().positive().optional(),
 });
 export type InsertCopasstActa = z.infer<typeof insertCopasstActaSchema>;
 export type CopasstActa = typeof copasstActas.$inferSelect;
@@ -8180,10 +8261,25 @@ export const convivenciaActas = pgTable("convivencia_actas", {
   documentoUrl: text("documento_url"), // URL del PDF del acta
   archivoAdjuntoUrl: text("archivo_adjunto_url"), // URL del soporte PDF cargado
   archivoAdjuntoNombre: text("archivo_adjunto_nombre"), // Nombre original del soporte
+  ...committeeActaStructuredFields,
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const insertConvivenciaActaSchema = createInsertSchema(convivenciaActas).omit({ id: true, createdAt: true });
+export const insertConvivenciaActaSchema = createInsertSchema(convivenciaActas)
+  .omit({ id: true, createdAt: true, numero: true, companyId: true })
+  .extend({
+    numero: z.number().int().positive().optional(),
+    companyId: z.string().optional(),
+    modalidad: committeeActaModalidadSchema.default("presencial"),
+    tipoReunion: z.string().min(1).default("ordinaria"),
+    participantes: z.array(committeeActaParticipantSchema).default([]),
+    invitados: z.array(z.string()).default([]),
+    ordenDia: z.array(committeeActaAgendaItemSchema).default([]),
+    compromisos: z.array(committeeActaCommitmentSchema).default([]),
+    firmantes: z.array(committeeActaSignerSchema).default([]),
+    estado: committeeActaEstadoSchema.default("borrador"),
+    version: z.number().int().positive().optional(),
+  });
 export type InsertConvivenciaActa = z.infer<typeof insertConvivenciaActaSchema>;
 export type ConvivenciaActa = typeof convivenciaActas.$inferSelect;
 

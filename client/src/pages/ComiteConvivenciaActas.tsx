@@ -46,6 +46,7 @@ import { AutomationAssistant } from "@/components/AutomationAssistant";
 import { getEstandarByCodigo } from "@/data/planear-normativa";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
+import { CommitteeActaBuilder, type CommitteeActaMember } from "@/components/CommitteeActaBuilder";
 
 const ELECTION_PHASES = [
   { key: 'convocatoria', label: 'Convocatoria' },
@@ -65,6 +66,8 @@ export default function ComiteConvivenciaActas() {
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>("");
   const [isCreateActaOpen, setIsCreateActaOpen] = useState(false);
   const [editingActa, setEditingActa] = useState<ConvivenciaActa | null>(null);
+  const [isGuidedActaOpen, setIsGuidedActaOpen] = useState(false);
+  const [guidedActa, setGuidedActa] = useState<ConvivenciaActa | null>(null);
   const [firmaPresidenteId, setFirmaPresidenteId] = useState<string>("");
   const [firmaSecretarioId, setFirmaSecretarioId] = useState<string>("");
 
@@ -185,6 +188,21 @@ export default function ComiteConvivenciaActas() {
     : null;
   const isExpiringSoon = daysUntilExpiry !== null && daysUntilExpiry <= 90 && daysUntilExpiry > 0;
   const isExpired = daysUntilExpiry !== null && daysUntilExpiry <= 0;
+
+  const guidedActaMembers: CommitteeActaMember[] = miembros
+    .filter((member) => member.estado === "activo")
+    .map((member) => {
+      const worker = workers.find((candidate) => candidate.id === member.workerId);
+      return {
+        workerId: member.workerId,
+        name: worker?.name || "Trabajador sin nombre",
+        position: worker?.position || "",
+        representation: member.representacion === "empleador" ? "Representante del empleador" : "Representante de los trabajadores",
+        role: member.cargo.replace(/_/g, " "),
+        principal: member.cargo !== "miembro_suplente",
+        active: member.estado === "activo",
+      };
+    });
 
   const periodoFormSchema = insertConvivenciaPeriodoSchema.omit({ companyId: true }).extend({
     fechaInicio: z.string().min(1, "Seleccione la fecha de inicio"),
@@ -538,6 +556,10 @@ export default function ComiteConvivenciaActas() {
   };
 
   const openEditActaDialog = (acta: ConvivenciaActa) => {
+    setGuidedActa(acta);
+    setIsGuidedActaOpen(true);
+    return;
+    // Legacy form retained temporarily for historical drafts.
     actaForm.reset({
       companyId: acta.companyId,
       tipo: acta.tipo,
@@ -550,7 +572,7 @@ export default function ComiteConvivenciaActas() {
       observaciones: acta.observaciones || "",
     });
     // Cargar firmas existentes
-    const firmas = acta.firmas as Array<{ workerId?: string; cargo: string }> | null;
+    const firmas = (acta.firmas as Array<{ workerId?: string; cargo: string }> | null) || [];
     if (firmas) {
       const presidente = firmas.find(f => f.cargo === 'presidente');
       const secretario = firmas.find(f => f.cargo === 'secretario');
@@ -564,6 +586,10 @@ export default function ComiteConvivenciaActas() {
   };
 
   const openCreateActaDialog = () => {
+    setGuidedActa(null);
+    setIsGuidedActaOpen(true);
+    return;
+    // Legacy form retained temporarily for historical drafts.
     actaForm.reset({
       companyId: effectiveCompanyId,
       tipo: "sesion",
@@ -1646,6 +1672,20 @@ export default function ComiteConvivenciaActas() {
           </Form>
         </DialogContent>
       </Dialog>
+
+      <CommitteeActaBuilder
+        open={isGuidedActaOpen}
+        onOpenChange={(open) => {
+          setIsGuidedActaOpen(open);
+          if (!open) setGuidedActa(null);
+        }}
+        committee="convivencia"
+        companyId={effectiveCompanyId}
+        companyName={companies.find((company) => company.id === effectiveCompanyId)?.name}
+        periodLabel={activePeriodo ? `${activePeriodo.fechaInicio} – ${activePeriodo.fechaFin}` : undefined}
+        members={guidedActaMembers}
+        acta={guidedActa}
+      />
 
       <Dialog open={isCreateActaOpen || !!editingActa} onOpenChange={(open) => {
         if (!open) {

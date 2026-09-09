@@ -517,6 +517,14 @@ ${cambio.justificacion || "Ver documentación del cambio"}
 
 ACCIÓN REQUERIDA:
 El Comité COPASST debe revisar y emitir concepto sobre este cambio según Decreto 1072/2015 Art. 2.2.4.6.26.`,
+      modalidad: "presencial",
+      tipoReunion: "seguimiento",
+      participantes: [],
+      invitados: [],
+      ordenDia: [],
+      compromisos: [],
+      firmantes: [],
+      estado: "borrador",
     }, companyId);
 
     created.push(acta.id);

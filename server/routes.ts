@@ -15074,6 +15074,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
   // ================== COPASST ACTAS ==================
+
+  // Las actas se redactan dentro del sistema. Los soportes históricos
+  // permanecen disponibles para consulta, pero no se aceptan nuevas cargas.
+  app.post("/api/copasst-actas/:id/upload", requirePermission("companies:edit"), (_req, res) => {
+    res.status(410).json({
+      error: "committee_acta_upload_disabled",
+      message: "Las nuevas actas COPASST se redactan dentro del sistema. Los archivos históricos son solo de lectura.",
+    });
+  });
   
   // Get all copasst actas for company
   app.get("/api/copasst-actas", requirePermission("companies:view"), async (req, res) => {
@@ -15283,6 +15292,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       currentY = addSectionBar(doc, 'Información del acta', currentY);
       currentY = addLabeledField(doc, 'Acta N°', acta.numeroActa, { y: currentY });
       currentY = addLabeledField(doc, 'Fecha', formatDate(acta.fecha), { y: currentY });
+      if (acta.horaInicio || acta.horaFin || acta.lugar || acta.modalidad || acta.periodoComite || acta.tipoReunion) {
+        currentY = addSectionBar(doc, 'Datos de la reunión', currentY);
+        if (acta.horaInicio) currentY = addLabeledField(doc, 'Hora de inicio', acta.horaInicio, { y: currentY });
+        if (acta.horaFin) currentY = addLabeledField(doc, 'Hora de finalización', acta.horaFin, { y: currentY });
+        if (acta.lugar) currentY = addLabeledField(doc, 'Lugar', acta.lugar, { y: currentY });
+        if (acta.modalidad) currentY = addLabeledField(doc, 'Modalidad', acta.modalidad, { y: currentY });
+        if (acta.periodoComite) currentY = addLabeledField(doc, 'Período del comité', acta.periodoComite, { y: currentY });
+        if (acta.tipoReunion) currentY = addLabeledField(doc, 'Tipo de reunión', acta.tipoReunion, { y: currentY });
+      }
       currentY += 6;
 
       if (acta.presidente || acta.secretaria) {
@@ -15299,7 +15317,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
       currentY = addSectionBar(doc, 'Contenido del acta', currentY);
       addParagraph(doc, acta.notas || 'Sin contenido registrado', { y: currentY });
 
-      addCommitteeActaSignatureFooter(doc, [
+      const structuredParticipants = Array.isArray(acta.participantes) ? acta.participantes : [];
+      if (structuredParticipants.length > 0) {
+        currentY = addSectionBar(doc, 'Participantes y asistencia', currentY);
+        currentY = addSimpleTable(
+          doc,
+          ['Nombre', 'Representación', 'Rol', 'Asistencia'],
+          structuredParticipants.map((participant: any) => [
+            participant.name || '—',
+            participant.representation || '—',
+            participant.role || '—',
+            participant.attendance || '—',
+          ]),
+          { y: currentY, columnWidths: [170, 145, 115, 115] }
+        );
+      }
+
+      const structuredCommitments = Array.isArray(acta.compromisos) ? acta.compromisos : [];
+      if (structuredCommitments.length > 0) {
+        currentY = addSectionBar(doc, 'Acuerdos y compromisos', currentY);
+        currentY = addSimpleTable(
+          doc,
+          ['Compromiso', 'Responsable', 'Fecha límite', 'Estado'],
+          structuredCommitments.map((commitment: any) => [
+            commitment.description || '—',
+            commitment.responsible || '—',
+            commitment.dueDate || '—',
+            commitment.status || 'pendiente',
+          ]),
+          { y: currentY, columnWidths: [235, 125, 90, 95] }
+        );
+      }
+
+      const guidedSigners = Array.isArray(acta.firmantes) && acta.firmantes.length > 0
+        ? acta.firmantes.map((signer: any) => ({
+          label: signer.role || 'Firmante',
+          name: signer.name,
+          role: signer.position || signer.role || 'Integrante del COPASST',
+        }))
+        : [
         {
           label: 'Presidente',
           name: acta.presidente,
@@ -15310,7 +15366,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           name: acta.secretaria,
           role: 'Secretario(a) del COPASST',
         },
-      ]);
+        ];
+      addCommitteeActaSignatureFooter(doc, guidedSigners);
       doc.end();
 
     } catch (error: any) {
@@ -18174,6 +18231,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
   // ================== COMITÉ DE CONVIVENCIA ACTAS ==================
+
+  // Las actas se redactan dentro del sistema. Los soportes históricos
+  // permanecen disponibles para consulta, pero no se aceptan nuevas cargas.
+  app.post("/api/convivencia-actas/:id/upload", requirePermission("companies:edit"), (_req, res) => {
+    res.status(410).json({
+      error: "committee_acta_upload_disabled",
+      message: "Las nuevas actas de Convivencia se redactan dentro del sistema. Los archivos históricos son solo de lectura.",
+    });
+  });
   
   // Get all comité de convivencia actas for company
   app.get("/api/comite-convivencia-actas", requirePermission("companies:view"), async (req, res) => {
@@ -20859,6 +20925,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const uniqueId = crypto.randomUUID();
       const ALLOWED_CATEGORIES = ['documents', 'evidencias', 'capacitaciones', 'copasst-actas', 'convivencia-actas', 'programas-capacitacion', 'general'];
       const rawCategory = req.body.category || 'documents';
+      if (rawCategory === "copasst-actas" || rawCategory === "convivencia-actas") {
+        if (req.file?.path && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+        return res.status(410).json({
+          error: "committee_acta_upload_disabled",
+          message: "Las nuevas actas de comité se redactan dentro del sistema; los soportes históricos son solo de lectura.",
+        });
+      }
       const category = ALLOWED_CATEGORIES.includes(rawCategory) ? rawCategory : 'documents';
       
       const companyScope = companyId || 'system';
@@ -47616,12 +47689,35 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       y = addLabeledField(doc, "Tipo", tipoLabels[acta.tipo] || acta.tipo, { y });
       y = addLabeledField(doc, "Fecha", formatDate(acta.fecha), { y });
       y = addLabeledField(doc, "Asunto", acta.asunto, { y });
+      if (acta.horaInicio || acta.horaFin || acta.lugar || acta.modalidad || acta.periodoComite || acta.tipoReunion) {
+        y = addSectionBar(doc, "Datos de la reunión", y);
+        if (acta.horaInicio) y = addLabeledField(doc, "Hora de inicio", acta.horaInicio, { y });
+        if (acta.horaFin) y = addLabeledField(doc, "Hora de finalización", acta.horaFin, { y });
+        if (acta.lugar) y = addLabeledField(doc, "Lugar", acta.lugar, { y });
+        if (acta.modalidad) y = addLabeledField(doc, "Modalidad", acta.modalidad, { y });
+        if (acta.periodoComite) y = addLabeledField(doc, "Período del comité", acta.periodoComite, { y });
+        if (acta.tipoReunion) y = addLabeledField(doc, "Tipo de reunión", acta.tipoReunion, { y });
+      }
       y += 6;
 
       y = addSectionBar(doc, "Contenido del acta", y);
       y = addParagraph(doc, acta.contenido || "Sin contenido registrado", { y });
 
-      if (acta.asistentes.length > 0) {
+      const structuredParticipants = Array.isArray(acta.participantes) ? acta.participantes : [];
+      if (structuredParticipants.length > 0) {
+        y = addSectionBar(doc, "Participantes y asistencia", y);
+        y = addSimpleTable(
+          doc,
+          ["Nombre", "Representación", "Rol", "Asistencia"],
+          structuredParticipants.map((participant: any) => [
+            participant.name || "—",
+            participant.representation || "—",
+            participant.role || "—",
+            participant.attendance || "—",
+          ]),
+          { y, columnWidths: [170, 145, 115, 115] }
+        );
+      } else if (acta.asistentes.length > 0) {
         y = addSectionBar(doc, "Asistentes", y);
         y = addSimpleTable(
           doc,
@@ -47631,7 +47727,21 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         );
       }
 
-      if (acta.acuerdos && acta.acuerdos.length > 0) {
+      const structuredCommitments = Array.isArray(acta.compromisos) ? acta.compromisos : [];
+      if (structuredCommitments.length > 0) {
+        y = addSectionBar(doc, "Acuerdos y compromisos", y);
+        y = addSimpleTable(
+          doc,
+          ["Compromiso", "Responsable", "Fecha límite", "Estado"],
+          structuredCommitments.map((commitment: any) => [
+            commitment.description || "—",
+            commitment.responsible || "—",
+            commitment.dueDate || "—",
+            commitment.status || "pendiente",
+          ]),
+          { y, columnWidths: [235, 125, 90, 95] }
+        );
+      } else if (acta.acuerdos && acta.acuerdos.length > 0) {
         y = addSectionBar(doc, "Acuerdos", y);
         y = addSimpleTable(
           doc,
@@ -47646,13 +47756,19 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         addParagraph(doc, acta.observaciones, { y });
       }
 
-      const actaFirmas = Array.isArray(acta.firmas)
+      const legacyFirmas = Array.isArray(acta.firmas)
         ? acta.firmas as Array<{ nombre?: string; cargo?: string }>
         : [];
-      const presidente = actaFirmas.find((firma) => firma.cargo === "presidente");
-      const secretario = actaFirmas.find((firma) => firma.cargo === "secretario");
+      const presidente = legacyFirmas.find((firma) => firma.cargo === "presidente");
+      const secretario = legacyFirmas.find((firma) => firma.cargo === "secretario");
 
-      addCommitteeActaSignatureFooter(doc, [
+      const guidedSignatureRows = Array.isArray(acta.firmantes) && acta.firmantes.length > 0
+        ? acta.firmantes.map((firma: any) => ({
+          label: firma.role || "Firmante",
+          name: firma.name,
+          role: firma.position || firma.role || "Integrante del Comité de Convivencia",
+        }))
+        : [
         {
           label: "Presidente",
           name: presidente?.nombre,
@@ -47663,7 +47779,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
           name: secretario?.nombre,
           role: "Secretario(a) del Comité de Convivencia",
         },
-      ]);
+        ];
+      addCommitteeActaSignatureFooter(doc, guidedSignatureRows);
       doc.end();
     } catch (error: any) {
       handlePdfError(error, res, "convivencia-acta-pdf");
@@ -47700,8 +47817,11 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       if (acta.companyId !== companyId) {
         return res.status(403).send("Acceso no autorizado");
       }
-      const validatedData = insertConvivenciaActaSchema.partial().parse(req.body);
-      const updated = await storage.updateConvivenciaActa(req.params.id, validatedData);
+      const validatedData = insertConvivenciaActaSchema.partial().parse({
+        ...req.body,
+        companyId,
+      });
+      const updated = await storage.updateConvivenciaActa(req.params.id, validatedData, companyId);
       res.json(updated);
     } catch (error: any) {
       res.status(400).send(error.message);
@@ -47760,7 +47880,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const updatedActa = await storage.updateConvivenciaActa(actaId, {
         archivoAdjuntoUrl: fileUrl,
         archivoAdjuntoNombre: req.file.originalname
-      });
+      }, companyId);
 
       if (!updatedActa) {
         return res.status(404).json({ error: "Acta no encontrada al guardar el archivo" });

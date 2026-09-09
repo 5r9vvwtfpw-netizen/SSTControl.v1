@@ -16897,16 +16897,27 @@ export class DbStorage implements IStorage {
   }
 
   async createConvivenciaActa(acta: InsertConvivenciaActa): Promise<ConvivenciaActa> {
+    const latest = await db.select({ numero: schema.convivenciaActas.numero })
+      .from(schema.convivenciaActas)
+      .where(eq(schema.convivenciaActas.companyId, acta.companyId!))
+      .orderBy(desc(schema.convivenciaActas.numero))
+      .limit(1);
+    const nextNumero = latest.length > 0 ? latest[0].numero + 1 : 1;
     const [newActa] = await db.insert(schema.convivenciaActas)
-      .values(acta)
+      .values({ ...acta, companyId: acta.companyId!, numero: nextNumero })
       .returning();
     return newActa;
   }
 
-  async updateConvivenciaActa(id: string, data: Partial<InsertConvivenciaActa>): Promise<ConvivenciaActa | undefined> {
+  async updateConvivenciaActa(id: string, data: Partial<InsertConvivenciaActa>, companyId?: string): Promise<ConvivenciaActa | undefined> {
+    const { companyId: _ignoredCompanyId, ...safeData } = data;
+    const conditions = [eq(schema.convivenciaActas.id, id)];
+    if (companyId) {
+      conditions.push(eq(schema.convivenciaActas.companyId, companyId));
+    }
     const [updated] = await db.update(schema.convivenciaActas)
-      .set(data)
-      .where(eq(schema.convivenciaActas.id, id))
+      .set({ ...safeData, updatedAt: new Date() })
+      .where(and(...conditions))
       .returning();
     return updated;
   }

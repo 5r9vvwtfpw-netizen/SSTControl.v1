@@ -56,6 +56,7 @@ import { AutomationAssistant } from "@/components/AutomationAssistant";
 import { getEstandarByCodigo } from "@/data/planear-normativa";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
+import { CommitteeActaBuilder, type CommitteeActaMember } from "@/components/CommitteeActaBuilder";
 
 function calcularComposicion(numTrabajadores: number) {
   if (numTrabajadores < 10) return { tipo: 'vigia', principales: 1, suplentes: 0 };
@@ -80,6 +81,8 @@ export default function CopasstGestion() {
   const [isCreateEleccionOpen, setIsCreateEleccionOpen] = useState(false);
   const [isAddMiembroOpen, setIsAddMiembroOpen] = useState(false);
   const [isRegisterCandidateOpen, setIsRegisterCandidateOpen] = useState(false);
+  const [isGuidedActaOpen, setIsGuidedActaOpen] = useState(false);
+  const [guidedActa, setGuidedActa] = useState<CopasstActa | null>(null);
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>("");
 
   // States for actas management
@@ -196,6 +199,21 @@ export default function CopasstGestion() {
     },
     enabled: !!activeElection?.id && !!effectiveCompanyId,
   });
+
+  const guidedActaMembers: CommitteeActaMember[] = miembros
+    .filter((member) => member.activo !== false)
+    .map((member) => {
+      const worker = workers.find((candidate) => candidate.id === member.workerId);
+      return {
+        workerId: member.workerId,
+        name: worker?.name || "Trabajador sin nombre",
+        position: worker?.position || member.cargo || "",
+        representation: member.tipoRepresentante === "empleador" ? "Representante del empleador" : "Representante de los trabajadores",
+        role: `${member.rolMiembro === "principal" ? "Principal" : "Suplente"}${member.cargo ? ` · ${member.cargo}` : ""}`,
+        principal: member.rolMiembro === "principal",
+        active: member.activo !== false,
+      };
+    });
 
   const { data: actas = [], isLoading: loadingActas } = useQuery<CopasstActa[]>({
     queryKey: ["/api/copasst-actas", effectiveCompanyId],
@@ -666,6 +684,10 @@ export default function CopasstGestion() {
   };
 
   const handleActaEdit = (acta: CopasstActa) => {
+    setGuidedActa(acta);
+    setIsGuidedActaOpen(true);
+    return;
+    // Legacy form retained temporarily for historical drafts.
     setEditingActa(acta);
     if (acta.presidenteWorkerId) {
       const presidenteWorker = workers.find(w => w.id === acta.presidenteWorkerId);
@@ -1364,7 +1386,10 @@ export default function CopasstGestion() {
               />
             </div>
             <Button
-              onClick={() => setIsCreateActaOpen(true)}
+              onClick={() => {
+                setGuidedActa(null);
+                setIsGuidedActaOpen(true);
+              }}
               className="gap-2"
               data-testid="button-create-acta"
             >
@@ -1877,6 +1902,20 @@ export default function CopasstGestion() {
           </Form>
         </DialogContent>
       </Dialog>
+
+      <CommitteeActaBuilder
+        open={isGuidedActaOpen}
+        onOpenChange={(open) => {
+          setIsGuidedActaOpen(open);
+          if (!open) setGuidedActa(null);
+        }}
+        committee="copasst"
+        companyId={effectiveCompanyId}
+        companyName={companies.find((company) => company.id === effectiveCompanyId)?.name}
+        periodLabel={activePeriodo ? `${activePeriodo.fechaInicio} – ${activePeriodo.fechaFin}` : undefined}
+        members={guidedActaMembers}
+        acta={guidedActa}
+      />
 
       <Dialog open={isCreateActaOpen} onOpenChange={setIsCreateActaOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">

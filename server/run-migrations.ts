@@ -63,6 +63,7 @@ import { createMaquinariaInspecciones } from './migrations/create-maquinaria-ins
 import { createMechanicCompanyAccessTable } from './migrations/create-mechanic-company-access';
 import { syncMechanicInvitations } from './migrations/sync-mechanic-invitations';
 import { syncEppDeliveryGroups } from './migrations/sync-epp-delivery-groups';
+import { syncGuidedCommitteeActas } from './migrations/sync-guided-committee-actas';
 
 /**
  * Ejecuta migraciones de base de datos automáticamente
@@ -139,6 +140,7 @@ export async function runMigrations() {
     await createDriverVehicleAssignmentsTable();
     await createMaquinariaInspecciones();
     await syncEppDeliveryGroups();
+    await syncGuidedCommitteeActas();
     console.log('✅ Migraciones completadas exitosamente');
   } catch (error: any) {
     console.error('⚠️ Error en migraciones:', error.message);
