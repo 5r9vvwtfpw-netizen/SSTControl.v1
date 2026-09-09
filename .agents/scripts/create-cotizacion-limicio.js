@@ -110,7 +110,7 @@ doc.font("Helvetica").fontSize(10.5).fillColor(COLORS.text)
   );
 
 sectionTitle("Alcance de la capacitación", 444);
-bullet("Capacitación virtual individual de 8 horas, dividida en 4 sesiones de 2 horas diarias.", 60, 472, 460);
+bullet("Mínimo requerido para enseñar los tres portales: 8 horas, divididas en 4 sesiones de 2 horas diarias.", 60, 472, 460);
 bullet("Transferencia operativa para que TRANSPORTES LIMICIO LTDA reemplace al Profesional en SST.", 60, 496, 460);
 bullet("Portal de la Empresa: usuarios, actividades, documentos, cronogramas y seguimiento.", 60, 520, 460);
 bullet("Portal de gestión SST: estándares, evidencias, actividades pendientes, avances e informes.", 60, 544, 460);
@@ -125,7 +125,7 @@ header(
 );
 
 sectionTitle("Inversión", 174);
-const hourlyRate = 58364;
+const hourlyRate = 50000;
 const trainingHours = 8;
 const subtotal = hourlyRate * trainingHours;
 const iva = Math.round(subtotal * 0.19);
@@ -143,7 +143,7 @@ doc.font("Helvetica-Bold").fontSize(9).fillColor(COLORS.white)
 doc.rect(tableX, tableY + rowH, tableW, 64).fill(COLORS.pale)
   .strokeColor(COLORS.border).lineWidth(0.7).stroke();
 doc.font("Helvetica").fontSize(10).fillColor(COLORS.text)
-  .text("Capacitación virtual para reemplazo del Profesional en SST (8 horas)", tableX + 14, tableY + 50, {
+  .text("Capacitación virtual para enseñar los tres portales y reemplazar al Profesional en SST (mínimo 8 horas)", tableX + 14, tableY + 50, {
     width: 345,
   })
   .text(money(subtotal), amountX, tableY + 50, { width: amountW, align: "right" });
@@ -177,7 +177,7 @@ doc.font("Helvetica-Bold").fontSize(10).fillColor(COLORS.green)
   .text("Aceptación de la propuesta", 54, 708);
 doc.font("Helvetica").fontSize(9.5).fillColor(COLORS.text)
   .text(
-    "El pago se realiza por adelantado. Una vez confirmado el pago, se enviará la agenda con la distribución de las 8 horas de capacitación para coordinar las sesiones virtuales y la habilitación del usuario.",
+    "El pago se realiza por adelantado. Una vez confirmado el pago, se enviará la agenda con la distribución mínima de 8 horas: 4 sesiones virtuales de 2 horas diarias para enseñar los tres portales y coordinar la habilitación del usuario.",
     54,
     727,
     { width: 487 },
