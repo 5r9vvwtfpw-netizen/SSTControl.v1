@@ -9593,17 +9593,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         { Campo: "Marca", Descripción: "Marca comercial del vehículo.", Requerido: "Sí", "Valores válidos": "Texto libre", Ejemplo: "Toyota" },
         { Campo: "Modelo", Descripción: "Modelo o referencia del vehículo.", Requerido: "Sí", "Valores válidos": "Texto libre", Ejemplo: "Hilux" },
         { Campo: "Año", Descripción: "Año del vehículo.", Requerido: "Sí", "Valores válidos": "Número entero entre 1900 y el año siguiente", Ejemplo: "2024" },
-        { Campo: "Categoría", Descripción: "Clasificación general del activo.", Requerido: "Sí", "Valores válidos": "vehiculo_carretera, maquinaria_amarilla, equipo_especial", Ejemplo: "maquinaria_amarilla" },
-        { Campo: "Tipo", Descripción: "Tipo de vehículo.", Requerido: "Sí", "Valores válidos": "automovil, camioneta, camion, motocicleta, bus, otro", Ejemplo: "camioneta" },
-        { Campo: "Tipo de Maquinaria", Descripción: "Obligatorio para maquinaria amarilla o equipo especial.", Requerido: "Condicional", "Valores válidos": "excavadora, excavadora_compacta, retroexcavadora, cargador, motoniveladora, bulldozer, grua, montacargas, compactador, otro", Ejemplo: "excavadora_compacta" },
-        { Campo: "Propiedad", Descripción: "Forma de tenencia del vehículo.", Requerido: "Sí", "Valores válidos": "propio, arrendado, contratado", Ejemplo: "propio" },
+        { Campo: "Categoría", Descripción: "Indica qué clase de activo se registrará. Vehículo de carretera: circula normalmente por vías. Maquinaria amarilla: equipo pesado de construcción o movimiento de tierra. Equipo especial: equipo industrial, agrícola, de izaje u otro que no sea un vehículo convencional.", Requerido: "Sí", "Valores válidos": "Vehículo de carretera | Maquinaria amarilla | Equipo especial", Ejemplo: "Maquinaria amarilla" },
+        { Campo: "Tipo", Descripción: "Complete este campo solamente cuando la categoría sea Vehículo de carretera.", Requerido: "Sí para vehículos de carretera", "Valores válidos": "Automóvil | Camioneta | Camión | Motocicleta | Bus | Otro", Ejemplo: "Camioneta" },
+        { Campo: "Tipo de Maquinaria", Descripción: "Complete este campo cuando la categoría sea Maquinaria amarilla o Equipo especial. Para vehículos de carretera puede dejarlo vacío.", Requerido: "Sí para maquinaria o equipo", "Valores válidos": "Excavadora | Excavadora compacta | Retroexcavadora | Cargador frontal | Motoniveladora | Bulldozer | Grúa | Montacargas | Compactador | Otro", Ejemplo: "Excavadora compacta" },
+        { Campo: "Propiedad", Descripción: "Indica si el activo pertenece a la empresa o se utiliza mediante alquiler o contrato.", Requerido: "Sí", "Valores válidos": "Propio | Arrendado | Contratado", Ejemplo: "Propio" },
         { Campo: "Capacidad", Descripción: "Número de pasajeros.", Requerido: "No", "Valores válidos": "Número entero mayor o igual a cero", Ejemplo: "5" },
         { Campo: "Kilometraje", Descripción: "Kilometraje actual del vehículo.", Requerido: "No", "Valores válidos": "Número entero mayor o igual a cero", Ejemplo: "50000" },
         { Campo: "Horómetro", Descripción: "Horas acumuladas de operación de la maquinaria.", Requerido: "No", "Valores válidos": "Número entero mayor o igual a cero", Ejemplo: "1200" },
         { Campo: "Número de Serie", Descripción: "Identificación asignada por el fabricante.", Requerido: "No", "Valores válidos": "Texto libre", Ejemplo: "HCM1..." },
-        { Campo: "Tipo de Combustible", Descripción: "Combustible o fuente de energía del equipo.", Requerido: "No", "Valores válidos": "Texto libre", Ejemplo: "Diésel" },
-        { Campo: "Capacidad Operativa", Descripción: "Capacidad técnica o de trabajo.", Requerido: "No", "Valores válidos": "Texto libre con unidad", Ejemplo: "3 toneladas" },
-        { Campo: "Implementos Disponibles", Descripción: "Implementos separados por coma.", Requerido: "No", "Valores válidos": "Texto libre", Ejemplo: "Balde, martillo hidráulico" },
+        { Campo: "Tipo de Combustible", Descripción: "Combustible o fuente de energía utilizada por el activo.", Requerido: "No", "Valores válidos": "Diésel (ACPM) | Gasolina corriente | Gasolina extra | GNV | GLP | Biodiésel | Etanol | Eléctrico | Híbrido | Hidrógeno | Solar | Batería | Sin combustible | Otro", Ejemplo: "Diésel (ACPM)" },
+        { Campo: "Capacidad Operativa", Descripción: "Indique la capacidad incluyendo su unidad: peso, volumen o personas, según corresponda.", Requerido: "No", "Valores válidos": "Kilogramos | Toneladas | Metros cúbicos (m³) | Número de personas | No aplica", Ejemplo: "3 toneladas" },
+        { Campo: "Implementos Disponibles", Descripción: "Escriba todos los implementos instalados o disponibles, separados por coma.", Requerido: "No", "Valores válidos": "Balde | Martillo hidráulico | Pinza | Garra | Cizalla | Ahoyador | Ripper | Hoja | Rodillo | Horquillas | Grúa | Winche | Barredora | Zanjadora | Otro", Ejemplo: "Balde, martillo hidráulico" },
         { Campo: "Última Revisión", Descripción: "Fecha de la última revisión del equipo.", Requerido: "No", "Valores válidos": "AAAA-MM-DD o DD/MM/AAAA", Ejemplo: "2026-08-01" },
         { Campo: "Próximo Mantenimiento", Descripción: "Fecha prevista del próximo mantenimiento.", Requerido: "No", "Valores válidos": "AAAA-MM-DD o DD/MM/AAAA", Ejemplo: "2026-12-01" },
         { Campo: "Frente de Trabajo", Descripción: "Ubicación, sede, obra o frente de operación.", Requerido: "No", "Valores válidos": "Texto libre", Ejemplo: "Obra norte" },
@@ -9618,14 +9618,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
         { Campo: "Observaciones Técnicas", Descripción: "Condición y restricciones técnicas del equipo.", Requerido: "No", "Valores válidos": "Texto libre", Ejemplo: "Uso exclusivo en obra" },
         { Campo: "Observaciones", Descripción: "Notas adicionales.", Requerido: "No", "Valores válidos": "Texto libre", Ejemplo: "Vehículo asignado a operación norte" },
       ];
-      const instructionsSheet = XLSX.utils.json_to_sheet(instructions);
+      const instructionsRows = [
+        ["LEA ESTAS INSTRUCCIONES ANTES DE DILIGENCIAR LA PLANTILLA"],
+        ["En la columna Categoría escriba: Vehículo de carretera, Maquinaria amarilla o Equipo especial. No necesita usar códigos ni guiones bajos."],
+        ["La hoja Vehículos está vacía para evitar importar ejemplos por error. Use exactamente los nombres explicados en esta guía."],
+        [],
+        ["Campo", "Descripción", "Requerido", "Valores válidos", "Ejemplo"],
+        ...instructions.map((item) => [
+          item.Campo,
+          item.Descripción,
+          item.Requerido,
+          item["Valores válidos"],
+          item.Ejemplo,
+        ]),
+      ];
+      const instructionsSheet = XLSX.utils.aoa_to_sheet(instructionsRows);
       instructionsSheet["!cols"] = [
-        { wch: 32 }, { wch: 58 }, { wch: 12 }, { wch: 55 }, { wch: 32 },
+        { wch: 32 }, { wch: 90 }, { wch: 24 }, { wch: 100 }, { wch: 32 },
+      ];
+      instructionsSheet["!merges"] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 4 } },
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 4 } },
+        { s: { r: 2, c: 0 }, e: { r: 2, c: 4 } },
       ];
 
+      worksheet["E1"].c = [{
+        a: "SST Colombia",
+        t: "Use una de estas tres categorías: Vehículo de carretera, Maquinaria amarilla o Equipo especial. Consulte la hoja LEA PRIMERO.",
+      }];
+      worksheet["F1"].c = [{
+        a: "SST Colombia",
+        t: "Solo para vehículos de carretera: Automóvil, Camioneta, Camión, Motocicleta, Bus u Otro.",
+      }];
+      worksheet["G1"].c = [{
+        a: "SST Colombia",
+        t: "Solo para maquinaria amarilla o equipo especial. Consulte los tipos permitidos en la hoja LEA PRIMERO.",
+      }];
+
       const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, instructionsSheet, "LEA PRIMERO");
       XLSX.utils.book_append_sheet(workbook, worksheet, "Vehículos");
-      XLSX.utils.book_append_sheet(workbook, instructionsSheet, "Instrucciones");
       const buffer = XLSX.write(workbook, { type: "buffer", bookType: "xlsx" });
 
       res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
