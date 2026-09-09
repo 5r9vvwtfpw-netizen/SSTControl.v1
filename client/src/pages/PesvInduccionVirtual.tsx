@@ -97,6 +97,7 @@ export default function PesvInduccionVirtual() {
   const [contenidoDialogOpen, setContenidoDialogOpen] = useState(false);
   const [preguntaDialogOpen, setPreguntaDialogOpen] = useState(false);
   const [enviarIndividualOpen, setEnviarIndividualOpen] = useState(false);
+  const [pendingSendWarningOpen, setPendingSendWarningOpen] = useState(false);
   const [enviarDialogOpen, setEnviarDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [respuestasDialogOpen, setRespuestasDialogOpen] = useState(false);
@@ -364,6 +365,10 @@ export default function PesvInduccionVirtual() {
   // Las inducciones PESV pueden repetirse. Una sesión activa anterior no debe
   // ocultar al trabajador ni impedir que se le asigne una nueva.
   const availableWorkers = workers as any[];
+  const selectedWorkerActiveSessions = sesionesConActiva.filter(
+    (sesion: any) => sesion.workerId === selectedWorker,
+  );
+  const selectedWorkerData = availableWorkers.find((worker: any) => worker.id === selectedWorker);
 
   // ── Render ───────────────────────────────────────────────────────────────
   return (
@@ -424,12 +429,28 @@ export default function PesvInduccionVirtual() {
                   {availableWorkers.length === 0 && (
                     <p className="text-xs text-muted-foreground">No hay trabajadores registrados.</p>
                   )}
+                  {selectedWorkerActiveSessions.length > 0 && (
+                    <div className="flex gap-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+                      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                      <p>
+                        Este trabajador ya tiene {selectedWorkerActiveSessions.length} inducción
+                        {selectedWorkerActiveSessions.length === 1 ? "" : "es"} PESV pendiente
+                        {selectedWorkerActiveSessions.length === 1 ? "" : "s"} o en progreso.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setEnviarIndividualOpen(false)}>Cancelar</Button>
                 <Button
-                  onClick={() => enviarIndividualMutation.mutate(selectedWorker)}
+                   onClick={() => {
+                     if (selectedWorkerActiveSessions.length > 0) {
+                       setPendingSendWarningOpen(true);
+                       return;
+                     }
+                     enviarIndividualMutation.mutate(selectedWorker);
+                   }}
                   disabled={!selectedWorker || enviarIndividualMutation.isPending}
                 >
                   {enviarIndividualMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
@@ -438,6 +459,32 @@ export default function PesvInduccionVirtual() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+
+          <AlertDialog open={pendingSendWarningOpen} onOpenChange={setPendingSendWarningOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>El trabajador tiene una inducción pendiente</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {selectedWorkerData?.name || "El trabajador"} ya tiene{" "}
+                  {selectedWorkerActiveSessions.length} inducción
+                  {selectedWorkerActiveSessions.length === 1 ? "" : "es"} PESV pendiente
+                  {selectedWorkerActiveSessions.length === 1 ? "" : "s"} o en progreso.
+                  ¿Desea enviarle una nueva inducción de todas formas?
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => {
+                    setPendingSendWarningOpen(false);
+                    enviarIndividualMutation.mutate(selectedWorker);
+                  }}
+                >
+                  Sí, enviar otra
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
 
           {/* Enviar masivo */}
           <Dialog open={enviarDialogOpen} onOpenChange={setEnviarDialogOpen}>
