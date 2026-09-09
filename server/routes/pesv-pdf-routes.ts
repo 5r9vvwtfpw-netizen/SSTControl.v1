@@ -216,9 +216,9 @@ export function registerPesvPdfRoutes(app: Express) {
         documentCode: 'PESV-COM-INT', logoBuffer
       });
 
-      const rows = integrantes.map(i => [
+       const rows = integrantes.map(i => [
         i.nombre, i.cargo, i.rol, i.email || 'N/A', i.estado
-      ]);
+       ]);
       y = addSimpleTable(doc, ['Nombre', 'Cargo', 'Rol', 'Email', 'Estado'], rows, { y });
 
       await addSignatureFooter(doc, signers, true);
@@ -1079,7 +1079,14 @@ export function registerPesvPdfRoutes(app: Express) {
       const [company] = await db.select().from(schema.companies).where(eq(schema.companies.id, companyId)).limit(1);
       if (!company) return res.status(404).send('Empresa no encontrada');
 
-      const mantenimientos = await db.select().from(schema.vehicleMaintenances).where(eq(schema.vehicleMaintenances.companyId, companyId));
+       const mantenimientos = await db.select().from(schema.vehicleMaintenances).where(eq(schema.vehicleMaintenances.companyId, companyId));
+       const vehicles = await db.select().from(schema.vehicles).where(eq(schema.vehicles.companyId, companyId));
+       const vehicleById = new Map(vehicles.map(v => [v.id, v]));
+       const categoryLabel = (category: string | null | undefined) => ({
+         vehiculo_carretera: 'Vehículo de carretera',
+         maquinaria_amarilla: 'Maquinaria amarilla',
+         equipo_especial: 'Equipo especial',
+       } as Record<string, string>)[category || ''] || category || 'Sin categoría';
 
       const { default: PDFDocument } = await import('pdfkit');
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
@@ -1100,11 +1107,17 @@ export function registerPesvPdfRoutes(app: Express) {
         documentCode: 'PESV-MNT', logoBuffer
       });
 
-      const rows = mantenimientos.map(m => [
-        m.vehicleId, m.maintenanceType, formatDate(m.maintenanceDate),
-        m.description || 'N/A', m.cost ? String(m.cost) : 'N/A', 'Registrado'
-      ]);
-      y = addSimpleTable(doc, ['Vehículo', 'Tipo', 'Fecha', 'Descripción', 'Costo', 'Estado'], rows, { y });
+       const rows = mantenimientos.map(m => {
+         const vehicle = vehicleById.get(m.vehicleId);
+         const road = vehicle?.assetCategory === 'vehiculo_carretera';
+         return [
+         vehicle?.plate || m.vehicleId, categoryLabel(vehicle?.assetCategory),
+         road ? `${m.mileageAtMaintenance ?? '—'} km` : `${m.engineHoursAtMaintenance ?? '—'} h`,
+         m.maintenanceType, formatDate(m.maintenanceDate),
+         m.description || 'N/A', m.cost ? String(m.cost) : 'N/A', 'Registrado'
+         ];
+       });
+       y = addSimpleTable(doc, ['Activo / Identificación', 'Categoría', 'Km / Horómetro', 'Tipo', 'Fecha', 'Descripción', 'Costo', 'Estado'], rows, { y });
 
       await addSignatureFooter(doc, signers, true);
       doc.end();
@@ -1149,13 +1162,16 @@ export function registerPesvPdfRoutes(app: Express) {
       });
 
       y = addSectionBar(doc, 'Datos del Mantenimiento', y);
-      y = addLabeledField(doc, 'Vehículo', vehicle ? `${vehicle.plate} - ${vehicle.brand} ${vehicle.model}` : maintenance.vehicleId, { y });
+       const isRoadAsset = vehicle?.assetCategory === 'vehiculo_carretera';
+       const categoryLabel = ({ vehiculo_carretera: 'Vehículo de carretera', maquinaria_amarilla: 'Maquinaria amarilla', equipo_especial: 'Equipo especial' } as Record<string, string>)[vehicle?.assetCategory || ''] || vehicle?.assetCategory || 'Sin categoría';
+       y = addLabeledField(doc, 'Activo / Identificación', vehicle ? `${vehicle.plate} - ${vehicle.brand} ${vehicle.model}` : maintenance.vehicleId, { y });
+       y = addLabeledField(doc, 'Categoría', categoryLabel, { y });
       y = addLabeledField(doc, 'Tipo de Mantenimiento', maintenance.maintenanceType, { y });
       y = addLabeledField(doc, 'Fecha de Mantenimiento', formatDate(maintenance.maintenanceDate), { y });
       y = addLabeledField(doc, 'Descripción', maintenance.description, { y });
-      y = addLabeledField(doc, 'Kilometraje al Mantenimiento', maintenance.mileageAtMaintenance ? String(maintenance.mileageAtMaintenance) : '—', { y });
+       y = addLabeledField(doc, isRoadAsset ? 'Kilometraje al Mantenimiento' : 'Horómetro al Mantenimiento', isRoadAsset ? (maintenance.mileageAtMaintenance != null ? `${maintenance.mileageAtMaintenance} km` : '—') : (maintenance.engineHoursAtMaintenance != null ? `${maintenance.engineHoursAtMaintenance} horas` : '—'), { y });
       y = addLabeledField(doc, 'Próximo Mantenimiento (Fecha)', formatDate(maintenance.nextMaintenanceDate), { y });
-      y = addLabeledField(doc, 'Próximo Mantenimiento (Km)', maintenance.nextMaintenanceMileage ? String(maintenance.nextMaintenanceMileage) : '—', { y });
+       y = addLabeledField(doc, isRoadAsset ? 'Próximo Mantenimiento (Km)' : 'Próximo Mantenimiento (Horómetro)', isRoadAsset ? (maintenance.nextMaintenanceMileage != null ? `${maintenance.nextMaintenanceMileage} km` : '—') : (maintenance.nextEngineHours != null ? `${maintenance.nextEngineHours} horas` : '—'), { y });
       y = addLabeledField(doc, 'Costo', maintenance.cost ? `$${maintenance.cost.toLocaleString('es-CO')}` : '—', { y });
       y = addLabeledField(doc, 'Proveedor', maintenance.provider || '—', { y });
       y = addLabeledField(doc, 'Número de Factura', maintenance.invoiceNumber || '—', { y });

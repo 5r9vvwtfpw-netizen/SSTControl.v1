@@ -16,6 +16,7 @@ export type PortalPendingCount = {
   eleccionesConvivencia: number;
   encuestaDiaria: number;
   inspeccionesVehiculo: number;
+  inspeccionesMaquinariaAmarilla: number;
   total: number;
 };
 
@@ -34,6 +35,7 @@ const emptyCount = (): PortalPendingCount => ({
   eleccionesConvivencia: 0,
   encuestaDiaria: 0,
   inspeccionesVehiculo: 0,
+  inspeccionesMaquinariaAmarilla: 0,
   total: 0,
 });
 
@@ -234,6 +236,25 @@ export async function getPortalPendingCount(
               AND vi.inspection_date = (now() AT TIME ZONE 'America/Bogota')::date
           )
       ) AS inspecciones_vehiculo
+      ,
+      (
+        SELECT count(*)::int
+        FROM driver_vehicle_assignments dva
+        JOIN drivers d ON d.id = dva.driver_id
+        JOIN vehicles v ON v.id = dva.vehicle_id
+        WHERE dva.company_id = ${companyId} AND d.company_id = ${companyId}
+          AND d.worker_id = (SELECT worker_id FROM resolved_worker)
+          AND dva.is_active = 1 AND v.company_id = ${companyId} AND v.status = 'activo'
+          AND v.asset_category IN ('maquinaria_amarilla','equipo_especial')
+          AND dva.start_date <= (now() AT TIME ZONE 'America/Bogota')::date
+          AND (dva.end_date IS NULL OR dva.end_date >= (now() AT TIME ZONE 'America/Bogota')::date)
+          AND NOT EXISTS (
+            SELECT 1 FROM maquinaria_inspecciones mi
+            WHERE mi.company_id = ${companyId} AND mi.worker_id = d.worker_id
+              AND mi.equipment_id = dva.vehicle_id
+              AND mi.inspection_date = (now() AT TIME ZONE 'America/Bogota')::date
+          )
+      ) AS inspecciones_maquinaria_amarilla
   `);
 
   const row = result.rows[0] as Record<string, unknown> | undefined;
@@ -254,6 +275,7 @@ export async function getPortalPendingCount(
     eleccionesConvivencia: Number(row.elecciones_convivencia ?? 0),
     encuestaDiaria: Number(row.encuesta_diaria ?? 0),
     inspeccionesVehiculo: Number(row.inspecciones_vehiculo ?? 0),
+    inspeccionesMaquinariaAmarilla: Number(row.inspecciones_maquinaria_amarilla ?? 0),
   };
 
   return {
@@ -266,6 +288,7 @@ export async function getPortalPendingCount(
       count.audiometrias +
       count.elecciones +
       count.encuestaDiaria +
-      count.inspeccionesVehiculo,
+      count.inspeccionesVehiculo +
+      count.inspeccionesMaquinariaAmarilla,
   };
 }

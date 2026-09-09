@@ -432,21 +432,21 @@ export const PASOS_PESV: PasoPesvData[] = [
   {
     codigo: 'H05',
     numero: 13,
-    nombre: 'Plan de mantenimiento de vehículos',
-    descripcion: 'Implementar plan de mantenimiento preventivo y correctivo para la flota vehicular.',
+     nombre: 'Plan de mantenimiento de vehículos y activos',
+     descripcion: 'Implementar y mantener el plan preventivo, correctivo y predictivo para vehículos de carretera, maquinaria amarilla y equipos especiales.',
     fase: 'hacer',
     aplicaBasico: true,
     aplicaEstandar: true,
     aplicaAvanzado: true,
     puntajeMaximo: 4,
     criteriosVerificacion: [
-      'Plan de mantenimiento documentado',
-      'Registros de mantenimiento',
-      'Cronograma de intervenciones'
+       'Plan de mantenimiento documentado por categoría de activo',
+       'Registros con kilometraje u horómetro',
+       'Cronograma de intervenciones'
     ],
     evidenciasRequeridas: [
-      'Plan de mantenimiento vehicular',
-      'Hojas de vida de vehículos',
+       'Plan de mantenimiento de activos PESV',
+       'Hojas de vida de vehículos, maquinaria y equipos',
       'Órdenes de trabajo'
     ],
     modulosSstRelacionados: ['mantenimiento', 'equipos'],

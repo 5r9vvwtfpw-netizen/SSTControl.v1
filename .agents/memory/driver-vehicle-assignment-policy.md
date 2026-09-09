@@ -7,4 +7,4 @@ La relación conductor–vehículo es muchos-a-muchos: un conductor puede operar
 
 **Why:** La operación real no tiene una relación exclusiva uno-a-uno y SST/PESV requiere trazabilidad histórica. El triángulo naranja sigue reservado exclusivamente para comparendos.
 
-**How to apply:** En flujos operativos, usar únicamente asignaciones vigentes. El fallback que muestra la flota activa completa solo protege la transición de conductores que nunca han tenido una asignación; una vez existe historial, no volver a abrir acceso a toda la flota.
+**How to apply:** En flujos operativos, usar únicamente asignaciones vigentes. El fallback que muestra la flota activa completa solo protege la transición de conductores de vehículos de carretera que nunca han tenido una asignación; maquinaria amarilla y equipos especiales nunca usan fallback. Una vez existe historial, no volver a abrir acceso a toda la flota.

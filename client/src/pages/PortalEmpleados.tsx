@@ -974,6 +974,7 @@ const portalNavGroups = [
       { id: "induccion-pesv", label: "Inducción PESV", icon: Monitor },
       { id: "encuesta-conductor", label: "Encuesta Diaria", icon: ClipboardList },
       { id: "inspeccion-vehiculo", label: "Inspección Vehículo", icon: Truck },
+      { id: "inspeccion-maquinaria", label: "Inspección Maquinaria Amarilla", icon: CheckSquare },
     ]
   },
 ];
@@ -1247,7 +1248,8 @@ function WorkerPortal() {
         {activeSection === "capacitaciones-pesv" && <MisCapacitacionesPesvTab />}
         {activeSection === "induccion-pesv" && <InduccionPesvTab />}
         {activeSection === "encuesta-conductor" && <EncuestaConductorPortalTab />}
-        {activeSection === "inspeccion-vehiculo" && <InspeccionVehiculoPortalTab />}
+       {activeSection === "inspeccion-vehiculo" && <InspeccionVehiculoPortalTab />}
+       {activeSection === "inspeccion-maquinaria" && <InspeccionMaquinariaPortalTab />}
       </div>
 
       {/* ===== BOTTOM NAV — solo mobile (sm:hidden) ===== */}
@@ -6016,6 +6018,84 @@ function InspeccionVehiculoPortalTab() {
       </Card>
     </div>
   );
+}
+
+type MaquinariaEquipo = {
+  id: string; assignmentId: string; plate: string | null; serialNumber: string | null;
+  machineryType: string | null; assetCategory: string;
+};
+type MaquinariaAnswer = { value: "conforme" | "falla" | "no_aplica"; comment: string };
+const MAQUINARIA_SECCIONES: [string, string][] = [
+  ["identificacion_documentacion", "Identificación y documentación"],
+  ["aceites_refrigerante_combustible", "Aceites, refrigerante y combustible"],
+  ["fugas", "Fugas"], ["sistema_hidraulico", "Sistema hidráulico"],
+  ["mangueras_conexiones", "Mangueras y conexiones"], ["tren_rodaje_llantas", "Tren de rodaje o llantas"],
+  ["balde_implementos", "Balde e implementos"], ["pasadores_seguros", "Pasadores y seguros"],
+  ["luces_alarma_pito", "Luces, alarma y pito"], ["extintor", "Extintor"],
+  ["cabina_cinturon_controles", "Cabina, cinturón y controles"], ["estado_general_limpieza", "Estado general y limpieza"],
+];
+
+function InspeccionMaquinariaPortalTab() {
+  const { toast } = useToast();
+  const today = getTodayDateString();
+  const [equipmentId, setEquipmentId] = useState("");
+  const [shift, setShift] = useState("diurno");
+  const [engineHours, setEngineHours] = useState("");
+  const [workFront, setWorkFront] = useState("");
+  const [observations, setObservations] = useState("");
+  const [answers, setAnswers] = useState<Record<string, MaquinariaAnswer>>(
+    Object.fromEntries(MAQUINARIA_SECCIONES.map(([key]) => [key, { value: "conforme", comment: "" }]))
+  );
+  const { data, isLoading } = useQuery<{ equipos: MaquinariaEquipo[] }>({ queryKey: ["/api/portal/mis-maquinaria"] });
+  const { data: history, isLoading: historyLoading } = useQuery<{ inspecciones: any[] }>({ queryKey: ["/api/portal/mis-inspecciones-maquinaria"] });
+  const equipos = data?.equipos ?? [];
+  const mutation = useMutation({
+    mutationFn: () => apiRequest("POST", "/api/portal/inspeccion-maquinaria", {
+      assignmentId: equipos.find(e => e.id === equipmentId)?.assignmentId, inspectionDate: today,
+      shift, engineHours: Number(engineHours), workFront, observations, answers,
+    }),
+    onSuccess: async (r) => {
+      const body = await r.json();
+      queryClient.invalidateQueries({ queryKey: ["/api/portal/mis-inspecciones-maquinaria"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/portal/notification-count"] });
+      toast({ title: body.result === "apta" ? "Maquinaria APTA" : "Maquinaria NO APTA", description: "Inspección registrada." });
+    },
+    onError: (e: Error) => toast({ title: "No se pudo registrar", description: e.message, variant: "destructive" }),
+  });
+  const updateAnswer = (key: string, value: MaquinariaAnswer["value"]) =>
+    setAnswers(a => ({ ...a, [key]: { ...a[key], value } }));
+  const todayDone = (history?.inspecciones ?? []).some(i => i.inspection_date?.toString().slice(0, 10) === today && i.equipment_id === equipmentId && i.shift === shift);
+  return <div className="space-y-4">
+    <Card className="border-green-200">
+      <CardHeader><CardTitle className="flex items-center gap-2"><Truck className="h-5 w-5" />Inspección preoperacional de maquinaria amarilla</CardTitle>
+        <CardDescription>Checklist específico por equipo. Una falla genera resultado NO APTA y exige comentario.</CardDescription></CardHeader>
+      <CardContent className="space-y-4">
+        {isLoading ? <Skeleton className="h-10 w-full" /> : equipos.length === 0 ? <p className="text-sm text-muted-foreground">No tiene maquinaria amarilla o equipo especial asignado y vigente.</p> :
+          <Select value={equipmentId} onValueChange={setEquipmentId}><SelectTrigger><SelectValue placeholder="Seleccione maquinaria (placa / serial / tipo)" /></SelectTrigger>
+            <SelectContent>{equipos.map(e => <SelectItem key={e.id} value={e.id}>{e.plate || "Sin placa"} · {e.serialNumber || "Sin serial"} · {e.machineryType || e.assetCategory}</SelectItem>)}</SelectContent></Select>}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div><Label>Fecha</Label><Input value={today} readOnly /></div>
+          <div><Label>Turno</Label><Select value={shift} onValueChange={setShift}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="diurno">Diurno</SelectItem><SelectItem value="nocturno">Nocturno</SelectItem><SelectItem value="otro">Otro</SelectItem></SelectContent></Select></div>
+          <div><Label>Horómetro *</Label><Input type="number" min="0" value={engineHours} onChange={e => setEngineHours(e.target.value)} /></div>
+        </div>
+        <div><Label>Frente de trabajo</Label><Input value={workFront} onChange={e => setWorkFront(e.target.value)} placeholder="Obra, frente o ubicación" /></div>
+        {MAQUINARIA_SECCIONES.map(([key, label]) => <div key={key} className="rounded-md border p-3 space-y-2">
+          <Label className="font-medium">{label}</Label>
+          <div className="flex flex-wrap gap-2">{(["conforme", "falla", "no_aplica"] as const).map(v =>
+            <Button key={v} type="button" size="sm" variant={answers[key].value === v ? (v === "falla" ? "destructive" : "default") : "outline"} onClick={() => updateAnswer(key, v)}>{v.replace("_", " ")}</Button>)}</div>
+          {answers[key].value === "falla" && <Input placeholder="Comentario obligatorio de la falla" value={answers[key].comment} onChange={e => setAnswers(a => ({ ...a, [key]: { ...a[key], comment: e.target.value } }))} />}
+        </div>)}
+        <div><Label>Observaciones</Label><Textarea value={observations} onChange={e => setObservations(e.target.value)} /></div>
+        <Button className="w-full" disabled={!equipmentId || !engineHours || todayDone || mutation.isPending} onClick={() => mutation.mutate()}>
+          {todayDone ? "Inspección ya registrada para este turno" : mutation.isPending ? "Guardando..." : "Registrar inspección"}
+        </Button>
+      </CardContent>
+    </Card>
+    <Card><CardHeader><CardTitle className="text-base">Historial propio</CardTitle></CardHeader><CardContent>
+      {historyLoading ? <Skeleton className="h-16 w-full" /> : (history?.inspecciones ?? []).length === 0 ? <p className="text-sm text-muted-foreground">Sin inspecciones registradas.</p> :
+        <div className="space-y-2">{history!.inspecciones.map((i: any) => <div key={i.id} className="flex justify-between border-b py-2 text-sm"><span>{String(i.inspection_date).slice(0,10)} · {i.plate || i.serial_number} · {i.shift}</span><Badge variant={i.result === "apta" ? "default" : "destructive"}>{i.result === "apta" ? "APTA" : "NO APTA"}</Badge></div>)}</div>}
+    </CardContent></Card>
+  </div>;
 }
 
 type PesvEncuestaConductorPortal = {

@@ -1083,6 +1083,40 @@ export const vehicleInspections = pgTable("vehicle_inspections", {
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
 
+// Inspección preoperacional específica para maquinaria amarilla/equipos especiales.
+// Se mantiene separada de vehicleInspections para no alterar el checklist vial existente.
+export const maquinariaInspecciones = pgTable("maquinaria_inspecciones", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+  workerId: varchar("worker_id").notNull().references(() => workers.id),
+  equipmentId: varchar("equipment_id").notNull().references(() => vehicles.id),
+  assignmentId: varchar("assignment_id").notNull().references(() => driverVehicleAssignments.id),
+  inspectionDate: date("inspection_date").notNull(),
+  shift: text("shift").notNull(),
+  engineHours: integer("engine_hours").notNull(),
+  workFront: text("work_front"),
+  result: text("result").notNull(), // apta | no_apta
+  checklistVersion: text("checklist_version").notNull().default("maquinaria-amarilla-v1"),
+  answers: jsonb("answers").notNull(),
+  observations: text("observations"),
+  evidenceUrls: text("evidence_urls").array().notNull().default(sql`'{}'`),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+}, (table) => ({
+  uniqueEquipmentDayShift: index("maquinaria_inspecciones_equipo_fecha_turno_idx")
+    .on(table.companyId, table.equipmentId, table.inspectionDate, table.shift),
+}));
+export const maquinariaInspeccionRespuestas = pgTable("maquinaria_inspeccion_respuestas", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  inspectionId: varchar("inspection_id").notNull().references(() => maquinariaInspecciones.id, { onDelete: "cascade" }),
+  section: text("section").notNull(),
+  itemKey: text("item_key").notNull(),
+  answer: text("answer").notNull(), // conforme | falla | no_aplica
+  comment: text("comment"),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+});
+export type MaquinariaInspeccion = typeof maquinariaInspecciones.$inferSelect;
+export type MaquinariaInspeccionRespuesta = typeof maquinariaInspeccionRespuestas.$inferSelect;
+
 // Road incident severity
 export const incidentSeverityEnum = pgEnum("incident_severity", ["solo-danos", "con-heridos", "mortal"]);
 export const incidentTypeEnum = pgEnum("incident_type", ["colision", "volcamiento", "atropello", "salida-via", "choque-objeto", "otro"]);
@@ -10764,6 +10798,10 @@ export const vehicleMaintenances = pgTable("vehicle_maintenances", {
   mileageAtMaintenance: integer("mileage_at_maintenance"),
   nextMaintenanceDate: date("next_maintenance_date"),
   nextMaintenanceMileage: integer("next_maintenance_mileage"),
+  // Horómetro para maquinaria amarilla y equipos especiales. El kilometraje
+  // anterior se conserva para vehículos de carretera.
+  engineHoursAtMaintenance: integer("engine_hours_at_maintenance"),
+  nextEngineHours: integer("next_engine_hours"),
   cost: integer("cost"), // Costo en COP
   provider: text("provider"),
   invoiceNumber: text("invoice_number"),
@@ -10784,6 +10822,8 @@ export const insertVehicleMaintenanceSchema = createInsertSchema(vehicleMaintena
     maintenanceType: z.string().min(1, "El tipo de mantenimiento es obligatorio"),
     description: z.string().min(1, "La descripción es obligatoria"),
     maintenanceDate: z.string().min(1, "La fecha de mantenimiento es obligatoria"),
+    engineHoursAtMaintenance: z.coerce.number().min(0).optional().nullable(),
+    nextEngineHours: z.coerce.number().min(0).optional().nullable(),
   });
 export type InsertVehicleMaintenance = z.infer<typeof insertVehicleMaintenanceSchema>;
 export type VehicleMaintenance = typeof vehicleMaintenances.$inferSelect;

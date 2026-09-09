@@ -43702,6 +43702,146 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     }
   });
 
+  // Maquinaria amarilla: únicamente equipos especiales asignados y vigentes.
+  const MAQUINARIA_CHECKLIST = [
+    ["identificacion_documentacion", "Identificación y documentación"],
+    ["aceites_refrigerante_combustible", "Aceites, refrigerante y combustible"],
+    ["fugas", "Fugas"],
+    ["sistema_hidraulico", "Sistema hidráulico"],
+    ["mangueras_conexiones", "Mangueras y conexiones"],
+    ["tren_rodaje_llantas", "Tren de rodaje o llantas"],
+    ["balde_implementos", "Balde e implementos"],
+    ["pasadores_seguros", "Pasadores y seguros"],
+    ["luces_alarma_pito", "Luces, alarma y pito"],
+    ["extintor", "Extintor"],
+    ["cabina_cinturon_controles", "Cabina, cinturón y controles"],
+    ["estado_general_limpieza", "Estado general y limpieza"],
+  ] as const;
+
+  app.get("/api/portal/mis-maquinaria", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as schema.User;
+      if (!user.companyId) return res.status(403).json({ error: "Sin empresa asociada" });
+      const worker = user.workerId
+        ? { id: user.workerId }
+        : user.email ? await storage.getWorkerByEmail(user.email, user.companyId) : undefined;
+      if (!worker) return res.status(403).json({ error: "Trabajador no encontrado" });
+      const rows = await db.select({
+        assignmentId: schema.driverVehicleAssignments.id,
+        id: schema.vehicles.id, plate: schema.vehicles.plate, serialNumber: schema.vehicles.serialNumber,
+        machineryType: schema.vehicles.machineryType, assetCategory: schema.vehicles.assetCategory,
+      }).from(schema.driverVehicleAssignments)
+        .innerJoin(schema.drivers, eq(schema.drivers.id, schema.driverVehicleAssignments.driverId))
+        .innerJoin(schema.vehicles, eq(schema.vehicles.id, schema.driverVehicleAssignments.vehicleId))
+        .where(and(
+          eq(schema.driverVehicleAssignments.companyId, user.companyId),
+          eq(schema.drivers.companyId, user.companyId), eq(schema.drivers.workerId, worker.id),
+          eq(schema.driverVehicleAssignments.isActive, 1), eq(schema.vehicles.status, "activo"),
+          sql`${schema.driverVehicleAssignments.startDate} <= CURRENT_DATE`,
+          sql`(${schema.driverVehicleAssignments.endDate} IS NULL OR ${schema.driverVehicleAssignments.endDate} >= CURRENT_DATE)`,
+          sql`${schema.vehicles.assetCategory} IN ('maquinaria_amarilla','equipo_especial')`,
+        )).orderBy(schema.vehicles.plate);
+      res.json({ equipos: rows, checklist: MAQUINARIA_CHECKLIST, checklistVersion: "maquinaria-amarilla-v1" });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/portal/mis-inspecciones-maquinaria", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as schema.User;
+      if (!user.companyId) return res.status(403).json({ error: "Sin empresa asociada" });
+      const worker = user.workerId
+        ? { id: user.workerId }
+        : user.email ? await storage.getWorkerByEmail(user.email, user.companyId) : undefined;
+      if (!worker) return res.status(403).json({ error: "Trabajador no encontrado" });
+      const rows = await db.execute(sql`
+        SELECT mi.*, v.plate, v.serial_number, v.machinery_type
+        FROM maquinaria_inspecciones mi
+        JOIN vehicles v ON v.id = mi.equipment_id AND v.company_id = mi.company_id
+        WHERE mi.company_id = ${user.companyId} AND mi.worker_id = ${worker.id}
+        ORDER BY mi.inspection_date DESC, mi.created_at DESC LIMIT 50
+      `);
+      res.json({ inspecciones: (rows as any).rows ?? rows });
+    } catch (error: any) { res.status(500).json({ error: error.message }); }
+  });
+
+  // Revisión administrativa: siempre limitada a la empresa de la sesión.
+  app.get("/api/portal/admin/inspecciones-maquinaria", requirePermission("vehicles:view"), async (req, res) => {
+    try {
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(403).json({ error: "Seleccione una empresa" });
+      const rows = await db.execute(sql`
+        SELECT mi.*, v.plate, v.serial_number, v.machinery_type, w.name AS worker_name
+        FROM maquinaria_inspecciones mi
+        JOIN vehicles v ON v.id = mi.equipment_id AND v.company_id = mi.company_id
+        JOIN workers w ON w.id = mi.worker_id AND w.company_id = mi.company_id
+        WHERE mi.company_id = ${companyId}
+        ORDER BY mi.inspection_date DESC, mi.created_at DESC LIMIT 200
+      `);
+      res.json({ inspecciones: (rows as any).rows ?? rows });
+    } catch (error: any) { res.status(500).json({ error: error.message }); }
+  });
+
+  app.post("/api/portal/inspeccion-maquinaria", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as schema.User;
+      if (!user.companyId) return res.status(403).json({ error: "Sin empresa asociada" });
+      const worker = user.workerId
+        ? { id: user.workerId }
+        : user.email ? await storage.getWorkerByEmail(user.email, user.companyId) : undefined;
+      if (!worker) return res.status(403).json({ error: "Trabajador no encontrado" });
+      const { assignmentId, inspectionDate, shift, engineHours, workFront, observations, evidenceUrls, answers } = req.body;
+      if (!assignmentId || !inspectionDate || !shift || !Number.isInteger(Number(engineHours)) || Number(engineHours) < 0)
+        return res.status(400).json({ error: "Equipo, fecha, turno y horómetro son obligatorios" });
+      if (!["diurno", "nocturno", "otro"].includes(shift))
+        return res.status(400).json({ error: "El turno seleccionado no es válido" });
+      const todayBogota = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Bogota", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+      if (inspectionDate !== todayBogota)
+        return res.status(400).json({ error: "La inspección debe registrarse con la fecha actual" });
+      const normalizedAnswers: Record<string, any> = answers && typeof answers === "object" ? answers : {};
+      for (const [key] of MAQUINARIA_CHECKLIST) {
+        const answer = normalizedAnswers[key];
+        if (!answer || !["conforme", "falla", "no_aplica"].includes(answer.value))
+          return res.status(400).json({ error: `Respuesta inválida o faltante: ${key}` });
+        if (answer.value === "falla" && !String(answer.comment || "").trim())
+          return res.status(400).json({ error: `El comentario es obligatorio para la falla en ${key}` });
+      }
+      const assignment = await db.select({ id: schema.driverVehicleAssignments.id, equipmentId: schema.driverVehicleAssignments.vehicleId })
+        .from(schema.driverVehicleAssignments).innerJoin(schema.drivers, eq(schema.drivers.id, schema.driverVehicleAssignments.driverId))
+        .innerJoin(schema.vehicles, eq(schema.vehicles.id, schema.driverVehicleAssignments.vehicleId))
+        .where(and(eq(schema.driverVehicleAssignments.id, assignmentId), eq(schema.driverVehicleAssignments.companyId, user.companyId),
+          eq(schema.drivers.companyId, user.companyId), eq(schema.drivers.workerId, worker.id), eq(schema.driverVehicleAssignments.isActive, 1),
+          eq(schema.vehicles.status, "activo"), sql`${schema.vehicles.assetCategory} IN ('maquinaria_amarilla','equipo_especial')`,
+          sql`${schema.driverVehicleAssignments.startDate} <= ${inspectionDate}::date`,
+          sql`(${schema.driverVehicleAssignments.endDate} IS NULL OR ${schema.driverVehicleAssignments.endDate} >= ${inspectionDate}::date)`)).limit(1);
+      if (!assignment[0]) return res.status(403).json({ error: "La asignación no está vigente o el equipo no está permitido" });
+      const result = Object.values(normalizedAnswers).some((a: any) => a.value === "falla") ? "no_apta" : "apta";
+      const created = await db.transaction(async (tx) => {
+        const inserted = await tx.execute(sql`
+          INSERT INTO maquinaria_inspecciones
+            (company_id, worker_id, equipment_id, assignment_id, inspection_date, shift, engine_hours, work_front, result, checklist_version, answers, observations, evidence_urls)
+          VALUES (${user.companyId}, ${worker.id}, ${assignment[0].equipmentId}, ${assignmentId}, ${inspectionDate}::date, ${shift}, ${Number(engineHours)}, ${workFront || null}, ${result}, 'maquinaria-amarilla-v1', ${JSON.stringify(normalizedAnswers)}::jsonb, ${observations || null}, ${Array.isArray(evidenceUrls) ? evidenceUrls : []})
+          RETURNING *
+        `);
+        const inspection = (inserted as any).rows?.[0];
+        for (const [key, section] of MAQUINARIA_CHECKLIST) {
+          const answer = normalizedAnswers[key];
+          await tx.execute(sql`
+            INSERT INTO maquinaria_inspeccion_respuestas
+              (inspection_id, section, item_key, answer, comment)
+            VALUES (${inspection.id}, ${section}, ${key}, ${answer.value}, ${answer.comment || null})
+          `);
+        }
+        return inspection;
+      });
+      res.status(201).json({ inspeccion: created, result });
+    } catch (error: any) {
+      if (error?.code === "23505") return res.status(409).json({ error: "Ya existe una inspección para este equipo, fecha y turno" });
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // GET /api/portal/mis-vehiculos — vehículos asignados activos del conductor
   app.get("/api/portal/mis-vehiculos", requireAuth, async (req, res) => {
     try {
@@ -54980,7 +55120,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     }
   });
 
-  // ========== PESV - Vehicle Maintenances Routes (Res. 40595/2022 - H06) ==========
+  // ========== PESV - Vehicle Maintenances Routes (Res. 40595/2022 - H05) ==========
 
   // GET /api/vehicle-maintenances - List all vehicle maintenances
   app.get("/api/vehicle-maintenances", requirePermission("vehicles:view"), async (req, res) => {

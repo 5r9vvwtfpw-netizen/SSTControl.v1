@@ -6,6 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Pencil, Trash2, ArrowLeft, Wrench, FileDown } from "lucide-react";
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -38,6 +40,8 @@ export default function PesvMantenimientoVehicular() {
     mileageAtMaintenance: "" as number | string,
     nextMaintenanceDate: "",
     nextMaintenanceMileage: "" as number | string,
+    engineHoursAtMaintenance: "" as number | string,
+    nextEngineHours: "" as number | string,
     cost: "" as number | string,
     provider: "",
     invoiceNumber: "",
@@ -62,6 +66,16 @@ export default function PesvMantenimientoVehicular() {
       return response.json();
     },
     enabled: !!effectiveCompanyId,
+  });
+
+  const { data: machineryInspections = [] } = useQuery<any[]>({
+    queryKey: ["/api/portal/admin/inspecciones-maquinaria", effectiveCompanyId || "sin-empresa"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/portal/admin/inspecciones-maquinaria");
+      const body = await response.json();
+      return body.inspecciones || [];
+    },
+    enabled: isAdmin && !!effectiveCompanyId,
   });
 
   const createMaintenanceMutation = useMutation({
@@ -141,12 +155,16 @@ export default function PesvMantenimientoVehicular() {
     
     const mileageAtMaintenanceValue = formData.mileageAtMaintenance === '' ? undefined : Number(formData.mileageAtMaintenance);
     const nextMaintenanceMileageValue = formData.nextMaintenanceMileage === '' ? undefined : Number(formData.nextMaintenanceMileage);
+    const engineHoursAtMaintenanceValue = formData.engineHoursAtMaintenance === '' ? undefined : Number(formData.engineHoursAtMaintenance);
+    const nextEngineHoursValue = formData.nextEngineHours === '' ? undefined : Number(formData.nextEngineHours);
     const costValue = formData.cost === '' ? undefined : Number(formData.cost);
     
     const data = {
       ...formData,
       mileageAtMaintenance: mileageAtMaintenanceValue,
       nextMaintenanceMileage: nextMaintenanceMileageValue,
+      engineHoursAtMaintenance: engineHoursAtMaintenanceValue,
+      nextEngineHours: nextEngineHoursValue,
       cost: costValue,
       nextMaintenanceDate: formData.nextMaintenanceDate || undefined,
       provider: formData.provider || undefined,
@@ -174,6 +192,8 @@ export default function PesvMantenimientoVehicular() {
       mileageAtMaintenance: maintenance.mileageAtMaintenance ?? "",
       nextMaintenanceDate: maintenance.nextMaintenanceDate || "",
       nextMaintenanceMileage: maintenance.nextMaintenanceMileage ?? "",
+      engineHoursAtMaintenance: maintenance.engineHoursAtMaintenance ?? "",
+      nextEngineHours: maintenance.nextEngineHours ?? "",
       cost: maintenance.cost ?? "",
       provider: maintenance.provider || "",
       invoiceNumber: maintenance.invoiceNumber || "",
@@ -201,6 +221,8 @@ export default function PesvMantenimientoVehicular() {
       mileageAtMaintenance: "",
       nextMaintenanceDate: "",
       nextMaintenanceMileage: "",
+      engineHoursAtMaintenance: "",
+      nextEngineHours: "",
       cost: "",
       provider: "",
       invoiceNumber: "",
@@ -214,6 +236,14 @@ export default function PesvMantenimientoVehicular() {
     const vehicle = vehicles.find(v => v.id === vehicleId);
     return vehicle ? vehicle.plate : "Desconocido";
   };
+
+  const getVehicle = (vehicleId: string) => vehicles.find(v => v.id === vehicleId);
+  const getCategoryLabel = (category?: string | null) => ({
+    vehiculo_carretera: "Vehículo de carretera",
+    maquinaria_amarilla: "Maquinaria amarilla",
+    equipo_especial: "Equipo especial",
+  }[category || ""] || category || "Sin categoría");
+  const isRoadAsset = (vehicleId: string) => getVehicle(vehicleId)?.assetCategory === "vehiculo_carretera";
 
   const filteredMaintenances = maintenances.filter((maintenance) => {
     const searchLower = searchTerm.toLowerCase();
@@ -268,9 +298,9 @@ export default function PesvMantenimientoVehicular() {
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2" data-testid="text-page-title">
             <Wrench className="h-8 w-8" />
-            Mantenimiento Vehicular PESV
+             Mantenimiento de activos PESV (H05)
           </h1>
-          <p className="text-muted-foreground">Gestión de mantenimientos preventivos, correctivos y predictivos</p>
+           <p className="text-muted-foreground">Plan y registro de mantenimiento para vehículos de carretera, maquinaria amarilla y equipos especiales</p>
         </div>
         <div className="flex gap-2 flex-wrap">
           <HelpVideoButton customRoute="/pesv/mantenimiento" testId="button-help-video-pesv-mantenimiento" />
@@ -286,7 +316,7 @@ export default function PesvMantenimientoVehicular() {
         </div>
       </div>
       
-      <TrazabilidadPesvBanner codigoPaso="H09" compacto />
+      <TrazabilidadPesvBanner codigoPaso="H05" compacto />
       
       <div className="flex flex-wrap items-center justify-between gap-4">
         {isAdmin && (
@@ -315,25 +345,25 @@ export default function PesvMantenimientoVehicular() {
                       </div>
                     </div>
                   )}
-                  <div className="space-y-2">
-                    <Label htmlFor="vehicleId">Vehículo *</Label>
+                   <div className="space-y-2">
+                     <Label htmlFor="vehicleId">Activo (vehículo, maquinaria o equipo) *</Label>
                     <Select
                       value={formData.vehicleId}
                       onValueChange={(value) => setFormData({ ...formData, vehicleId: value })}
                     >
                       <SelectTrigger id="vehicleId" data-testid="select-vehicle">
-                        <SelectValue placeholder="Seleccionar vehículo" />
+                         <SelectValue placeholder="Seleccionar activo" />
                       </SelectTrigger>
                       <SelectContent>
                         {vehicles.map((vehicle) => (
                           <SelectItem key={vehicle.id} value={vehicle.id}>
-                            {vehicle.plate} - {vehicle.brand} {vehicle.model}
+                             {vehicle.plate} - {getCategoryLabel(vehicle.assetCategory)} - {vehicle.brand} {vehicle.model}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                  </div>
-                  <div className="space-y-2">
+                   </div>
+                   <div className="space-y-2">
                     <Label htmlFor="maintenanceType">Tipo de Mantenimiento *</Label>
                     <Select
                       value={formData.maintenanceType}
@@ -348,7 +378,7 @@ export default function PesvMantenimientoVehicular() {
                         <SelectItem value="predictivo">Predictivo</SelectItem>
                       </SelectContent>
                     </Select>
-                  </div>
+                   </div>
                   <div className="space-y-2 col-span-2">
                     <Label htmlFor="description">Descripción *</Label>
                     <Textarea
@@ -371,8 +401,8 @@ export default function PesvMantenimientoVehicular() {
                       data-testid="input-maintenance-date"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="mileageAtMaintenance">Kilometraje al Mantenimiento</Label>
+                   <div className="space-y-2">
+                      <Label htmlFor="mileageAtMaintenance">Kilometraje al Mantenimiento (vehículos de carretera)</Label>
                     <Input
                       id="mileageAtMaintenance"
                       type="number"
@@ -383,6 +413,14 @@ export default function PesvMantenimientoVehicular() {
                       data-testid="input-mileage-at-maintenance"
                     />
                   </div>
+                   {formData.vehicleId && !isRoadAsset(formData.vehicleId) && (
+                     <div className="space-y-2">
+                       <Label htmlFor="engineHoursAtMaintenance">Horómetro al Mantenimiento (horas)</Label>
+                       <Input id="engineHoursAtMaintenance" type="number" min="0" value={formData.engineHoursAtMaintenance}
+                         onChange={(e) => setFormData({ ...formData, engineHoursAtMaintenance: e.target.value === '' ? '' : e.target.value })}
+                         placeholder="Ej: 1250" data-testid="input-engine-hours-at-maintenance" />
+                     </div>
+                   )}
                   <div className="space-y-2">
                     <Label htmlFor="nextMaintenanceDate">Próxima Fecha de Mantenimiento</Label>
                     <Input
@@ -393,8 +431,8 @@ export default function PesvMantenimientoVehicular() {
                       data-testid="input-next-maintenance-date"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="nextMaintenanceMileage">Próximo Kilometraje de Mantenimiento</Label>
+                   <div className="space-y-2">
+                      <Label htmlFor="nextMaintenanceMileage">Próximo Kilometraje (vehículos de carretera)</Label>
                     <Input
                       id="nextMaintenanceMileage"
                       type="number"
@@ -405,6 +443,14 @@ export default function PesvMantenimientoVehicular() {
                       data-testid="input-next-maintenance-mileage"
                     />
                   </div>
+                   {formData.vehicleId && !isRoadAsset(formData.vehicleId) && (
+                     <div className="space-y-2">
+                       <Label htmlFor="nextEngineHours">Próximo Horómetro (horas)</Label>
+                       <Input id="nextEngineHours" type="number" min="0" value={formData.nextEngineHours}
+                         onChange={(e) => setFormData({ ...formData, nextEngineHours: e.target.value === '' ? '' : e.target.value })}
+                         placeholder="Ej: 1500" data-testid="input-next-engine-hours" />
+                     </div>
+                   )}
                   <div className="space-y-2">
                     <Label htmlFor="cost">Costo ($)</Label>
                     <Input
@@ -500,10 +546,12 @@ export default function PesvMantenimientoVehicular() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead data-testid="header-vehicle">Vehículo</TableHead>
+              <TableHead data-testid="header-vehicle">Activo / Identificación</TableHead>
+              <TableHead data-testid="header-category">Categoría</TableHead>
               <TableHead data-testid="header-type">Tipo</TableHead>
               <TableHead data-testid="header-date">Fecha</TableHead>
               <TableHead data-testid="header-cost">Costo</TableHead>
+              <TableHead data-testid="header-meter">Km / Horómetro</TableHead>
               <TableHead data-testid="header-next-maintenance">Próximo Mant.</TableHead>
               {isAdmin && <TableHead data-testid="header-actions">Acciones</TableHead>}
             </TableRow>
@@ -511,24 +559,30 @@ export default function PesvMantenimientoVehicular() {
           <TableBody>
             {maintenancesLoading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center" data-testid="text-loading">
+                <TableCell colSpan={8} className="text-center" data-testid="text-loading">
                   Cargando mantenimientos...
                 </TableCell>
               </TableRow>
             ) : filteredMaintenances.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center" data-testid="text-no-maintenances">
+                <TableCell colSpan={8} className="text-center" data-testid="text-no-maintenances">
                   No se encontraron registros de mantenimiento
                 </TableCell>
               </TableRow>
             ) : (
               filteredMaintenances.map((maintenance) => (
                 <TableRow key={maintenance.id} data-testid={`row-maintenance-${maintenance.id}`}>
-                  <TableCell data-testid={`text-vehicle-${maintenance.id}`}>{getVehiclePlate(maintenance.vehicleId)}</TableCell>
+                   <TableCell data-testid={`text-vehicle-${maintenance.id}`}>{getVehiclePlate(maintenance.vehicleId)}</TableCell>
+                   <TableCell data-testid={`text-category-${maintenance.id}`}>{getCategoryLabel(getVehicle(maintenance.vehicleId)?.assetCategory)}</TableCell>
                   <TableCell data-testid={`text-type-${maintenance.id}`}>{getMaintenanceTypeLabel(maintenance.maintenanceType)}</TableCell>
                   <TableCell data-testid={`text-date-${maintenance.id}`}>{formatDate(maintenance.maintenanceDate)}</TableCell>
                   <TableCell data-testid={`text-cost-${maintenance.id}`}>{formatCurrency(maintenance.cost)}</TableCell>
-                  <TableCell data-testid={`text-next-maintenance-${maintenance.id}`}>{formatDate(maintenance.nextMaintenanceDate)}</TableCell>
+                   <TableCell data-testid={`text-meter-${maintenance.id}`}>{isRoadAsset(maintenance.vehicleId)
+                     ? (maintenance.mileageAtMaintenance != null ? `${maintenance.mileageAtMaintenance.toLocaleString("es-CO")} km` : "—")
+                     : (maintenance.engineHoursAtMaintenance != null ? `${maintenance.engineHoursAtMaintenance.toLocaleString("es-CO")} h` : "—")}</TableCell>
+                   <TableCell data-testid={`text-next-maintenance-${maintenance.id}`}>{formatDate(maintenance.nextMaintenanceDate)}{isRoadAsset(maintenance.vehicleId)
+                     ? (maintenance.nextMaintenanceMileage != null ? ` · ${maintenance.nextMaintenanceMileage.toLocaleString("es-CO")} km` : "")
+                     : (maintenance.nextEngineHours != null ? ` · ${maintenance.nextEngineHours.toLocaleString("es-CO")} h` : "")}</TableCell>
                   {isAdmin && (
                     <TableCell>
                       <div className="flex gap-2">
@@ -566,6 +620,51 @@ export default function PesvMantenimientoVehicular() {
           </TableBody>
         </Table>
       </div>
+
+      {isAdmin && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Inspecciones preoperacionales de maquinaria</CardTitle>
+            <CardDescription>Últimos registros enviados por trabajadores para la empresa seleccionada.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {machineryInspections.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No hay inspecciones preoperacionales registradas.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Fecha</TableHead>
+                      <TableHead>Equipo</TableHead>
+                      <TableHead>Trabajador</TableHead>
+                      <TableHead>Turno</TableHead>
+                      <TableHead>Horómetro</TableHead>
+                      <TableHead>Resultado</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {machineryInspections.slice(0, 20).map((inspection) => (
+                      <TableRow key={inspection.id}>
+                        <TableCell>{String(inspection.inspection_date).slice(0, 10)}</TableCell>
+                        <TableCell>{inspection.plate || inspection.serial_number || "Sin identificación"}</TableCell>
+                        <TableCell>{inspection.worker_name}</TableCell>
+                        <TableCell>{inspection.shift}</TableCell>
+                        <TableCell>{inspection.engine_hours} h</TableCell>
+                        <TableCell>
+                          <Badge variant={inspection.result === "apta" ? "default" : "destructive"}>
+                            {inspection.result === "apta" ? "APTA" : "NO APTA"}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

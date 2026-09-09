@@ -34,6 +34,8 @@ export async function syncVehicleMaintenancesColumns() {
       { name: 'observations', type: 'TEXT' },
       { name: 'document_url', type: 'TEXT' },
       { name: 'evaluacion_pesv_id', type: 'VARCHAR' },
+      { name: 'engine_hours_at_maintenance', type: 'INTEGER' },
+      { name: 'next_engine_hours', type: 'INTEGER' },
     ];
 
     for (const col of columns) {
