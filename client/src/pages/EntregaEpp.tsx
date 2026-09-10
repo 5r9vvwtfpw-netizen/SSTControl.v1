@@ -8,6 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -18,7 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { useCompanyContext } from "@/hooks/use-company-context";
 import { queryClient, apiRequest, buildHeaders } from "@/lib/queryClient";
-import { Plus, Edit, Trash2, HardHat, Glasses, Search, Filter, Wind, Footprints, Shirt, ShieldCheck, ArrowLeft, Bot, UserPlus, CalendarDays, RefreshCw, AlertTriangle, Clock, ArrowUpDown, Briefcase, FileText, FileDown, Printer, X } from "lucide-react";
+import { Plus, Edit, Trash2, HardHat, Glasses, Search, Filter, Wind, Footprints, Shirt, ShieldCheck, ArrowLeft, Bot, UserPlus, CalendarDays, RefreshCw, AlertTriangle, Clock, ArrowUpDown, Briefcase, FileText, FileDown, Printer, X, ChevronDown } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useLocation } from "wouter";
 import { LuEar, LuHand } from "react-icons/lu";
@@ -72,6 +74,7 @@ export default function EntregaEpp() {
   const [items, setItems] = useState<ActItem[]>([]), [manualEntry, setManualEntry] = useState(false);
   const [searchTerm, setSearchTerm] = useState(""), [categoryFilter, setCategoryFilter] = useState("todos");
   const [catalogSearchTerm, setCatalogSearchTerm] = useState(""), [workerSearchTerm, setWorkerSearchTerm] = useState("");
+  const [catalogOpen, setCatalogOpen] = useState(false);
   const [draft, setDraft] = useState<ActItem>({ eppName: "", eppCategory: "proteccion_cabeza", quantity: 1, size: "" });
   const { data: deliveries = [], isLoading } = useQuery<DeliveryAct[]>({ queryKey: ["/api/epp/deliveries", { companyId }], queryFn: async () => { const r = await fetch("/api/epp/deliveries", { credentials: "include", headers: buildHeaders(false) }); if (!r.ok) throw new Error("Error al cargar actas"); return r.json(); }, enabled: !!companyId });
   const { data: catalog = [] } = useQuery<EppCatalog[]>({ queryKey: ["/api/epp/catalog"] });
@@ -328,14 +331,59 @@ export default function EntregaEpp() {
 
               <div className="space-y-3 rounded-lg border-2 border-dashed border-blue-200 bg-blue-50/50 p-4 dark:bg-blue-950/20">
                 <div className="flex items-center gap-2"><Bot className="h-5 w-5 text-blue-600" /><h3 className="font-semibold">Agregar elemento al acta</h3></div>
-                <Select onValueChange={selectCatalog} value={manualEntry ? "manual" : draft.eppCatalogId || ""}>
-                  <SelectTrigger data-testid="select-catalog"><SelectValue placeholder="Busque o seleccione EPP del catálogo" /></SelectTrigger>
-                  <SelectContent className="max-h-[320px]">
-                    <div className="sticky top-0 bg-popover p-2"><Input placeholder="Buscar EPP..." value={catalogSearchTerm} onChange={(event) => setCatalogSearchTerm(event.target.value)} data-testid="input-search-catalog" /></div>
-                    <SelectItem value="manual"><Plus className="mr-2 inline h-4 w-4" />Agregar manualmente</SelectItem>
-                    {filteredCatalog.map((entry) => <SelectItem key={entry.id} value={entry.id}>{entry.name} — {eppCategories[entry.category]?.label || entry.category}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <Popover open={catalogOpen} onOpenChange={(open) => { setCatalogOpen(open); if (!open) setCatalogSearchTerm(""); }}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={catalogOpen}
+                      className="w-full justify-between font-normal"
+                      data-testid="select-catalog"
+                    >
+                      <span className={manualEntry || draft.eppCatalogId ? "truncate" : "truncate text-muted-foreground"}>
+                        {manualEntry
+                          ? "Agregar manualmente"
+                          : catalog.find((entry) => entry.id === draft.eppCatalogId)?.name || "Busque o seleccione EPP del catálogo"}
+                      </span>
+                      <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                    <Command shouldFilter={false}>
+                      <CommandInput
+                        placeholder="Buscar EPP..."
+                        value={catalogSearchTerm}
+                        onValueChange={setCatalogSearchTerm}
+                        data-testid="input-search-catalog"
+                      />
+                      <CommandList className="max-h-[320px]">
+                        <CommandEmpty>No se encontraron EPP.</CommandEmpty>
+                        <CommandItem
+                          value="manual"
+                          onSelect={() => { selectCatalog("manual"); setCatalogOpen(false); }}
+                        >
+                          <Plus className="mr-2 h-4 w-4" />
+                          Agregar manualmente
+                        </CommandItem>
+                        {filteredCatalog.map((entry) => (
+                          <CommandItem
+                            key={entry.id}
+                            value={entry.id}
+                            onSelect={() => { selectCatalog(entry.id); setCatalogOpen(false); }}
+                          >
+                            <div className="min-w-0">
+                              <div className="truncate">{entry.name}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {eppCategories[entry.category]?.label || entry.category}
+                              </div>
+                            </div>
+                          </CommandItem>
+                        ))}
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
                 {manualEntry && (
                   <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
                     <Input placeholder="Nombre del EPP *" value={draft.eppName} onChange={(event) => setDraft((value) => ({ ...value, eppName: event.target.value }))} data-testid="input-epp-nombre" />
