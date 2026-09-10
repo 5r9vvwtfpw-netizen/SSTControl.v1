@@ -8,7 +8,8 @@ export type SecurityEventType =
   | "unauthorized_ip"
   | "blocked_unauthorized_ip"
   | "simultaneous"
-  | "long_session";
+  | "long_session"
+  | "idle_timeout";
 
 interface GeoResult {
   status: "resolved" | "private" | "unavailable";
@@ -76,6 +77,7 @@ const eventLabels: Record<SecurityEventType, string> = {
   blocked_unauthorized_ip: "Bloqueo por reiteración de IP no autorizada",
   simultaneous: "Sesión simultánea",
   long_session: "Sesión superior a ocho horas",
+  idle_timeout: "Cierre por inactividad",
 };
 
 export async function enrichSessionLocation(sessionRecordId: string, ip: string): Promise<GeoResult> {

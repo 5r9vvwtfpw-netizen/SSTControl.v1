@@ -47,18 +47,18 @@ async function closeExpiredSessions() {
   }
 }
 
-export async function checkLongSessions() {
+export async function checkSessionTimeouts() {
   try {
     await closeExpiredSessions();
   } catch (err) {
-    logger.error({ err }, "[SESSION-MONITOR] Error en checkLongSessions");
+    logger.error({ err }, "[SESSION-MONITOR] Error en checkSessionTimeouts");
   }
 }
 
 export function registerSessionMonitorCron() {
   const INTERVAL_MS = 60 * 1000;
-  setInterval(checkLongSessions, INTERVAL_MS);
+  setInterval(checkSessionTimeouts, INTERVAL_MS);
   // Ejecutar una vez al arrancar
-  checkLongSessions();
+  checkSessionTimeouts();
   logger.info("[SESSION-MONITOR] Monitor de seguridad de sesiones registrado (cada 1 min)");
 }

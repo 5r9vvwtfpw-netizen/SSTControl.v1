@@ -19,8 +19,6 @@ import logger from "./lib/logger";
 import { enrichSessionLocation, processSecurityAlert } from "./services/security-access";
 
 // ── Monitoreo de sesiones ─────────────────────────────────────────────────────
-const MAX_SESSION_HOURS = 6;
-const ABSOLUTE_SESSION_HOURS = 6;
 const SESSION_IDLE_MINUTES = 20;
 const UNAUTHORIZED_IP_ALLOWED_ATTEMPTS = 3;
 const UNAUTHORIZED_IP_WINDOW_HOURS = 24;
@@ -280,16 +278,7 @@ async function closeLoginSession(sessionId: string) {
       UPDATE user_sessions_log
       SET is_active = false,
           logout_at = now(),
-          duration_minutes = EXTRACT(EPOCH FROM (now() - login_at)) / 60,
-          is_suspicious = CASE
-            WHEN EXTRACT(EPOCH FROM (now() - login_at)) / 3600 > ${MAX_SESSION_HOURS}
-            THEN true ELSE is_suspicious END,
-          alert_type = CASE
-            WHEN EXTRACT(EPOCH FROM (now() - login_at)) / 3600 > ${MAX_SESSION_HOURS} AND alert_type IS NULL
-            THEN 'long_session' ELSE alert_type END,
-          alert_note = CASE
-            WHEN EXTRACT(EPOCH FROM (now() - login_at)) / 3600 > ${MAX_SESSION_HOURS} AND alert_type IS NULL
-            THEN 'Sesión activa superó las 8 horas continuas' ELSE alert_note END
+          duration_minutes = EXTRACT(EPOCH FROM (now() - login_at)) / 60
       WHERE session_id = ${sessionId} AND is_active = true
     `);
   } catch (err) {
@@ -297,25 +286,24 @@ async function closeLoginSession(sessionId: string) {
   }
 }
 
-type SessionExpiryReason = "idle_timeout" | "absolute_timeout";
-
-async function expireLoginSession(sessionId: string, reason: SessionExpiryReason) {
-  const note = reason === "idle_timeout"
-    ? `Sesión cerrada automáticamente después de ${SESSION_IDLE_MINUTES} minutos de inactividad`
-    : `Sesión cerrada automáticamente al alcanzar el límite máximo de ${ABSOLUTE_SESSION_HOURS} horas`;
-
+async function expireLoginSession(sessionId: string) {
   await db.execute(sql`
     UPDATE user_sessions_log
     SET is_active = false,
         logout_at = now(),
         duration_minutes = EXTRACT(EPOCH FROM (now() - login_at)) / 60,
-        alert_type = ${reason}::text,
-        alert_note = CONCAT_WS(' | '::text, alert_note, ${note}::text)
+        alert_type = 'idle_timeout',
+        alert_note = CONCAT_WS(
+          ' | '::text,
+          alert_note,
+          ${`Sesión cerrada automáticamente después de ${SESSION_IDLE_MINUTES} minutos de inactividad`}::text
+        )
     WHERE session_id = ${sessionId} AND is_active = true
   `);
 }
 
 async function enforceAuthenticatedSessionActivity(req: Request, res: Response, next: NextFunction) {
+  if (req.path === "/api/logout") return next();
   if (!req.isAuthenticated?.() || !req.sessionID) return next();
 
   try {
@@ -353,11 +341,9 @@ async function enforceAuthenticatedSessionActivity(req: Request, res: Response, 
       ? new Date(sessionRecord.last_activity_at).getTime()
       : loginAt;
     const idleExpired = now - lastActivityAt >= SESSION_IDLE_MINUTES * 60 * 1000;
-    const absoluteExpired = now - loginAt >= ABSOLUTE_SESSION_HOURS * 60 * 60 * 1000;
 
-    if (idleExpired || absoluteExpired) {
-      const reason: SessionExpiryReason = idleExpired ? "idle_timeout" : "absolute_timeout";
-      await expireLoginSession(req.sessionID, reason);
+    if (idleExpired) {
+      await expireLoginSession(req.sessionID);
 
       req.logout((logoutError) => {
         if (logoutError) {
@@ -368,17 +354,10 @@ async function enforceAuthenticatedSessionActivity(req: Request, res: Response, 
             logger.error({ err: destroyError }, "[SESSION] Error destruyendo sesión vencida");
           }
           res.clearCookie("connect.sid");
-          return res.status(401).json(
-            reason === "idle_timeout"
-              ? {
-                  error: `Tu sesión se cerró después de ${SESSION_IDLE_MINUTES} minutos de inactividad.`,
-                  code: "SESSION_IDLE_TIMEOUT",
-                }
-              : {
-                  error: "Tu sesión alcanzó el tiempo máximo permitido.",
-                  code: "SESSION_ABSOLUTE_TIMEOUT",
-                },
-          );
+          return res.status(401).json({
+            error: `Tu sesión se cerró después de ${SESSION_IDLE_MINUTES} minutos de inactividad.`,
+            code: "SESSION_IDLE_TIMEOUT",
+          });
         });
       });
       return;
@@ -543,12 +522,13 @@ export function setupAuth(app: Express) {
     secret: process.env.SESSION_SECRET!,
     resave: false,
     saveUninitialized: false,
+    rolling: true,
     store: storage.sessionStore,
     cookie: {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-     maxAge: 1000 * 60 * 60 * 6
+      maxAge: SESSION_IDLE_MINUTES * 60 * 1000
     }
   };
 
@@ -1062,7 +1042,6 @@ export function setupAuth(app: Express) {
         return res.status(200).json({
           active: true,
           idleTimeoutMinutes: SESSION_IDLE_MINUTES,
-          absoluteTimeoutHours: ABSOLUTE_SESSION_HOURS,
         });
       } catch (error) {
         logger.error({ error }, "[SESSION] Error actualizando actividad");

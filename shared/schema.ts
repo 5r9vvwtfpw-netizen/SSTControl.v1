@@ -11290,7 +11290,8 @@ export const userSessions = pgTable("user_sessions_log", {
   durationMinutes: integer("duration_minutes"),
   isActive: boolean("is_active").notNull().default(true),
   isSuspicious: boolean("is_suspicious").notNull().default(false),
-  // Tipo de alerta: unauthorized_ip | long_session | simultaneous | idle_timeout | absolute_timeout | null
+  // Tipo de alerta: unauthorized_ip | long_session | simultaneous | idle_timeout | null.
+  // absolute_timeout se conserva únicamente para registros históricos.
   alertType: text("alert_type"),
   alertNote: text("alert_note"),
 });

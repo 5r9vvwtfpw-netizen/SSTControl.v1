@@ -16,6 +16,9 @@ export function SessionTimeoutGuard() {
     if (!user) return;
 
     let disposed = false;
+    lastInteractionAtRef.current = Date.now();
+    lastServerSyncAtRef.current = 0;
+    checkingIdleRef.current = false;
 
     const redirectAfterExpiredSession = () => {
       if (disposed || checkingIdleRef.current) return;
