@@ -341,8 +341,18 @@ export function CommitteeActaBuilder({
     setSaving(true);
     try {
       const content = formalText(draft, committee, companyName);
-      const selectedPresident = draft.firmantes.find((item) => (item.role || "").toLowerCase().includes("presidente"));
-      const selectedSecretary = draft.firmantes.find((item) => (item.role || "").toLowerCase().includes("secret"));
+      const selectedPresident = draft.firmantes.find((item) => (item.role || "").toLowerCase().includes("presidente"))
+        || draft.firmantes[0];
+      const selectedSecretary = draft.firmantes.find((item) => (item.role || "").toLowerCase().includes("secret"))
+        || draft.firmantes.find((item) => item !== selectedPresident);
+      const formalFirmantes = draft.firmantes.map((item) => ({
+        ...item,
+        role: item === selectedPresident
+          ? "Presidente"
+          : item === selectedSecretary
+            ? "Secretario"
+            : "Integrante del comité",
+      }));
       const payload = committee === "copasst"
         ? {
           fecha: draft.fecha,
@@ -357,7 +367,7 @@ export function CommitteeActaBuilder({
           invitados: draft.invitados,
           ordenDia: draft.ordenDia,
           compromisos: draft.compromisos,
-          firmantes: draft.firmantes,
+          firmantes: formalFirmantes,
           proximaReunion: draft.proximaReunion || null,
           estado: status,
           presidenteWorkerId: selectedPresident?.workerId || null,
@@ -374,7 +384,7 @@ export function CommitteeActaBuilder({
           asistentes: selectedParticipants.map((participant) => participant.name),
           acuerdos: draft.compromisos.map((item) => item.description),
           observaciones: draft.legacyNotes || null,
-          firmas: draft.firmantes,
+          firmas: formalFirmantes,
           horaInicio: draft.horaInicio || null,
           horaFin: draft.horaFin || null,
           lugar: draft.lugar || null,
@@ -385,7 +395,7 @@ export function CommitteeActaBuilder({
           invitados: draft.invitados,
           ordenDia: draft.ordenDia,
           compromisos: draft.compromisos,
-          firmantes: draft.firmantes,
+          firmantes: formalFirmantes,
           proximaReunion: draft.proximaReunion || null,
           estado: status,
         };

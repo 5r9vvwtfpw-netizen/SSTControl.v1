@@ -1533,6 +1533,60 @@ function getEffectiveCompanyId(req: Request): string {
   return user.companyId || "";
 }
 
+function normalizeCommitteeSignerName(value: unknown): string {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
+}
+
+function isCommitteeSignerMatch(signer: any, workerId: unknown, name: unknown): boolean {
+  if (workerId && signer?.workerId === workerId) return true;
+  return Boolean(name) && normalizeCommitteeSignerName(signer?.name) === normalizeCommitteeSignerName(name);
+}
+
+/**
+ * The member's role (e.g. Principal/Suplente) describes committee representation,
+ * not the officer role used in the signature block. Resolve the latter explicitly.
+ */
+function getCommitteeActaSignatureLabel(
+  signer: any,
+  index: number,
+  allSigners: any[],
+  acta: any,
+): string {
+  if (isCommitteeSignerMatch(signer, acta?.presidenteWorkerId, acta?.presidente)) {
+    return "Presidente";
+  }
+  if (isCommitteeSignerMatch(signer, acta?.secretariaWorkerId, acta?.secretaria)) {
+    return "Secretario";
+  }
+
+  const memberRole = normalizeCommitteeSignerName(signer?.role);
+  if (memberRole.includes("presidente")) return "Presidente";
+  if (memberRole.includes("secretario") || memberRole.includes("secretaria")) return "Secretario";
+
+  const presidentIndex = allSigners.findIndex((candidate) =>
+    isCommitteeSignerMatch(candidate, acta?.presidenteWorkerId, acta?.presidente)
+    || normalizeCommitteeSignerName(candidate?.role).includes("presidente")
+  );
+  const secretaryIndex = allSigners.findIndex((candidate) =>
+    isCommitteeSignerMatch(candidate, acta?.secretariaWorkerId, acta?.secretaria)
+    || normalizeCommitteeSignerName(candidate?.role).includes("secretario")
+    || normalizeCommitteeSignerName(candidate?.role).includes("secretaria")
+  );
+
+  // Guided actas convention: when two or more selected signers have no
+  // explicit secretary, the first signer different from the president is
+  // the secretary. Additional selected members remain committee members.
+  if (allSigners.length >= 2) {
+    if (presidentIndex === -1 && index === 0) return "Presidente";
+    if (secretaryIndex === -1 && index !== presidentIndex) return "Secretario";
+  }
+  return "Integrante del comité";
+}
+
 /**
  * Helper function to check if a user role has support ticket access
  * superadmin and soporte roles can manage all support tickets
@@ -15377,10 +15431,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const guidedSigners = Array.isArray(acta.firmantes) && acta.firmantes.length > 0
-        ? acta.firmantes.map((signer: any) => ({
-          label: signer.role || 'Firmante',
+        ? acta.firmantes.map((signer: any, index: number, allSigners: any[]) => ({
+          label: getCommitteeActaSignatureLabel(signer, index, allSigners, acta),
           name: signer.name,
-          role: signer.position || signer.role || 'Integrante del COPASST',
+          role: signer.position || 'Integrante del COPASST',
         }))
         : [
         {
@@ -47817,10 +47871,10 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const secretario = legacyFirmas.find((firma) => firma.cargo === "secretario");
 
       const guidedSignatureRows = Array.isArray(acta.firmantes) && acta.firmantes.length > 0
-        ? acta.firmantes.map((firma: any) => ({
-          label: firma.role || "Firmante",
+        ? acta.firmantes.map((firma: any, index: number, allSigners: any[]) => ({
+          label: getCommitteeActaSignatureLabel(firma, index, allSigners, acta),
           name: firma.name,
-          role: firma.position || firma.role || "Integrante del Comité de Convivencia",
+          role: firma.position || "Integrante del Comité de Convivencia",
         }))
         : [
         {

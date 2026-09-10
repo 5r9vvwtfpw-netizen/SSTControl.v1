@@ -16,6 +16,7 @@
 - [GitHub connectors](github-connector-vs-source-control.md) — Replit separa GitHub general de GitHub Source Control; la sincronización del repositorio usa la tarjeta Source Control.
 - [Committee actas document policy](committee-actas-document-policy.md) — COPASST y Convivencia se redactan dentro del sistema; los PDF cargados no son requisito.
 - [Committee actas portal boundary](committee-actas-portal-boundary.md) — las actas se gestionan fuera del Portal de Empleados; ese portal solo participa en votaciones.
+- [Committee acta signature roles](committee-acta-signature-roles.md) — el bloque de firmas usa Presidente/Secretario, no Principal/Suplente como cargos formales.
 - [Driver–vehicle assignment policy](driver-vehicle-assignment-policy.md) — relación PESV muchos-a-muchos con vigencia e historial; finalizar no borra y el fallback de flota solo aplica antes de la primera asignación.
 - [Storage architecture](storage-architecture.md) — uploads use AWS S3; base64 logo routes need encoded-size parser headroom and explicit 413 messages.
 - [Induction resend policy](pesv-induction-send-policy.md) — SST y PESV admiten sesiones repetidas; sus evaluaciones son prediseñadas y no dependen de preguntas configuradas por empresa.
