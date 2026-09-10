@@ -11,8 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertSstDocumentSchema, type SstDocument, type InsertSstDocument, type SstDocumentVersion, type SstDocumentAccessLog, type CambioSst } from "@shared/schema";
-import { Plus, FileText, Search, Filter, Edit, Trash2, Eye, History, Clock, AlertCircle, CheckCircle2, FileWarning, Archive, XCircle, Calendar, Download, Wand2, FileCheck, Users, UserCheck, ChevronDown, ChevronRight, Server } from "lucide-react";
+import { insertSstDocumentSchema, type SstDocument, type InsertSstDocument, type SstDocumentVersion, type SstDocumentAccessLog } from "@shared/schema";
+import { Plus, FileText, Search, Filter, Edit, Trash2, Eye, History, Clock, AlertCircle, CheckCircle2, FileWarning, Archive, XCircle, Calendar, Download, FileCheck, Users, UserCheck, ChevronDown, ChevronRight, Server } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -406,7 +406,6 @@ export default function ConservacionDocumentos() {
   const [editingItem, setEditingItem] = useState<SstDocument | null>(null);
   const [selectedDocument, setSelectedDocument] = useState<SstDocument | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
-  const [selectedCambio, setSelectedCambio] = useState<string | null>(null);
   const { data: documents, isLoading } = useQuery<SstDocument[]>({
     queryKey: ["/api/sst-documents"],
   });
@@ -417,10 +416,6 @@ export default function ConservacionDocumentos() {
 
   const { data: users } = useQuery<{ id: string; fullName: string; role: string }[]>({
     queryKey: ["/api/users/company-members"],
-  });
-
-  const { data: cambiosSst } = useQuery<CambioSst[]>({
-    queryKey: ["/api/cambios-sst"],
   });
 
   const { data: systemDocuments, isLoading: isLoadingSystemDocs } = useQuery<SystemDocument[]>({
@@ -534,7 +529,6 @@ export default function ConservacionDocumentos() {
 
   const handleNew = () => {
     setEditingItem(null);
-    setSelectedCambio(null);
     form.reset({
       code: "",
       title: "",
@@ -547,29 +541,6 @@ export default function ConservacionDocumentos() {
       isConfidential: false,
     });
     setDialogOpen(true);
-  };
-
-  const handleSelectCambioSst = (cambioId: string) => {
-    if (cambioId === "none") {
-      setSelectedCambio(null);
-      return;
-    }
-    
-    setSelectedCambio(cambioId);
-    const cambio = cambiosSst?.find(c => c.id === cambioId);
-    if (!cambio) return;
-    
-    form.setValue("title", `Documento de Cambio - ${cambio.titulo}`);
-    form.setValue("description", `Documento generado a partir del cambio SST: ${cambio.descripcion}\n\nTipo: ${cambio.tipo}\nCategoría: ${cambio.categoria}`);
-    form.setValue("category", "registro");
-    form.setValue("phvaCycle", "ACTUAR");
-    form.setValue("status", "borrador");
-    
-    toast({
-      title: "Cambio SST vinculado",
-      description: `Se han pre-rellenado los campos con la información del cambio "${cambio.titulo}"`,
-      className: "bg-green-50 border-green-200",
-    });
   };
 
   const handleSelectPlantilla = (plantilla: PlantillaInfo) => {
@@ -682,38 +653,6 @@ export default function ConservacionDocumentos() {
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-                {!editingItem && (
-                  <div className="space-y-2 p-3 border rounded-lg bg-muted/30">
-                    <div className="flex items-center gap-2">
-                      <Wand2 className="h-4 w-4 text-primary" />
-                      <FormLabel className="text-sm font-medium">Vincular con Cambio SST (Opcional)</FormLabel>
-                    </div>
-                    <FormDescription className="text-xs">
-                      Seleccione un cambio registrado para pre-rellenar el documento
-                    </FormDescription>
-                    <Select 
-                      value={selectedCambio || "none"} 
-                      onValueChange={handleSelectCambioSst}
-                    >
-                      <SelectTrigger data-testid="select-vincular-cambio">
-                        <SelectValue placeholder="Sin vincular" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none" data-testid="option-cambio-none">Sin vincular</SelectItem>
-                        {cambiosSst?.map((cambio) => (
-                          <SelectItem 
-                            key={cambio.id} 
-                            value={cambio.id}
-                            data-testid={`option-cambio-${cambio.id}`}
-                          >
-                            {cambio.titulo} - {cambio.tipo}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
