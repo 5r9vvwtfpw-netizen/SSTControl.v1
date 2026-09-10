@@ -2318,7 +2318,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       subBullet('Cookie httpOnly: true (no accesible desde JavaScript del navegador)');
       subBullet('Cookie secure: true en producción (solo HTTPS)');
       subBullet('Cookie sameSite: \'strict\' (protección contra CSRF)');
-      subBullet('Tiempo máximo absoluto: 6 horas (sin cierre automático por inactividad)');
+      subBullet('Cierre por inactividad: 8 horas (sin tiempo máximo absoluto de sesión)');
       bulletBold('Función stripPassword(): ', 'remueve el hash de toda respuesta de la API');
       currentY += 10;
 

@@ -8,7 +8,8 @@ import { sql } from "drizzle-orm";
 import logger from "../lib/logger";
 import { processSecurityAlert } from "../services/security-access";
 
-const SESSION_IDLE_MINUTES = 20;
+// Debe coincidir con el límite aplicado por server/auth.ts y el guardia del cliente.
+const SESSION_IDLE_MINUTES = 8 * 60;
 
 async function closeExpiredSessions() {
   const result = await db.execute(sql`

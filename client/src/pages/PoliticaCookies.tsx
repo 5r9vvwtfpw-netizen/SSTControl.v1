@@ -54,7 +54,7 @@ export default function PoliticaCookies() {
                             <td className="py-2 pr-4 font-mono">connect.sid</td>
                             <td className="py-2 pr-4">Esenciales</td>
                             <td className="py-2 pr-4">Gestión de sesión de usuario</td>
-                             <td className="py-2">6 horas</td>
+                             <td className="py-2">8 horas de inactividad</td>
                           </tr>
                           <tr>
                             <td className="py-2 pr-4 font-mono">cookie_consent</td>

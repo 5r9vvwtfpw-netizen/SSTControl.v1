@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/use-auth";
 
-const SESSION_IDLE_MINUTES = 20;
+const SESSION_IDLE_MINUTES = 8 * 60;
 const SESSION_IDLE_MS = SESSION_IDLE_MINUTES * 60 * 1000;
 const ACTIVITY_SYNC_INTERVAL_MS = 60 * 1000;
 

@@ -19,7 +19,9 @@ import logger from "./lib/logger";
 import { enrichSessionLocation, processSecurityAlert } from "./services/security-access";
 
 // ── Monitoreo de sesiones ─────────────────────────────────────────────────────
-const SESSION_IDLE_MINUTES = 20;
+// La sesión se cierra únicamente después de 8 horas sin actividad.
+// No existe un tiempo máximo absoluto de sesión.
+const SESSION_IDLE_MINUTES = 8 * 60;
 const UNAUTHORIZED_IP_ALLOWED_ATTEMPTS = 3;
 const UNAUTHORIZED_IP_WINDOW_HOURS = 24;
 const LOGIN_CODE_MINUTES = 10;
