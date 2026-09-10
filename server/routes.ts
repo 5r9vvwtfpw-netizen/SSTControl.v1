@@ -41031,6 +41031,13 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // POST /api/sst-documents - Create new document with auto-generated code
   app.post("/api/sst-documents", requireAuth, requirePermission("documents:create"), async (req, res) => {
     try {
+      const hasFilePayload = ["fileUrl", "fileName", "fileSize"].some(
+        (field) => req.body[field] !== undefined && req.body[field] !== null && req.body[field] !== ""
+      );
+      if (hasFilePayload) {
+        return res.status(400).send("La carga de archivos está desactivada para los documentos manuales");
+      }
+
       const userCompanyId = getEffectiveCompanyId(req);
       const isAdmin = hasGlobalAccess(req.user!.role);
       
@@ -41127,6 +41134,19 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         existingDoc = await storage.getSstDocument(req.params.id, companyId);
         if (!existingDoc) {
           return res.status(404).send("Documento no encontrado");
+        }
+      }
+
+      const fileFieldsProvided = ["fileUrl", "fileName", "fileSize"].some((field) =>
+        Object.prototype.hasOwnProperty.call(req.body, field)
+      );
+      if (fileFieldsProvided) {
+        const sameFile =
+          (req.body.fileUrl ?? existingDoc.fileUrl) === existingDoc.fileUrl &&
+          (req.body.fileName ?? existingDoc.fileName) === existingDoc.fileName &&
+          (req.body.fileSize ?? existingDoc.fileSize) === existingDoc.fileSize;
+        if (!sameFile) {
+          return res.status(400).send("No se pueden subir, reemplazar ni retirar archivos desde este módulo");
         }
       }
       

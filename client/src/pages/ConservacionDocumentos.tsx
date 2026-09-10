@@ -1080,19 +1080,6 @@ export default function ConservacionDocumentos() {
                   )}
                 />
 
-                <div className="space-y-2 rounded-md border border-dashed p-3">
-                  <FormLabel>Archivo del documento</FormLabel>
-                  {editingItem?.fileUrl ? (
-                    <p className="text-sm text-muted-foreground">
-                      Este documento ya tiene un archivo asociado: <span className="font-medium text-foreground">{editingItem.fileName || "Documento existente"}</span>.
-                    </p>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">
-                      La carga de archivos está desactivada en este módulo. Los archivos deben generarse o administrarse desde el módulo que los origina.
-                    </p>
-                  )}
-                </div>
-
                 <DialogFooter>
                   <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                     Cancelar
