@@ -918,6 +918,8 @@ export default function Capacitaciones() {
               id={training.id}
               title={training.title}
               date={formatDate(training.date)}
+              startTime={training.startTime}
+              endTime={training.endTime}
               attendees={allAttendeesCounts[training.id] || 0}
               totalWorkers={training.totalWorkers}
               status={training.status as "programada" | "completada" | "en-curso" | "cancelada"}
