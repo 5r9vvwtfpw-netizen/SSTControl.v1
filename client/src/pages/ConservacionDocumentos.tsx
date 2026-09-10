@@ -463,7 +463,6 @@ export default function ConservacionDocumentos() {
       queryClient.invalidateQueries({ queryKey: ["/api/sst-documents"] });
       toast({ title: "Documento creado exitosamente", className: "bg-green-50 border-green-200" });
       setDialogOpen(false);
-      setUploadedFile(null);
       form.reset();
     },
     onError: (error: Error) => {
@@ -479,7 +478,6 @@ export default function ConservacionDocumentos() {
       toast({ title: "Documento actualizado exitosamente", className: "bg-green-50 border-green-200" });
       setDialogOpen(false);
       setEditingItem(null);
-      setUploadedFile(null);
       form.reset();
     },
     onError: (error: Error) => {
