@@ -15292,6 +15292,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       currentY = addSectionBar(doc, 'Información del acta', currentY);
       currentY = addLabeledField(doc, 'Acta N°', acta.numeroActa, { y: currentY });
       currentY = addLabeledField(doc, 'Fecha', formatDate(acta.fecha), { y: currentY });
+      const copasstStatusLabels: Record<string, string> = {
+        borrador: 'Borrador',
+        pendiente_revision: 'Pendiente de revisión',
+        pendiente_firmas: 'Pendiente de firma física',
+        parcialmente_firmada: 'Parcialmente firmada',
+        firmada: 'Firmada físicamente',
+        cerrada: 'Cerrada',
+        anulada: 'Anulada',
+      };
+      currentY = addLabeledField(doc, 'Estado', copasstStatusLabels[acta.estado] || acta.estado || 'Borrador', { y: currentY });
+      currentY = addLabeledField(doc, 'Versión', String(acta.version || 1), { y: currentY });
       if (acta.horaInicio || acta.horaFin || acta.lugar || acta.modalidad || acta.periodoComite || acta.tipoReunion) {
         currentY = addSectionBar(doc, 'Datos de la reunión', currentY);
         if (acta.horaInicio) currentY = addLabeledField(doc, 'Hora de inicio', acta.horaInicio, { y: currentY });
@@ -15315,7 +15326,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       currentY = addSectionBar(doc, 'Contenido del acta', currentY);
-      addParagraph(doc, acta.notas || 'Sin contenido registrado', { y: currentY });
+      currentY = addParagraph(doc, acta.notas || 'Sin contenido registrado', { y: currentY });
 
       const structuredParticipants = Array.isArray(acta.participantes) ? acta.participantes : [];
       if (structuredParticipants.length > 0) {
@@ -15330,6 +15341,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
             participant.attendance || '—',
           ]),
           { y: currentY, columnWidths: [170, 145, 115, 115] }
+        );
+      }
+
+      const structuredAgenda = Array.isArray(acta.ordenDia) ? acta.ordenDia : [];
+      if (structuredAgenda.length > 0) {
+        currentY = addSectionBar(doc, 'Orden del día y desarrollo', currentY);
+        currentY = addSimpleTable(
+          doc,
+          ['N°', 'Punto', 'Lo tratado'],
+          structuredAgenda.map((item: any, index: number) => [
+            String(index + 1),
+            item.title || '—',
+            item.notes || 'Sin desarrollo registrado',
+          ]),
+          { y: currentY, columnWidths: [32, 205, 305] }
         );
       }
 
@@ -15348,6 +15374,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           { y: currentY, columnWidths: [235, 125, 90, 95] }
         );
       }
+
+      currentY = addSectionBar(doc, 'Constancia de firma física', currentY);
+      currentY = addParagraph(
+        doc,
+        'El presente documento se imprime para firma física de los integrantes seleccionados del comité. La relación de firmantes corresponde a los miembros vigentes registrados, incluidos los representantes elegidos por votación.',
+        { y: currentY }
+      );
 
       const guidedSigners = Array.isArray(acta.firmantes) && acta.firmantes.length > 0
         ? acta.firmantes.map((signer: any) => ({
@@ -47689,6 +47722,17 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       y = addLabeledField(doc, "Tipo", tipoLabels[acta.tipo] || acta.tipo, { y });
       y = addLabeledField(doc, "Fecha", formatDate(acta.fecha), { y });
       y = addLabeledField(doc, "Asunto", acta.asunto, { y });
+      const convivenciaStatusLabels: Record<string, string> = {
+        borrador: "Borrador",
+        pendiente_revision: "Pendiente de revisión",
+        pendiente_firmas: "Pendiente de firma física",
+        parcialmente_firmada: "Parcialmente firmada",
+        firmada: "Firmada físicamente",
+        cerrada: "Cerrada",
+        anulada: "Anulada",
+      };
+      y = addLabeledField(doc, "Estado", convivenciaStatusLabels[acta.estado] || acta.estado || "Borrador", { y });
+      y = addLabeledField(doc, "Versión", String(acta.version || 1), { y });
       if (acta.horaInicio || acta.horaFin || acta.lugar || acta.modalidad || acta.periodoComite || acta.tipoReunion) {
         y = addSectionBar(doc, "Datos de la reunión", y);
         if (acta.horaInicio) y = addLabeledField(doc, "Hora de inicio", acta.horaInicio, { y });
@@ -47727,6 +47771,21 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         );
       }
 
+      const structuredAgenda = Array.isArray(acta.ordenDia) ? acta.ordenDia : [];
+      if (structuredAgenda.length > 0) {
+        y = addSectionBar(doc, "Orden del día y desarrollo", y);
+        y = addSimpleTable(
+          doc,
+          ["N°", "Punto", "Lo tratado"],
+          structuredAgenda.map((item: any, index: number) => [
+            String(index + 1),
+            item.title || "—",
+            item.notes || "Sin desarrollo registrado",
+          ]),
+          { y, columnWidths: [32, 205, 305] }
+        );
+      }
+
       const structuredCommitments = Array.isArray(acta.compromisos) ? acta.compromisos : [];
       if (structuredCommitments.length > 0) {
         y = addSectionBar(doc, "Acuerdos y compromisos", y);
@@ -47753,8 +47812,15 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
       if (acta.observaciones) {
         y = addSectionBar(doc, "Observaciones", y);
-        addParagraph(doc, acta.observaciones, { y });
+        y = addParagraph(doc, acta.observaciones, { y });
       }
+
+      y = addSectionBar(doc, "Constancia de firma física", y);
+      y = addParagraph(
+        doc,
+        "El presente documento se imprime para firma física de los integrantes seleccionados del comité. La relación de firmantes corresponde a los miembros vigentes registrados, incluidos los representantes elegidos por votación.",
+        { y }
+      );
 
       const legacyFirmas = Array.isArray(acta.firmas)
         ? acta.firmas as Array<{ nombre?: string; cargo?: string }>

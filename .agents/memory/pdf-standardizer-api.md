@@ -112,3 +112,12 @@ Los PDF expuestos en la biblioteca de informes no deben limitarse a usar el enca
 **Why:** Los bloques manuales con `doc.rect`, alturas fijas y coordenadas incrementadas a mano llegaron a producir texto superpuesto aunque la descarga respondiera HTTP 200 y el archivo tuviera una firma PDF válida.
 
 **How to apply:** Al crear o modificar un informe, validar tanto la integridad del archivo (`%PDF-` y `%%EOF`) como su renderizado visual con datos largos, múltiples filas, saltos de página y la tabla de firmas.
+
+## Flujo vertical en actas guiadas
+
+Cada bloque que devuelve una posición nueva debe reasignarse antes de dibujar la siguiente sección:
+`y = addParagraph(...)`, `y = addSectionBar(...)`, `y = addSimpleTable(...)` y `y = addLabeledField(...)`.
+
+**Why:** En actas de comité, omitir la reasignación después del texto narrativo dejó las tablas de participantes, agenda y compromisos dibujadas sobre el mismo contenido aunque la descarga del PDF fuera válida.
+
+**How to apply:** Al agregar una sección a un acta, mantener una sola variable `y`, propagarla entre todos los helpers y renderizar al menos una muestra con salto de página antes de cerrar el cambio.

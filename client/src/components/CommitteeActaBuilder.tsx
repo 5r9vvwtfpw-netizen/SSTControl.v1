@@ -36,6 +36,7 @@ import type {
   CommitteeActaCommitment,
   CommitteeActaParticipant,
   CommitteeActaSigner,
+  CommitteeActaEstado,
 } from "@shared/schema";
 
 export type CommitteeActaMember = {
@@ -100,6 +101,15 @@ const attendanceOptions = [
   { value: "no_asistio", label: "No asistió" },
   { value: "suplente", label: "Suplente que reemplazó" },
   { value: "invitado", label: "Asistió como invitado" },
+];
+
+const statusOptions: Array<{ value: CommitteeActaEstado; label: string }> = [
+  { value: "borrador", label: "Borrador" },
+  { value: "pendiente_firmas", label: "Pendiente de firma física" },
+  { value: "parcialmente_firmada", label: "Parcialmente firmada" },
+  { value: "firmada", label: "Firmada físicamente" },
+  { value: "cerrada", label: "Cerrada" },
+  { value: "anulada", label: "Anulada" },
 ];
 
 const defaultAgenda = (committee: Committee): CommitteeActaAgendaItem[] => [
@@ -207,6 +217,8 @@ function formalText(draft: Draft, committee: Committee, companyName: string) {
     ? draft.compromisos.map((item, index) => `${index + 1}. ${item.description}${item.responsible ? ` — Responsable: ${item.responsible}` : ""}${item.dueDate ? ` — Fecha límite: ${item.dueDate}` : ""}`).join("\n")
     : "No se registraron compromisos nuevos.";
   const close = `No existiendo otros asuntos por tratar, se dio por finalizada la reunión${draft.horaFin ? ` a las ${draft.horaFin}` : ""}. Los participantes manifiestan que el contenido del acta corresponde a lo tratado y acordado durante la sesión.`;
+  const signatureMessage = `CONSTANCIA DE FIRMA FÍSICA
+El presente documento se imprime para firma física de los integrantes seleccionados del comité. La relación de firmantes corresponde a los miembros vigentes registrados, incluidos los representantes elegidos por votación.`;
   return [
     opening,
     "",
@@ -218,6 +230,8 @@ function formalText(draft: Draft, committee: Committee, companyName: string) {
     "",
     "ACUERDOS Y COMPROMISOS",
     commitments,
+    "",
+    signatureMessage,
     "",
     close,
   ].join("\n");
@@ -238,7 +252,7 @@ export function CommitteeActaBuilder({
   const [step, setStep] = useState(0);
   const [draft, setDraft] = useState<Draft>(() => buildInitialDraft(committee, members, periodLabel, acta));
   const [saving, setSaving] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<"borrador" | "pendiente_firmas">("borrador");
+  const [saveStatus, setSaveStatus] = useState<CommitteeActaEstado>("borrador");
   const [invitedText, setInvitedText] = useState("");
 
   useEffect(() => {
@@ -247,7 +261,7 @@ export function CommitteeActaBuilder({
       const next = buildInitialDraft(committee, members, periodLabel, acta);
       setDraft(next);
       setInvitedText(next.invitados.join(", "));
-      setSaveStatus(acta?.estado === "pendiente_firmas" ? "pendiente_firmas" : "borrador");
+      setSaveStatus((acta?.estado as CommitteeActaEstado) || "borrador");
     }
   }, [open, committee, periodLabel, acta, members]);
 
@@ -285,6 +299,12 @@ export function CommitteeActaBuilder({
     }] : current);
   };
 
+  const updateSignerSigned = (workerId: string, signed: boolean) => {
+    updateDraft("firmantes", draft.firmantes.map((signer) => (
+      signer.workerId === workerId ? { ...signer, signed } : signer
+    )));
+  };
+
   const validateStep = () => {
     if (step === 0 && (!draft.fecha || !draft.tipoReunion)) {
       toast({ variant: "destructive", title: "Completa la información de la reunión", description: "La fecha y el tipo de reunión son obligatorios." });
@@ -305,8 +325,16 @@ export function CommitteeActaBuilder({
     return true;
   };
 
-  const handleSave = async (status: "borrador" | "pendiente_firmas") => {
+  const handleSave = async (status: CommitteeActaEstado) => {
     if (!validateStep() && step !== 6) return;
+    if (status === "firmada" && draft.firmantes.some((signer) => !signer.signed)) {
+      toast({
+        variant: "destructive",
+        title: "Faltan firmas físicas",
+        description: "Marca la firma física recibida para cada firmante antes de cerrar el acta como firmada.",
+      });
+      return;
+    }
     setSaving(true);
     try {
       const content = formalText(draft, committee, companyName);
@@ -365,7 +393,14 @@ export function CommitteeActaBuilder({
       const method = acta ? "PATCH" : "POST";
       await apiRequest(method, path, payload);
       await queryClient.invalidateQueries({ queryKey: [committee === "copasst" ? "/api/copasst-actas" : "/api/convivencia-actas", companyId] });
-      toast({ title: acta ? "Acta actualizada" : "Acta creada", description: status === "pendiente_firmas" ? "Quedó pendiente de firmas." : "El borrador fue guardado." });
+      toast({
+        title: acta ? "Acta actualizada" : "Acta creada",
+        description: status === "pendiente_firmas"
+          ? "Quedó preparada para imprimir y recoger las firmas físicas."
+          : status === "firmada"
+            ? "Se registró como firmada físicamente."
+            : "El acta fue guardada.",
+      });
       onOpenChange(false);
       onSaved?.();
     } catch (error: any) {
@@ -509,11 +544,31 @@ export function CommitteeActaBuilder({
 
         {step === 5 && (
           <div className="space-y-4 py-3">
-            <p className="text-sm text-muted-foreground">Solo pueden firmar miembros que pertenecen a la reunión. La firma electrónica se completa en el flujo documental disponible; aquí se define quién debe firmar.</p>
+            <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
+              <p className="font-semibold">Firma física del acta</p>
+              <p className="mt-1">El acta se imprime y se firma físicamente. Selecciona a los integrantes vigentes del comité que deben firmarla; esta lista incluye los representantes elegidos por votación.</p>
+            </div>
             <div className="space-y-2">
               {selectedParticipants.map((participant) => {
                 const checked = draft.firmantes.some((signer) => signer.workerId === participant.workerId);
-                return <label key={participant.workerId || participant.name} className="flex items-center gap-3 border rounded-md p-3 cursor-pointer"><Checkbox checked={checked} onCheckedChange={(value) => updateSigners(participant.workerId || participant.name, Boolean(value))} /><span><span className="font-medium block">{participant.name}</span><span className="text-xs text-muted-foreground">{participant.position || "Sin cargo"} · {participant.role || "Miembro"}</span></span></label>;
+                const signer = draft.firmantes.find((item) => item.workerId === participant.workerId);
+                return (
+                  <div key={participant.workerId || participant.name} className="border rounded-md p-3 space-y-2">
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <Checkbox checked={checked} onCheckedChange={(value) => updateSigners(participant.workerId || participant.name, Boolean(value))} />
+                      <span>
+                        <span className="font-medium block">{participant.name}</span>
+                        <span className="text-xs text-muted-foreground">{participant.position || "Sin cargo"} · {participant.role || "Miembro"}</span>
+                      </span>
+                    </label>
+                    {checked && (
+                      <label className="ml-7 flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+                        <Checkbox checked={Boolean(signer?.signed)} onCheckedChange={(value) => updateSignerSigned(participant.workerId || participant.name, Boolean(value))} />
+                        Firma física recibida
+                      </label>
+                    )}
+                  </div>
+                );
               })}
             </div>
           </div>
@@ -524,7 +579,15 @@ export function CommitteeActaBuilder({
             <div className="flex items-center gap-2"><FileText className="h-5 w-5" /><h3 className="font-semibold">Vista previa del acta</h3></div>
             <pre className="whitespace-pre-wrap rounded-md border bg-muted/30 p-4 text-sm leading-6 max-h-[420px] overflow-y-auto">{formalText(draft, committee, companyName)}</pre>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
-              <div><span className="text-muted-foreground">Estado al guardar</span><p className="font-medium">{saveStatus === "borrador" ? "Borrador" : "Pendiente de firmas"}</p></div>
+              <div className="md:col-span-2">
+                <span className="text-muted-foreground">Estado del acta</span>
+                <Select value={saveStatus} onValueChange={(value) => setSaveStatus(value as CommitteeActaEstado)}>
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {statusOptions.map((option) => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
               <div><span className="text-muted-foreground">Asistencia</span><p className="font-medium">{quorumLabel}</p></div>
               <div><span className="text-muted-foreground">Firmantes</span><p className="font-medium">{draft.firmantes.length}</p></div>
             </div>
@@ -537,8 +600,8 @@ export function CommitteeActaBuilder({
             {step < 6 && <Button type="button" onClick={() => { if (validateStep()) setStep((current) => current + 1); }}>Siguiente<ArrowRight className="h-4 w-4 ml-2" /></Button>}
           </div>
           {step === 6 && <div className="flex gap-2">
-            <Button type="button" variant="outline" disabled={saving} onClick={() => handleSave("borrador")}>{saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}Guardar borrador</Button>
-            <Button type="button" disabled={saving} onClick={() => handleSave("pendiente_firmas")}>{saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Check className="h-4 w-4 mr-2" />}Enviar a firmas</Button>
+            <Button type="button" variant="outline" disabled={saving} onClick={() => handleSave(saveStatus)}>{saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}Guardar estado</Button>
+            <Button type="button" disabled={saving} onClick={() => handleSave("pendiente_firmas")}>{saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Check className="h-4 w-4 mr-2" />}Preparar para firma física</Button>
           </div>}
         </DialogFooter>
       </DialogContent>
