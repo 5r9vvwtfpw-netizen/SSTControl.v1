@@ -15294,12 +15294,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       currentY = addLabeledField(doc, 'Fecha', formatDate(acta.fecha), { y: currentY });
       const copasstStatusLabels: Record<string, string> = {
         borrador: 'Borrador',
-        pendiente_revision: 'Pendiente de revisión',
-        pendiente_firmas: 'Pendiente de firma física',
-        parcialmente_firmada: 'Parcialmente firmada',
-        firmada: 'Firmada físicamente',
+        aprobada: 'Aprobada',
         cerrada: 'Cerrada',
-        anulada: 'Anulada',
+        pendiente_revision: 'Aprobada',
+        pendiente_firmas: 'Aprobada',
+        parcialmente_firmada: 'Aprobada',
+        firmada: 'Aprobada',
+        anulada: 'Cerrada',
       };
       currentY = addLabeledField(doc, 'Estado', copasstStatusLabels[acta.estado] || acta.estado || 'Borrador', { y: currentY });
       currentY = addLabeledField(doc, 'Versión', String(acta.version || 1), { y: currentY });
@@ -47717,12 +47718,13 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       y = addLabeledField(doc, "Asunto", acta.asunto, { y });
       const convivenciaStatusLabels: Record<string, string> = {
         borrador: "Borrador",
-        pendiente_revision: "Pendiente de revisión",
-        pendiente_firmas: "Pendiente de firma física",
-        parcialmente_firmada: "Parcialmente firmada",
-        firmada: "Firmada físicamente",
+        aprobada: "Aprobada",
         cerrada: "Cerrada",
-        anulada: "Anulada",
+        pendiente_revision: "Aprobada",
+        pendiente_firmas: "Aprobada",
+        parcialmente_firmada: "Aprobada",
+        firmada: "Aprobada",
+        anulada: "Cerrada",
       };
       y = addLabeledField(doc, "Estado", convivenciaStatusLabels[acta.estado] || acta.estado || "Borrador", { y });
       y = addLabeledField(doc, "Versión", String(acta.version || 1), { y });

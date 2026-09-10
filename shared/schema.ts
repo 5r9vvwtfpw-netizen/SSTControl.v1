@@ -1800,12 +1800,8 @@ export type CommitteeActaSigner = z.infer<typeof committeeActaSignerSchema>;
 
 export const committeeActaEstadoSchema = z.enum([
   "borrador",
-  "pendiente_revision",
-  "pendiente_firmas",
-  "parcialmente_firmada",
-  "firmada",
+  "aprobada",
   "cerrada",
-  "anulada",
 ]);
 export type CommitteeActaEstado = z.infer<typeof committeeActaEstadoSchema>;
 

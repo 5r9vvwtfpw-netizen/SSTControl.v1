@@ -25,9 +25,23 @@ async function addColumns(tableName: string) {
   }
 }
 
+async function normalizeStatuses(tableName: string) {
+  await db.execute(sql.raw(`
+    UPDATE ${tableName}
+    SET estado = CASE
+      WHEN estado = 'anulada' THEN 'cerrada'
+      WHEN estado IN ('pendiente_revision', 'pendiente_firmas', 'parcialmente_firmada', 'firmada') THEN 'aprobada'
+      ELSE estado
+    END
+    WHERE estado IN ('anulada', 'pendiente_revision', 'pendiente_firmas', 'parcialmente_firmada', 'firmada')
+  `));
+}
+
 export async function syncGuidedCommitteeActas() {
   console.log("[Migration] Sincronizando campos de actas guiadas...");
   await addColumns("copasst_actas");
   await addColumns("convivencia_actas");
+  await normalizeStatuses("copasst_actas");
+  await normalizeStatuses("convivencia_actas");
   console.log("[Migration] ✅ Campos de actas guiadas sincronizados");
 }
