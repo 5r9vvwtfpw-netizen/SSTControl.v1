@@ -17,6 +17,7 @@
 - [Committee actas document policy](committee-actas-document-policy.md) — COPASST y Convivencia se redactan dentro del sistema; los PDF cargados no son requisito.
 - [Committee actas portal boundary](committee-actas-portal-boundary.md) — las actas se gestionan fuera del Portal de Empleados; ese portal solo participa en votaciones.
 - [Committee acta signature roles](committee-acta-signature-roles.md) — el bloque de firmas usa Presidente/Secretario, no Principal/Suplente como cargos formales.
+- [Resolución 3461 de 2025 — Comité de Convivencia Laboral](resolucion-3461-2025-ccl.md) — CCL preventivo y confidencial, con plazos y ruta separada para acoso sexual; no aplica al COPASST.
 - [Driver–vehicle assignment policy](driver-vehicle-assignment-policy.md) — relación PESV muchos-a-muchos con vigencia e historial; finalizar no borra y el fallback de flota solo aplica antes de la primera asignación.
 - [Storage architecture](storage-architecture.md) — uploads use AWS S3; base64 logo routes need encoded-size parser headroom and explicit 413 messages.
 - [Induction resend policy](pesv-induction-send-policy.md) — SST y PESV admiten sesiones repetidas; sus evaluaciones son prediseñadas y no dependen de preguntas configuradas por empresa.
