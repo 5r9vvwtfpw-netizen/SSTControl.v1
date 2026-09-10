@@ -16452,7 +16452,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.pipe(res);
       
       const logo = await loadCompanyLogo(company?.logoUrl);
-      const signers = await getSignersForCompany(companyId);
 
       await addStandardHeader({
         doc,
@@ -16627,15 +16626,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
         doc.moveDown(0.1);
         row.forEach((m, idx) => {
-          const tipoRep = m.tipoRepresentante === 'empleador' ? 'Rep. Empleador' : 'Rep. Trabajadores';
-          const rol = m.rolMiembro === 'principal' ? 'Principal' : 'Suplente';
+          const cargoFirma = m.cargo === 'presidente'
+            ? 'Presidente'
+            : m.cargo === 'secretario'
+              ? 'Secretario'
+              : m.tipoRepresentante === 'empleador'
+                ? 'Representante del empleador'
+                : 'Representante de los trabajadores';
           const xPos = margin + (sigWidth + 40) * idx;
-          doc.fontSize(8).text(`${tipoRep} - ${rol}`, xPos, doc.y, { width: sigWidth });
+          doc.fontSize(8).text(cargoFirma, xPos, doc.y, { width: sigWidth });
         });
         doc.fontSize(8).moveDown(1.5);
       }
       
-      await addSignatureFooter(doc, signers, false);
       doc.end();
     } catch (error: any) {
       handlePdfError(error, res, 'copasst-periodos-acta-constitucion-pdf');
@@ -48421,7 +48424,6 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       
       // Preload company logo and signers from Object Storage
       const logo = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId, false);
       
       const contentStartY = await addStandardHeader({
         doc,
@@ -48600,23 +48602,19 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         
         row.forEach((miembro) => {
           const worker = workerMap.get(miembro.workerId);
-          const cargoComiteMap: Record<string, string> = {
-            'presidente': 'Presidente',
-            'secretario': 'Secretario',
-            'miembro_principal': 'Principal',
-            'miembro_suplente': 'Suplente'
-          };
+          const cargoFirma = miembro.cargo === 'presidente'
+            ? 'Presidente'
+            : miembro.cargo === 'secretario'
+              ? 'Secretario'
+              : `Representante del ${miembro.representacion === 'empleador' ? 'empleador' : 'trabajadores'}`;
           doc.fontSize(7).font('Helvetica');
           doc.text(worker?.name || 'Miembro', xPos, doc.y, { width: sigWidth });
-          doc.text(`${cargoComiteMap[miembro.cargo] || miembro.cargo} - Rep. ${miembro.representacion === 'empleador' ? 'Empleador' : 'Trabajadores'}`, xPos, doc.y, { width: sigWidth });
+          doc.text(cargoFirma, xPos, doc.y, { width: sigWidth });
           xPos += sigWidth + 20;
         });
         
         doc.moveDown(2);
       }
-      
-      // Add standard signature footer
-      await addSignatureFooter(doc, signers, false);
       
       doc.end();
     } catch (error: any) {
