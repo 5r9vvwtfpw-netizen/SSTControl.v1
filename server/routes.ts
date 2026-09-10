@@ -16613,18 +16613,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       for (let i = 0; i < allMiembros.length; i += signaturesPerRow) {
         const row = allMiembros.slice(i, i + signaturesPerRow);
+        const signatureY = doc.y;
+        const nameY = signatureY + 15;
+        const roleY = nameY + 13;
+
+        row.forEach((m, idx) => {
+          const xPos = margin + (sigWidth + 40) * idx;
+          doc.text('_______________________', xPos, signatureY);
+        });
+
         row.forEach((m, idx) => {
           const worker = workerMap.get(m.workerId);
           const xPos = margin + (sigWidth + 40) * idx;
-          doc.text('_______________________', xPos, doc.y);
+          doc.text(worker?.name || 'N/A', xPos, nameY, { width: sigWidth });
         });
-        doc.moveDown(0.3);
-        row.forEach((m, idx) => {
-          const worker = workerMap.get(m.workerId);
-          const xPos = margin + (sigWidth + 40) * idx;
-          doc.text(worker?.name || 'N/A', xPos, doc.y, { width: sigWidth });
-        });
-        doc.moveDown(0.1);
+
         row.forEach((m, idx) => {
           const cargoFirma = m.cargo === 'presidente'
             ? 'Presidente'
@@ -16634,9 +16637,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 ? 'Representante del empleador'
                 : 'Representante de los trabajadores';
           const xPos = margin + (sigWidth + 40) * idx;
-          doc.fontSize(8).text(cargoFirma, xPos, doc.y, { width: sigWidth });
+          doc.fontSize(8).text(cargoFirma, xPos, roleY, { width: sigWidth });
         });
-        doc.fontSize(8).moveDown(1.5);
+
+        doc.y = roleY + 24;
       }
       
       doc.end();
@@ -48589,31 +48593,29 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       
       for (let i = 0; i < allMiembros.length; i += signaturesPerRow) {
         const row = allMiembros.slice(i, i + signaturesPerRow);
-        let xPos = margin;
-        
-        row.forEach((miembro) => {
-          const worker = workerMap.get(miembro.workerId);
-          doc.text('_______________________', xPos, doc.y);
-          xPos += sigWidth + 20;
+        const signatureY = doc.y;
+        const nameY = signatureY + 15;
+        const roleY = nameY + 13;
+
+        row.forEach((_miembro, index) => {
+          const xPos = margin + (sigWidth + 20) * index;
+          doc.text('_______________________', xPos, signatureY);
         });
-        
-        doc.moveDown(0.3);
-        xPos = margin;
-        
-        row.forEach((miembro) => {
+
+        row.forEach((miembro, index) => {
           const worker = workerMap.get(miembro.workerId);
           const cargoFirma = miembro.cargo === 'presidente'
             ? 'Presidente'
             : miembro.cargo === 'secretario'
               ? 'Secretario'
               : `Representante del ${miembro.representacion === 'empleador' ? 'empleador' : 'trabajadores'}`;
+          const xPos = margin + (sigWidth + 20) * index;
           doc.fontSize(7).font('Helvetica');
-          doc.text(worker?.name || 'Miembro', xPos, doc.y, { width: sigWidth });
-          doc.text(cargoFirma, xPos, doc.y, { width: sigWidth });
-          xPos += sigWidth + 20;
+          doc.text(worker?.name || 'Miembro', xPos, nameY, { width: sigWidth });
+          doc.text(cargoFirma, xPos, roleY, { width: sigWidth });
         });
-        
-        doc.moveDown(2);
+
+        doc.y = roleY + 24;
       }
       
       doc.end();
