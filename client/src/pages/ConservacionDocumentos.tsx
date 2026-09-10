@@ -11,8 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertSstDocumentSchema, type SstDocument, type InsertSstDocument, type SstDocumentVersion, type SstDocumentAccessLog } from "@shared/schema";
-import { Plus, FileText, Search, Filter, Edit, Trash2, Eye, History, Clock, AlertCircle, CheckCircle2, FileWarning, Archive, XCircle, Calendar, Download, FileCheck, Users, UserCheck, ChevronDown, ChevronRight, Server } from "lucide-react";
+import { insertSstDocumentSchema, type SstDocument, type InsertSstDocument, type SstDocumentVersion, type SstDocumentAccessLog, type CambioSst } from "@shared/schema";
+import { Plus, FileText, Search, Filter, Edit, Trash2, Eye, History, Clock, AlertCircle, CheckCircle2, FileWarning, Archive, XCircle, Calendar, Download, Wand2, FileCheck, Users, UserCheck, Upload, Loader2, File, ChevronDown, ChevronRight, Server } from "lucide-react";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -27,6 +27,7 @@ import { AutomationAssistant, type NormativaInfo, type PlantillaInfo } from "@/c
 import { getEstandarByCodigo } from "@/data/planear-normativa";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
+import { useUpload } from "@/hooks/use-upload";
 
 const categoryLabels: Record<string, string> = {
   "politica": "Política",
@@ -406,6 +407,39 @@ export default function ConservacionDocumentos() {
   const [editingItem, setEditingItem] = useState<SstDocument | null>(null);
   const [selectedDocument, setSelectedDocument] = useState<SstDocument | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [selectedCambio, setSelectedCambio] = useState<string | null>(null);
+  const [uploadedFile, setUploadedFile] = useState<{ url: string; name: string } | null>(null);
+
+  const { uploadFile, isUploading: isUploadingFile } = useUpload({
+    onSuccess: (response) => {
+      setUploadedFile({
+        url: response.objectPath,
+        name: response.metadata.name,
+      });
+      form.setValue("fileUrl", response.objectPath);
+      form.setValue("fileName", response.metadata.name);
+      toast({
+        title: "Archivo subido",
+        description: "El documento se ha subido correctamente",
+        className: "bg-green-50 border-green-200",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error al subir archivo",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      await uploadFile(file);
+    }
+  };
+
   const { data: documents, isLoading } = useQuery<SstDocument[]>({
     queryKey: ["/api/sst-documents"],
   });
@@ -416,6 +450,10 @@ export default function ConservacionDocumentos() {
 
   const { data: users } = useQuery<{ id: string; fullName: string; role: string }[]>({
     queryKey: ["/api/users/company-members"],
+  });
+
+  const { data: cambiosSst } = useQuery<CambioSst[]>({
+    queryKey: ["/api/cambios-sst"],
   });
 
   const { data: systemDocuments, isLoading: isLoadingSystemDocs } = useQuery<SystemDocument[]>({
@@ -458,6 +496,7 @@ export default function ConservacionDocumentos() {
       queryClient.invalidateQueries({ queryKey: ["/api/sst-documents"] });
       toast({ title: "Documento creado exitosamente", className: "bg-green-50 border-green-200" });
       setDialogOpen(false);
+      setUploadedFile(null);
       form.reset();
     },
     onError: (error: Error) => {
@@ -473,6 +512,7 @@ export default function ConservacionDocumentos() {
       toast({ title: "Documento actualizado exitosamente", className: "bg-green-50 border-green-200" });
       setDialogOpen(false);
       setEditingItem(null);
+      setUploadedFile(null);
       form.reset();
     },
     onError: (error: Error) => {
@@ -502,6 +542,7 @@ export default function ConservacionDocumentos() {
 
   const handleEdit = (item: SstDocument) => {
     setEditingItem(item);
+    setUploadedFile(item.fileUrl ? { url: item.fileUrl, name: item.fileName || "Documento" } : null);
     form.reset({
       code: item.code || "",
       title: item.title,
@@ -529,6 +570,8 @@ export default function ConservacionDocumentos() {
 
   const handleNew = () => {
     setEditingItem(null);
+    setSelectedCambio(null);
+    setUploadedFile(null);
     form.reset({
       code: "",
       title: "",
@@ -541,6 +584,29 @@ export default function ConservacionDocumentos() {
       isConfidential: false,
     });
     setDialogOpen(true);
+  };
+
+  const handleSelectCambioSst = (cambioId: string) => {
+    if (cambioId === "none") {
+      setSelectedCambio(null);
+      return;
+    }
+    
+    setSelectedCambio(cambioId);
+    const cambio = cambiosSst?.find(c => c.id === cambioId);
+    if (!cambio) return;
+    
+    form.setValue("title", `Documento de Cambio - ${cambio.titulo}`);
+    form.setValue("description", `Documento generado a partir del cambio SST: ${cambio.descripcion}\n\nTipo: ${cambio.tipo}\nCategoría: ${cambio.categoria}`);
+    form.setValue("category", "registro");
+    form.setValue("phvaCycle", "ACTUAR");
+    form.setValue("status", "borrador");
+    
+    toast({
+      title: "Cambio SST vinculado",
+      description: `Se han pre-rellenado los campos con la información del cambio "${cambio.titulo}"`,
+      className: "bg-green-50 border-green-200",
+    });
   };
 
   const handleSelectPlantilla = (plantilla: PlantillaInfo) => {
@@ -653,6 +719,38 @@ export default function ConservacionDocumentos() {
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+                {!editingItem && (
+                  <div className="space-y-2 p-3 border rounded-lg bg-muted/30">
+                    <div className="flex items-center gap-2">
+                      <Wand2 className="h-4 w-4 text-primary" />
+                      <FormLabel className="text-sm font-medium">Vincular con Cambio SST (Opcional)</FormLabel>
+                    </div>
+                    <FormDescription className="text-xs">
+                      Seleccione un cambio registrado para pre-rellenar el documento
+                    </FormDescription>
+                    <Select 
+                      value={selectedCambio || "none"} 
+                      onValueChange={handleSelectCambioSst}
+                    >
+                      <SelectTrigger data-testid="select-vincular-cambio">
+                        <SelectValue placeholder="Sin vincular" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none" data-testid="option-cambio-none">Sin vincular</SelectItem>
+                        {cambiosSst?.map((cambio) => (
+                          <SelectItem 
+                            key={cambio.id} 
+                            value={cambio.id}
+                            data-testid={`option-cambio-${cambio.id}`}
+                          >
+                            {cambio.titulo} - {cambio.tipo}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -1016,6 +1114,51 @@ export default function ConservacionDocumentos() {
                     </FormItem>
                   )}
                 />
+
+                <div className="space-y-2">
+                  <FormLabel>Archivo del Documento (PDF/Imagen)</FormLabel>
+                  <div className="flex items-center gap-2">
+                    {uploadedFile || editingItem?.fileUrl ? (
+                      <div className="flex items-center gap-2 p-2 border rounded-md bg-muted/30 flex-1">
+                        <File className="h-4 w-4 text-primary" />
+                        <span className="text-sm truncate flex-1">{uploadedFile?.name || editingItem?.fileName || "Documento subido"}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setUploadedFile(null);
+                            form.setValue("fileUrl", undefined);
+                            form.setValue("fileName", undefined);
+                          }}
+                          data-testid="button-remove-document-sst"
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex-1">
+                        <Input
+                          type="file"
+                          accept=".pdf,.jpg,.jpeg,.png"
+                          onChange={handleFileUpload}
+                          disabled={isUploadingFile}
+                          className="cursor-pointer"
+                          data-testid="input-upload-document-sst"
+                        />
+                      </div>
+                    )}
+                    {isUploadingFile && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Subiendo...
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Suba el archivo del documento SST para conservación digital
+                  </p>
+                </div>
 
                 <DialogFooter>
                   <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
