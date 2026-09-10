@@ -69,14 +69,7 @@ interface TrainingAttendee {
   confirmed?: boolean;
 }
 
-/** Auto-inserta ":" después de los primeros 2 dígitos mientras el usuario escribe */
-function formatTimeInput(raw: string): string {
-  const digits = raw.replace(/\D/g, "").slice(0, 4);
-  if (digits.length <= 2) return digits;
-  return `${digits.slice(0, 2)}:${digits.slice(2)}`;
-}
-
-/** Al perder foco normaliza valores incompletos: "10" → "10:00" */
+/** Normaliza valores antiguos o incompletos al abrir una capacitación existente. */
 function normalizeTime(val: string): string {
   if (!val) return "";
   if (/^\d{1,2}$/.test(val.trim())) return `${val.trim().padStart(2, "0")}:00`;
@@ -539,12 +532,9 @@ export default function Capacitaciones() {
                     <Label htmlFor="startTime">Hora de Inicio (opcional)</Label>
                     <Input
                       id="startTime"
-                      type="text"
-                      placeholder="08:00"
-                      maxLength={5}
+                      type="time"
                       value={formData.startTime}
-                      onChange={(e) => setFormData({ ...formData, startTime: formatTimeInput(e.target.value) })}
-                      onBlur={(e) => setFormData({ ...formData, startTime: normalizeTime(e.target.value) })}
+                      onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
                       data-testid="input-start-time"
                     />
                   </div>
@@ -552,12 +542,9 @@ export default function Capacitaciones() {
                     <Label htmlFor="endTime">Hora de Fin (opcional)</Label>
                     <Input
                       id="endTime"
-                      type="text"
-                      placeholder="17:00"
-                      maxLength={5}
+                      type="time"
                       value={formData.endTime}
-                      onChange={(e) => setFormData({ ...formData, endTime: formatTimeInput(e.target.value) })}
-                      onBlur={(e) => setFormData({ ...formData, endTime: normalizeTime(e.target.value) })}
+                      onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
                       data-testid="input-end-time"
                     />
                   </div>
@@ -729,12 +716,9 @@ export default function Capacitaciones() {
                 <Label htmlFor="edit-startTime">Hora de Inicio (opcional)</Label>
                 <Input
                   id="edit-startTime"
-                  type="text"
-                  placeholder="08:00"
-                  maxLength={5}
+                  type="time"
                   value={editFormData.startTime}
-                  onChange={(e) => setEditFormData({ ...editFormData, startTime: formatTimeInput(e.target.value) })}
-                  onBlur={(e) => setEditFormData({ ...editFormData, startTime: normalizeTime(e.target.value) })}
+                  onChange={(e) => setEditFormData({ ...editFormData, startTime: e.target.value })}
                   data-testid="input-edit-start-time"
                 />
               </div>
@@ -742,12 +726,9 @@ export default function Capacitaciones() {
                 <Label htmlFor="edit-endTime">Hora de Fin (opcional)</Label>
                 <Input
                   id="edit-endTime"
-                  type="text"
-                  placeholder="17:00"
-                  maxLength={5}
+                  type="time"
                   value={editFormData.endTime}
-                  onChange={(e) => setEditFormData({ ...editFormData, endTime: formatTimeInput(e.target.value) })}
-                  onBlur={(e) => setEditFormData({ ...editFormData, endTime: normalizeTime(e.target.value) })}
+                  onChange={(e) => setEditFormData({ ...editFormData, endTime: e.target.value })}
                   data-testid="input-edit-end-time"
                 />
               </div>
@@ -918,8 +899,6 @@ export default function Capacitaciones() {
               id={training.id}
               title={training.title}
               date={formatDate(training.date)}
-              startTime={training.startTime}
-              endTime={training.endTime}
               attendees={allAttendeesCounts[training.id] || 0}
               totalWorkers={training.totalWorkers}
               status={training.status as "programada" | "completada" | "en-curso" | "cancelada"}

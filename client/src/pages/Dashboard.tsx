@@ -285,8 +285,6 @@ export default function Dashboard() {
                         id={training.id}
                         title={training.title}
                         date={formatDate(training.date)}
-                        startTime={training.startTime}
-                        endTime={training.endTime}
                         attendees={0}
                         totalWorkers={training.totalWorkers}
                         status={training.status as "programada" | "completada" | "en-curso"}

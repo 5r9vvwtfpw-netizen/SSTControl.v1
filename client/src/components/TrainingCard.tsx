@@ -1,14 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, Users, CheckCircle2, Pencil, UserPlus, Printer } from "lucide-react";
+import { Calendar, Users, CheckCircle2, Pencil, UserPlus, Printer } from "lucide-react";
 
 interface TrainingCardProps {
   id: string;
   title: string;
   date: string;
-  startTime?: string | null;
-  endTime?: string | null;
   attendees: number;
   totalWorkers: number;
   status: "programada" | "completada" | "en-curso" | "cancelada";
@@ -26,7 +24,7 @@ const statusConfig = {
   cancelada: { label: "Cancelada", variant: "destructive" as const },
 };
 
-export function TrainingCard({ id, title, date, startTime, endTime, attendees, totalWorkers, status, onEdit, onManageAttendees, canEdit, canPrint, pdfUrl }: TrainingCardProps) {
+export function TrainingCard({ id, title, date, attendees, totalWorkers, status, onEdit, onManageAttendees, canEdit, canPrint, pdfUrl }: TrainingCardProps) {
   // Corregir división por cero y mostrar 100% cuando está completada
   // Limitar a máximo 100% para evitar desbordamiento visual
   const rawPercentage = totalWorkers > 0 
@@ -34,9 +32,6 @@ export function TrainingCard({ id, title, date, startTime, endTime, attendees, t
     : (status === "completada" ? 100 : 0);
   const percentage = Math.min(rawPercentage, 100);
   const config = statusConfig[status] || statusConfig.programada;
-  const timeRange = startTime && endTime
-    ? `${startTime} - ${endTime}`
-    : startTime || endTime;
 
   return (
     <Card data-testid={`card-training-${id}`} className="hover-elevate">
@@ -83,12 +78,6 @@ export function TrainingCard({ id, title, date, startTime, endTime, attendees, t
             <Calendar className="h-4 w-4" />
             <span>{date}</span>
           </div>
-          {timeRange && (
-            <div className="flex items-center gap-1" data-testid={`text-training-time-${id}`}>
-              <Clock className="h-4 w-4" />
-              <span>{timeRange}</span>
-            </div>
-          )}
           <div className="flex items-center gap-1">
             <Users className="h-4 w-4" />
             <span>{attendees}/{totalWorkers} asistentes</span>

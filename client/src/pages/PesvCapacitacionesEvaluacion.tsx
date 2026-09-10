@@ -816,8 +816,6 @@ export default function PesvCapacitacionesEvaluacion() {
                   id={training.id}
                   title={training.title}
                   date={new Date(training.trainingDate).toLocaleDateString("es-CO")}
-                  startTime={training.startTime}
-                  endTime={training.endTime}
                   attendees={allWorkerCounts[training.id] ?? 0}
                   totalWorkers={training.totalAttendees}
                   status={training.status as any}
