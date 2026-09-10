@@ -1,6 +1,6 @@
 /**
  * Monitor de seguridad de sesiones.
- * Cierra sesiones que alcanzan el límite absoluto y marca sesiones largas como sospechosas.
+ * Cierra sesiones inactivas.
  * Se ejecuta cada minuto.
  */
 import { db } from "../db";
@@ -8,8 +8,7 @@ import { sql } from "drizzle-orm";
 import logger from "../lib/logger";
 import { processSecurityAlert } from "../services/security-access";
 
-const MAX_SESSION_HOURS = 6;
-const ABSOLUTE_SESSION_HOURS = 6;
+const SESSION_IDLE_MINUTES = 20;
 
 async function closeExpiredSessions() {
   const result = await db.execute(sql`
@@ -17,50 +16,40 @@ async function closeExpiredSessions() {
     SET is_active = false,
         logout_at = now(),
         duration_minutes = EXTRACT(EPOCH FROM (now() - login_at)) / 60,
-        alert_type = 'absolute_timeout',
+        alert_type = 'idle_timeout',
         alert_note = CONCAT_WS(
           ' | ',
           alert_note,
-          ${`Sesión cerrada automáticamente al alcanzar el límite máximo de ${ABSOLUTE_SESSION_HOURS} horas`}::text
+          ${`Sesión cerrada automáticamente después de ${SESSION_IDLE_MINUTES} minutos de inactividad`}::text
         )
     WHERE is_active = true
-      AND login_at <= now() - (${ABSOLUTE_SESSION_HOURS} * interval '1 hour')
-    RETURNING id
+      AND COALESCE(last_activity_at, login_at) <= now() - (${SESSION_IDLE_MINUTES} * interval '1 minute')
+    RETURNING id, user_id, ip_address, user_agent
   `);
-  const count = ((result as any).rows ?? []).length;
-  if (count > 0) {
-    logger.info({ count }, `[SESSION-MONITOR] ${count} sesión(es) cerradas automáticamente`);
+  const rows = ((result as any).rows ?? []) as Array<{
+    id: string;
+    user_id: string;
+    ip_address: string | null;
+    user_agent: string | null;
+  }>;
+  if (rows.length > 0) {
+    logger.info({ count: rows.length }, `[SESSION-MONITOR] ${rows.length} sesión(es) cerradas por inactividad`);
+    for (const row of rows) {
+      void processSecurityAlert({
+        sessionRecordId: row.id,
+        userId: row.user_id,
+        eventType: "idle_timeout",
+        decision: "allowed",
+        ip: row.ip_address || "unknown",
+        userAgent: row.user_agent || null,
+      });
+    }
   }
 }
 
 export async function checkLongSessions() {
   try {
     await closeExpiredSessions();
-    const result = await db.execute(sql`
-      UPDATE user_sessions_log
-      SET is_suspicious = true,
-          alert_type = COALESCE(alert_type, 'long_session'),
-          alert_note = COALESCE(alert_note, 'Sesión activa superó las ' || ${MAX_SESSION_HOURS} || ' horas continuas')
-      WHERE is_active = true
-        AND is_suspicious = false
-        AND EXTRACT(EPOCH FROM (now() - login_at)) / 3600 > ${MAX_SESSION_HOURS}
-      RETURNING id, user_id, ip_address, user_agent, login_at
-    `);
-
-    const rows = (result as any).rows ?? [];
-    if (rows.length > 0) {
-      logger.warn({ count: rows.length }, `[SESSION-MONITOR] ${rows.length} sesión(es) larga(s) marcadas como sospechosas`);
-      for (const row of rows) {
-        void processSecurityAlert({
-          sessionRecordId: row.id,
-          userId: row.user_id,
-          eventType: "long_session",
-          decision: "allowed",
-          ip: row.ip_address || "unknown",
-          userAgent: row.user_agent || null,
-        });
-      }
-    }
   } catch (err) {
     logger.error({ err }, "[SESSION-MONITOR] Error en checkLongSessions");
   }

@@ -21,6 +21,7 @@ import { enrichSessionLocation, processSecurityAlert } from "./services/security
 // ── Monitoreo de sesiones ─────────────────────────────────────────────────────
 const MAX_SESSION_HOURS = 6;
 const ABSOLUTE_SESSION_HOURS = 6;
+const SESSION_IDLE_MINUTES = 20;
 const UNAUTHORIZED_IP_ALLOWED_ATTEMPTS = 3;
 const UNAUTHORIZED_IP_WINDOW_HOURS = 24;
 const LOGIN_CODE_MINUTES = 10;
@@ -296,10 +297,12 @@ async function closeLoginSession(sessionId: string) {
   }
 }
 
-type SessionExpiryReason = "absolute_timeout";
+type SessionExpiryReason = "idle_timeout" | "absolute_timeout";
 
 async function expireLoginSession(sessionId: string, reason: SessionExpiryReason) {
-  const note = `Sesión cerrada automáticamente al alcanzar el límite máximo de ${ABSOLUTE_SESSION_HOURS} horas`;
+  const note = reason === "idle_timeout"
+    ? `Sesión cerrada automáticamente después de ${SESSION_IDLE_MINUTES} minutos de inactividad`
+    : `Sesión cerrada automáticamente al alcanzar el límite máximo de ${ABSOLUTE_SESSION_HOURS} horas`;
 
   await db.execute(sql`
     UPDATE user_sessions_log
@@ -346,10 +349,14 @@ async function enforceAuthenticatedSessionActivity(req: Request, res: Response, 
 
     const now = Date.now();
     const loginAt = new Date(sessionRecord.login_at).getTime();
+    const lastActivityAt = sessionRecord.last_activity_at
+      ? new Date(sessionRecord.last_activity_at).getTime()
+      : loginAt;
+    const idleExpired = now - lastActivityAt >= SESSION_IDLE_MINUTES * 60 * 1000;
     const absoluteExpired = now - loginAt >= ABSOLUTE_SESSION_HOURS * 60 * 60 * 1000;
 
-    if (absoluteExpired) {
-      const reason: SessionExpiryReason = "absolute_timeout";
+    if (idleExpired || absoluteExpired) {
+      const reason: SessionExpiryReason = idleExpired ? "idle_timeout" : "absolute_timeout";
       await expireLoginSession(req.sessionID, reason);
 
       req.logout((logoutError) => {
@@ -361,10 +368,17 @@ async function enforceAuthenticatedSessionActivity(req: Request, res: Response, 
             logger.error({ err: destroyError }, "[SESSION] Error destruyendo sesión vencida");
           }
           res.clearCookie("connect.sid");
-          return res.status(401).json({
-            error: "Tu sesión alcanzó el tiempo máximo permitido.",
-            code: "SESSION_ABSOLUTE_TIMEOUT",
-          });
+          return res.status(401).json(
+            reason === "idle_timeout"
+              ? {
+                  error: `Tu sesión se cerró después de ${SESSION_IDLE_MINUTES} minutos de inactividad.`,
+                  code: "SESSION_IDLE_TIMEOUT",
+                }
+              : {
+                  error: "Tu sesión alcanzó el tiempo máximo permitido.",
+                  code: "SESSION_ABSOLUTE_TIMEOUT",
+                },
+          );
         });
       });
       return;
@@ -1031,10 +1045,30 @@ export function setupAuth(app: Express) {
 
   app.post("/api/session/activity", (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    return res.status(200).json({
-      active: true,
-      absoluteTimeoutHours: ABSOLUTE_SESSION_HOURS,
-    });
+    void (async () => {
+      try {
+        const result = await db.execute(sql`
+          UPDATE user_sessions_log
+          SET last_activity_at = now()
+          WHERE session_id = ${req.sessionID} AND is_active = true
+          RETURNING id
+        `);
+        if (!((result as any).rows ?? []).length) {
+          return res.status(401).json({
+            error: "Esta sesión ya no está activa. Inicia sesión nuevamente.",
+            code: "SESSION_REVOKED",
+          });
+        }
+        return res.status(200).json({
+          active: true,
+          idleTimeoutMinutes: SESSION_IDLE_MINUTES,
+          absoluteTimeoutHours: ABSOLUTE_SESSION_HOURS,
+        });
+      } catch (error) {
+        logger.error({ error }, "[SESSION] Error actualizando actividad");
+        return res.status(500).json({ error: "No se pudo actualizar la actividad de la sesión." });
+      }
+    })();
   });
 
   app.get("/api/user", async (req, res) => {
