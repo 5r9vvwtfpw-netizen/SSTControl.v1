@@ -21,7 +21,8 @@ import { enrichSessionLocation, processSecurityAlert } from "./services/security
 // ── Monitoreo de sesiones ─────────────────────────────────────────────────────
 // La sesión se cierra únicamente después de 8 horas sin actividad.
 // No existe un tiempo máximo absoluto de sesión.
-const SESSION_IDLE_MINUTES = 8 * 60;
+const SESSION_IDLE_HOURS = 8;
+const SESSION_IDLE_MINUTES = SESSION_IDLE_HOURS * 60;
 const UNAUTHORIZED_IP_ALLOWED_ATTEMPTS = 3;
 const UNAUTHORIZED_IP_WINDOW_HOURS = 24;
 const LOGIN_CODE_MINUTES = 10;
@@ -298,7 +299,7 @@ async function expireLoginSession(sessionId: string) {
         alert_note = CONCAT_WS(
           ' | '::text,
           alert_note,
-          ${`Sesión cerrada automáticamente después de ${SESSION_IDLE_MINUTES} minutos de inactividad`}::text
+          ${`Sesión cerrada automáticamente después de ${SESSION_IDLE_HOURS} horas de inactividad`}::text
         )
     WHERE session_id = ${sessionId} AND is_active = true
   `);
@@ -357,7 +358,7 @@ async function enforceAuthenticatedSessionActivity(req: Request, res: Response, 
           }
           res.clearCookie("connect.sid");
           return res.status(401).json({
-            error: `Tu sesión se cerró después de ${SESSION_IDLE_MINUTES} minutos de inactividad.`,
+            error: `Tu sesión se cerró después de ${SESSION_IDLE_HOURS} horas de inactividad.`,
             code: "SESSION_IDLE_TIMEOUT",
           });
         });

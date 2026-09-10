@@ -9,7 +9,8 @@ import logger from "../lib/logger";
 import { processSecurityAlert } from "../services/security-access";
 
 // Debe coincidir con el límite aplicado por server/auth.ts y el guardia del cliente.
-const SESSION_IDLE_MINUTES = 8 * 60;
+const SESSION_IDLE_HOURS = 8;
+const SESSION_IDLE_MINUTES = SESSION_IDLE_HOURS * 60;
 
 async function closeExpiredSessions() {
   const result = await db.execute(sql`
@@ -21,7 +22,7 @@ async function closeExpiredSessions() {
         alert_note = CONCAT_WS(
           ' | ',
           alert_note,
-          ${`Sesión cerrada automáticamente después de ${SESSION_IDLE_MINUTES} minutos de inactividad`}::text
+          ${`Sesión cerrada automáticamente después de ${SESSION_IDLE_HOURS} horas de inactividad`}::text
         )
     WHERE is_active = true
       AND COALESCE(last_activity_at, login_at) <= now() - (${SESSION_IDLE_MINUTES} * interval '1 minute')
