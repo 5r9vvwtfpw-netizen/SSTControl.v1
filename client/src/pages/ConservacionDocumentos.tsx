@@ -679,7 +679,7 @@ export default function ConservacionDocumentos() {
                       <SelectTrigger data-testid="select-vincular-cambio">
                         <SelectValue placeholder="Sin vincular" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="max-h-[60vh]">
                         <SelectItem value="none" data-testid="option-cambio-none">Sin vincular</SelectItem>
                         {cambiosSst?.map((cambio) => (
                           <SelectItem 
