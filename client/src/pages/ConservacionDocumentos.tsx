@@ -1209,7 +1209,7 @@ export default function ConservacionDocumentos() {
             nombre: 'Actas Comité Convivencia',
             descripcion: 'Actas de reuniones del Comité de Convivencia Laboral',
             campos: { retencion: '20 años', categoria: 'acta', cicloPhva: 'VERIFICAR' },
-            normativaBase: 'Resolución 652/2012 y Resolución 1356/2012'
+             normativaBase: 'Resolución 3461/2025; Ley 1010/2006; Ley 2365/2024'
           },
           {
             id: 'contratos-laborales',

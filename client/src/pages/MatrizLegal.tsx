@@ -94,7 +94,7 @@ const plantillasMatrizLegal: PlantillaInfo[] = [
     descripcion: "COPASST y Comité de Convivencia Laboral",
     campos: {
       categoria: "comites-sst",
-      obligaciones: "Conformar y garantizar el funcionamiento del COPASST según Resolución 2013/1986. Conformar Comité de Convivencia Laboral (CCL) según Resolución 3461/2025 (deroga Res. 652/2012): un CCL por centro de trabajo, composición según tamaño de empresa, paridad de género, integración con SG-SST, plazo máximo 65 días para resolver quejas, reportes periódicos obligatorios.",
+       obligaciones: "Conformar y garantizar el funcionamiento del COPASST según Resolución 2013/1986. Conformar y mantener el Comité de Convivencia Laboral según Resolución 3461/2025 (deroga Res. 652/2012 y 1356/2012), con composición según tamaño y centros de trabajo, reuniones ordinarias mensuales, procedimiento preventivo máximo de 65 días, confidencialidad, informes trimestrales y anual, y ruta separada para acoso sexual.",
       normativa: "Resolución 2013/1986, Resolución 3461/2025"
     },
     normativaBase: "RES-2013-1986"
@@ -635,7 +635,7 @@ export default function MatrizLegal() {
           { campo: 'Medicina del Trabajo', valor: 'Resolución 2346/2007 - Exámenes médicos ocupacionales', normativaReferencia: 'RES-2346-2007' },
           { campo: 'Higiene Industrial', valor: 'Exposición a agentes físicos, químicos y biológicos', normativaReferencia: 'RES-2400-1979' },
           { campo: 'Emergencias', valor: 'Decreto 1072/2015 Art. 2.2.4.6.25 - Plan de prevención', normativaReferencia: 'DEC-1072-2.2.4.6.25' },
-          { campo: 'Comités SST', valor: 'Resolución 2013/1986 COPASST, Resolución 652/2012 Convivencia', normativaReferencia: 'RES-2013-1986' },
+          { campo: 'Comités SST', valor: 'Resolución 2013/1986 COPASST, Resolución 3461/2025 Comité de Convivencia', normativaReferencia: 'RES-2013-1986' },
           { campo: 'Investigación de Incidentes', valor: 'Resolución 1401/2007 - Investigación de AT/EL', normativaReferencia: 'RES-1401-2007' },
           { campo: 'Capacitación', valor: 'Decreto 1072/2015 Art. 2.2.4.6.11 - Programa de capacitación', normativaReferencia: 'DEC-1072-2.2.4.6.11' }
         ];

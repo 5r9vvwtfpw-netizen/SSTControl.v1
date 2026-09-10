@@ -182,13 +182,13 @@ const estandaresSst = [
     componenteId: "comp-sst-1",
     numeroEstandar: "1.1.8",
     nombre: "Conformación Comité de Convivencia Laboral",
-    descripcion: "Conformar y garantizar el funcionamiento del Comité de Convivencia Laboral de acuerdo con la normatividad vigente.",
-    marcoLegal: "Resolución 652 de 2012; Resolución 1356 de 2012",
+    descripcion: "Conformar y garantizar el funcionamiento preventivo, confidencial y oportuno del Comité de Convivencia Laboral conforme a la Resolución 3461 de 2025.",
+    marcoLegal: "Resolución 3461 de 2025; Ley 1010 de 2006; Ley 2365 de 2024",
     puntajeTipo1: null,
     puntajeTipo2: 2,
     puntajeTipo3: 1,
     puntajeTipo4: 1,
-    criteriosVerificacion: "Acta de conformación del Comité de Convivencia Laboral; Actas de reuniones trimestrales del Comité",
+    criteriosVerificacion: "Acta de conformación y elección/designación vigente; reglamento y acuerdos de confidencialidad; actas de reuniones ordinarias mensuales y extraordinarias por queja; seguimiento mensual; informes trimestrales y anual; procedimiento preventivo de quejas con plazo máximo de 65 días calendario y ruta separada para acoso sexual",
     orden: 8,
   },
   {
@@ -1242,6 +1242,16 @@ export async function seedSstCatalog() {
         .onConflictDoNothing();
     }
     console.log(`✅ ${estandaresSst.length} estándares SST insertados/verificados`);
+
+    // Mantener actualizada la descripción normativa del estándar 1.1.8 cuando
+    // ya existe en la base de datos. onConflictDoNothing no actualiza maestros.
+    await db.update(schema.estandaresSst)
+      .set({
+        descripcion: "Conformar y garantizar el funcionamiento preventivo, confidencial y oportuno del Comité de Convivencia Laboral conforme a la Resolución 3461 de 2025.",
+        marcoLegal: "Resolución 3461 de 2025; Ley 1010 de 2006; Ley 2365 de 2024",
+        criteriosVerificacion: "Acta de conformación y elección/designación vigente; reglamento y acuerdos de confidencialidad; actas de reuniones ordinarias mensuales y extraordinarias por queja; seguimiento mensual; informes trimestrales y anual; procedimiento preventivo de quejas con plazo máximo de 65 días calendario y ruta separada para acoso sexual",
+      })
+      .where(eq(schema.estandaresSst.numeroEstandar, "1.1.8"));
     
     // Actualizar puntajeTipo1 explícitamente para todos los estándares que aplican a tipo1
     // Necesario porque onConflictDoNothing impide actualizar estándares ya existentes en prod

@@ -667,7 +667,7 @@ export default function ComiteConvivenciaActas() {
         <div>
           <h1 className="text-2xl font-bold" data-testid="text-page-title">Gestión Comité de Convivencia Laboral</h1>
           <p className="text-muted-foreground">
-            Resolución 652/2012 - Resolución 1356/2012
+             Resolución 3461 de 2025 — deroga las Resoluciones 652 y 1356 de 2012
           </p>
         </div>
       </div>
@@ -678,7 +678,7 @@ export default function ComiteConvivenciaActas() {
           <AutomationAssistant
             titulo="Conformación Comité de Convivencia Laboral"
             estandar={estandar.codigo}
-            descripcion="Conformación y funcionamiento del Comité de Convivencia Laboral según Resolución 652/2012 y Resolución 1356/2012"
+             descripcion="Conformación y funcionamiento preventivo del Comité de Convivencia Laboral según la Resolución 3461 de 2025"
             normativaAplicable={estandar.normativaAplicable.map(n => ({
               codigo: n.codigo,
               norma: n.norma,

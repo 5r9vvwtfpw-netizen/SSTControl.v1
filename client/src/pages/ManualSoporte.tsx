@@ -244,9 +244,9 @@ const MODULOS_SST = [
   {
     modulo: "Comité de Convivencia Laboral",
     ruta: "Módulo Comité de Convivencia — Estándar 1.1.8",
-    descripcion: "Gestión del Comité de Convivencia Laboral (Resolución 652/2012 y 1356/2012). Permite registrar períodos vigentes, proceso electoral y actas de reuniones. Conexión Portal de Empleados: los trabajadores pueden participar en elecciones del Comité desde Portal → Participación → 'Comité de Convivencia'.",
+    descripcion: "Gestión del Comité de Convivencia Laboral conforme a la Resolución 3461 de 2025. Permite registrar períodos vigentes, proceso electoral y actas de reuniones ordinarias mensuales y extraordinarias. Conexión Portal de Empleados: los trabajadores pueden participar en elecciones del Comité desde Portal → Participación → 'Comité de Convivencia'.",
     preguntasFrecuentes: [
-      { pregunta: "Cuándo se requiere Comité de Convivencia", respuesta: "Hola. Toda empresa con 10 o más trabajadores debe conformar un Comité de Convivencia Laboral (Resolución 652/2012). El sistema lo gestiona desde el estándar 1.1.8 en la Evaluación Inicial. Haga clic en él para acceder al módulo." },
+      { pregunta: "Cuándo se requiere Comité de Convivencia", respuesta: "Hola. La Resolución 3461 de 2025 aplica a empleadores y empresas públicas o privadas, con conformación según el número de trabajadores y centros de trabajo. El sistema lo gestiona desde el estándar 1.1.8 en la Evaluación Inicial. Haga clic en él para acceder al módulo." },
       { pregunta: "Cómo registrar actas del Comité de Convivencia", respuesta: "Hola. Acceda al módulo de Comité de Convivencia desde su Evaluación Inicial → estándar 1.1.8. Use la pestaña 'Actas' para registrar las reuniones del comité (mínimo una por trimestre) con fecha, participantes y casos tratados. El módulo es similar al COPASST pero independiente." },
       { pregunta: "Los trabajadores no ven el Comité de Convivencia en su portal", respuesta: "Hola. El Comité de Convivencia aparece en Portal de Empleados → Participación → 'Comité de Convivencia' cuando el administrador tiene un período activo. Verifique que el comité esté configurado en la Evaluación Inicial → estándar 1.1.8." },
     ],

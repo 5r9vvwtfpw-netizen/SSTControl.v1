@@ -118,7 +118,7 @@ const ACTIVIDAD_KEYWORD_ROUTES: { keywords: string[]; route: string }[] = [
   { keywords: ["copasst", "vigia", "vigía", "conformacion del copasst", "conformación del copasst", "conformacion/renovacion del copasst", "conformación/renovación del copasst", "reuniones mensuales del copasst", "actas de reuniones mensuales del copasst", "verificar certificacion de miembros copasst", "verificar certificación de miembros copasst"], route: "/copasst-gestion" },
   
   // Comité de Convivencia Laboral
-  { keywords: ["convivencia laboral", "ccl", "comite de convivencia", "comité de convivencia", "reuniones trimestrales del ccl", "actas de reuniones del comite de convivencia", "actas de reuniones del comité de convivencia", "conformacion del comite de convivencia", "conformación del comité de convivencia"], route: "/comite-convivencia-actas" },
+  { keywords: ["convivencia laboral", "ccl", "comite de convivencia", "comité de convivencia", "reuniones mensuales del ccl", "actas de reuniones del comite de convivencia", "actas de reuniones del comité de convivencia", "conformacion del comite de convivencia", "conformación del comité de convivencia"], route: "/comite-convivencia-actas" },
   
   // Auditorías
   { keywords: ["auditoria", "auditoría", "auditorias", "auditorías", "auditoria interna", "auditoría interna", "planificacion del programa de auditoria", "planificación del programa de auditoría"], route: "/auditorias-internas" },

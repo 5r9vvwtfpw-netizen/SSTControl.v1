@@ -433,7 +433,7 @@ function ObjetivosTab() {
         {
           nombre: `Comité de Convivencia Laboral ${currentYear}`,
           descripcion: 'Conformar y mantener vigente el Comité de Convivencia Laboral para prevenir el acoso laboral.',
-          meta: 'Mantener comité conformado con reuniones trimestrales documentadas',
+          meta: 'Mantener comité conformado con reuniones ordinarias mensuales documentadas',
           valorMeta: 100,
           responsable: user?.fullName || 'Responsable SG-SST',
           anio: currentYear,

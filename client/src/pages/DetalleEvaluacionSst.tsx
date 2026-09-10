@@ -1937,7 +1937,7 @@ export default function DetalleEvaluacionSst() {
                     Modo Verificación - Estándar 1.1.8
                   </p>
                   <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
-                    Solicitar el documento de conformación del Comité de Convivencia Laboral y verificar que esté integrado de acuerdo a la normativa y que se encuentra vigente. Solicitar las actas de las reuniones (como mínimo una reunión cada tres (3) meses) y los Informes de Gestión del Comité de Convivencia Laboral, verificando el desarrollo de sus funciones.
+                    Solicitar el documento de conformación y elección/designación del Comité de Convivencia Laboral, verificar su vigencia, el reglamento y los acuerdos de confidencialidad. Solicitar las actas de reuniones ordinarias mensuales y extraordinarias por queja, el seguimiento mensual de compromisos y los informes trimestrales y anual, verificando el desarrollo preventivo de sus funciones y el procedimiento máximo de 65 días calendario.
                   </p>
                   <div className="mt-3 p-3 bg-blue-100/50 dark:bg-blue-900/30 rounded-md">
                     <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 mb-2">
@@ -1951,7 +1951,7 @@ export default function DetalleEvaluacionSst() {
                     </ul>
                   </div>
                   <p className="text-xs text-blue-600 dark:text-blue-400 mt-3 font-medium">
-                    Evidencia esperada: Acta de conformación del Comité, actas de reuniones trimestrales, informes de gestión, constancias de capacitación de integrantes
+                     Evidencia esperada: Acta de conformación y elección/designación, reglamento y confidencialidad, actas mensuales y extraordinarias por queja, seguimientos mensuales, informes trimestrales y anual, soportes de prevención y capacitación con la ARL
                   </p>
                   <div className="flex gap-2 mt-3 flex-wrap">
                     <Button 

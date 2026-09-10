@@ -195,7 +195,7 @@ const POSITION_RESPONSIBILITIES: Record<string, string[]> = {
 
   "Presidente del Comité de Convivencia": [
     "Presidir las reuniones ordinarias y extraordinarias del Comité de Convivencia Laboral.",
-    "Convocar a los miembros del comité a reuniones trimestrales ordinarias y extraordinarias cuando sea necesario.",
+    "Convocar a los miembros del comité a reuniones ordinarias mensuales y extraordinarias cada vez que se reciba una queja de acoso laboral.",
     "Coordinar la elaboración de la agenda para cada reunión del comité.",
     "Dirigir las discusiones y garantizar que se cumplan los objetivos de cada reunión.",
     "Tramitar ante la dirección de la empresa las recomendaciones y acciones propuestas por el comité.",
