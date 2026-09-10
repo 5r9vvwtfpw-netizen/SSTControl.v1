@@ -1984,12 +1984,15 @@ export const comiteConvivenciaActas = pgTable("comite_convivencia_actas", {
   empleador3Nombre: text("empleador3_nombre"),
   empleador3Cedula: text("empleador3_cedula"),
   empleador3Tipo: text("empleador3_tipo"),
-  
+  estado: text("estado").notNull().default("borrador"),
+  version: integer("version").notNull().default(1),
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
 
 export const insertComiteConvivenciaActaSchema = createInsertSchema(comiteConvivenciaActas).omit({ id: true, createdAt: true, companyId: true, numeroActa: true }).extend({
   fecha: z.string().min(1, "La fecha es obligatoria"),
+  estado: committeeActaEstadoSchema.default("borrador"),
 });
 export type InsertComiteConvivenciaActa = z.infer<typeof insertComiteConvivenciaActaSchema>;
 export type ComiteConvivenciaActa = typeof comiteConvivenciaActas.$inferSelect;

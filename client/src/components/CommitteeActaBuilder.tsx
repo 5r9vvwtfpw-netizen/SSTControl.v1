@@ -105,12 +105,23 @@ const attendanceOptions = [
 
 const statusOptions: Array<{ value: CommitteeActaEstado; label: string }> = [
   { value: "borrador", label: "Borrador" },
-  { value: "pendiente_firmas", label: "Pendiente de firma física" },
-  { value: "parcialmente_firmada", label: "Parcialmente firmada" },
-  { value: "firmada", label: "Firmada físicamente" },
+  { value: "aprobada", label: "Aprobada" },
   { value: "cerrada", label: "Cerrada" },
-  { value: "anulada", label: "Anulada" },
 ];
+
+function normalizeActaStatus(value: unknown): CommitteeActaEstado {
+  if (value === "cerrada" || value === "anulada") return "cerrada";
+  if (
+    value === "aprobada"
+    || value === "pendiente_revision"
+    || value === "pendiente_firmas"
+    || value === "parcialmente_firmada"
+    || value === "firmada"
+  ) {
+    return "aprobada";
+  }
+  return "borrador";
+}
 
 const defaultAgenda = (committee: Committee): CommitteeActaAgendaItem[] => [
   { id: makeId(), title: "Verificación de asistencia y quórum", notes: "" },
@@ -261,7 +272,7 @@ export function CommitteeActaBuilder({
       const next = buildInitialDraft(committee, members, periodLabel, acta);
       setDraft(next);
       setInvitedText(next.invitados.join(", "));
-      setSaveStatus((acta?.estado as CommitteeActaEstado) || "borrador");
+      setSaveStatus(normalizeActaStatus(acta?.estado));
     }
   }, [open, committee, periodLabel, acta, members]);
 
@@ -327,14 +338,6 @@ export function CommitteeActaBuilder({
 
   const handleSave = async (status: CommitteeActaEstado) => {
     if (!validateStep() && step !== 6) return;
-    if (status === "firmada" && draft.firmantes.some((signer) => !signer.signed)) {
-      toast({
-        variant: "destructive",
-        title: "Faltan firmas físicas",
-        description: "Marca la firma física recibida para cada firmante antes de cerrar el acta como firmada.",
-      });
-      return;
-    }
     setSaving(true);
     try {
       const content = formalText(draft, committee, companyName);
@@ -395,11 +398,11 @@ export function CommitteeActaBuilder({
       await queryClient.invalidateQueries({ queryKey: [committee === "copasst" ? "/api/copasst-actas" : "/api/convivencia-actas", companyId] });
       toast({
         title: acta ? "Acta actualizada" : "Acta creada",
-        description: status === "pendiente_firmas"
-          ? "Quedó preparada para imprimir y recoger las firmas físicas."
-          : status === "firmada"
-            ? "Se registró como firmada físicamente."
-            : "El acta fue guardada.",
+        description: status === "aprobada"
+          ? "Quedó aprobada y lista para imprimir y recoger las firmas físicas."
+          : status === "cerrada"
+            ? "El acta quedó cerrada."
+            : "El acta fue guardada como borrador.",
       });
       onOpenChange(false);
       onSaved?.();
@@ -600,8 +603,10 @@ export function CommitteeActaBuilder({
             {step < 6 && <Button type="button" onClick={() => { if (validateStep()) setStep((current) => current + 1); }}>Siguiente<ArrowRight className="h-4 w-4 ml-2" /></Button>}
           </div>
           {step === 6 && <div className="flex gap-2">
-            <Button type="button" variant="outline" disabled={saving} onClick={() => handleSave(saveStatus)}>{saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}Guardar estado</Button>
-            <Button type="button" disabled={saving} onClick={() => handleSave("pendiente_firmas")}>{saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Check className="h-4 w-4 mr-2" />}Preparar para firma física</Button>
+            <Button type="button" disabled={saving} onClick={() => handleSave(saveStatus)}>
+              {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Check className="h-4 w-4 mr-2" />}
+              {saveStatus === "aprobada" ? "Aprobar acta" : saveStatus === "cerrada" ? "Cerrar acta" : "Guardar borrador"}
+            </Button>
           </div>}
         </DialogFooter>
       </DialogContent>
