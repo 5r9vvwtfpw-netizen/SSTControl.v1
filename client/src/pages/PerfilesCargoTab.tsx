@@ -280,6 +280,18 @@ export const PREDEFINED_PROFILES: Record<string, PredefProfile> = {
     requiredExams: ["Examen médico ocupacional para operación de montacargas", "Visiometría", "Audiometría", "Valoración osteomuscular"],
     requiredTrainings: ["Operación segura de montacargas (certificación)", "Manejo de cargas", "Señalización de tránsito interno", "Prevención de riesgos en bodega"],
   },
+  "Operadores de maquinaria amarilla": {
+    name: "Operadores de maquinaria amarilla",
+    department: "Operaciones",
+    description: "Operar maquinaria amarilla para movimiento de tierras, excavación, cargue, nivelación, compactación y apoyo a obras o actividades operativas. Incluye retroexcavadoras, excavadoras, cargadores frontales, bulldóceres, motoniveladoras, vibrocompactadores, minicargadores y equipos similares, según la autorización y competencia del trabajador.",
+    riskClass: "IV",
+    riskFactors: ["Volcamiento de maquinaria", "Atropellamiento o colisión", "Atrapamiento", "Caída de objetos o material", "Ruido", "Vibración", "Polvo y material particulado", "Riesgo eléctrico", "Exposición solar", "Fatiga y posturas prolongadas"],
+    physicalDemands: "Trabajo principalmente sentado durante la operación, exposición a vibración y ruido, ascenso y descenso frecuente del equipo, inspecciones preoperacionales y desplazamientos en terrenos irregulares.",
+    mentalDemands: "Atención sostenida, coordinación visomotora, percepción espacial, toma de decisiones en tiempo real, comunicación con señalero y cumplimiento estricto de procedimientos.",
+    requiredPpe: ["Casco de seguridad", "Calzado de seguridad", "Chaleco reflectivo", "Protección auditiva", "Gafas de seguridad", "Guantes de seguridad", "Protección respiratoria según exposición al polvo"],
+    requiredExams: ["Examen médico ocupacional general", "Evaluación visual", "Audiometría", "Valoración osteomuscular", "Evaluación de coordinación y reflejos"],
+    requiredTrainings: ["Operación segura del equipo específico", "Inspección preoperacional de maquinaria", "Señalización y comunicación con personal en tierra", "Prevención de riesgos por volcamiento y atrapamiento", "Manejo de emergencias y primeros auxilios"],
+  },
 };
 
 export default function PerfilesCargo() {
