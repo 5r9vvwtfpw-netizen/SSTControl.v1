@@ -15375,13 +15375,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         );
       }
 
-      currentY = addSectionBar(doc, 'Constancia de firma física', currentY);
-      currentY = addParagraph(
-        doc,
-        'El presente documento se imprime para firma física de los integrantes seleccionados del comité. La relación de firmantes corresponde a los miembros vigentes registrados, incluidos los representantes elegidos por votación.',
-        { y: currentY }
-      );
-
       const guidedSigners = Array.isArray(acta.firmantes) && acta.firmantes.length > 0
         ? acta.firmantes.map((signer: any) => ({
           label: signer.role || 'Firmante',
@@ -47814,13 +47807,6 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         y = addSectionBar(doc, "Observaciones", y);
         y = addParagraph(doc, acta.observaciones, { y });
       }
-
-      y = addSectionBar(doc, "Constancia de firma física", y);
-      y = addParagraph(
-        doc,
-        "El presente documento se imprime para firma física de los integrantes seleccionados del comité. La relación de firmantes corresponde a los miembros vigentes registrados, incluidos los representantes elegidos por votación.",
-        { y }
-      );
 
       const legacyFirmas = Array.isArray(acta.firmas)
         ? acta.firmas as Array<{ nombre?: string; cargo?: string }>

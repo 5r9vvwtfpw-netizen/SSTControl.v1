@@ -121,3 +121,9 @@ Cada bloque que devuelve una posición nueva debe reasignarse antes de dibujar l
 **Why:** En actas de comité, omitir la reasignación después del texto narrativo dejó las tablas de participantes, agenda y compromisos dibujadas sobre el mismo contenido aunque la descarga del PDF fuera válida.
 
 **How to apply:** Al agregar una sección a un acta, mantener una sola variable `y`, propagarla entre todos los helpers y renderizar al menos una muestra con salto de página antes de cerrar el cambio.
+
+En actas de comité, la constancia fija de firma física debe formar parte del bloque inferior de firmas, no ser una sección independiente inmediatamente antes del footer.
+
+**Why:** La reserva genérica de espacio para footers puede enviar una constancia de pocas líneas a una página adicional, dejando una tercera página casi vacía.
+
+**How to apply:** Mantener el aviso y las líneas de firma como un bloque compacto; si se cambia su altura, validar actas con agenda extensa y compromisos.

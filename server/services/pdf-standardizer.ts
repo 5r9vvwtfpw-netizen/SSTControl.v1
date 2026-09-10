@@ -633,9 +633,12 @@ export function addCommitteeActaSignatureFooter(
   const pageHeight = doc.page.height;
   const footerHeight = 92;
   const potentialFooterY = pageHeight - margin - footerHeight;
+  const noticeHeight = 38;
+  const noticeGap = 8;
+  const potentialNoticeY = potentialFooterY - noticeHeight - noticeGap;
 
   let footerY: number;
-  if (doc.y > potentialFooterY) {
+  if (doc.y > potentialNoticeY) {
     doc.addPage();
     footerY = pageHeight - margin - footerHeight;
   } else {
@@ -648,6 +651,32 @@ export function addCommitteeActaSignatureFooter(
   const tableWidth = pageWidth - margin * 2;
   const colWidth = tableWidth / effectiveSigners.length;
   const headerRowHeight = 20;
+
+  const noticeY = footerY - noticeHeight - noticeGap;
+  doc
+    .roundedRect(margin, noticeY, tableWidth, noticeHeight, 3)
+    .fillAndStroke(PDF_COLORS.GRAY_LIGHT, PDF_COLORS.GRAY_BORDER);
+  doc
+    .fontSize(7)
+    .font('Helvetica-Bold')
+    .fillColor(PDF_COLORS.GREEN_PRIMARY)
+    .text('FIRMA FÍSICA', margin + 8, noticeY + 6, {
+      width: tableWidth - 16,
+      align: 'left',
+    });
+  doc
+    .fontSize(7)
+    .font('Helvetica')
+    .fillColor(PDF_COLORS.BLACK)
+    .text(
+      'El presente documento se imprime para firma física de los integrantes seleccionados del comité. La relación corresponde a los miembros vigentes registrados, incluidos los representantes elegidos por votación.',
+      margin + 8,
+      noticeY + 17,
+      {
+        width: tableWidth - 16,
+        align: 'left',
+      }
+    );
 
   doc.rect(margin, footerY, tableWidth, footerHeight).stroke(PDF_COLORS.GREEN_PRIMARY);
 
