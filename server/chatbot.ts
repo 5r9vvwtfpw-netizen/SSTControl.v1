@@ -845,6 +845,28 @@ const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 const RATE_LIMIT = 20;
 const RATE_WINDOW_MS = 60 * 60 * 1000;
 
+export function getDirectGuidanceForQuestion(question: string): string | null {
+  const normalizedQuestion = question
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+  if (!normalizedQuestion.includes("convivencia")) {
+    return null;
+  }
+
+  return `**Estándar 1.1.8 — Conformación del Comité de Convivencia Laboral (2 puntos).**
+
+Para diligenciarlo en la plataforma:
+1. Ve a **PLANEAR → Evaluación Inicial SST**.
+2. Busca y abre el **estándar 1.1.8**.
+3. Haz clic en **Ir al módulo Comité de Convivencia**. Se abrirá el módulo **Comité de Convivencia Laboral**, dentro de **PLANEAR**.
+4. En ese módulo registra el período vigente, el proceso electoral, los miembros y las actas de las reuniones mensuales.
+5. Regresa al estándar 1.1.8, selecciona el estado de cumplimiento y guarda la evaluación.
+
+La gestión se realiza conforme a la **Resolución 3461 de 2025**. Las reuniones ordinarias son mensuales; las extraordinarias se registran cuando exista una queja.`;
+}
+
 function checkRateLimit(userId: string): boolean {
   const now = Date.now();
   const entry = rateLimitMap.get(userId);
@@ -907,6 +929,26 @@ export function registerChatbotRoutes(app: Express, requireAuth?: RequestHandler
         return res.status(429).json({ error: "Has alcanzado el límite de preguntas por hora. Intenta más tarde." });
       }
 
+      const startTime = Date.now();
+      const directGuidance = getDirectGuidanceForQuestion(question.trim());
+      if (directGuidance) {
+        db.insert(chatbotQuestions).values({
+          companyId,
+          userId,
+          question: question.trim(),
+          answer: directGuidance,
+          responseTimeMs: Date.now() - startTime,
+        }).catch(() => {});
+
+        res.setHeader("Content-Type", "text/event-stream");
+        res.setHeader("Cache-Control", "no-cache");
+        res.setHeader("Connection", "keep-alive");
+        res.setHeader("X-Accel-Buffering", "no");
+        res.write(`data: ${JSON.stringify({ content: directGuidance })}\n\n`);
+        res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+        return res.end();
+      }
+
       let companyName: string | undefined;
       if (companyId) {
         const now = Date.now();
@@ -923,8 +965,6 @@ export function registerChatbotRoutes(app: Express, requireAuth?: RequestHandler
           } catch {}
         }
       }
-
-      const startTime = Date.now();
 
       const cacheKey = `${userRole}:${companyName || ""}`;
       const now = Date.now();
