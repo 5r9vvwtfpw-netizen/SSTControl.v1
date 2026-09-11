@@ -7491,10 +7491,10 @@ export class DbStorage implements IStorage {
         norma: "Resolución 3461 de 2025",
         fechaEmision: new Date("2025-09-01"),
         entidadEmisora: "Ministerio del Trabajo",
-        categoria: "riesgo-psicosocial",
+        categoria: "comites-sst",
         titulo: "Conformación y funcionamiento del Comité de Convivencia Laboral",
-        descripcion: "Reglamenta la conformación, funcionamiento preventivo, confidencialidad y trámite de quejas del Comité de Convivencia Laboral; deroga las Resoluciones 652 y 1356 de 2012",
-        obligaciones: "Conformar el Comité por centro de trabajo según el número de trabajadores, realizar reuniones ordinarias mensuales y extraordinarias por queja, tramitar el procedimiento preventivo en máximo 65 días calendario y presentar informes trimestrales y anual",
+        descripcion: "Reglamenta la conformación y el funcionamiento preventivo del Comité de Convivencia Laboral por centro de trabajo; deroga las Resoluciones 652 y 1356 de 2012.",
+        obligaciones: "Conformar y garantizar el funcionamiento del Comité por centro de trabajo según el número de trabajadores; realizar reuniones ordinarias mensuales y extraordinarias por cada queja; proteger la confidencialidad; tramitar el procedimiento preventivo en máximo 65 días calendario; elaborar informes trimestrales y anual; y remitir el acoso sexual o la violencia por razones de género a una ruta separada.",
         alcance: "Empleadores y empresas públicas o privadas, según su número de trabajadores y centros de trabajo",
         periodicidad: "Reuniones ordinarias mensuales y extraordinarias por queja",
         responsableCumplimiento: "RRHH / Coordinador SST"
@@ -7735,6 +7735,19 @@ export class DbStorage implements IStorage {
         responsableCumplimiento: "Coordinador SST / RRHH",
         validacionAutomatica: 1,
         codigoValidacion: "PERFIL_SOCIODEMOGRAFICO"
+      },
+      {
+        norma: "Resolución 3461 de 2025",
+        fechaEmision: new Date("2025-09-01"),
+        entidadEmisora: "Ministerio del Trabajo",
+        categoria: "comites-sst",
+        titulo: "Conformación y funcionamiento del Comité de Convivencia Laboral",
+        descripcion: "Reglamenta la conformación y el funcionamiento preventivo del Comité de Convivencia Laboral por centro de trabajo; deroga las Resoluciones 652 y 1356 de 2012.",
+        obligaciones: "Conformar y garantizar el funcionamiento del Comité por centro de trabajo según el número de trabajadores; realizar reuniones ordinarias mensuales y extraordinarias por cada queja; proteger la confidencialidad; tramitar el procedimiento preventivo en máximo 65 días calendario; elaborar informes trimestrales y anual; y remitir el acoso sexual o la violencia por razones de género a una ruta separada.",
+        articulosAplicables: "Resolución 3461 de 2025",
+        alcance: "Empleadores y empresas públicas o privadas, según su número de trabajadores y centros de trabajo",
+        periodicidad: "Reuniones ordinarias mensuales y extraordinarias por queja",
+        responsableCumplimiento: "RRHH / Coordinador SST"
       }
     ];
 

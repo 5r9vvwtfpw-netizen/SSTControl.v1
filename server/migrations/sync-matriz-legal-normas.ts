@@ -2,11 +2,12 @@ import { db } from '../db';
 import { sql } from 'drizzle-orm';
 
 /**
- * Agrega 3 nuevas normas a la matriz legal de todas las empresas que ya
+ * Agrega nuevas normas a la matriz legal de todas las empresas que ya
  * tienen la matriz inicializada pero no tienen estas entradas:
  *   - Resolución 2346/2007 Art. 4-5 (Profesiograma)
  *   - Decreto 1072/2015 Art. 2.2.4.6.8 (Organigrama SST)
  *   - Resolución 2646/2008 Art. 8 (Perfil Sociodemográfico)
+ *   - Resolución 3461/2025 (Comité de Convivencia Laboral)
  */
 export async function syncMatrizLegalNormas() {
   console.log('[Migration] Sincronizando nuevas normas en matriz_legal...');
@@ -68,6 +69,19 @@ export async function syncMatrizLegalNormas() {
         responsableCumplimiento: 'Coordinador SST / RRHH',
         validacionAutomatica: 1,
         codigoValidacion: 'PERFIL_SOCIODEMOGRAFICO'
+      },
+      {
+        norma: 'Resolución 3461 de 2025',
+        fechaEmision: '2025-09-01',
+        entidadEmisora: 'Ministerio del Trabajo',
+        categoria: 'comites-sst',
+        titulo: 'Conformación y funcionamiento del Comité de Convivencia Laboral',
+        descripcion: 'Reglamenta la conformación y el funcionamiento preventivo del Comité de Convivencia Laboral por centro de trabajo; deroga las Resoluciones 652 y 1356 de 2012.',
+        obligaciones: 'Conformar y garantizar el funcionamiento del Comité por centro de trabajo según el número de trabajadores; realizar reuniones ordinarias mensuales y extraordinarias por cada queja; proteger la confidencialidad; tramitar el procedimiento preventivo en máximo 65 días calendario; elaborar informes trimestrales y anual; y remitir el acoso sexual o la violencia por razones de género a una ruta separada.',
+        articulosAplicables: 'Resolución 3461 de 2025',
+        alcance: 'Empleadores y empresas públicas o privadas, según su número de trabajadores y centros de trabajo',
+        periodicidad: 'Reuniones ordinarias mensuales y extraordinarias por queja',
+        responsableCumplimiento: 'RRHH / Coordinador SST'
       }
     ];
 
