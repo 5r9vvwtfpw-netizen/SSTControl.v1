@@ -8123,7 +8123,7 @@ export type InsertCopasstNotificacion = z.infer<typeof insertCopasstNotificacion
 export type CopasstNotificacion = typeof copasstNotificaciones.$inferSelect;
 
 // ============================================================================
-// COMITÉ DE CONVIVENCIA LABORAL - Resolución 652/2012, Resolución 1356/2012
+// COMITÉ DE CONVIVENCIA LABORAL - Resolución 3461/2025
 // Ciclo completo: Períodos, Miembros, Elecciones, Candidatos, Votación, Actas
 // ============================================================================
 
@@ -8178,7 +8178,7 @@ export const convivenciaElecciones = pgTable("convivencia_elecciones", {
   estado: text("estado").notNull().default("convocatoria"), // 'convocatoria' | 'inscripcion' | 'votacion' | 'escrutinio' | 'completada'
   // Publicación en Portal de Trabajadores (SST-2025-0097)
   publicadoEnPortal: boolean("publicado_en_portal").notNull().default(false), // Controla visibilidad en portal de trabajadores
-  // Configuración según Resolución 652/2012
+  // Configuración según Resolución 3461/2025
   principalesRequeridos: integer("principales_requeridos").notNull().default(2), // Mínimo 2 por cada parte
   suplentesRequeridos: integer("suplentes_requeridos").notNull().default(2),
   // Resultados

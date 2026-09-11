@@ -412,7 +412,7 @@ export async function generateOrganigramaPdf(
   y = addInfoRow(
     doc,
     'Base legal',
-    'Resolución 2646/2008 / Resolución 652/2012 / Resolución 1356/2012 — Ley 1010/2006',
+    'Resolución 2646/2008 / Resolución 3461/2025 — Ley 1010/2006 y Ley 2365/2024',
     margin,
     doc.y,
     contentWidth,
