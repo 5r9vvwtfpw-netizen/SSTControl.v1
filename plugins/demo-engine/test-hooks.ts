@@ -16,6 +16,43 @@ function isTestMode(): boolean {
   return process.env.TEST_MODE === "true" && process.env.NODE_ENV !== "production";
 }
 
+async function recordTestLoginSession(req: Request, userId: string): Promise<void> {
+  await db.execute(sql`
+    UPDATE user_sessions_log
+    SET is_active = false,
+        logout_at = now(),
+        duration_minutes = EXTRACT(EPOCH FROM (now() - login_at)) / 60
+    WHERE user_id = ${userId} AND is_active = true
+  `);
+
+  await db.execute(sql`
+    INSERT INTO user_sessions_log (
+      user_id,
+      session_id,
+      ip_address,
+      user_agent,
+      device_id,
+      access_decision,
+      login_at,
+      last_activity_at,
+      is_active,
+      is_suspicious
+    )
+    VALUES (
+      ${userId},
+      ${req.sessionID},
+      ${req.ip || "127.0.0.1"},
+      ${req.get("user-agent") || null},
+      'automated-test',
+      'allowed',
+      now(),
+      now(),
+      true,
+      false
+    )
+  `);
+}
+
 router.use((req, res, next) => {
   if (!isTestMode()) {
     return res.status(404).json({ error: "Not found" });
@@ -117,12 +154,18 @@ router.get("/login-redirect", async (req: Request, res: Response) => {
     if (!valid) {
       return res.status(401).send("Contraseña incorrecta");
     }
-    req.logIn(user, (err) => {
+    req.logIn(user, async (err) => {
       if (err) {
         logger.error({ err }, "[TestHooks] login-redirect session error");
         return res.status(500).send("Error al establecer sesión");
       }
-      return res.redirect(redirect as string);
+      try {
+        await recordTestLoginSession(req, user.id);
+        return res.redirect(redirect as string);
+      } catch (sessionError) {
+        logger.error({ err: sessionError }, "[TestHooks] login-redirect audit session error");
+        return res.status(500).send("Error al registrar sesión de prueba");
+      }
     });
   } catch (error: any) {
     logger.error({ err: error }, "[TestHooks] login-redirect failed");
@@ -145,13 +188,19 @@ router.post("/login", async (req: Request, res: Response) => {
     if (!valid) {
       return res.status(401).json({ error: "Contraseña incorrecta" });
     }
-    req.logIn(user, (err) => {
+    req.logIn(user, async (err) => {
       if (err) {
         logger.error({ err }, "[TestHooks] login session error");
         return res.status(500).json({ error: "Error al establecer sesión" });
       }
-      const { password: _pw, ...safeUser } = user as any;
-      return res.json({ ok: true, user: safeUser });
+      try {
+        await recordTestLoginSession(req, user.id);
+        const { password: _pw, ...safeUser } = user as any;
+        return res.json({ ok: true, user: safeUser });
+      } catch (sessionError) {
+        logger.error({ err: sessionError }, "[TestHooks] login audit session error");
+        return res.status(500).json({ error: "Error al registrar sesión de prueba" });
+      }
     });
   } catch (error: any) {
     logger.error({ err: error }, "[TestHooks] login failed");
