@@ -26088,19 +26088,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
         columnWidths: [180, 181, 181],
       });
 
+      const paragraphHeight = (text: string, indent = 0, fontSize = 8) => {
+        doc.font('Helvetica').fontSize(fontSize);
+        return doc.heightOfString(text, {
+          width: doc.page.width - PDF_CONFIG.MARGIN * 2 - indent,
+          align: 'justify',
+        }) + 5;
+      };
+
       const addTextSection = (title: string, text: string) => {
-        standardY = addSectionBar(doc, title, standardY + 2);
-        standardY = addParagraph(doc, text || 'No aplica.', { y: standardY, fontSize: 8 });
+        const content = text || 'No aplica.';
+        standardY = checkPageBreak(
+          doc,
+          30 + paragraphHeight(content),
+          standardY + 2,
+        );
+        standardY = addSectionBar(doc, title, standardY);
+        standardY = addParagraph(doc, content, { y: standardY, fontSize: 8 });
       };
 
       const addNumberedSection = (title: string, items: string[]) => {
-        standardY = addSectionBar(doc, title, standardY + 2);
         if (items.length === 0) {
+          standardY = checkPageBreak(
+            doc,
+            30 + paragraphHeight('No se registraron elementos.'),
+            standardY + 2,
+          );
+          standardY = addSectionBar(doc, title, standardY);
           standardY = addParagraph(doc, 'No se registraron elementos.', { y: standardY, fontSize: 8 });
           return;
         }
-        items.forEach((item, index) => {
-          standardY = addParagraph(doc, `${index + 1}. ${item}`, {
+
+        const numberedItems = items.map((item, index) => `${index + 1}. ${item}`);
+        const listHeight = numberedItems.reduce(
+          (height, item) => height + paragraphHeight(item, 8),
+          0,
+        );
+        standardY = checkPageBreak(doc, 30 + listHeight, standardY + 2);
+        standardY = addSectionBar(doc, title, standardY);
+        numberedItems.forEach((item) => {
+          standardY = addParagraph(doc, item, {
             y: standardY,
             fontSize: 8,
             indent: 8,
