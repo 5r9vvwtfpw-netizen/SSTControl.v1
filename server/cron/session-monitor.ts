@@ -7,6 +7,7 @@ import { db } from "../db";
 import { sql } from "drizzle-orm";
 import logger from "../lib/logger";
 import { processSecurityAlert } from "../services/security-access";
+import { storage } from "../storage";
 
 // Debe coincidir con el límite aplicado por server/auth.ts y el guardia del cliente.
 const SESSION_IDLE_HOURS = 8;
@@ -26,15 +27,29 @@ async function closeExpiredSessions() {
         )
     WHERE is_active = true
       AND COALESCE(last_activity_at, login_at) <= now() - (${SESSION_IDLE_MINUTES} * interval '1 minute')
-    RETURNING id, user_id, ip_address, user_agent
+    RETURNING id, user_id, session_id, ip_address, user_agent
   `);
   const rows = ((result as any).rows ?? []) as Array<{
     id: string;
     user_id: string;
+    session_id: string | null;
     ip_address: string | null;
     user_agent: string | null;
   }>;
   if (rows.length > 0) {
+    await Promise.all(
+      rows
+        .map((row) => row.session_id)
+        .filter((sessionId): sessionId is string => Boolean(sessionId))
+        .map((sessionId) => new Promise<void>((resolve) => {
+          storage.sessionStore.destroy(sessionId, (error) => {
+            if (error) {
+              logger.error({ err: error, sessionId }, "[SESSION-MONITOR] Error revocando sesión vencida");
+            }
+            resolve();
+          });
+        })),
+    );
     logger.info({ count: rows.length }, `[SESSION-MONITOR] ${rows.length} sesión(es) cerradas por inactividad`);
     for (const row of rows) {
       void processSecurityAlert({

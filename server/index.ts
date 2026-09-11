@@ -38,7 +38,7 @@ import { startAccountingRetryJob, processAccountingRetries } from "./jobs/accoun
 import { scheduleWeeklyBackup } from "./jobs/weekly-backup";
 import { startSubscriptionIntegrityCheck } from "./cron/subscription-integrity";
 import { startManualSubscriptionExpiryJob } from "./cron/manual-subscription-expiry";
-import { registerSessionMonitorCron } from "./cron/session-monitor";
+import { checkSessionTimeouts, registerSessionMonitorCron } from "./cron/session-monitor";
 import { getUncachableStripeClient, getStripeSecretKey } from "./stripeClient";
 import { storage } from "./storage";
 import { initializeLicense, requireValidLicense } from "./middleware/license";
@@ -885,6 +885,8 @@ app.use(requestLoggerMiddleware);
 // límite de una vez cada 5 minutos para que sea prácticamente gratis.
 let lastAccountingRetryCheck = 0;
 const ACCOUNTING_RETRY_THROTTLE_MS = 5 * 60 * 1000;
+let lastSessionTimeoutCheck = 0;
+const SESSION_TIMEOUT_CHECK_THROTTLE_MS = 60 * 1000;
 app.use((req, res, next) => {
   if (req.path.startsWith('/api/')) {
     const now = Date.now();
@@ -893,6 +895,13 @@ app.use((req, res, next) => {
       processAccountingRetries().catch((err) => {
         logger.error({ err }, '[Accounting Retry] Error en verificación oportunista');
       });
+    }
+    // Los despliegues Autoscale no mantienen procesos en segundo plano cuando
+    // no hay tráfico. Esta comprobación mantiene al día el registro de
+    // auditoría en la siguiente solicitud y no depende de un setInterval.
+    if (now - lastSessionTimeoutCheck > SESSION_TIMEOUT_CHECK_THROTTLE_MS) {
+      lastSessionTimeoutCheck = now;
+      void checkSessionTimeouts();
     }
   }
   next();

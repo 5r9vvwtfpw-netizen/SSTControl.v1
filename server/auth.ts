@@ -525,7 +525,10 @@ export function setupAuth(app: Express) {
     secret: process.env.SESSION_SECRET!,
     resave: false,
     saveUninitialized: false,
-    rolling: true,
+    // La cookie solo se renueva desde /api/session/activity tras una interacción
+    // explícita del usuario. Si fuese rolling, cualquier petición automática
+    // prolongaría la sesión aunque el usuario estuviera inactivo.
+    rolling: false,
     store: storage.sessionStore,
     cookie: {
       httpOnly: true,
@@ -1042,6 +1045,17 @@ export function setupAuth(app: Express) {
             code: "SESSION_REVOKED",
           });
         }
+
+        // Renovar la expiración del store y de la cookie únicamente después de
+        // registrar una interacción real del usuario en el cliente.
+        req.session.cookie.maxAge = SESSION_IDLE_MINUTES * 60 * 1000;
+        await new Promise<void>((resolve, reject) => {
+          req.session.save((saveError) => {
+            if (saveError) return reject(saveError);
+            resolve();
+          });
+        });
+
         return res.status(200).json({
           active: true,
           idleTimeoutMinutes: SESSION_IDLE_MINUTES,

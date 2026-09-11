@@ -23,7 +23,16 @@ export function SessionTimeoutGuard() {
     const redirectAfterExpiredSession = () => {
       if (disposed || checkingIdleRef.current) return;
       checkingIdleRef.current = true;
-      logoutMutation.mutate();
+      // La cookie puede haber expirado antes de que una pestaña suspendida
+      // vuelva a ejecutar sus temporizadores. El redireccionamiento se hace
+      // incluso si /api/logout ya no puede encontrar esa sesión.
+      logoutMutation.mutate(undefined, {
+        onSettled: () => {
+          if (!disposed) {
+            window.location.replace("/login");
+          }
+        },
+      });
     };
 
     const syncActivity = () => {
@@ -82,6 +91,13 @@ export function SessionTimeoutGuard() {
       ["scroll", { passive: true }],
     ];
     events.forEach(([event, options]) => document.addEventListener(event, handleInteraction, options));
+    const handleReturnToPage = () => {
+      if (document.visibilityState === "visible") {
+        syncActivity();
+      }
+    };
+    document.addEventListener("visibilitychange", handleReturnToPage);
+    window.addEventListener("focus", handleReturnToPage);
     scheduleIdleCheck();
 
     return () => {
@@ -90,6 +106,8 @@ export function SessionTimeoutGuard() {
         window.clearTimeout(idleCheckTimeoutRef.current);
       }
       events.forEach(([event, options]) => document.removeEventListener(event, handleInteraction, options));
+      document.removeEventListener("visibilitychange", handleReturnToPage);
+      window.removeEventListener("focus", handleReturnToPage);
     };
   }, [user, logoutMutation]);
 

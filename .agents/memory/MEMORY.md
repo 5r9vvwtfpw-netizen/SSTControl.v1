@@ -41,3 +41,4 @@
 - [DEMO-PRUEBA test retention](demo-prueba-test-retention.md) — conservar los datos creados en pruebas funcionales de esta empresa para revisión del usuario.
 - [Global menu route permissions](menu-route-permissions.md) — toda ruta nueva del menú PHVA debe registrarse en routePermissions o se oculta por defecto.
 - [Transition quote canonical template](transition-quote-template.md) — conservar el documento completo aprobado y variar solo empresa, fechas, horas, tarifa y cálculos.
+- [Autoscale session expiry](autoscale-session-expiry.md) — Autoscale suspende temporizadores en producción; el cierre debe combinar expiración de cookie, retorno de pestaña y limpieza al recibir tráfico.
