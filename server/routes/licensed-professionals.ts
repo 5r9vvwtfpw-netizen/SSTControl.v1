@@ -13,6 +13,7 @@ import { sendLsoRemovalNotificationEmail } from "../email";
 import { objectStorageClient } from "../replit_integrations/object_storage";
 import { ObjectStorageService, objectStorageService as s3Service } from "../objectStorage";
 import { notifyNewMessage } from "../websocket";
+import { generateLsoManagementReport } from "../services/lso-management-report";
 
 async function shouldIncludeFallbackCompany(userId: string, companyId: string): Promise<boolean> {
   const [wasUnassigned] = await db.select({ id: schema.licensedProfessionalAssignments.id })
@@ -544,6 +545,37 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
     } catch (error: any) {
       console.error('[GET /api/portal-licenciado/dashboard] Error:', error.message);
       res.status(500).json({ message: "Error fetching dashboard stats", error: error.message });
+    }
+  });
+
+  // Informe analítico continuo de entrega de gestión SST + PESV del LSO.
+  app.get("/api/portal-licenciado/empresa/:companyId/informe-gestion/pdf", requirePermission("portal_licenciado:access"), async (req, res) => {
+    try {
+      const user = req.user!;
+      const { companyId } = req.params;
+      const parsedYear = Number(req.query.year);
+      if (!Number.isInteger(parsedYear) || parsedYear < 2000 || parsedYear > 2100) {
+        return res.status(400).json({ message: "El parámetro year debe ser un año válido (YYYY)" });
+      }
+      const [assignment] = await db.select({ id: schema.licensedProfessionalAssignments.id })
+        .from(schema.licensedProfessionalAssignments)
+        .where(and(
+          eq(schema.licensedProfessionalAssignments.userId, user.id),
+          eq(schema.licensedProfessionalAssignments.companyId, companyId),
+          eq(schema.licensedProfessionalAssignments.isActive, true),
+        )).limit(1);
+      if (!assignment) {
+        return res.status(403).json({ message: "No tiene una asignación activa para esta empresa" });
+      }
+      const pdf = await generateLsoManagementReport(companyId, parsedYear, user.id, assignment.id);
+      if (!pdf) return res.status(404).json({ message: "Empresa no encontrada" });
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="informe-gestion-lso-${companyId}-${parsedYear}.pdf"`);
+      res.setHeader("Content-Length", pdf.length);
+      return res.send(pdf);
+    } catch (error: any) {
+      console.error("[GET /api/portal-licenciado/empresa/:companyId/informe-gestion/pdf] Error:", error.message);
+      return res.status(500).json({ message: "Error generando informe de gestión" });
     }
   });
 

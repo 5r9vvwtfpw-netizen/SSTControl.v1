@@ -873,6 +873,91 @@ interface HistorialEmpresa {
   unassignedAt: string | null;
 }
 
+function InformeConsolidadoButton({
+  companyId,
+  companyName,
+  compact = false,
+}: {
+  companyId: string;
+  companyName: string;
+  compact?: boolean;
+}) {
+  const { toast } = useToast();
+  const [isDownloading, setIsDownloading] = useState(false);
+  const reportYear = new Date().getFullYear();
+
+  const handleDownload = async () => {
+    if (isDownloading) return;
+    setIsDownloading(true);
+
+    try {
+      const response = await fetch(
+        `/api/portal-licenciado/empresa/${encodeURIComponent(companyId)}/informe-gestion/pdf?year=${reportYear}`,
+        { credentials: "include" },
+      );
+
+      if (!response.ok) {
+        let message = "No se pudo generar el informe consolidado.";
+        try {
+          const body = await response.json();
+          if (typeof body?.message === "string") message = body.message;
+          else if (typeof body?.error === "string") message = body.error;
+        } catch {
+          // The endpoint may return a non-JSON error response.
+        }
+        throw new Error(message);
+      }
+
+      const blob = await response.blob();
+      const safeCompanyName = companyName
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-zA-Z0-9]+/g, "-")
+        .replace(/^-|-$/g, "")
+        .toLowerCase() || "empresa";
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = `informe-consolidado-sst-pesv-${safeCompanyName}-${reportYear}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(objectUrl);
+      toast({
+        title: "Informe descargado",
+        description: `Informe consolidado SST y PESV de ${companyName} (${reportYear}).`,
+      });
+    } catch (error) {
+      toast({
+        title: "No se pudo descargar el informe",
+        description: error instanceof Error ? error.message : "Intente nuevamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      onClick={handleDownload}
+      disabled={isDownloading}
+      className="whitespace-nowrap"
+      data-testid={`button-download-informe-consolidado-${companyId}`}
+      aria-label={`Descargar Informe consolidado SST y PESV de ${companyName}`}
+    >
+      {isDownloading ? (
+        <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+      ) : (
+        <FileBarChart className="h-4 w-4 mr-1" />
+      )}
+      {isDownloading ? "Descargando..." : compact ? "Informe SST y PESV" : "Informe consolidado SST y PESV"}
+    </Button>
+  );
+}
+
 function EmpresasTab() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
@@ -1086,6 +1171,11 @@ function EmpresasTab() {
                               PESV
                             </Button>
                           )}
+                          <InformeConsolidadoButton
+                            companyId={empresa.id}
+                            companyName={empresa.name}
+                            compact
+                          />
                           <Button
                             size="sm"
                             data-testid={`button-message-${empresa.id}`}
@@ -1599,6 +1689,11 @@ function CompanyVaultDetail({ vault, onBack, isSigning, signingId, onSign, onMes
               <Badge variant="outline">{vault.totalDocs} documentos</Badge>
               {vault.pendingDocs > 0 && <Badge variant="destructive">{vault.pendingDocs} pendientes</Badge>}
               {vault.signedDocs > 0 && <Badge className="bg-green-600 text-white">{vault.signedDocs} firmados</Badge>}
+              <InformeConsolidadoButton
+                companyId={vault.companyId}
+                companyName={vault.companyName}
+                compact
+              />
               {onMessage && (
                 <Button onClick={onMessage} data-testid="button-vault-message">
                   <MessageSquare className="h-4 w-4 mr-1" />
