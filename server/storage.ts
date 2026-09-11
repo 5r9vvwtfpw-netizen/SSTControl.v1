@@ -1981,7 +1981,7 @@ export interface IStorage {
 
   // ============================================================================
   // CONVIVENCIA - Comité de Convivencia Laboral
-  // Resolución 652/2012, Resolución 1356/2012
+  // Resolución 3461/2025
   // ============================================================================
 
   // Convivencia Períodos
@@ -16562,7 +16562,7 @@ export class DbStorage implements IStorage {
 
   // ============================================================================
   // CONVIVENCIA - Comité de Convivencia Laboral
-  // Resolución 652/2012, Resolución 1356/2012
+  // Resolución 3461/2025
   // ============================================================================
 
   // Convivencia Períodos
