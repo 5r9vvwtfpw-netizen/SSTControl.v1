@@ -2,7 +2,6 @@ import { isIP } from "net";
 import { db } from "../db";
 import { sql } from "drizzle-orm";
 import logger from "../lib/logger";
-import { sendSecurityAccessAlertEmail } from "../email";
 
 export type SecurityEventType =
   | "unauthorized_ip"
@@ -72,14 +71,6 @@ export async function geolocateIp(ip: string): Promise<GeoResult> {
   }
 }
 
-const eventLabels: Record<SecurityEventType, string> = {
-  unauthorized_ip: "IP no autorizada",
-  blocked_unauthorized_ip: "Bloqueo por reiteración de IP no autorizada",
-  simultaneous: "Sesión simultánea",
-  long_session: "Sesión superior a ocho horas",
-  idle_timeout: "Cierre por inactividad",
-};
-
 export async function enrichSessionLocation(sessionRecordId: string, ip: string): Promise<GeoResult> {
   const geo = await geolocateIp(ip);
   await db.execute(sql`
@@ -106,52 +97,9 @@ export async function processSecurityAlert(params: {
   userAgent: string | null;
 }): Promise<void> {
   try {
-    const geo = await enrichSessionLocation(params.sessionRecordId, params.ip);
-    const userResult = await db.execute(sql`
-      SELECT id, username, full_name, role
-      FROM users
-      WHERE id = ${params.userId}
-      LIMIT 1
-    `);
-    const user: any = (userResult as any).rows?.[0];
-    if (!user) return;
-
-    const adminResult = await db.execute(sql`
-      SELECT DISTINCT email
-      FROM users
-      WHERE role = 'superadmin' AND email IS NOT NULL AND email <> ''
-    `);
-    const recipients = ((adminResult as any).rows ?? []).map((row: any) => row.email as string);
-    const location = [geo.city, geo.region, geo.country].filter(Boolean).join(", ") || null;
-
-    const emailEnabled = process.env.NODE_ENV === "production" ||
-      process.env.SECURITY_ALERT_EMAILS_ENABLED === "true";
-    if (!emailEnabled) {
-      logger.info(
-        { eventType: params.eventType, userId: params.userId, recipients: recipients.length },
-        "[SECURITY] Correo de alerta suprimido fuera de producción",
-      );
-      return;
-    }
-
-    const results = await Promise.allSettled(recipients.map((to: string) =>
-      sendSecurityAccessAlertEmail({
-        to,
-        userName: user.full_name || user.username,
-        username: user.username,
-        role: user.role,
-        eventLabel: eventLabels[params.eventType],
-        decision: params.decision,
-        ip: params.ip,
-        device: params.userAgent,
-        location,
-        occurredAt: new Date(),
-      })
-    ));
-    const failed = results.filter((result) =>
-      result.status === "rejected" || (result.status === "fulfilled" && !result.value.success)
-    ).length;
-    if (failed) logger.warn({ failed, recipients: recipients.length }, "[SECURITY] Algunas alertas por correo no se enviaron");
+    // Las alertas de seguridad se consultan exclusivamente desde el panel de
+    // actividad. Conservamos la geolocalización del evento, sin enviar correos.
+    await enrichSessionLocation(params.sessionRecordId, params.ip);
   } catch (error) {
     logger.error({ error, params }, "[SECURITY] Error procesando alerta");
   }

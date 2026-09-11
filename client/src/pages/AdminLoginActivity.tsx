@@ -542,7 +542,7 @@ export default function AdminLoginActivity() {
                       <tr className="border-b">
                         <th className="px-3 py-2 text-left">Ingreso</th>
                         <th className="px-3 py-2 text-left">IP</th>
-                        <th className="px-3 py-2 text-left">Ubicación aproximada</th>
+                        <th className="px-3 py-2 text-left">Ubicación de la conexión</th>
                         <th className="px-3 py-2 text-left">Dispositivo</th>
                         <th className="px-3 py-2 text-left">Duración</th>
                         <th className="px-3 py-2 text-left">Estado</th>
@@ -559,7 +559,11 @@ export default function AdminLoginActivity() {
                           </td>
                           <td className="px-3 py-3">
                             <div>{[session.geoCity, session.geoRegion, session.geoCountry].filter(Boolean).join(", ") || "No disponible"}</div>
-                            {session.geoIsp && <div className="text-xs text-muted-foreground">{session.geoIsp}</div>}
+                            {session.geoIsp && (
+                              <div className="text-xs text-muted-foreground">
+                                Operador de internet: {session.geoIsp}
+                              </div>
+                            )}
                           </td>
                           <td className="px-3 py-3">
                             <div className="flex items-center gap-1">
