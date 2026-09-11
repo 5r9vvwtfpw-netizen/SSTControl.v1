@@ -81,7 +81,9 @@ export async function syncMatrizLegalNormas() {
         articulosAplicables: 'Resolución 3461 de 2025',
         alcance: 'Empleadores y empresas públicas o privadas, según su número de trabajadores y centros de trabajo',
         periodicidad: 'Reuniones ordinarias mensuales y extraordinarias por queja',
-        responsableCumplimiento: 'RRHH / Coordinador SST'
+        responsableCumplimiento: 'RRHH / Coordinador SST',
+        validacionAutomatica: 0,
+        codigoValidacion: 'CCL_3461_2025'
       }
     ];
 
