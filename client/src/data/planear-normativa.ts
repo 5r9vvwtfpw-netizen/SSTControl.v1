@@ -484,13 +484,14 @@ COMPROMISOS:
         norma: 'Resolución 3461 de 2025',
         descripcion: 'Nueva normativa integral para Comités de Convivencia Laboral (deroga Res. 652 y 1356 de 2012)',
         requisitos: [
-          'Conformación según tamaño: <5 trab: 1+1 sin suplentes; 5-19 trab: 1+1 con suplentes; 20+ trab: 2+2 con suplentes',
-          'Reuniones trimestrales mínimo con informes de gestión',
-          'Período de vigencia de 2 años (reelección posible por una sola vez)',
+          'Conformación según tamaño: menos de 5: 1 representante de trabajadores y 1 del empleador; más de 5 y menos de 20: 1+1 con suplentes; más de 20: 2+2 con suplentes. Los casos de exactamente 5 y 20 trabajadores requieren validar el criterio aplicable',
+          'Reuniones ordinarias mensuales y reuniones extraordinarias cada vez que se reciba una queja de acoso laboral; quórum de mitad más uno',
+          'Período de vigencia de 2 años, contado desde la comunicación de la elección y/o designación',
           'Plazo máximo de resolución de quejas: 65 días calendario',
-          'Paridad de género en la conformación',
-          'Capacitación obligatoria de integrantes',
-          'Exclusión de casos de acoso sexual (tratamiento especializado Ley 2365/2024)'
+          'Reglamento propio, acuerdos de confidencialidad, custodia reservada y protección de datos sensibles',
+          'Informes trimestrales y un informe anual sobre la gestión del Comité',
+          'Capacitación y fortalecimiento de competencias con apoyo de la ARL',
+          'El acoso sexual y la violencia por razones de género requieren una ruta separada; no son competencia conciliatoria del Comité'
         ],
         obligatorio: true
       },
@@ -528,8 +529,10 @@ COMPROMISOS:
     ],
     camposSugeridos: [
       { campo: 'periodoVigencia', tipo: 'select', opciones: ['2 años'] },
-      { campo: 'integrantes', tipo: 'numero', valorSugerido: '4' },
-      { campo: 'frecuenciaReuniones', tipo: 'select', opciones: ['Trimestral', 'Según necesidad'] }
+      { campo: 'integrantes', tipo: 'text', valorSugerido: 'Según número de trabajadores y centros de trabajo' },
+      { campo: 'frecuenciaReuniones', tipo: 'select', opciones: ['Mensual', 'Extraordinaria por queja'] },
+      { campo: 'plazoProcedimiento', tipo: 'select', opciones: ['Máximo 65 días calendario'] },
+      { campo: 'informes', tipo: 'select', opciones: ['Trimestral y anual'] }
     ],
     plantillas: [
       {
@@ -541,9 +544,10 @@ COMPROMISOS:
           contenido: `En cumplimiento de la Resolución 3461 de 2025 del Ministerio del Trabajo, y en desarrollo de la Ley 1010 de 2006 sobre Acoso Laboral, se procede a conformar el Comité de Convivencia Laboral de [NOMBRE_EMPRESA].
 
 CONFORMACIÓN SEGÚN TAMAÑO DE EMPRESA:
-- Menos de 5 trabajadores: 1 representante empleador + 1 trabajador (sin suplentes)
-- De 5 a 19 trabajadores: 1 representante empleador + 1 trabajador (con suplentes)
-- 20 o más trabajadores: 2 representantes empleador + 2 trabajadores (con suplentes)
+- Menos de 5 trabajadores: 1 representante del empleador + 1 de los trabajadores
+- Más de 5 y menos de 20 trabajadores: 1 representante del empleador + 1 de los trabajadores, con sus respectivos suplentes
+- Más de 20 trabajadores: 2 representantes del empleador + 2 de los trabajadores, con sus respectivos suplentes
+- La resolución no describe expresamente los casos de exactamente 5 y 20 trabajadores; validar el criterio aplicable antes de formalizar el acta.
 
 REPRESENTANTES DEL EMPLEADOR:
 Principal: [NOMBRE] - [CARGO]
@@ -558,14 +562,14 @@ FUNCIONES DEL COMITÉ (Art. Res. 3461/2025):
 2. Examinar casos de manera confidencial
 3. Escuchar a las partes involucradas individualmente
 4. Promover espacios de diálogo y mediación
-5. Formular planes de mejora concertados (5-10 días calendario)
+5. Formular planes de mejora concertados dentro de los plazos del procedimiento (5 días, ampliables hasta 15 con justificación)
 6. Hacer seguimiento mensual a compromisos
-7. Comunicar casos sin acuerdo a alta dirección
-8. Elaborar informes trimestrales y anuales con estadísticas
+7. Remitir o informar los casos sin acuerdo, según sea entidad pública o empresa privada, dentro de los 15 días siguientes a verificar el incumplimiento
+8. Elaborar informes trimestrales y un informe anual con estadísticas, seguimiento y recomendaciones
 
 EXCLUSIONES: El Comité NO es competente para casos de acoso sexual o violencia de género (Ley 2365/2024).
 
-Período de vigencia: 2 años (reelección posible por una sola vez)
+Período de vigencia: 2 años, contados desde la comunicación de la elección y/o designación
 Plazo máximo de resolución: 65 días calendario desde recepción de queja`
         },
         normativaBase: 'RES-3461-2025'
@@ -1136,7 +1140,7 @@ export const ACTIVIDADES_PLAN_ANUAL: {
   { mes: 0, actividad: 'Inspecciones de seguridad', estandar: '3.1.3', frecuencia: 'Mensual', responsable: 'Responsable SST' },
   { mes: 0, actividad: 'Reporte de accidentes e incidentes', estandar: '3.2.1', frecuencia: 'Mensual', responsable: 'Responsable SST' },
   // Actividades trimestrales
-  { mes: 1, actividad: 'Reunión Comité de Convivencia Laboral', estandar: '1.1.8', frecuencia: 'Trimestral', responsable: 'Comité Convivencia' },
+  { mes: 0, actividad: 'Reunión ordinaria Comité de Convivencia Laboral', estandar: '1.1.8', frecuencia: 'Mensual', responsable: 'Comité Convivencia' },
   { mes: 1, actividad: 'Seguimiento a indicadores SST', estandar: '2.2.1', frecuencia: 'Trimestral', responsable: 'Responsable SST' },
   // Actividades semestrales
   { mes: 1, actividad: 'Capacitación en prevención de riesgos', estandar: '1.2.1', frecuencia: 'Semestral', responsable: 'Responsable SST' },
