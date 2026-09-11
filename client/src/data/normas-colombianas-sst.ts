@@ -308,11 +308,11 @@ export const normasColombianasSST: NormaPredefinida[] = [
     codigo: "Resolución 3461 de 2025",
     titulo: "Comité de Convivencia Laboral - Nueva Normativa",
     categoria: "comites-sst",
-    obligaciones: "Conformar Comité de Convivencia Laboral (CCL) por centro de trabajo. Composición según tamaño: <5 trabajadores (1+1 sin suplentes), 5-20 (1+1 con suplentes), >20 (2+2 con suplentes). Garantizar paridad de género. Integrar al SG-SST. Plazo máximo 65 días para resolver quejas. Reportes semestrales (entidades públicas) y anuales (todos). Usar plataformas electrónicas para gestión de quejas. Excluir casos de acoso sexual y violencia de género (vía diferente).",
-    periodicidad: "Reuniones mínimo cada 3 meses o cuando se requiera por quejas",
+    obligaciones: "Conformar y garantizar el funcionamiento preventivo del Comité de Convivencia Laboral por centro de trabajo, con composición según número de trabajadores, reuniones ordinarias mensuales y extraordinarias por cada queja. Integrarlo al SG-SST, proteger la confidencialidad, tramitar el procedimiento preventivo dentro de un máximo de 65 días calendario, elaborar informes trimestrales y un informe anual, y remitir el acoso sexual o la violencia por razones de género a una ruta separada.",
+    periodicidad: "Reuniones ordinarias mensuales y extraordinarias cada vez que se reciba una queja",
     entidadEmisora: "Ministerio del Trabajo",
     fechaEmision: "2025-09-01",
-    descripcion: "Nueva normativa para Comités de Convivencia Laboral. Deroga Resoluciones 652 y 1356 de 2012. Vigencia inmediata. Exige un CCL por centro de trabajo, integración con SG-SST, paridad de género y plataformas electrónicas. Publicada en Diario Oficial 53.240 del 11 de septiembre de 2025."
+    descripcion: "Nueva normativa para Comités de Convivencia Laboral. Deroga las Resoluciones 652 y 1356 de 2012. Exige un CCL por centro de trabajo, integración con el SG-SST, confidencialidad, reuniones mensuales, informes trimestrales y anual, procedimiento preventivo máximo de 65 días calendario y ruta separada para acoso sexual. Expedida el 1 de septiembre de 2025 y publicada en el Diario Oficial 53.240 del 11 de septiembre de 2025."
   },
   {
     codigo: "Resolución 652 de 2012",

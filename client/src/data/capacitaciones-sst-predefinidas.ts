@@ -218,7 +218,7 @@ export const capacitacionesSstPredefinidas: CapacitacionPredefinida[] = [
     categoria: 'normatividad',
     nivel: 'intermedio',
     obligatoria: true,
-    normativa: 'Resolución 652/2012 - Ley 1010/2006'
+    normativa: 'Resolución 3461/2025 - Ley 1010/2006 - Ley 2365/2024'
   },
   {
     codigo: 'CAP-ESP-01',

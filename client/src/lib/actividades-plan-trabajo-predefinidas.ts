@@ -146,18 +146,18 @@ export const ACTIVIDADES_PLAN_TRABAJO_SST: ActividadPredefinida[] = [
     indicador: "Acta de conformación (Sí/No)",
     mesesSugeridos: ["enero", "julio"],
     cargo: "Gerencia - COPASST",
-    baseNormativa: "Resolución 652/2012"
+    baseNormativa: "Resolución 3461/2025"
   },
   {
     ciclo: "planear",
     programa: "riesgo-psicosocial",
     actividad: "Actas de Reuniones del Comité de Convivencia Laboral",
-    objetivo: "Documentar las reuniones trimestrales del comité",
-    meta: "4 actas trimestrales",
-    indicador: "(Reuniones realizadas / 4) × 100",
-    mesesSugeridos: ["marzo", "junio", "septiembre", "diciembre"],
+    objetivo: "Documentar las reuniones ordinarias mensuales y las extraordinarias por queja del comité",
+    meta: "12 actas ordinarias anuales y las extraordinarias que correspondan",
+    indicador: "(Reuniones ordinarias realizadas / 12) × 100",
+    mesesSugeridos: ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"],
     cargo: "CCL",
-    baseNormativa: "Resolución 652/2012"
+    baseNormativa: "Resolución 3461/2025"
   },
   {
     ciclo: "planear",
@@ -168,7 +168,7 @@ export const ACTIVIDADES_PLAN_TRABAJO_SST: ActividadPredefinida[] = [
     indicador: "(Miembros capacitados / Total miembros) × 100",
     mesesSugeridos: ["enero", "julio"],
     cargo: "Responsable SG-SST",
-    baseNormativa: "Resolución 652/2012"
+    baseNormativa: "Resolución 3461/2025"
   },
   {
     ciclo: "planear",

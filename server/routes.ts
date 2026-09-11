@@ -31676,7 +31676,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Estándar 1.1.8 - Comité de Convivencia Laboral
         { minChapter: 2, ciclo: "planear", programa: "riesgo-psicosocial", actividad: "Conformación del Comité de Convivencia Laboral", objetivo: "Constituir CCL según Ley 1010/2006", meta: "CCL legalmente constituido", cargo: "Gerencia General", meses: ["enero"] },
-        { minChapter: 2, ciclo: "planear", programa: "riesgo-psicosocial", actividad: "Reuniones Trimestrales del CCL", objetivo: "Documentar reuniones trimestrales", meta: "4 actas anuales", cargo: "CCL", meses: ["marzo", "junio", "septiembre", "diciembre"] },
+        { minChapter: 2, ciclo: "planear", programa: "riesgo-psicosocial", actividad: "Reuniones Mensuales del CCL", objetivo: "Documentar reuniones ordinarias mensuales y extraordinarias por queja", meta: "12 actas ordinarias anuales y las extraordinarias que correspondan", cargo: "CCL", meses: ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"] },
         
         // Estándar 2.1.2 - Política de SST
         { minChapter: 2, ciclo: "planear", programa: "otro", actividad: "Publicación y Socialización de la Política SST", objetivo: "Divulgar política a todos los trabajadores", meta: "100% trabajadores informados", cargo: "COPASST", meses: ["enero"] },
@@ -39127,7 +39127,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
   // ============================================================================
   // COMITÉ DE CONVIVENCIA LABORAL - PORTAL EMPLEADOS VOTING ENDPOINTS
-  // Resolución 652/2012 y 1356/2012
+  // Resolución 3461/2025
   // ============================================================================
 
   // GET /api/portal/convivencia/eleccion-activa - Obtener elección activa de la empresa del trabajador
@@ -47155,7 +47155,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
   // ============================================================================
   // CONVIVENCIA - Comité de Convivencia Laboral
-  // Resolución 652/2012, Resolución 1356/2012
+  // Resolución 3461/2025
   // ============================================================================
 
   // Helper function for getting company ID from header or user
@@ -48014,7 +48014,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
   // =====================================================
   // PDF GENERATION - COMITÉ DE CONVIVENCIA LABORAL
-  // Resolución 652/2012, Resolución 1356/2012
+  // Resolución 3461/2025
   // =====================================================
 
   // 1. Convocatoria PDF - Comité de Convivencia Laboral
@@ -48086,7 +48086,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       doc.moveDown(1.5);
       
       doc.fontSize(7).font('Helvetica');
-      const introText = `De conformidad con lo establecido en la Resolución 652 de 2012 y la Resolución 1356 de 2012 del Ministerio del Trabajo, la empresa ${company.name} convoca a todos los trabajadores al proceso de elección de los representantes de los trabajadores al Comité de Convivencia Laboral para el período ${year}-${year + 2}.`;
+      const introText = `De conformidad con lo establecido en la Resolución 3461 de 2025 del Ministerio del Trabajo, que derogó las Resoluciones 652 y 1356 de 2012, la empresa ${company.name} convoca a todos los trabajadores al proceso de elección de los representantes de los trabajadores al Comité de Convivencia Laboral para el período ${year}-${year + 2}.`;
       
       doc.text(introText, margin, doc.y, {
         width: pageWidth - 2 * margin,
@@ -48137,7 +48137,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       doc.text('• Ser trabajador de la empresa con contrato vigente', margin + 20);
       doc.text('• Tener competencias actitudinales y comportamentales como respeto, imparcialidad, tolerancia y confidencialidad', margin + 20);
       doc.text('• Poseer habilidades de comunicación asertiva y escucha activa', margin + 20);
-      doc.text('• No haber sido sancionado disciplinariamente en el último año', margin + 20);
+      doc.text('• No haber presentado ni haber sido víctima de una queja de acoso laboral en el año anterior a la conformación, cuando aplique', margin + 20);
       doc.text('• Tener disponibilidad de tiempo para cumplir con las funciones del Comité', margin + 20);
       doc.moveDown(1.5);
       
@@ -48159,8 +48159,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       doc.moveDown(0.5);
       
       doc.fontSize(7).font('Helvetica');
-      doc.text('• Resolución 652 de 2012 - Conformación y funcionamiento del Comité de Convivencia Laboral', margin + 10, doc.y, { width: pageWidth - 2 * margin - 20 });
-      doc.text('• Resolución 1356 de 2012 - Modificación parcial de la Resolución 652', margin + 10, doc.y, { width: pageWidth - 2 * margin - 20 });
+      doc.text('• Resolución 3461 de 2025 - Conformación y funcionamiento preventivo del Comité de Convivencia Laboral', margin + 10, doc.y, { width: pageWidth - 2 * margin - 20 });
       doc.text('• Ley 1010 de 2006 - Medidas para prevenir, corregir y sancionar el acoso laboral', margin + 10, doc.y, { width: pageWidth - 2 * margin - 20 });
       doc.moveDown(2);
       
@@ -48349,7 +48348,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       doc.moveDown(2);
       
       doc.fontSize(7).font('Helvetica');
-      doc.text('Los abajo firmantes, en calidad de jurados de votación, certificamos que el presente escrutinio se realizó de manera transparente y conforme a la Resolución 652 de 2012 y la Resolución 1356 de 2012.', margin, doc.y, {
+      doc.text('Los abajo firmantes, en calidad de jurados de votación, certificamos que el presente escrutinio se realizó de manera transparente y conforme a la Resolución 3461 de 2025.', margin, doc.y, {
         width: pageWidth - 2 * margin,
         align: 'justify'
       });
@@ -48539,7 +48538,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const presidenteWorker = presidente ? workerMap.get(presidente.workerId) : null;
       const secretarioWorker = secretario ? workerMap.get(secretario.workerId) : null;
       
-      doc.text(`• Presidente: ${presidenteWorker?.name || 'Por designar'} (rotativo entre ambas partes)`, margin + 20);
+      doc.text(`• Presidente: ${presidenteWorker?.name || 'Por designar'} (designado por mutuo acuerdo entre los representantes)`, margin + 20);
       doc.text(`• Secretario: ${secretarioWorker?.name || 'Por designar'} (elegido por el comité)`, margin + 20);
       doc.moveDown(1);
       
@@ -48548,14 +48547,14 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       doc.moveDown(0.5);
       
       doc.fontSize(7).font('Helvetica');
-      doc.text(`El presente comité tendrá una vigencia de dos (2) años, comprendidos entre el ${fechaInicio} y el ${fechaFin}, de conformidad con lo establecido en la Resolución 652 de 2012.`, margin + 10, doc.y, {
+      doc.text(`El presente comité tendrá una vigencia de dos (2) años, comprendidos entre el ${fechaInicio} y el ${fechaFin}, contados desde la comunicación de la elección y/o designación, de conformidad con la Resolución 3461 de 2025.`, margin + 10, doc.y, {
         width: pageWidth - 2 * margin - 20,
         align: 'justify'
       });
       doc.moveDown(1);
       
       doc.fontSize(9).font('Helvetica-Bold');
-      doc.text('6. FUNCIONES DEL COMITÉ (Art. 6, Resolución 652/2012)', margin);
+      doc.text('6. FUNCIONES DEL COMITÉ (Resolución 3461/2025)', margin);
       doc.moveDown(0.5);
       
       doc.fontSize(7).font('Helvetica');
@@ -48564,9 +48563,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         'Examinar de manera confidencial los casos de acoso laboral',
         'Escuchar a las partes involucradas de manera individual',
         'Adelantar reuniones para crear un espacio de diálogo',
-        'Formular planes de mejora y hacer seguimiento',
+        'Formular planes de mejora y hacer seguimiento mensual a los compromisos',
         'Presentar recomendaciones para el desarrollo de medidas preventivas',
-        'Elaborar informes trimestrales de gestión'
+        'Elaborar informes trimestrales y un informe anual de gestión'
       ];
       funciones.forEach(f => {
         doc.text(`• ${f}`, margin + 10, doc.y, { width: pageWidth - 2 * margin - 20 });
@@ -48579,8 +48578,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       
       doc.fontSize(7).font('Helvetica');
       doc.text('• Ley 1010 de 2006 - Medidas para prevenir, corregir y sancionar el acoso laboral', margin + 10, doc.y, { width: pageWidth - 2 * margin - 20 });
-      doc.text('• Resolución 652 de 2012 - Conformación y funcionamiento del Comité de Convivencia Laboral', margin + 10, doc.y, { width: pageWidth - 2 * margin - 20 });
-      doc.text('• Resolución 1356 de 2012 - Modificación parcial de la Resolución 652', margin + 10, doc.y, { width: pageWidth - 2 * margin - 20 });
+      doc.text('• Resolución 3461 de 2025 - Conformación y funcionamiento preventivo del Comité de Convivencia Laboral', margin + 10, doc.y, { width: pageWidth - 2 * margin - 20 });
+      doc.text('• Ley 2365 de 2024 - Prevención y atención del acoso sexual en el contexto laboral', margin + 10, doc.y, { width: pageWidth - 2 * margin - 20 });
       doc.moveDown(1.5);
       
       doc.fontSize(7).font('Helvetica');

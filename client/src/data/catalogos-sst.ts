@@ -277,14 +277,14 @@ export const CAPACITACIONES_OBLIGATORIAS: CapacitacionPredefinida[] = [
     dirigidoA: ['Miembros del Comité de Convivencia Laboral'],
     contenidoMinimo: [
       'Ley 1010/2006 - Acoso Laboral',
-      'Resolución 652/2012 y 1356/2012',
+      'Resolución 3461/2025 (deroga Resoluciones 652/2012 y 1356/2012)',
       'Funciones del Comité de Convivencia',
       'Procedimiento de quejas',
       'Técnicas de mediación y conciliación',
       'Elaboración de actas e informes',
       'Confidencialidad y ética'
     ],
-    normativaBase: 'Resolución 652/2012',
+    normativaBase: 'Resolución 3461/2025 - Ley 1010/2006 - Ley 2365/2024',
     obligatoria: true,
     modalidad: ['presencial', 'virtual']
   }

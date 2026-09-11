@@ -170,9 +170,9 @@ Esta política se desarrolla según la NSR-10 Título J y las mejores prácticas
    - Sanciones según gravedad de la falta.
    - Medidas correctivas y preventivas.
 
-Esta política se implementa según la Ley 1010/2006 y la Resolución 652/2012.`,
+ Esta política se implementa según la Ley 1010/2006 y la Resolución 3461/2025. El acoso sexual y la violencia por razones de género se tramitan mediante una ruta separada, no conciliatoria.`,
     categoria: 'salud',
-    normativa: 'Ley 1010/2006 - Resolución 652/2012',
+    normativa: 'Ley 1010/2006 - Resolución 3461/2025 - Ley 2365/2024',
     obligatoria: true
   },
   {
