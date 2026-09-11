@@ -7488,15 +7488,15 @@ export class DbStorage implements IStorage {
         responsableCumplimiento: "Coordinador SST / Psicología Organizacional"
       },
       {
-        norma: "Resolución 652 de 2012",
-        fechaEmision: new Date("2012-04-30"),
+        norma: "Resolución 3461 de 2025",
+        fechaEmision: new Date("2025-09-01"),
         entidadEmisora: "Ministerio del Trabajo",
         categoria: "riesgo-psicosocial",
-        titulo: "Conformación del Comité de Convivencia Laboral",
-        descripcion: "Reglamentación de la conformación y funcionamiento del Comité de Convivencia Laboral",
-        obligaciones: "Conformar el Comité de Convivencia Laboral para prevenir acoso laboral",
-        alcance: "Empresas con 10 o más trabajadores",
-        periodicidad: "Sesiones bimestrales mínimo",
+        titulo: "Conformación y funcionamiento del Comité de Convivencia Laboral",
+        descripcion: "Reglamenta la conformación, funcionamiento preventivo, confidencialidad y trámite de quejas del Comité de Convivencia Laboral; deroga las Resoluciones 652 y 1356 de 2012",
+        obligaciones: "Conformar el Comité por centro de trabajo según el número de trabajadores, realizar reuniones ordinarias mensuales y extraordinarias por queja, tramitar el procedimiento preventivo en máximo 65 días calendario y presentar informes trimestrales y anual",
+        alcance: "Empleadores y empresas públicas o privadas, según su número de trabajadores y centros de trabajo",
+        periodicidad: "Reuniones ordinarias mensuales y extraordinarias por queja",
         responsableCumplimiento: "RRHH / Coordinador SST"
       },
       {
@@ -16719,7 +16719,7 @@ export class DbStorage implements IStorage {
         // Create a new period if none exists
         const fechaInicio = new Date();
         const fechaFin = new Date();
-        fechaFin.setFullYear(fechaFin.getFullYear() + 2); // 2-year term as per Resolución 652/2012
+        fechaFin.setFullYear(fechaFin.getFullYear() + 2); // Período de 2 años según Resolución 3461/2025
         
         periodo = await this.createConvivenciaPeriodo({
           companyId: eleccion.companyId,
@@ -16733,10 +16733,11 @@ export class DbStorage implements IStorage {
       const candidatos = await this.getConvivenciaCandidatos(id);
       
       // Get workers count to determine committee size
-      // Per Resolución 652/2012: <20 workers = 1+1, >=20 workers = 2+2
+      // Resolución 3461/2025: menos de 5, y más de 5 hasta 20 según
+      // el criterio aplicable, usan 1+1; más de 20 usan 2+2.
       const workers = await db.select().from(schema.workers)
         .where(eq(schema.workers.companyId, eleccion.companyId));
-      const numMiembrosTrabajadores = workers.length >= 20 ? 2 : 1;
+      const numMiembrosTrabajadores = workers.length > 20 ? 2 : 1;
       
       // Create members from top voted candidates (workers' representatives elected by vote)
       const ganadores = candidatos.slice(0, numMiembrosTrabajadores);

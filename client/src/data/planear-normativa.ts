@@ -529,7 +529,7 @@ COMPROMISOS:
     ],
     camposSugeridos: [
       { campo: 'periodoVigencia', tipo: 'select', opciones: ['2 años'] },
-      { campo: 'integrantes', tipo: 'text', valorSugerido: 'Según número de trabajadores y centros de trabajo' },
+      { campo: 'integrantes', tipo: 'texto', valorSugerido: 'Según número de trabajadores y centros de trabajo' },
       { campo: 'frecuenciaReuniones', tipo: 'select', opciones: ['Mensual', 'Extraordinaria por queja'] },
       { campo: 'plazoProcedimiento', tipo: 'select', opciones: ['Máximo 65 días calendario'] },
       { campo: 'informes', tipo: 'select', opciones: ['Trimestral y anual'] }
