@@ -2,6 +2,7 @@ import { db } from "./db";
 import * as schema from "@shared/schema";
 import { sql, eq, desc } from "drizzle-orm";
 import { pricingConfig } from "../pricing_plugin/schema";
+import { getCanonicalEppSizes } from "@shared/epp-sizes";
 
 // Datos maestros de componentes SST según Resolución 0312/2019
 const componentesSst = [
@@ -1206,9 +1207,14 @@ async function seedEppCatalog() {
     // Insertar nuevos elementos y mantener sincronizados los datos del catálogo
     // maestro. Los EPP personalizados de cada empresa no se modifican.
     for (const epp of catalogoEppMaestro) {
-      await db.insert(schema.eppCatalog).values(epp).onConflictDoNothing();
+      const canonicalSizes = getCanonicalEppSizes(epp.name);
+      const synchronizedEpp = canonicalSizes
+        ? { ...epp, tallasDisponibles: canonicalSizes }
+        : epp;
 
-      const { id, ...masterData } = epp;
+      await db.insert(schema.eppCatalog).values(synchronizedEpp).onConflictDoNothing();
+
+      const { id, ...masterData } = synchronizedEpp;
       await db.update(schema.eppCatalog)
         .set({
           ...masterData,

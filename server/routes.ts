@@ -260,6 +260,7 @@ import { STANDARD_TO_ISO45001, ISO45001_CLAUSES, ISO45001_REPORT_STRUCTURE, ISO4
 import { PASO_TO_ISO39001, ISO39001_CLAUSES, ISO39001_REPORT_STRUCTURE, ISO39001_TO_PASOS } from "@shared/iso39001-mapping";
 import { PASOS_PESV } from "@shared/pasos-pesv";
 import { prepareCompanyWithCiiuAutomation, processCiiuAutomation } from "@shared/ciiu-company-automation";
+import { getCanonicalEppSizes } from "@shared/epp-sizes";
 import { setupTrialWatermarkOnAllPages, addTrialFooter, setupLsoWatermarkOnAllPages } from "./services/pdf-watermark";
 import { 
   addStandardHeader, 
@@ -50272,7 +50273,14 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         .where(and(...conditions))
         .orderBy(eppCatalog.category, eppCatalog.name);
       
-      res.json(catalog);
+      res.json(catalog.map((item) => {
+        const canonicalSizes = !item.esPersonalizado
+          ? getCanonicalEppSizes(item.name)
+          : null;
+        return canonicalSizes
+          ? { ...item, tallasDisponibles: canonicalSizes }
+          : item;
+      }));
     } catch (error: any) {
       console.error("[GET /api/epp/catalog] Error:", error.message);
       res.status(500).send("Error al obtener catálogo de EPP");
