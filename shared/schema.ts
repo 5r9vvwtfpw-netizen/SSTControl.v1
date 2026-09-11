@@ -13,7 +13,7 @@
  */
 
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, timestamp, integer, bigint, date, pgEnum, jsonb, boolean, numeric, serial, index } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, timestamp, integer, bigint, date, pgEnum, jsonb, boolean, numeric, serial, index, unique } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -221,6 +221,50 @@ export const insertLicensedProfessionalAssignmentSchema = createInsertSchema(lic
 });
 export type InsertLicensedProfessionalAssignment = z.infer<typeof insertLicensedProfessionalAssignmentSchema>;
 export type LicensedProfessionalAssignment = typeof licensedProfessionalAssignments.$inferSelect;
+
+// Immutable evidence generated before an LSO assignment is terminated.
+export const lsoManagementReportArchives = pgTable("lso_management_report_archives", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  assignmentId: varchar("assignment_id").notNull().references(() => licensedProfessionalAssignments.id),
+  companyId: varchar("company_id").notNull().references(() => companies.id),
+  lsoUserId: varchar("lso_user_id").references(() => users.id),
+  lsoName: text("lso_name").notNull(),
+  lsoLicense: text("lso_license").notNull(),
+  lsoLicenseIssuer: text("lso_license_issuer").notNull(),
+  lsoEmail: text("lso_email"),
+  assignedAt: timestamp("assigned_at").notNull(),
+  terminatedAt: timestamp("terminated_at").notNull(),
+  year: integer("year").notNull(),
+  generatedAt: timestamp("generated_at").notNull().default(sql`now()`),
+  objectPath: text("object_path").notNull(),
+  contentType: text("content_type").notNull().default("application/pdf"),
+  sha256: varchar("sha256", { length: 64 }).notNull(),
+  byteSize: integer("byte_size").notNull(),
+  documentCode: varchar("document_code").notNull().default("LSO-GEST-01"),
+  version: varchar("version").notNull().default("1.0"),
+  status: text("status", { enum: ["stored", "failed"] }).notNull().default("stored"),
+  failureReason: text("failure_reason"),
+  createdBy: varchar("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+}, (table) => ({
+  assignmentLifecycleYearVersionUnique: unique("lso_management_report_archives_assignment_lifecycle_year_version_key").on(table.assignmentId, table.assignedAt, table.year, table.version),
+  companyIdx: index("lso_management_report_archives_company_idx").on(table.companyId),
+  assignmentIdx: index("lso_management_report_archives_assignment_idx").on(table.assignmentId),
+}));
+export type LsoManagementReportArchive = typeof lsoManagementReportArchives.$inferSelect;
+
+export const lsoArchiveObjectCleanupJobs = pgTable("lso_archive_object_cleanup_jobs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  objectPath: text("object_path").notNull().unique(),
+  reason: text("reason").notNull(),
+  attempts: integer("attempts").notNull().default(0),
+  status: text("status", { enum: ["pending", "completed"] }).notNull().default("pending"),
+  nextAttemptAt: timestamp("next_attempt_at").notNull().default(sql`now()`),
+  lastError: text("last_error"),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+});
 
 // Consent Records table - Habeas Data (Ley 1581/2012)
 export const consentTypeEnum = pgEnum("consent_type", [

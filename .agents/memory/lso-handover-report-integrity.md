@@ -14,3 +14,15 @@ Los informes oficiales deben abortar si un módulo necesario no puede consultars
 **Why:** Un fallback vacío publica conclusiones falsas, y cargar telemetría o eventos completos para contar registros puede agotar memoria y bloquear el servidor.
 
 **How to apply:** Propagar errores de consulta al endpoint y calcular conteos/condicionales en PostgreSQL; cargar detalles solo cuando el documento realmente presenta una muestra acotada.
+
+El cierre de una asignación debe archivar el PDF, registrar sus metadatos y desactivar la asignación dentro de una operación serializada por empresa. Cada intento de almacenamiento usa una ruta única; la limpieza diferida nunca reutiliza ni elimina la ruta de otro intento.
+
+**Why:** Separar archivo y desactivación permite cierres parciales; reutilizar rutas entre reintentos permite que la compensación de un fallo borre un PDF confirmado posteriormente.
+
+**How to apply:** Bloquear empresa y asignación, conservar ciclos por `assignedAt`, compensar objetos fallidos con una cola duradera y comprobar referencias antes de limpiar. Los reemplazos solo terminan las asignaciones objetivo.
+
+Los endpoints de lectura necesarios para montar el Portal LSO antes de seleccionar empresa deben quedar fuera del gate de contexto, pero las rutas operativas continúan exigiendo una asignación activa validada.
+
+**Why:** Si `/api/auth/user` o los archivos históricos propios exigen una empresa previamente seleccionada, React no puede montar el portal desde el cual se realiza esa selección.
+
+**How to apply:** Mantener una allowlist mínima de bootstrap para identidad, portal, ayuda contextual y archivos históricos propios; no ampliar la excepción a mutaciones ni datos operativos.

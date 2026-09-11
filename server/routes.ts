@@ -1647,7 +1647,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // These portal endpoints derive the allowed companies from the LSO's own
     // assignments and are needed before a company context can be selected.
     const contextBootstrapPrefixes = [
+      "/auth/user",
+      "/lso-management-report-archives",
       "/portal-licenciado",
+      "/help-videos/by-route",
       "/support-tickets",
       "/internal-messages",
     ];

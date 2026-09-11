@@ -70,6 +70,7 @@ import {
   ImageOff,
   CheckCircle2,
   XCircle
+  ,Download
 } from "lucide-react";
 import { z } from "zod";
 import type { Company, User } from "@shared/schema";
@@ -124,6 +125,73 @@ interface Assignment {
 
 interface LicensedProfessional extends Omit<User, 'password'> {
   assignments: Assignment[];
+}
+
+interface LsoReportArchive {
+  id: string;
+  companyId: string;
+  lsoName: string;
+  lsoLicense: string | null;
+  assignedAt: string | null;
+  terminatedAt: string | null;
+  year: number;
+  byteSize: number;
+  sha256: string;
+  status: string;
+  lsoUserId?: string | null;
+}
+
+function LsoClosureEvidence({ lsoUserId }: { lsoUserId: string }) {
+  const { toast } = useToast();
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const { data: archives = [], isLoading, isError, refetch } = useQuery<LsoReportArchive[]>({
+    queryKey: ["/api/lso-management-report-archives", "professional-context", lsoUserId],
+    queryFn: async () => {
+      const params = new URLSearchParams({ lsoUserId });
+      const response = await fetch(`/api/lso-management-report-archives?${params.toString()}`, { credentials: "include" });
+      if (!response.ok) throw new Error("No se pudieron consultar los informes de cierre.");
+      return response.json();
+    },
+  });
+  const visibleArchives = archives.filter((archive) => archive.lsoUserId === lsoUserId);
+
+  const downloadArchive = async (archive: LsoReportArchive) => {
+    setDownloadingId(archive.id);
+    try {
+      const response = await fetch(`/api/lso-management-report-archives/${encodeURIComponent(archive.id)}/download`, { credentials: "include" });
+      if (!response.ok) throw new Error("El archivo no está disponible para descarga.");
+      const url = URL.createObjectURL(await response.blob());
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `cierre-lso-${archive.year}-${archive.id}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      toast({ title: "Evidencia descargada", description: `Informe de cierre ${archive.year}.` });
+    } catch (error) {
+      toast({ title: "No se pudo descargar la evidencia", description: error instanceof Error ? error.message : "Intente nuevamente.", variant: "destructive" });
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
+  return (
+    <Card data-testid="professional-lso-closure-archives">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base"><FileCheck className="h-4 w-4" /> Evidencia de cierres históricos</CardTitle>
+        <CardDescription>Informes inmutables asociados a empresas de este profesional, incluidas asignaciones finalizadas.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? <div className="space-y-2"><div className="h-12 rounded-md bg-muted animate-pulse" /><div className="h-12 rounded-md bg-muted animate-pulse" /></div> :
+          isError ? <div className="flex items-center justify-between gap-3 rounded-md border border-destructive/30 p-3 text-sm text-destructive" data-testid="professional-lso-closure-archives-error">No se pudo cargar la evidencia.<Button size="sm" variant="outline" onClick={() => refetch()} data-testid="button-retry-professional-lso-archives">Reintentar</Button></div> :
+          visibleArchives.length === 0 ? <p className="py-6 text-center text-sm text-muted-foreground" data-testid="professional-lso-closure-archives-empty">No hay informes de cierre para las empresas de este profesional.</p> :
+          <div className="overflow-x-auto"><Table><TableHeader><TableRow><TableHead>LSO</TableHead><TableHead>Empresa</TableHead><TableHead>Año</TableHead><TableHead>Finalización</TableHead><TableHead className="text-right">Acción</TableHead></TableRow></TableHeader><TableBody>
+            {visibleArchives.map((archive) => <TableRow key={archive.id} data-testid={`professional-lso-closure-archive-row-${archive.id}`}><TableCell><div className="font-medium">{archive.lsoName}</div><div className="text-xs text-muted-foreground">{archive.lsoLicense || "Sin licencia"}</div></TableCell><TableCell className="font-mono text-xs">{archive.companyId}</TableCell><TableCell>{archive.year}</TableCell><TableCell>{archive.terminatedAt ? format(new Date(archive.terminatedAt), "dd/MM/yyyy", { locale: es }) : "—"}</TableCell><TableCell className="text-right"><Button size="sm" variant="outline" onClick={() => downloadArchive(archive)} disabled={downloadingId === archive.id} data-testid={`button-download-professional-lso-closure-${archive.id}`}><Download className="mr-2 h-4 w-4" />{downloadingId === archive.id ? "Descargando..." : "Descargar"}</Button></TableCell></TableRow>)}
+          </TableBody></Table></div>}
+      </CardContent>
+    </Card>
+  );
 }
 
 export default function ProfesionalesLicenciados() {
@@ -681,6 +749,8 @@ export default function ProfesionalesLicenciados() {
             )}
           </CardContent>
         </Card>
+
+        <LsoClosureEvidence lsoUserId={prof.id} />
 
         <AlertDialog open={confirmResetPassword} onOpenChange={setConfirmResetPassword}>
           <AlertDialogContent>

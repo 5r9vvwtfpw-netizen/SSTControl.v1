@@ -20,11 +20,12 @@ import { sendLsoPortalAccessEmail, sendLsoRemovalNotificationEmail, sendLsoNewAs
 import { randomBytes } from "crypto";
 import { storage } from "../storage";
 import { notifyNewMessage } from "../websocket";
+import { terminateLsoAssignment, terminateLsoAssignments, replaceLsoAssignmentsAtomically } from "../services/lso-management-report-archive";
 
 // Helper function to get effective company ID
 function getEffectiveCompanyId(req: any): string | null {
   const headerCompanyId = req.headers['x-company-id'] as string | undefined;
-  const isGlobalUser = ['superadmin', 'admin', 'asesor'].includes(req.user!.role);
+  const isGlobalUser = req.user!.role === "superadmin";
   
   if (isGlobalUser && headerCompanyId) {
     return headerCompanyId;
@@ -216,9 +217,7 @@ export function registerLsoDirectoryExternalRoutes(app: Express) {
         ));
 
       for (const existing of existingAssignments) {
-        await db.update(schema.licensedProfessionalAssignments)
-          .set({ isActive: false, unassignedAt: new Date() })
-          .where(eq(schema.licensedProfessionalAssignments.id, existing.id));
+        // Notifications are sent after the atomic replacement below.
 
         try {
           const [prevLso] = await db.select().from(schema.users).where(eq(schema.users.id, existing.userId));
@@ -326,8 +325,7 @@ export function registerLsoDirectoryExternalRoutes(app: Express) {
       }
 
       // Crear la nueva asignación con datos del LSO externo
-      const [assignment] = await db.insert(schema.licensedProfessionalAssignments)
-        .values({
+      const replacementValues = {
           companyId,
           userId: lsoUserId,
           assignedBy: user.id,
@@ -341,8 +339,10 @@ export function registerLsoDirectoryExternalRoutes(app: Express) {
           externalLsoLicenseIssuer: lsoData.licenseIssuer || null,
           externalLsoLicenseExpiry: lsoData.licenseExpiry ? new Date(lsoData.licenseExpiry) : null,
           externalLsoSignatureUrl: lsoData.signatureUrl || null,
-        })
-        .returning();
+        };
+      const { assignment } = await replaceLsoAssignmentsAtomically(companyId,
+        existingAssignments.map((existing) => ({ assignmentId: existing.id, createdBy: (req.user as any)?.id })),
+        replacementValues);
 
       // Enviar credenciales por email al LSO si se auto-creó
       if (autoCreatedUser && lsoData.email && temporaryPassword) {
@@ -520,12 +520,7 @@ export function registerLsoDirectoryExternalRoutes(app: Express) {
           eq(schema.licensedProfessionalAssignments.isActive, true)
         ));
 
-      await db.update(schema.licensedProfessionalAssignments)
-        .set({ isActive: false, unassignedAt: new Date() })
-        .where(and(
-          eq(schema.licensedProfessionalAssignments.companyId, companyId),
-          eq(schema.licensedProfessionalAssignments.isActive, true)
-        ));
+      await terminateLsoAssignments(activeAssignments.map((assignment) => ({ assignmentId: assignment.id, createdBy: (req.user as any)?.id })));
 
       for (const assignment of activeAssignments) {
         try {

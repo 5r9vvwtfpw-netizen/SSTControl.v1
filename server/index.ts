@@ -38,6 +38,7 @@ import { startAccountingRetryJob, processAccountingRetries } from "./jobs/accoun
 import { scheduleWeeklyBackup } from "./jobs/weekly-backup";
 import { startSubscriptionIntegrityCheck } from "./cron/subscription-integrity";
 import { startManualSubscriptionExpiryJob } from "./cron/manual-subscription-expiry";
+import { startLsoArchiveCleanupReconciler } from "./services/lso-archive-cleanup";
 import { checkSessionTimeouts, registerSessionMonitorCron } from "./cron/session-monitor";
 import { getUncachableStripeClient, getStripeSecretKey } from "./stripeClient";
 import { storage } from "./storage";
@@ -984,6 +985,14 @@ app.use((req, res, next) => {
         await initializeDemoRooms();
       } catch (initError) {
         logger.warn({ err: initError }, "⚠️ Demo Engine room initialization failed (non-critical)");
+      }
+    }
+
+    if (!isAutoscale) {
+      try {
+        startLsoArchiveCleanupReconciler();
+      } catch (error) {
+        logger.error({ err: error }, "⚠️ LSO archive cleanup initialization failed");
       }
     }
   };

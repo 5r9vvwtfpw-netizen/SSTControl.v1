@@ -6,6 +6,7 @@ import {
   addSectionBar, addStandardHeader, addSignatureFooter, formatDate,
   PDF_CONFIG,
 } from "./pdf-standardizer";
+import { interpretGpsAggregate, isLsoAttributable, shouldRenderPesvOperationalSections } from "./lso-management-report-policy";
 
 type AnyRecord = Record<string, any>;
 const text = (v: unknown, empty = "Sin registro") => v === null || v === undefined || v === "" ? empty : String(v);
@@ -77,7 +78,8 @@ export async function generateLsoManagementReport(companyId: string, year: numbe
   const comparendos = await query(() => db.select().from(schema.driverComparendos).where(and(eq(schema.driverComparendos.companyId, companyId), sql`EXTRACT(YEAR FROM ${schema.driverComparendos.fechaComparendo}) = ${year}`)), [], "comparendos", moduleErrors);
   const maintenances = await query(() => db.select().from(schema.vehicleMaintenances).where(and(eq(schema.vehicleMaintenances.companyId, companyId), sql`EXTRACT(YEAR FROM ${schema.vehicleMaintenances.maintenanceDate}) = ${year}`)), [], "mantenimientos", moduleErrors);
   const routes = await query(() => db.select().from(schema.safeRoutes).where(eq(schema.safeRoutes.companyId, companyId)), [], "rutas seguras", moduleErrors);
-  const [gps] = await query(() => db.select({ total: sql<number>`count(*)`, exceeded: sql<number>`count(*) filter (where ${schema.vehicleGpsTracking.speedExceeded} = 1)` }).from(schema.vehicleGpsTracking).where(and(eq(schema.vehicleGpsTracking.companyId, companyId), sql`EXTRACT(YEAR FROM ${schema.vehicleGpsTracking.trackingDate}) = ${year}`)), [{ total: 0, exceeded: 0 }], "GPS", moduleErrors);
+  const [gpsAggregate] = await query(() => db.select({ total: sql<number>`count(*)`, exceeded: sql<number>`count(*) filter (where ${schema.vehicleGpsTracking.speedExceeded} = 1)` }).from(schema.vehicleGpsTracking).where(and(eq(schema.vehicleGpsTracking.companyId, companyId), sql`EXTRACT(YEAR FROM ${schema.vehicleGpsTracking.trackingDate}) = ${year}`)), [{ total: 0, exceeded: 0 }], "GPS", moduleErrors);
+  const gps = interpretGpsAggregate(gpsAggregate);
   const [speedAlerts] = await query(() => db.select({ total: sql<number>`count(*)`, open: sql<number>`count(*) filter (where ${schema.sstSpeedAlerts.status} <> 'cerrada')` }).from(schema.sstSpeedAlerts).where(and(eq(schema.sstSpeedAlerts.companyId, companyId), sql`EXTRACT(YEAR FROM ${schema.sstSpeedAlerts.alertDate}) = ${year}`)), [{ total: 0, open: 0 }], "alertas de velocidad", moduleErrors);
   const [incidents] = await query(() => db.select({ total: sql<number>`count(*)`, serious: sql<number>`count(*) filter (where ${schema.roadIncidents.severity} <> 'solo-danos')`, fatalities: sql<number>`coalesce(sum(${schema.roadIncidents.fatalities}), 0)` }).from(schema.roadIncidents).where(and(eq(schema.roadIncidents.companyId, companyId), sql`EXTRACT(YEAR FROM ${schema.roadIncidents.incidentDate}) = ${year}`)), [{ total: 0, serious: 0, fatalities: 0 }], "siniestros viales", moduleErrors);
   const trainings = await query(() => db.select().from(schema.roadSafetyTrainings).where(and(eq(schema.roadSafetyTrainings.companyId, companyId), sql`EXTRACT(YEAR FROM ${schema.roadSafetyTrainings.trainingDate}) = ${year}`)), [], "formación vial", moduleErrors);
@@ -106,18 +108,14 @@ export async function generateLsoManagementReport(companyId: string, year: numbe
   doc.on("data", (c: Buffer) => chunks.push(c));
   const signerName = lso.fullName || lso.username;
   const signerLicense = lso.sstLicenseNumber || assignment.externalLsoLicenseNumber || "";
-  const normalize = (value?: string | null) => (value || "").trim().toLowerCase().replace(/\s+/g, " ");
   const matchesRequester = (record: { name?: string | null; license?: string | null; signedAt?: Date | string | null; userId?: string | null }) => {
-    const signedAt = record.signedAt ? new Date(record.signedAt) : null;
-    const starts = new Date(assignment.assignedAt).getTime();
-    const ends = (assignment.unassignedAt || new Date()).getTime();
-    return normalize(record.name) !== "" &&
-      normalize(record.license) !== "" &&
-      normalize(record.name) === normalize(signerName) &&
-      normalize(record.license) === normalize(signerLicense) &&
-      !!signedAt && !Number.isNaN(signedAt.getTime()) &&
-      signedAt.getTime() >= starts && signedAt.getTime() <= ends &&
-      (!record.userId || record.userId === userId);
+    return isLsoAttributable(record, {
+      name: signerName,
+      license: signerLicense,
+      userId,
+      assignedAt: assignment.assignedAt,
+      unassignedAt: assignment.unassignedAt,
+    });
   };
   const signers = {
     elaboro: { name: "SST-Colombia", role: "Sistema de Gestión SST" },
@@ -161,7 +159,7 @@ export async function generateLsoManagementReport(companyId: string, year: numbe
     ], y);
   }
   if (!pesvLatest) y = writeBlock(doc, "PESV — EVALUACIÓN", ["No hay evaluación PESV para la vigencia solicitada; los dominios operativos se informan independientemente."], y);
-  {
+  if (shouldRenderPesvOperationalSections(!!pesvLatest)) {
     y = writeBlock(doc, "PESV — DOMINIOS OPERATIVOS Y GOBERNANZA", [
       metric("integrantes comité ampliado", `Gobernanza: ${(expandedMembers.length ? expandedMembers.filter((c: AnyRecord) => c.estado === "activo").length : committees.filter((c: AnyRecord) => c.activo === 1).length)} integrantes activos y ${(expandedActs.length || expandedMembers.length ? expandedActs.length : acts.length)} acta(s) en ${year}; se prioriza el modelo ampliado.`),
       `${metric("fatiga PESV", `Fatiga: ${asNumber(fatigue.total)} controles (${asNumber(fatigue.exceptions)} excepciones)`) }; ${metric("alcohol PESV", `alcohol: ${asNumber(alcohol.total)} pruebas (${asNumber(alcohol.exceptions)} requieren atención)`) }; ${metric("encuestas de aptitud", `aptitud: ${asNumber(driverSurveys.total)} encuestas`)}`,

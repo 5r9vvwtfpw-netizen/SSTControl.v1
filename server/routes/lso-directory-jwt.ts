@@ -13,11 +13,12 @@ import logger from "../lib/logger";
 import { db } from "../db";
 import * as schema from "@shared/schema";
 import { eq, and } from "drizzle-orm";
-import { hashPassword } from "../auth";
+import { hashPassword, requirePermission } from "../auth";
 import { sendLsoPortalAccessEmail, sendLsoRemovalNotificationEmail, sendLsoNewAssignmentEmail, buildLsoPortalLoginUrl } from "../email";
 import { randomBytes } from "crypto";
 import { storage } from "../storage";
 import { notifyNewMessage } from "../websocket";
+import { terminateLsoAssignment, terminateLsoAssignments, replaceLsoAssignmentsAtomically } from "../services/lso-management-report-archive";
 
 const router = Router();
 
@@ -27,7 +28,7 @@ const router = Router();
 function getEffectiveCompanyId(req: Request): string | null {
   const user = req.user as any;
   const headerCompanyId = req.headers['x-company-id'] as string | undefined;
-  const isGlobalUser = ['superadmin', 'admin', 'asesor'].includes(user?.role);
+  const isGlobalUser = user?.role === "superadmin";
   
   if (isGlobalUser && headerCompanyId) {
     return headerCompanyId;
@@ -103,7 +104,7 @@ router.get("/lso/:id", requireAuth, async (req: Request, res: Response) => {
  * Asigna un profesional LSO externo a una empresa
  * Acepta datos completos del LSO del frontend (ya validados por la búsqueda)
  */
-router.post("/assign", requireAuth, async (req: Request, res: Response) => {
+router.post("/assign", requirePermission("licensed_professionals:assign"), async (req: Request, res: Response) => {
   try {
     const user = req.user as any;
     const companyId = getEffectiveCompanyId(req);
@@ -187,40 +188,13 @@ router.post("/assign", requireAuth, async (req: Request, res: Response) => {
       return res.status(404).json({ ok: false, error: "Empresa no encontrada" });
     }
 
-    // Desactivar asignaciones existentes
+    // Existing assignments remain active until the replacement transaction below.
     const existingAssignments = await db.select()
       .from(schema.licensedProfessionalAssignments)
       .where(and(
         eq(schema.licensedProfessionalAssignments.companyId, companyId),
         eq(schema.licensedProfessionalAssignments.isActive, true)
       ));
-
-    for (const existing of existingAssignments) {
-      await db.update(schema.licensedProfessionalAssignments)
-        .set({ isActive: false, unassignedAt: new Date() })
-        .where(eq(schema.licensedProfessionalAssignments.id, existing.id));
-
-      try {
-        const [prevLso] = await db.select().from(schema.users).where(eq(schema.users.id, existing.userId));
-        if (prevLso) {
-          const removalDateStr = new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' });
-          const jwtRemovalMsg = await storage.createInternalMessage({
-            companyId, senderId: prevLso.id, senderName: 'Sistema SST Colombia', senderRole: 'superadmin',
-            receiverId: prevLso.id, receiverName: prevLso.fullName || prevLso.username,
-            receiverRole: prevLso.role, subject: `Finalización de asignación - ${company.name}`,
-            content: `Le informamos que la empresa "${company.name}" (NIT: ${company.nit || 'N/A'}) ha finalizado su asignación como profesional licenciado responsable del SG-SST a partir del ${removalDateStr}. Un nuevo profesional ha sido asignado en su lugar. Los documentos que usted firmó durante su gestión permanecen válidos.`,
-            priority: 'urgent', status: 'unread', relatedEntity: 'lso_assignment', relatedEntityId: existing.id,
-          });
-          try { notifyNewMessage(prevLso.id, prevLso.id, jwtRemovalMsg.id); } catch (e) { /* ignore */ }
-          if (prevLso.email) {
-            await sendLsoRemovalNotificationEmail(prevLso.email, {
-              lsoName: prevLso.fullName || prevLso.username,
-              companyName: company.name, companyNit: company.nit || 'N/A', removalDate: removalDateStr,
-            });
-          }
-        }
-      } catch (notifErr) { logger.error({ notifErr }, "[LSO-JWT-Routes] Error notifying previous LSO"); }
-    }
 
     // Auto-provisionar usuario LSO si no existe
     let lsoUserId: string = user.id;
@@ -318,8 +292,7 @@ router.post("/assign", requireAuth, async (req: Request, res: Response) => {
     }
 
     // Crear nueva asignación con datos del LSO externo
-    const [assignment] = await db.insert(schema.licensedProfessionalAssignments)
-      .values({
+    const replacementValues = {
         companyId,
         userId: lsoUserId,
         assignedBy: user.id,
@@ -333,8 +306,10 @@ router.post("/assign", requireAuth, async (req: Request, res: Response) => {
         externalLsoLicenseIssuer: lso.licenseIssuer || null,
         externalLsoLicenseExpiry: lso.licenseExpiry ? new Date(lso.licenseExpiry) : null,
         externalLsoSignatureUrl: lso.signatureUrl || null,
-      })
-      .returning();
+      };
+    const { assignment } = await replaceLsoAssignmentsAtomically(companyId,
+      existingAssignments.map((existing) => ({ assignmentId: existing.id, createdBy: user.id })),
+      replacementValues);
 
     try {
       const [lsoUser] = await db.select().from(schema.users).where(eq(schema.users.id, lsoUserId));
@@ -384,7 +359,7 @@ router.post("/assign", requireAuth, async (req: Request, res: Response) => {
  * DELETE /api/lso-directory-jwt/unassign
  * Desasigna el profesional LSO externo de la empresa actual
  */
-router.delete("/unassign", requireAuth, async (req: Request, res: Response) => {
+router.delete("/unassign", requirePermission("licensed_professionals:assign"), async (req: Request, res: Response) => {
   try {
     const companyId = getEffectiveCompanyId(req);
 
@@ -399,12 +374,7 @@ router.delete("/unassign", requireAuth, async (req: Request, res: Response) => {
         eq(schema.licensedProfessionalAssignments.isActive, true)
       ));
 
-    await db.update(schema.licensedProfessionalAssignments)
-      .set({ isActive: false, unassignedAt: new Date() })
-      .where(and(
-        eq(schema.licensedProfessionalAssignments.companyId, companyId),
-        eq(schema.licensedProfessionalAssignments.isActive, true)
-      ));
+    await terminateLsoAssignments(activeAssignments.map((assignment) => ({ assignmentId: assignment.id, createdBy: (req.user as any)?.id })));
 
     for (const assignment of activeAssignments) {
       try {

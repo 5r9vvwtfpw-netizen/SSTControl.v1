@@ -66,6 +66,7 @@ import {
   Plus,
   CircleDot,
   FileBarChart
+  ,Download
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
@@ -873,6 +874,117 @@ interface HistorialEmpresa {
   unassignedAt: string | null;
 }
 
+interface LsoReportArchive {
+  id: string;
+  companyId: string;
+  lsoName: string;
+  lsoLicense: string | null;
+  assignedAt: string | null;
+  terminatedAt: string | null;
+  year: number;
+  byteSize: number;
+  sha256: string;
+  status: string;
+}
+
+function formatArchiveDate(value: string | null) {
+  if (!value) return "—";
+  try {
+    return format(new Date(value), "dd MMM yyyy", { locale: es });
+  } catch {
+    return "—";
+  }
+}
+
+function formatArchiveSize(bytes: number) {
+  if (!bytes) return "—";
+  return `${(bytes / 1024 / 1024).toFixed(bytes > 1024 * 1024 ? 1 : 2)} MB`;
+}
+
+function LsoClosureArchives({ companyIds }: { companyIds?: string[] }) {
+  const { toast } = useToast();
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const { data: archives = [], isLoading, isError, refetch } = useQuery<LsoReportArchive[]>({
+    queryKey: ["/api/lso-management-report-archives", companyIds?.join(",") || "self"],
+    queryFn: async () => {
+      const params = companyIds?.length ? `?${companyIds.map((id) => `companyId=${encodeURIComponent(id)}`).join("&")}` : "";
+      const response = await fetch(`/api/lso-management-report-archives${params}`, { credentials: "include" });
+      if (!response.ok) throw new Error("No se pudieron consultar los archivos de cierre.");
+      return response.json();
+    },
+  });
+
+  const downloadArchive = async (archive: LsoReportArchive) => {
+    if (downloadingId) return;
+    setDownloadingId(archive.id);
+    try {
+      const response = await fetch(`/api/lso-management-report-archives/${encodeURIComponent(archive.id)}/download`, {
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("El archivo no está disponible para descarga.");
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `cierre-lso-${archive.year}-${archive.id}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+      toast({ title: "Archivo descargado", description: `Informe de cierre ${archive.year}.` });
+    } catch (error) {
+      toast({ title: "No se pudo descargar el archivo", description: error instanceof Error ? error.message : "Intente nuevamente.", variant: "destructive" });
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
+  return (
+    <Card data-testid="lso-closure-archives">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base"><History className="h-5 w-5" /> Informes de cierre archivados</CardTitle>
+        <CardDescription>Copias inmutables de sus asignaciones finalizadas, disponibles aunque ya no estén activas.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="space-y-3">{[1, 2].map((item) => <Skeleton key={item} className="h-14 w-full" />)}</div>
+        ) : isError ? (
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>No se pudo cargar el archivo</AlertTitle>
+            <AlertDescription className="flex items-center justify-between gap-3">
+              Intente nuevamente.
+              <Button size="sm" variant="outline" onClick={() => refetch()} data-testid="button-retry-lso-archives">Reintentar</Button>
+            </AlertDescription>
+          </Alert>
+        ) : archives.length === 0 ? (
+          <div className="py-8 text-center text-sm text-muted-foreground" data-testid="lso-closure-archives-empty">
+            <FileText className="mx-auto mb-2 h-8 w-8 opacity-50" />
+            Aún no hay informes de cierre archivados.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader><TableRow><TableHead>LSO / licencia</TableHead><TableHead>Periodo</TableHead><TableHead>Cierre</TableHead><TableHead>Tamaño</TableHead><TableHead className="text-right">Archivo</TableHead></TableRow></TableHeader>
+              <TableBody>
+                {archives.map((archive) => (
+                  <TableRow key={archive.id} data-testid={`lso-closure-archive-row-${archive.id}`}>
+                    <TableCell><div className="font-medium">{archive.lsoName}</div><div className="text-xs text-muted-foreground">{archive.lsoLicense || "Licencia no registrada"}</div></TableCell>
+                    <TableCell>{archive.year}</TableCell>
+                    <TableCell><div>{formatArchiveDate(archive.terminatedAt)}</div><div className="text-xs text-muted-foreground">Asignado: {formatArchiveDate(archive.assignedAt)}</div></TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{formatArchiveSize(archive.byteSize)}</TableCell>
+                    <TableCell className="text-right"><Button size="sm" variant="outline" onClick={() => downloadArchive(archive)} disabled={downloadingId === archive.id} data-testid={`button-download-lso-closure-${archive.id}`}><Download className="mr-2 h-4 w-4" />{downloadingId === archive.id ? "Descargando..." : "Descargar PDF"}</Button></TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 function InformeConsolidadoButton({
   companyId,
   companyName,
@@ -1033,16 +1145,19 @@ function EmpresasTab() {
 
   if (empresas.length === 0 && historial.length === 0) {
     return (
-      <Card>
-        <CardContent className="flex flex-col items-center justify-center py-12">
-          <Building2 className="h-12 w-12 text-muted-foreground mb-4" />
-          <h3 className="text-lg font-medium mb-2">Sin empresas asignadas</h3>
-          <p className="text-muted-foreground text-center max-w-md">
-            Actualmente no tiene empresas asignadas. El administrador del sistema 
-            debe asignarle las empresas que requieran sus servicios profesionales.
-          </p>
-        </CardContent>
-      </Card>
+      <div className="space-y-6">
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <Building2 className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-medium mb-2">Sin empresas asignadas</h3>
+            <p className="text-muted-foreground text-center max-w-md">
+              Actualmente no tiene empresas asignadas. El administrador del sistema
+              debe asignarle las empresas que requieran sus servicios profesionales.
+            </p>
+          </CardContent>
+        </Card>
+        <LsoClosureArchives />
+      </div>
     );
   }
 
@@ -1354,6 +1469,7 @@ function EmpresasTab() {
           )}
         </Card>
       )}
+      <LsoClosureArchives />
     </div>
   );
 }

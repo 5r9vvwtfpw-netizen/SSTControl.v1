@@ -14,6 +14,8 @@ import { objectStorageClient } from "../replit_integrations/object_storage";
 import { ObjectStorageService, objectStorageService as s3Service } from "../objectStorage";
 import { notifyNewMessage } from "../websocket";
 import { generateLsoManagementReport } from "../services/lso-management-report";
+import { terminateLsoAssignment, activateLsoAssignment } from "../services/lso-management-report-archive";
+import { canAccessLsoArchive } from "../services/lso-management-report-policy";
 
 async function shouldIncludeFallbackCompany(userId: string, companyId: string): Promise<boolean> {
   const [wasUnassigned] = await db.select({ id: schema.licensedProfessionalAssignments.id })
@@ -367,10 +369,13 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
       
       if (existingAssignment) {
         if (!existingAssignment.isActive) {
-          const [reactivated] = await db.update(schema.licensedProfessionalAssignments)
-            .set({ isActive: true, assignedAt: new Date(), assignedBy: user.id, unassignedAt: null })
-            .where(eq(schema.licensedProfessionalAssignments.id, existingAssignment.id))
-            .returning();
+          const reactivated = await activateLsoAssignment({
+            userId: existingAssignment.userId,
+            companyId: existingAssignment.companyId,
+            assignedBy: user.id,
+            isActive: true,
+            unassignedAt: null,
+          }, existingAssignment.id);
 
           try {
             const assignDateStr = new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' });
@@ -399,13 +404,11 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
         return res.status(400).json({ message: "Professional is already assigned to this company" });
       }
       
-      const [assignment] = await db.insert(schema.licensedProfessionalAssignments)
-        .values({
+      const assignment = await activateLsoAssignment({
           userId: id,
           companyId,
           assignedBy: user.id,
-        })
-        .returning();
+        });
 
       try {
         const assignDateStr = new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' });
@@ -451,10 +454,7 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
       if (!assignment) {
         return res.status(404).json({ message: "Assignment not found" });
       }
-      
-      await db.update(schema.licensedProfessionalAssignments)
-        .set({ isActive: false, unassignedAt: new Date() })
-        .where(eq(schema.licensedProfessionalAssignments.id, assignment.id));
+      await terminateLsoAssignment(assignment.id, (req.user as any)?.id);
 
       await notifyLsoRemoval(assignment, companyId);
       
@@ -462,6 +462,67 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
     } catch (error: any) {
       console.error('[DELETE /api/licensed-professionals/:id/assignments/:companyId] Error:', error.message);
       res.status(500).json({ message: "Error removing assignment", error: error.message });
+    }
+  });
+
+  // Immutable closure reports. Access is checked against the archived assignment,
+  // not merely a guessed object path.
+  app.get("/api/lso-management-report-archives", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const requestedCompanyId = (req.query.companyId as string) || user.companyId;
+      const requestedLsoUserId = req.query.lsoUserId as string | undefined;
+      const isLso = ["lso", "lso_externo"].includes(user.role);
+      const conditions = [];
+      if (isLso) {
+        if (requestedLsoUserId && requestedLsoUserId !== user.id) return res.status(403).json({ error: "Solo puede consultar sus propios archivos de cierre" });
+        conditions.push(eq(schema.lsoManagementReportArchives.lsoUserId, user.id));
+      } else if (user.role === "superadmin") {
+        if (requestedCompanyId) conditions.push(eq(schema.lsoManagementReportArchives.companyId, requestedCompanyId));
+      } else {
+        if (!hasPermission(user.role, "licensed_professionals:view") || !requestedCompanyId || requestedCompanyId !== user.companyId) return res.status(403).json({ error: "Sin permiso para consultar archivos de cierre" });
+        conditions.push(eq(schema.lsoManagementReportArchives.companyId, requestedCompanyId));
+      }
+      if (requestedLsoUserId && user.role !== "superadmin" && !hasPermission(user.role, "licensed_professionals:view")) return res.status(403).json({ error: "Sin permiso para filtrar por LSO" });
+      if (requestedLsoUserId) conditions.push(eq(schema.lsoManagementReportArchives.lsoUserId, requestedLsoUserId));
+      const archives = await db.select({
+        id: schema.lsoManagementReportArchives.id,
+        assignmentId: schema.lsoManagementReportArchives.assignmentId,
+        companyId: schema.lsoManagementReportArchives.companyId,
+        lsoUserId: schema.lsoManagementReportArchives.lsoUserId,
+        lsoName: schema.lsoManagementReportArchives.lsoName,
+        lsoLicense: schema.lsoManagementReportArchives.lsoLicense,
+        lsoLicenseIssuer: schema.lsoManagementReportArchives.lsoLicenseIssuer,
+        assignedAt: schema.lsoManagementReportArchives.assignedAt,
+        terminatedAt: schema.lsoManagementReportArchives.terminatedAt,
+        year: schema.lsoManagementReportArchives.year,
+        generatedAt: schema.lsoManagementReportArchives.generatedAt,
+        contentType: schema.lsoManagementReportArchives.contentType,
+        byteSize: schema.lsoManagementReportArchives.byteSize,
+        documentCode: schema.lsoManagementReportArchives.documentCode,
+        version: schema.lsoManagementReportArchives.version,
+        status: schema.lsoManagementReportArchives.status,
+      }).from(schema.lsoManagementReportArchives)
+        .where(conditions.length ? and(...conditions) : undefined)
+        .orderBy(desc(schema.lsoManagementReportArchives.terminatedAt));
+      res.json(archives);
+    } catch (error: any) {
+      res.status(500).json({ error: "Error al obtener archivos de cierre LSO" });
+    }
+  });
+
+  app.get("/api/lso-management-report-archives/:id/download", requireAuth, async (req, res) => {
+    try {
+      const user = req.user as any;
+      const [archive] = await db.select().from(schema.lsoManagementReportArchives)
+        .where(eq(schema.lsoManagementReportArchives.id, req.params.id)).limit(1);
+      if (!archive || archive.status !== "stored") return res.status(404).json({ error: "Archivo de cierre no encontrado" });
+      const canView = hasPermission(user.role, "licensed_professionals:view");
+      const allowed = canAccessLsoArchive(user, archive, canView);
+      if (!allowed) return res.status(403).json({ error: "Sin permiso para descargar este archivo" });
+      await s3Service.downloadObject(archive.objectPath, res, 300);
+    } catch (error: any) {
+      res.status(404).json({ error: "Archivo de cierre no disponible" });
     }
   });
 

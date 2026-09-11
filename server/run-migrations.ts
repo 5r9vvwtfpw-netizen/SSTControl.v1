@@ -64,6 +64,8 @@ import { createMechanicCompanyAccessTable } from './migrations/create-mechanic-c
 import { syncMechanicInvitations } from './migrations/sync-mechanic-invitations';
 import { syncEppDeliveryGroups } from './migrations/sync-epp-delivery-groups';
 import { syncGuidedCommitteeActas } from './migrations/sync-guided-committee-actas';
+import { createLsoManagementReportArchives } from './migrations/create-lso-management-report-archives';
+import { createLsoArchiveCleanupJobs } from './migrations/create-lso-archive-cleanup-jobs';
 
 /**
  * Ejecuta migraciones de base de datos automáticamente
@@ -141,6 +143,8 @@ export async function runMigrations() {
     await createMaquinariaInspecciones();
     await syncEppDeliveryGroups();
     await syncGuidedCommitteeActas();
+    await createLsoManagementReportArchives();
+    await createLsoArchiveCleanupJobs();
     console.log('✅ Migraciones completadas exitosamente');
   } catch (error: any) {
     console.error('⚠️ Error en migraciones:', error.message);

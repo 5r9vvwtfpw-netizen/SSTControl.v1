@@ -5,6 +5,7 @@ import * as schema from "@shared/schema";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";
+import { terminateLsoAssignment } from "../services/lso-management-report-archive";
 
 const scryptAsync = promisify(scrypt);
 
@@ -288,9 +289,7 @@ export function registerAdminPortalsRoutes(app: Express) {
         return res.status(404).json({ error: "Asignación no encontrada" });
       }
 
-      await db.update(schema.licensedProfessionalAssignments)
-        .set({ isActive: false, unassignedAt: new Date() })
-        .where(eq(schema.licensedProfessionalAssignments.id, id));
+      await terminateLsoAssignment(existing.id, (req.user as any)?.id);
 
       res.json({ success: true, message: "Asignación desactivada exitosamente" });
     } catch (error: any) {

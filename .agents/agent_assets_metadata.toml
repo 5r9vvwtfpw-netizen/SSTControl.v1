@@ -293,3 +293,17 @@ mtime_ms = 1788934615588
 storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/82fa7a3c-b621-427b-8cc3-acdb9847a22d/c9b09e6d-06dc-4388-b14a-b03e8d14b485"
 storage_version_token = "1788934622525648"
 content_type = "text/html"
+
+[[outputs]]
+id = "COn0kkRtGAShvyFXKAlWF"
+uri = "file://evidence/informe-cierre-lso-prueba-funcional-2026.pdf"
+type = "pdf"
+title = "Evidencia PDF — cierre LSO 2026"
+description = "PDF inmutable descargado durante la prueba funcional del Portal LSO. Incluye análisis SST y PESV de DEMO-PRUEBA."
+logical_id = "ccec2879-1630-41db-8bf4-7c8813cc334e"
+content_hash = "sha256:8d738c550f6f4e3c21761f2273968f868264aa4b52d2a715fb74597964e4aec5"
+size = 770568
+mtime_ms = 1789153884381
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/ccec2879-1630-41db-8bf4-7c8813cc334e/41746f60-826b-4aa0-92e6-2932df7a8834"
+storage_version_token = "1789153895011264"
+content_type = "application/pdf"
