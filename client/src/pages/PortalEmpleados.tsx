@@ -32,7 +32,7 @@ import { z } from "zod";
 import { 
   MessageSquare, AlertCircle, Send, CheckCircle, CheckCircle2, FileText, User, Briefcase, FileCheck,
   GraduationCap, Calendar, Clock, MapPin, UserCheck, Users, Mail, KeyRound, Eye, EyeOff, Vote,
-  Building2, BarChart3, Shield, UserCog, BookOpen, Award, Play, Trophy, Star, FolderOpen, Inbox, Download, Bell, ChevronDown,
+  Building2, BarChart3, Shield, UserCog, BookOpen, Award, Play, Trophy, Star, FolderOpen, Inbox, Bell, ChevronDown,
   History, Monitor, Smartphone, Tablet, Video, Heart, ClipboardList, Camera, Upload, Trash2, Loader2, Headphones, Car, Search, X,
   Brain, Pill, Wine, Thermometer, Moon, Truck, CheckSquare, XSquare, AlertTriangle
 } from "lucide-react";
@@ -2932,16 +2932,6 @@ function InduccionesVirtualesTab() {
                           Completada: {sesion.fechaFinalizacion ? new Date(sesion.fechaFinalizacion).toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' }) : '-'}
                         </p>
                       </div>
-                      <a
-                        href={`/api/sesiones-induccion-virtual/${sesion.id}/pdf`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <Button variant="outline" data-testid={`button-constancia-induccion-${sesion.id}`}>
-                          <Download className="h-4 w-4 mr-2" />
-                          Descargar constancia
-                        </Button>
-                      </a>
                     </div>
                   </CardContent>
                 </Card>
