@@ -1203,12 +1203,25 @@ async function seedEppCatalog() {
       console.log(`✅ Catálogo EPP ya existe con ${existingCount[0].count} elementos`);
     }
     
-    // Insertar catálogo de EPP sin sobrescribir registros existentes
+    // Insertar nuevos elementos y mantener sincronizados los datos del catálogo
+    // maestro. Los EPP personalizados de cada empresa no se modifican.
     for (const epp of catalogoEppMaestro) {
       await db.insert(schema.eppCatalog).values(epp).onConflictDoNothing();
+
+      const { id, ...masterData } = epp;
+      await db.update(schema.eppCatalog)
+        .set({
+          ...masterData,
+          companyId: null,
+          updatedAt: new Date(),
+        })
+        .where(
+          sql`${schema.eppCatalog.id} = ${id}
+            AND ${schema.eppCatalog.esPersonalizado} = false`
+        );
     }
     
-    console.log(`✅ ${catalogoEppMaestro.length} elementos de EPP insertados en catálogo maestro`);
+    console.log(`✅ ${catalogoEppMaestro.length} elementos de EPP insertados/sincronizados en catálogo maestro`);
   } catch (error) {
     console.error("⚠️ Error al crear catálogo EPP (no crítico):", error);
   }
