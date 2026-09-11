@@ -1953,6 +1953,9 @@ export default function DetalleEvaluacionSst() {
                   <p className="text-xs text-blue-600 dark:text-blue-400 mt-3 font-medium">
                      Evidencia esperada: Acta de conformación y elección/designación, reglamento y confidencialidad, actas mensuales y extraordinarias por queja, seguimientos mensuales, informes trimestrales y anual, soportes de prevención y capacitación con la ARL
                   </p>
+                  <p className="text-xs text-amber-700 dark:text-amber-300 mt-2 font-medium">
+                    El acoso sexual y la violencia por razones de género no son competencia conciliatoria del Comité de Convivencia y deben tramitarse mediante una ruta separada, conforme a la Ley 2365 de 2024.
+                  </p>
                   <div className="flex gap-2 mt-3 flex-wrap">
                     <Button 
                       variant="outline" 
