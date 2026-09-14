@@ -1213,7 +1213,7 @@ function EmpresasTab() {
                   {empresas.map((empresa) => (
                     <TableRow
                       key={empresa.id}
-                      className="border-b-2 border-slate-300 last:border-b-0"
+                      className="border-b-[3px] border-slate-700 last:border-b-0"
                       data-testid={`row-empresa-${empresa.id}`}
                     >
                       <TableCell>
