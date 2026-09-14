@@ -1211,7 +1211,11 @@ function EmpresasTab() {
                 </TableHeader>
                 <TableBody>
                   {empresas.map((empresa) => (
-                    <TableRow key={empresa.id} data-testid={`row-empresa-${empresa.id}`}>
+                    <TableRow
+                      key={empresa.id}
+                      className="border-b-2 border-slate-300 last:border-b-0"
+                      data-testid={`row-empresa-${empresa.id}`}
+                    >
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <span className="font-medium">{empresa.name}</span>
