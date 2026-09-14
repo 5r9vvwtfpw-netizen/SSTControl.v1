@@ -79,9 +79,15 @@ addStandardHeader({ doc, company, documentTitle, documentCode, logoBuffer }): Pr
 
 ### addSignatureFooter
 ```typescript
-addSignatureFooter(doc, signers: PdfSigners, addToLastPage?: boolean): Promise<void>
+addSignatureFooter(
+  doc,
+  signers: PdfSigners,
+  includeLSO?: boolean,
+  opts?: { startY?: number }
+): Promise<void>
 ```
 - Llamar al final, antes de `doc.end()`
+- Para informes con coordenadas manuales, reservar antes la altura completa de la sección final y pasar `startY`; no depender de `doc.y` si el contenido usa posiciones explícitas.
 
 ## Patrón correcto para una ruta PDF
 
@@ -127,3 +133,11 @@ En actas de comité, la constancia fija de firma física debe formar parte del b
 **Why:** La reserva genérica de espacio para footers puede enviar una constancia de pocas líneas a una página adicional, dejando una tercera página casi vacía.
 
 **How to apply:** Mantener el aviso y las líneas de firma como un bloque compacto; si se cambia su altura, validar actas con agenda extensa y compromisos.
+
+## Bloques finales y páginas casi vacías
+
+El checklist, la declaración legal y las firmas deben tratarse como un solo bloque al calcular el salto de página. Después del salto, las firmas deben colocarse con `opts.startY` dentro del flujo del contenido.
+
+**Why:** Reservar espacio solo para el checklist permitió que PDFKit enviara cada línea legal y el pie a páginas automáticas distintas, generando una hoja vacía o casi vacía aunque el PDF fuera válido.
+
+**How to apply:** Calcular la altura total del bloque terminal, saltar antes de dibujarlo y verificar con `pdfinfo` más extracción de texto por página; ninguna página debe contener únicamente una línea o el pie.

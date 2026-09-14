@@ -49008,11 +49008,13 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         });
       }
 
-      // Green bar section header - CUMPLIMIENTO NORMATIVO
-      if (currentY > doc.page.height - 150) {
+      // Keep the heading, checklist, legal statement and signatures together.
+      // Reserving only the checklist height lets PDFKit split the final text
+      // across nearly empty pages.
+      const complianceSectionHeight = 285;
+      if (currentY > doc.page.height - complianceSectionHeight) {
         doc.addPage();
-          // Reset font after page break to maintain consistent text size
-          doc.font('Helvetica').fontSize(7).fillColor('#000000');
+        doc.font('Helvetica').fontSize(7).fillColor('#000000');
         currentY = 50;
       }
       currentY += 10;
@@ -49049,9 +49051,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         width: contentWidth,
         align: 'center' 
       });
+      currentY += 20;
       
-      // Add standard signature footer
-      await addSignatureFooter(doc, signers, true);
+      await addSignatureFooter(doc, signers, true, { startY: currentY });
 
       doc.end();
     } catch (error: any) {
