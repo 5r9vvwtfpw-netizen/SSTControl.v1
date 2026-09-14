@@ -26,3 +26,9 @@ Los endpoints de lectura necesarios para montar el Portal LSO antes de seleccion
 **Why:** Si `/api/auth/user` o los archivos históricos propios exigen una empresa previamente seleccionada, React no puede montar el portal desde el cual se realiza esa selección.
 
 **How to apply:** Mantener una allowlist mínima de bootstrap para identidad, portal, ayuda contextual y archivos históricos propios; no ampliar la excepción a mutaciones ni datos operativos.
+
+El informe para entrega al representante legal debe abrir con una síntesis en lenguaje común; cada fortaleza, alerta y recomendación se genera únicamente desde un dato consultado y conserva su módulo de origen.
+
+**Why:** Un consolidado técnicamente correcto no cumple su propósito si el representante legal no entiende el estado general, las prioridades y las acciones siguientes, o si una recomendación parece inventada.
+
+**How to apply:** Mantener reglas deterministas y probables por separado del generador PDF; mostrar una portada ejecutiva breve y repetir en el detalle todas las recomendaciones sin truncarlas.

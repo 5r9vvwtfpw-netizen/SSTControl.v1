@@ -7,10 +7,41 @@ import {
   PDF_CONFIG,
 } from "./pdf-standardizer";
 import { interpretGpsAggregate, isLsoAttributable, shouldRenderPesvOperationalSections } from "./lso-management-report-policy";
+import {
+  buildLsoManagementReportSummary,
+  formatLsoSummaryItemForPdf,
+  formatInvestigationActions,
+  formatInvestigationDeadlineStatus,
+  formatInvestigationEventType,
+  formatInvestigationStatus,
+  groupRecommendationPeriods,
+  limitExecutiveItems,
+  selectExecutiveRecommendationGroups,
+  type LsoReportSummary,
+  type LsoSummaryItem,
+} from "./lso-management-report-summary";
+
+export { buildLsoManagementReportSummary } from "./lso-management-report-summary";
+export {
+  formatLsoSummaryItemForPdf,
+  formatInvestigationActions,
+  formatInvestigationDeadlineStatus,
+  formatInvestigationEventType,
+  formatInvestigationStatus,
+  groupRecommendationPeriods,
+  limitExecutiveItems,
+  selectExecutiveRecommendationGroups,
+} from "./lso-management-report-summary";
+export type { LsoReportFacts, LsoReportSummary, LsoSummaryItem } from "./lso-management-report-summary";
 
 type AnyRecord = Record<string, any>;
 const text = (v: unknown, empty = "Sin registro") => v === null || v === undefined || v === "" ? empty : String(v);
 const asNumber = (v: unknown) => Number(v || 0);
+const asOptionalNumber = (v: unknown): number | null => {
+  if (v === null || v === undefined || v === "") return null;
+  const value = Number(v);
+  return Number.isFinite(value) ? value : null;
+};
 const query = async <T>(fn: () => Promise<T>, fallback: T, label: string, errors: string[]): Promise<T> => {
   try { return await fn(); } catch (error: any) {
     errors.push(label);
@@ -31,6 +62,42 @@ function writeBlock(doc: any, title: string, lines: string[], y: number): number
     y = doc.y + 3;
   }
   return y + 4;
+}
+
+function writeExecutiveBlock(doc: any, title: string, lines: string[], y: number): number {
+  y = addSectionBar(doc, title, y);
+  doc.font("Helvetica").fontSize(7).fillColor("#000000");
+  for (const line of lines) {
+    const width = doc.page.width - PDF_CONFIG.MARGIN * 2 - 10;
+    const rendered = `• ${line}`;
+    const height = doc.heightOfString(rendered, { width, lineGap: 1 });
+    if (y + height > doc.page.height - PDF_CONFIG.FOOTER_HEIGHT - 8) {
+      doc.addPage();
+      y = PDF_CONFIG.MARGIN + 10;
+    }
+    doc.text(rendered, PDF_CONFIG.MARGIN + 5, y, { width, lineGap: 1 });
+    y = doc.y + 1;
+  }
+  return y + 1;
+}
+
+function summaryItemLine(entry: LsoSummaryItem): string {
+  return formatLsoSummaryItemForPdf(entry);
+}
+
+function writeExecutiveSummaryItems(doc: any, title: string, entries: LsoSummaryItem[], y: number, omittedCount = 0): number {
+  const lines = entries.length ? entries.map(summaryItemLine) : ["No se encontró información registrada para este apartado."];
+  if (omittedCount > 0) lines.push(`Hay ${omittedCount} asuntos adicionales, detallados al final del informe.`);
+  return writeExecutiveBlock(doc, title, lines, y);
+}
+
+function startDetailPageAfterExecutive(doc: any, y: number): number {
+  const pages = doc.bufferedPageRange();
+  if (pages.count > 0 && y > PDF_CONFIG.MARGIN + 15) {
+    doc.addPage();
+    return PDF_CONFIG.MARGIN + 15;
+  }
+  return y;
 }
 
 export async function generateLsoManagementReport(companyId: string, year: number, userId: string, assignmentId: string): Promise<Buffer | null> {
@@ -103,6 +170,47 @@ export async function generateLsoManagementReport(companyId: string, year: numbe
     alerts: sql<number>`count(*) filter (where ${schema.pesvEncuestasConductor.horasSueno} < 6 or ${schema.pesvEncuestasConductor.estadoFisico} <> 'bueno' or ${schema.pesvEncuestasConductor.estadoEmocional} <> 'bueno' or ${schema.pesvEncuestasConductor.consumoAlcohol} = 1 or ${schema.pesvEncuestasConductor.presentaEnfermedad} = 1)`,
   }).from(schema.pesvEncuestasConductor).where(and(eq(schema.pesvEncuestasConductor.companyId, companyId), sql`EXTRACT(YEAR FROM ${schema.pesvEncuestasConductor.fechaRegistro}) = ${year}`)), [{ total: 0, aptos: 0, noAptos: 0, alerts: 0 }], "encuestas de aptitud", moduleErrors);
 
+  const reportGeneratedAt = new Date();
+  const reportSummary: LsoReportSummary = buildLsoManagementReportSummary({
+    sstEvaluation: {
+      exists: !!sstLatest,
+      percentage: sstLatest ? asOptionalNumber(sstLatest.porcentajeCumplimiento) : null,
+      nonCompliantAnswers: sstLatest ? sstAnswers.filter((answer) => !answer.noAplica && answer.cumple === 0).length : null,
+      pendingActions: sstLatest ? sstActions.filter((action: AnyRecord) => action.estado !== "cerrada" && action.estado !== "completada").length : null,
+      totalActions: sstLatest ? sstActions.length : null,
+    },
+    pesvEvaluation: {
+      exists: !!pesvLatest,
+      percentage: pesvLatest ? asOptionalNumber(pesvLatest.porcentajeCumplimiento) : null,
+      nonCompliantAnswers: pesvLatest ? pesvAnswers.filter((answer) => !answer.noAplica && answer.cumple === 0).length : null,
+      pendingActions: pesvLatest ? pesvActions.filter((action: AnyRecord) => action.estado !== "cerrada" && action.estado !== "completada").length : null,
+      totalActions: pesvLatest ? pesvActions.length : null,
+    },
+    annualPlan: {
+      exists: !!plan,
+      activities: plan ? asOptionalNumber(plan.totalActividades) : null,
+      completedActivities: plan ? asOptionalNumber(plan.actividadesCompletadas) : null,
+      percentage: plan ? asOptionalNumber(plan.porcentajeCumplimiento) : null,
+    },
+    hazardIdentification: { matrices: iperc.length },
+    investigations: {
+      total: investigations.length,
+      overdue: investigations.filter((investigation: AnyRecord) => investigation.slaStatus === "vencido").length,
+      missingSignatures: investigations.filter((investigation: AnyRecord) => !investigation.licensedProfessionalName).length,
+    },
+    fleet: {
+      vehicles: vehicles.length,
+      drivers: drivers.length,
+      expiredDocuments: vehicles.filter((vehicle: AnyRecord) => [vehicle.soatExpiry, vehicle.technicalReviewExpiry, vehicle.insuranceExpiry].some((date: any) => date && new Date(date) < reportGeneratedAt)).length,
+    },
+    inspections: {
+      total: asNumber(inspections.total),
+      requiresReviewBeforeOperating: asNumber(inspections.noAptas),
+    },
+    pesvFindings: { total: asNumber(pesvFindings.total), open: asNumber(pesvFindings.open) },
+    roadIncidents: { total: asNumber(incidents.total), serious: asNumber(incidents.serious), fatalities: asNumber(incidents.fatalities) },
+  });
+
   const chunks: Buffer[] = [];
   const doc = new PDFDocument({ size: "LETTER", margin: PDF_CONFIG.MARGIN, bufferPages: true });
   doc.on("data", (c: Buffer) => chunks.push(c));
@@ -123,93 +231,108 @@ export async function generateLsoManagementReport(companyId: string, year: numbe
     aprobo: { name: company.legalRepName || "Alta Dirección", role: "Alta Dirección / Gerencia", signatureUrl: company.legalRepSignatureUrl || undefined },
     lso: { name: signerName, licenseNumber: lso.sstLicenseNumber || assignment.externalLsoLicenseNumber || "Pendiente", licenseIssuer: lso.sstLicenseIssuer || assignment.externalLsoLicenseIssuer || "Secretaría de Salud", signatureUrl: lso.sstSignatureUrl || assignment.externalLsoSignatureUrl || undefined },
   };
-  let y = await addStandardHeader({ doc, company: { id: company.id, name: company.name, nit: company.nit, address: company.address, logoUrl: company.logoUrl }, documentTitle: "INFORME DE GESTIÓN SST + PESV — ENTREGA LSO", documentCode: "LSO-GEST-01", version: "1.0" });
+  let y = await addStandardHeader({ doc, company: { id: company.id, name: company.name, nit: company.nit, address: company.address, logoUrl: company.logoUrl }, documentTitle: "INFORME DE GESTIÓN DE SEGURIDAD Y SALUD EN EL TRABAJO Y SEGURIDAD VIAL — ENTREGA LSO", documentCode: "LSO-GEST-01", version: "1.0" });
   y = writeBlock(doc, "CONTEXTO DE LA ENTREGA", [
     `Empresa: ${company.name} | NIT: ${company.nit} | ${text(company.city)} | Vigencia analizada: ${year}.`,
     `Profesional asignado: ${text(lso?.fullName || assignment?.externalLsoName)} | Licencia: ${text(lso?.sstLicenseNumber || assignment?.externalLsoLicenseNumber)} | Asignación desde: ${formatDate(assignment?.assignedAt)}.`,
-    "Gestión atribuible al LSO: se limita a registros con firma, responsable o trazabilidad de auditoría. Estado de la empresa durante la vigencia: refleja datos operativos registrados, sin atribuirlos automáticamente al LSO.",
+    "La participación del LSO solo se reconoce cuando el sistema encuentra una firma, una persona responsable registrada o un historial verificable. Los demás registros de la empresa no se asignan automáticamente a este profesional.",
   ], y);
-  y = writeBlock(doc, "KPI EJECUTIVO", [
-    `SST: ${sstLatest ? `${text(sstLatest.porcentajeCumplimiento)}% (${text(sstLatest.nivelCumplimiento)})` : "sin evaluación para el año"}; PESV: ${pesvLatest ? `${text(pesvLatest.porcentajeCumplimiento)}%` : "sin evaluación para el año"}.`,
-    `Plan anual: ${plan ? `${text(plan.porcentajeCumplimiento)}% (${text(plan.estado)})` : "sin registro"}; IPERC: ${iperc.length} matriz(es); hallazgos/acciones abiertas se priorizan al final.`,
-    `Estado de la empresa (corte de generación ${formatDate(new Date())}): ${vehicles.length} vehículo(s), ${drivers.length} conductor(es); inspecciones ${year}: ${asNumber(inspections.total)}; investigaciones: ${investigations.length}.`,
+  y = writeExecutiveBlock(doc, "APRECIACIÓN GENERAL", [
+    `${reportSummary.overallNarrative} Clasificación: ${reportSummary.overallStatus}. Fecha del informe: ${formatDate(reportGeneratedAt)}.`,
+  ], y);
+  y = writeExecutiveSummaryItems(doc, "FORTALEZAS IDENTIFICADAS", limitExecutiveItems(reportSummary.strengths, 3), y);
+  const topAttention = [...reportSummary.attentionItems]
+    .sort((left, right) => (left.priority === "urgente" ? 0 : 1) - (right.priority === "urgente" ? 0 : 1))
+    .slice(0, 4);
+  y = writeExecutiveSummaryItems(doc, "ASUNTOS QUE REQUIEREN ATENCIÓN", topAttention, y, reportSummary.attentionItems.length - topAttention.length);
+  const recommendationGroups = selectExecutiveRecommendationGroups(reportSummary.recommendations, 4);
+  const recommendationLines = recommendationGroups.flatMap(({ label, entries }) => [label, ...entries.map(summaryItemLine)]);
+  y = writeExecutiveBlock(doc, "RECOMENDACIONES PARA LA CONTINUIDAD", recommendationLines.length ? recommendationLines : ["No se encontró información registrada que requiera una recomendación."], y);
+  y = writeExecutiveSummaryItems(doc, "CONCEPTO DE ENTREGA", [reportSummary.handoverConcept], y);
+  y = startDetailPageAfterExecutive(doc, y);
+  y = writeBlock(doc, "RESUMEN GENERAL DE RESULTADOS", [
+    `Seguridad y salud en el trabajo: ${sstLatest ? `${text(sstLatest.porcentajeCumplimiento)}% (${text(sstLatest.nivelCumplimiento)})` : "no se encontró información registrada de una evaluación para el año"}. Seguridad vial: ${pesvLatest ? `${text(pesvLatest.porcentajeCumplimiento)}%` : "no se encontró información registrada de una evaluación para el año"}.`,
+    `Plan anual: ${plan ? `${text(plan.porcentajeCumplimiento)}% (${text(plan.estado)})` : "no se encontró información registrada"}; matrices para identificar peligros y valorar riesgos: ${iperc.length}; hallazgos y acciones pendientes se describen en los apartados finales.`,
+    `Estado registrado a la fecha del informe ${formatDate(reportGeneratedAt)}: ${vehicles.length} vehículo(s), ${drivers.length} conductor(es); inspecciones ${year}: ${asNumber(inspections.total)}; investigaciones: ${investigations.length}.`,
   ], y);
   if (sstLatest) {
-    const phva = (() => { try { return JSON.parse(sstLatest.puntajesPorCicloPhva || "{}"); } catch { return {}; } })();
+     const improvementCycle = (() => { try { return JSON.parse(sstLatest.puntajesPorCicloPhva || "{}"); } catch { return {}; } })();
     const failed = sstAnswers.filter(a => !a.noAplica && a.cumple === 0).length;
-    y = writeBlock(doc, "SST — ÚLTIMA EVALUACIÓN Y BRECHAS", [
-      `Evaluación ${sstLatest.anio}, ${formatDate(sstLatest.fechaEvaluacion)}: ${text(sstLatest.puntajeTotal)}/${text(sstLatest.puntajeMaximo)} (${text(sstLatest.porcentajeCumplimiento)}%), ${text(sstLatest.estado)}.`,
-      `PHVA: ${Object.entries(phva).map(([k, v]: any) => `${k} ${text(v?.obtenido)}/${text(v?.maximo)}`).join(" · ") || "sin desglose registrado"}. Comparación anterior: ${sstPrior ? `${text(sstPrior.porcentajeCumplimiento)}% (${asNumber(sstLatest.porcentajeCumplimiento) - asNumber(sstPrior.porcentajeCumplimiento) >= 0 ? "+" : ""}${asNumber(sstLatest.porcentajeCumplimiento) - asNumber(sstPrior.porcentajeCumplimiento)} pp)` : "sin evaluación previa"}.`,
+     y = writeBlock(doc, "ESTADO DE LA SEGURIDAD Y SALUD EN EL TRABAJO", [
+      `Evaluación ${sstLatest.anio}, ${formatDate(sstLatest.fechaEvaluacion)}: puntaje ${text(sstLatest.puntajeTotal)} de ${text(sstLatest.puntajeMaximo)} (${text(sstLatest.porcentajeCumplimiento)}%), ${text(sstLatest.estado)}.`,
+       `Ciclo de mejora: ${Object.entries(improvementCycle).map(([k, v]: any) => `${k}: obtenido ${text(v?.obtenido)} de máximo ${text(v?.maximo)}`).join(" · ") || "sin desglose registrado"}. Comparación anterior: ${sstPrior ? `${text(sstPrior.porcentajeCumplimiento)}% (${asNumber(sstLatest.porcentajeCumplimiento) - asNumber(sstPrior.porcentajeCumplimiento) >= 0 ? "+" : ""}${asNumber(sstLatest.porcentajeCumplimiento) - asNumber(sstPrior.porcentajeCumplimiento)} puntos porcentuales)` : "sin evaluación previa"}.`,
       `Respuestas: ${sstAnswers.length}; no conformes: ${failed}; acciones de mejora: ${sstActions.length} (${sstActions.filter((a: AnyRecord) => a.estado !== "cerrada" && a.estado !== "completada").length} pendientes).`,
       text(sstLatest.observaciones, "Sin observaciones generales registradas."),
     ], y);
-  } else y = writeBlock(doc, "SST", ["No hay evaluación SST para la vigencia solicitada."], y);
-  y = writeBlock(doc, "PLAN ANUAL, IPERC Y EVIDENCIAS", [
-    plan ? `Plan ${year}: ${text(plan.totalActividades)} actividades, ${text(plan.actividadesCompletadas)} completadas, cumplimiento ${text(plan.porcentajeCumplimiento)}%; presupuesto ejecutado ${text(plan.presupuestoEjecutado)}.` : "No hay plan anual registrado.",
-    `Familia IPERC (corte ${formatDate(new Date())}): ${iperc.length} matriz(es). Gestión atribuible al LSO: ${plan?.lsoSignedAt && matchesRequester({ name: plan.lsoSignatureName, license: plan.lsoSignatureLicense, signedAt: plan.lsoSignedAt }) ? "plan firmado por el LSO autenticado" : "sin firma atribuible al LSO autenticado"}; estado empresa: ${plan?.lsoSignedAt ? "firma LSO registrada" : "sin firma registrada"}. Auditoría explícita del usuario autenticado en ${year}: ${asNumber(requesterAudit[0]?.count)} evento(s).`,
+   } else y = writeBlock(doc, "ESTADO DE LA SEGURIDAD Y SALUD EN EL TRABAJO", ["No se encontró información registrada de una evaluación de seguridad y salud en el trabajo para la vigencia solicitada."], y);
+   y = writeBlock(doc, "PLAN DE TRABAJO, IDENTIFICACIÓN DE PELIGROS Y SOPORTES", [
+     plan ? `Plan ${year}: ${text(plan.totalActividades)} actividades, ${text(plan.actividadesCompletadas)} completadas, cumplimiento ${text(plan.porcentajeCumplimiento)}%; presupuesto ejecutado ${text(plan.presupuestoEjecutado)}.` : "No se encontró información registrada de un plan anual de trabajo.",
+     `Matrices para identificar peligros y valorar riesgos (fecha del informe ${formatDate(reportGeneratedAt)}): ${iperc.length}. Registro del LSO: ${plan?.lsoSignedAt && matchesRequester({ name: plan.lsoSignatureName, license: plan.lsoSignatureLicense, signedAt: plan.lsoSignedAt }) ? "plan firmado por el LSO autenticado" : "sin firma validada para el LSO autenticado"}; registro de la empresa: ${plan?.lsoSignedAt ? "firma LSO registrada" : "sin firma registrada"}. Actividades identificadas en el historial del profesional durante ${year}: ${asNumber(requesterAudit[0]?.count)}.`,
   ], y);
-  y = writeBlock(doc, "ACCIDENTES E INVESTIGACIONES — EXCEPCIONES", investigations.length ? investigations.slice(0, 12).map((i: AnyRecord) => `${formatDate(i.eventDate)} ${text(i.eventType)}: ${text(i.status)}; SLA ${text(i.slaStatus)}; acciones ${text(i.actionsImplemented)}/${text(i.actionsTotal)}; ${i.licensedProfessionalName ? "firma LSO registrada (empresa; sin atribución de autoría)" : "firma LSO pendiente"}.`) : ["No hay investigaciones registradas para la vigencia."], y);
+   y = writeBlock(doc, "ACCIDENTES E INVESTIGACIONES", investigations.length ? investigations.slice(0, 12).map((i: AnyRecord) => {
+     const actionSentence = Number(i.actionsTotal) > 0 ? `; ${formatInvestigationActions(i.actionsImplemented, i.actionsTotal)}` : "";
+     return `${formatDate(i.eventDate)} ${formatInvestigationEventType(i.eventType)}: ${formatInvestigationStatus(i.status)}; la investigación ${formatInvestigationDeadlineStatus(i.slaStatus)}${actionSentence}; ${i.licensedProfessionalName ? "firma LSO registrada (empresa; el registro no permite confirmar quién realizó la actividad)" : "firma LSO pendiente"}.`;
+   }) : ["No se encontró información registrada de investigaciones para la vigencia."], y);
   if (pesvLatest) {
     const counts = { aplicables: pesvAnswers.filter(a => !a.noAplica).length, cumplimiento: pesvAnswers.filter(a => !a.noAplica && a.cumple === 1).length, noCumple: pesvAnswers.filter(a => !a.noAplica && a.cumple === 0).length, na: pesvAnswers.filter(a => a.noAplica === 1).length, sinRespuesta: pesvAnswers.filter(a => !a.noAplica && a.cumple === null).length };
-    y = writeBlock(doc, "PESV — EVALUACIÓN Y OPERACIÓN", [
+      y = writeBlock(doc, "ESTADO DE LA SEGURIDAD VIAL", [
       `Evaluación ${pesvLatest.anio}, ${formatDate(pesvLatest.createdAt)}: nivel ${text(pesvLatest.nivel)}, cumplimiento ${text(pesvLatest.porcentajeCumplimiento)}%, estado ${text(pesvLatest.estado)}.`,
-      `Fases: Planear ${text(pesvLatest.puntajePlanear)}, Hacer ${text(pesvLatest.puntajeHacer)}, Verificar ${text(pesvLatest.puntajeVerificar)}, Actuar ${text(pesvLatest.puntajeActuar)}. Respuestas: aplicables ${counts.aplicables}, cumple ${counts.cumplimiento}, no cumple ${counts.noCumple}, N/A ${counts.na}, sin respuesta ${counts.sinRespuesta}.`,
+       `Fases: Planear ${text(pesvLatest.puntajePlanear)}, Hacer ${text(pesvLatest.puntajeHacer)}, Verificar ${text(pesvLatest.puntajeVerificar)}, Actuar ${text(pesvLatest.puntajeActuar)}. Respuestas: aplicables ${counts.aplicables}, cumple ${counts.cumplimiento}, no cumple ${counts.noCumple}, no aplica ${counts.na}, sin respuesta ${counts.sinRespuesta}.`,
       `Hallazgos clave: ${pesvAnswers.filter(a => a.hallazgo).slice(0, 4).map(a => text(a.hallazgo, "")).join(" | ") || "sin hallazgos descritos"}; acciones ${pesvActions.length}, pendientes ${pesvActions.filter((a: AnyRecord) => a.estado !== "cerrada" && a.estado !== "completada").length}.`,
-      `Estado operativo: ${drivers.length} conductores, ${vehicles.length} vehículos; documentos con vencimiento registrado ${vehicles.filter((v: AnyRecord) => v.soatExpiry || v.technicalReviewExpiry || v.insuranceExpiry).length}; inspecciones ${asNumber(inspections.total)}, no aptas ${asNumber(inspections.noAptas)}.`,
+       `Registros de la operación: ${drivers.length} conductores, ${vehicles.length} vehículos; documentos con vencimiento registrado ${vehicles.filter((v: AnyRecord) => v.soatExpiry || v.technicalReviewExpiry || v.insuranceExpiry).length}; inspecciones ${asNumber(inspections.total)}, requieren revisión antes de operar ${asNumber(inspections.noAptas)}.`,
     ], y);
   }
-  if (!pesvLatest) y = writeBlock(doc, "PESV — EVALUACIÓN", ["No hay evaluación PESV para la vigencia solicitada; los dominios operativos se informan independientemente."], y);
+   if (!pesvLatest) y = writeBlock(doc, "ESTADO DE LA SEGURIDAD VIAL", ["No se encontró información registrada de una evaluación del Plan Estratégico de Seguridad Vial para la vigencia solicitada; los registros de la operación se informan independientemente."], y);
   if (shouldRenderPesvOperationalSections(!!pesvLatest)) {
-    y = writeBlock(doc, "PESV — DOMINIOS OPERATIVOS Y GOBERNANZA", [
-      metric("integrantes comité ampliado", `Gobernanza: ${(expandedMembers.length ? expandedMembers.filter((c: AnyRecord) => c.estado === "activo").length : committees.filter((c: AnyRecord) => c.activo === 1).length)} integrantes activos y ${(expandedActs.length || expandedMembers.length ? expandedActs.length : acts.length)} acta(s) en ${year}; se prioriza el modelo ampliado.`),
+     y = writeBlock(doc, "ORGANIZACIÓN Y SEGUIMIENTO DE LA SEGURIDAD VIAL", [
+       metric("integrantes comité ampliado", `Organización y seguimiento: ${(expandedMembers.length ? expandedMembers.filter((c: AnyRecord) => c.estado === "activo").length : committees.filter((c: AnyRecord) => c.activo === 1).length)} integrantes activos y ${(expandedActs.length || expandedMembers.length ? expandedActs.length : acts.length)} acta(s) en ${year}.`),
       `${metric("fatiga PESV", `Fatiga: ${asNumber(fatigue.total)} controles (${asNumber(fatigue.exceptions)} excepciones)`) }; ${metric("alcohol PESV", `alcohol: ${asNumber(alcohol.total)} pruebas (${asNumber(alcohol.exceptions)} requieren atención)`) }; ${metric("encuestas de aptitud", `aptitud: ${asNumber(driverSurveys.total)} encuestas`)}`,
       `Objetivos e indicadores: ${objectives.length} objetivo(s) de ${year}, ${indicators.length} indicador(es); auditorías PESV programadas ${audits.length}, ejecutadas ${audits.filter((a: AnyRecord) => a.fechaEjecucion).length}.`,
       metric("revisión por dirección PESV", `Revisión por dirección: ${reviews.length} revisión(es) en ${year}; decisiones/compromisos ${reviewDecisions.length}, pendientes ${reviewDecisions.filter((d: AnyRecord) => d.estado !== "completada").length}.`),
-      `Aptitud conductores: ${asNumber(driverSurveys.total)} encuestas, aptos ${asNumber(driverSurveys.aptos)}, no aptos ${asNumber(driverSurveys.noAptos)}; alertas de sueño/salud/alcohol ${asNumber(driverSurveys.alerts)}.`,
+       `Aptitud conductores: ${asNumber(driverSurveys.total)} encuestas, aptos ${asNumber(driverSurveys.aptos)}, requieren revisión antes de operar ${asNumber(driverSurveys.noAptos)}; alertas de sueño/salud/alcohol ${asNumber(driverSurveys.alerts)}.`,
     ], y);
     y = writeBlock(doc, "RIESGOS VIALES Y TRATAMIENTOS", riskRows.length || treatments.length ? [
       `Matriz vial: ${riskRows.length} riesgo(s), ${riskRows.filter((r: AnyRecord) => ["alto", "muy_alto", "critico"].includes(r.nivelRiesgo)).length} de nivel alto/muy alto; activos ${riskRows.filter((r: AnyRecord) => r.activo === 1).length}.`,
-      `Tratamientos: ${treatments.length}; pendientes/en curso ${treatments.filter((t: AnyRecord) => !["implementado", "cerrado", "completado"].includes(t.estado)).length}. Priorizar riesgos sin tratamiento o con eficacia baja.`,
-    ] : ["No hay riesgos ni tratamientos viales registrados."], y);
+       `Tratamientos: ${treatments.length}; pendientes/en curso ${treatments.filter((t: AnyRecord) => !["implementado", "cerrado", "completado"].includes(t.estado)).length}. Riesgos sin tratamiento o con eficacia baja: revisar en los registros correspondientes.`,
+     ] : ["No se encontró información registrada de riesgos ni tratamientos viales."], y);
     y = writeBlock(doc, "FLOTA, CONDUCTORES Y COMPARENDOS", vehicles.length || drivers.length || comparendos.length ? [
-      `Estado al corte ${formatDate(new Date())}: ${vehicles.length} vehículo(s), ${drivers.length} conductor(es), ${assignments.length} asignación(es) vigentes durante ${year}.`,
-      `Comparendos ${year}: ${comparendos.length}; pendientes ${comparendos.filter((c: AnyRecord) => c.estado === "pendiente").length}. Verificar licencias y vencimientos en la fecha de corte.`,
-    ] : ["No hay registros de flota, conductores ni comparendos."], y);
+       `Registros a la fecha del informe ${formatDate(reportGeneratedAt)}: ${vehicles.length} vehículo(s), ${drivers.length} conductor(es), ${assignments.length} asignación(es) vigentes durante ${year}.`,
+       `Comparendos ${year}: ${comparendos.length}; pendientes ${comparendos.filter((c: AnyRecord) => c.estado === "pendiente").length}. Verificar licencias y vencimientos a la fecha del informe.`,
+     ] : ["No se encontró información registrada de flota, conductores ni comparendos."], y);
     y = writeBlock(doc, "INSPECCIÓN Y MANTENIMIENTO", asNumber(inspections.total) || maintenances.length ? [
-      `Inspecciones preoperacionales ${year}: ${asNumber(inspections.total)}; no aptas ${asNumber(inspections.noAptas)}.`,
-      `Mantenimientos ${year}: ${maintenances.length}; soportes documentales registrados ${maintenances.filter((m: AnyRecord) => !!m.documentUrl).length}.`,
-    ] : ["No hay inspecciones ni mantenimientos en la vigencia."], y);
+       `Inspecciones preoperacionales ${year}: ${asNumber(inspections.total)}; requieren revisión antes de operar ${asNumber(inspections.noAptas)}.`,
+       `Mantenimientos ${year}: ${maintenances.length}; documentos de respaldo registrados ${maintenances.filter((m: AnyRecord) => !!m.documentUrl).length}.`,
+     ] : ["No se encontró información registrada de inspecciones ni mantenimientos en la vigencia."], y);
     y = writeBlock(doc, "RUTAS Y VELOCIDAD", routes.length || asNumber(gps.total) || asNumber(speedAlerts.total) ? [
       `Rutas seguras registradas: ${routes.length}, activas ${routes.filter((r: AnyRecord) => r.isActive === 1).length}; riesgo alto/muy alto ${routes.filter((r: AnyRecord) => ["alto", "muy_alto"].includes(r.riskLevel)).length}.`,
       `GPS ${year}: ${asNumber(gps.total)} registros, excedencias ${asNumber(gps.exceeded)}; alertas SST ${asNumber(speedAlerts.total)}, abiertas ${asNumber(speedAlerts.open)}.`,
-    ] : ["No hay rutas, trazas GPS ni alertas de velocidad."], y);
+     ] : ["No se encontró información registrada de rutas, registros de ubicación y velocidad ni alertas de velocidad."], y);
     y = writeBlock(doc, "SINIESTROS Y VÍCTIMAS", asNumber(incidents.total) || victims.length ? [
-      `Siniestros viales ${year}: ${asNumber(incidents.total)}; con heridos/mortales ${asNumber(incidents.serious)}; fatalidades registradas ${asNumber(incidents.fatalities)}.`,
+       `Siniestros viales ${year}: ${asNumber(incidents.total)}; con heridos o consecuencias mortales ${asNumber(incidents.serious)}; personas fallecidas registradas ${asNumber(incidents.fatalities)}.`,
       `Atención a víctimas: ${victims.length} registro(s), seguimiento abierto ${victims.filter((v: AnyRecord) => v.estadoSeguimiento !== "cerrado").length}.`,
-    ] : ["No hay siniestros ni registros de víctimas en la vigencia."], y);
+     ] : ["No se encontró información registrada de siniestros ni víctimas en la vigencia."], y);
     y = writeBlock(doc, "FORMACIÓN VIAL", trainings.length ? [
       `Formaciones ${year}: ${trainings.length}; asistentes registrados por relación conductor-formación: ${trainingAttendees.length}, asistencias confirmadas ${trainingAttendees.filter((a: AnyRecord) => a.attended === 1).length}.`,
-      `Promedio declarado por eventos: ${trainings.length ? Math.round(trainings.reduce((n: number, t: AnyRecord) => n + asNumber(t.totalAttendees), 0) / trainings.length) : 0} asistentes; validar brechas contra la asistencia efectiva.`,
-    ] : ["No hay formaciones viales en la vigencia."], y);
+       `Promedio declarado por eventos: ${trainings.length ? Math.round(trainings.reduce((n: number, t: AnyRecord) => n + asNumber(t.totalAttendees), 0) / trainings.length) : 0} asistentes; asistencias confirmadas registradas: ${trainingAttendees.filter((a: AnyRecord) => a.attended === 1).length}.`,
+     ] : ["No se encontró información registrada de formaciones viales en la vigencia."], y);
     y = writeBlock(doc, "OBJETIVOS, INDICADORES Y AUDITORÍA", objectives.length || indicators.length || measurements.length || audits.length || asNumber(pesvFindings.total) ? [
       `Objetivos ${year}: ${objectives.length}; indicadores definidos ${indicators.length}; mediciones ${year}: ${measurements.length}, fuera de meta ${measurements.filter((m: AnyRecord) => m.cumpleMeta === 0).length}.`,
       `Auditorías PESV programadas ${year}: ${audits.length}; hallazgos registrados ${asNumber(pesvFindings.total)}, abiertos ${asNumber(pesvFindings.open)}.`,
-    ] : ["No hay objetivos, mediciones ni auditorías viales en la vigencia."], y);
+     ] : ["No se encontró información registrada de objetivos, mediciones ni auditorías viales en la vigencia."], y);
     if (pesvLatest) {
       y = writeBlock(doc, "COBERTURA DE EVIDENCIA PESV", criteria.length || evidence.length ? [
         `Evaluación seleccionada: ${criteria.length} criterio(s) de verificación y ${evidence.length} evidencia(s) documental(es).`,
         `Evidencias con archivo: ${evidence.filter((e: AnyRecord) => !!e.archivoUrl).length}; criterios con observación/hallazgo: ${criteria.filter((c: AnyRecord) => !!c.observacion).length}.`,
-      ] : ["No hay criterios ni evidencias documentales vinculadas a la evaluación PESV."], y);
+       ] : ["No se encontró información registrada de criterios ni evidencias documentales vinculadas a la evaluación del Plan Estratégico de Seguridad Vial."], y);
     }
   }
-  const queue = [
-    ...(sstAnswers.filter(a => !a.noAplica && a.cumple === 0).length ? [`ALTA: cerrar ${sstAnswers.filter(a => !a.noAplica && a.cumple === 0).length} no conformidad(es) SST y verificar evidencia.`] : []),
-    ...(investigations.some((i: AnyRecord) => !i.licensedProfessionalName || i.slaStatus === "vencido") ? ["CRÍTICA: completar firmas o SLA vencido en investigaciones de accidentes."] : []),
-    ...(pesvAnswers.filter(a => a.hallazgo && a.cumple === 0).length ? [`ALTA: tratar ${pesvAnswers.filter(a => a.hallazgo && a.cumple === 0).length} hallazgo(s) PESV.`] : []),
-    ...(vehicles.some((v: AnyRecord) => [v.soatExpiry, v.technicalReviewExpiry, v.insuranceExpiry].some((d: any) => d && new Date(d) < new Date())) ? ["ALTA: regularizar documentos vencidos de flota."] : []),
-    "MEDIA: confirmar soportes, responsables y fechas de cierre en la próxima revisión de entrega.",
-  ];
-  y = writeBlock(doc, "COLA PRIORIZADA DE ENTREGA", queue, y);
+  const queue = reportSummary.attentionItems.map(summaryItemLine);
+  const completeRecommendationLines = groupRecommendationPeriods(reportSummary.recommendations)
+    .flatMap(({ label, entries }) => [label, ...entries.map(summaryItemLine)]);
+  if (completeRecommendationLines.length) {
+    y = writeBlock(doc, "PLAN COMPLETO DE RECOMENDACIONES", completeRecommendationLines, y);
+  }
+  y = writeBlock(doc, "ASUNTOS PRIORITARIOS", queue.length ? queue : ["No se encontró información registrada de asuntos prioritarios."], y);
   if (y + doc.heightOfString("Documento analítico generado con datos registrados en el sistema; no sustituye la verificación documental.", { width: doc.page.width - PDF_CONFIG.MARGIN * 2 }) > doc.page.height - PDF_CONFIG.FOOTER_HEIGHT) {
     doc.addPage();
     y = PDF_CONFIG.MARGIN + 15;

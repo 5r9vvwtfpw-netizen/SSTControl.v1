@@ -3,6 +3,19 @@ import assert from "node:assert/strict";
 import { createLsoArchiveLifecycleService, createLsoAssignmentActivationService, type ArchiveRepository, type LsoArchiveLifecycleDeps } from "../server/services/lso-management-report-archive";
 import { createLsoArchiveCleanupService } from "../server/services/lso-archive-cleanup";
 import { archiveListScope, canAccessLsoArchive, hasExactActiveAssignment, interpretGpsAggregate, isLsoAttributable, shouldRenderPesvOperationalSections } from "../server/services/lso-management-report-policy";
+import {
+  buildLsoManagementReportSummary,
+  formatLsoSummaryItemForPdf,
+  formatInvestigationActions,
+  formatInvestigationDeadlineStatus,
+  formatInvestigationEventType,
+  formatInvestigationStatus,
+  groupRecommendationPeriods,
+  limitExecutiveItems,
+  pluralizeSpanish,
+  selectExecutiveRecommendationGroups,
+  type LsoReportFacts,
+} from "../server/services/lso-management-report-summary";
 
 type Assignment = any;
 type Archive = any;
@@ -191,4 +204,153 @@ test("company lock serializes activation and replacement while keeping multiple 
   // Activation is a separate locked operation and does not deactivate other active assignments.
   await activation({ userId: "u4", companyId: "c1", isActive: true } as any);
   assert.equal(h.state.assignments.filter((a) => a.isActive).length, 3);
+});
+
+test("report summary marks an all-good set of registered facts as satisfactory", () => {
+  const summary = buildLsoManagementReportSummary({
+    sstEvaluation: { exists: true, percentage: 100, nonCompliantAnswers: 0, pendingActions: 0, totalActions: 4 },
+    pesvEvaluation: { exists: true, percentage: 100, nonCompliantAnswers: 0, pendingActions: 0, totalActions: 3 },
+    annualPlan: { exists: true, activities: 2, completedActivities: 2 },
+    hazardIdentification: { matrices: 1 },
+    investigations: { total: 1, overdue: 0, missingSignatures: 0 },
+    fleet: { vehicles: 2, drivers: 2, expiredDocuments: 0 },
+    inspections: { total: 2, requiresReviewBeforeOperating: 0 },
+    pesvFindings: { total: 1, open: 0 },
+  });
+  assert.equal(summary.overallStatus, "Satisfactorio");
+  assert.match(summary.overallNarrative, /Según los registros disponibles/);
+  assert.match(summary.overallNarrative, /Según los registros disponibles, la evaluación/);
+  assert.ok(summary.strengths.length >= 2 && summary.strengths.length <= 5);
+  assert.equal(summary.attentionItems.length, 0);
+  assert.ok(summary.recommendations.continuityNext90Days.length > 0);
+});
+
+test("report summary marks verified urgent issues and groups their recommendations", () => {
+  const summary = buildLsoManagementReportSummary({
+    sstEvaluation: { exists: true, percentage: 54, nonCompliantAnswers: 2, pendingActions: 3, totalActions: 5 },
+    pesvEvaluation: { exists: true, percentage: 61, nonCompliantAnswers: 1, pendingActions: 0, totalActions: 1 },
+    investigations: { total: 2, overdue: 1, missingSignatures: 1 },
+    fleet: { vehicles: 1, drivers: 1, expiredDocuments: 1 },
+    inspections: { total: 3, requiresReviewBeforeOperating: 1 },
+    pesvFindings: { total: 2, open: 1 },
+  });
+  assert.equal(summary.overallStatus, "Requiere atención prioritaria");
+  assert.ok(summary.attentionItems.length >= 4);
+  assert.ok(summary.recommendations.next30Days.length >= 4);
+  assert.ok(summary.recommendations.next30Days.every((recommendation) =>
+    summary.attentionItems.some((attention) => attention.fact === recommendation.fact)));
+  assert.ok(summary.recommendations.next30Days.some((recommendation) => recommendation.text.includes("Definir responsables y fechas")));
+});
+
+test("recorded percentages below 85 percent are attention items, not strengths", () => {
+  const summary = buildLsoManagementReportSummary({
+    sstEvaluation: { exists: true, percentage: 54 },
+    pesvEvaluation: { exists: true, percentage: 54 },
+  });
+  assert.equal(summary.strengths.length, 0);
+  assert.equal(summary.attentionItems.length, 2);
+  assert.ok(summary.attentionItems.every((entry) => entry.fact.includes("54%") && entry.text.includes("requiere seguimiento")));
+  assert.equal(summary.overallStatus, "Aceptable con asuntos pendientes");
+});
+
+test("missing evaluations are reported as missing information, not as nonperformance", () => {
+  const summary = buildLsoManagementReportSummary({
+    sstEvaluation: { exists: false },
+    pesvEvaluation: { exists: false },
+  });
+  assert.equal(summary.overallStatus, "Aceptable con asuntos pendientes");
+  assert.equal(summary.attentionItems.length, 2);
+  assert.ok(summary.attentionItems.every((entry) => entry.text.includes("No se encontró información registrada")));
+  assert.ok(summary.attentionItems.every((entry) => !entry.text.includes("incumpl")));
+});
+
+test("recommendations never lose their source fact", () => {
+  const facts: LsoReportFacts = {
+    sstEvaluation: { exists: true, percentage: 80, nonCompliantAnswers: 1, pendingActions: 0, totalActions: 0 },
+  };
+  const summary = buildLsoManagementReportSummary(facts);
+  const recommendations = [
+    ...summary.recommendations.next30Days,
+    ...summary.recommendations.next60Days,
+    ...summary.recommendations.continuityNext90Days,
+  ];
+  assert.ok(recommendations.length > 0);
+  assert.ok(recommendations.every((entry) => entry.sourceLabel && entry.fact && !entry.text.includes(entry.fact)));
+});
+
+test("summary wording avoids unexplained report jargon", () => {
+  const summary = buildLsoManagementReportSummary({
+    sstEvaluation: { exists: true, percentage: 90, nonCompliantAnswers: 0, pendingActions: 0, totalActions: 1 },
+    pesvEvaluation: { exists: true, percentage: 90, nonCompliantAnswers: 0, pendingActions: 0, totalActions: 1 },
+    hazardIdentification: { matrices: 1 },
+  });
+  const output = JSON.stringify(summary).toLowerCase();
+  for (const forbidden of ["sla", "kpi", "iperc", "phva", "n/a", "trazabilidad", "cola priorizada", "estado operativo"]) {
+    assert.equal(output.includes(forbidden), false, `found prohibited wording: ${forbidden}`);
+  }
+});
+
+test("investigation formatters translate stored values and calculate pending actions", () => {
+  assert.equal(formatInvestigationDeadlineStatus("vencido"), "superó el plazo establecido");
+  assert.equal(formatInvestigationDeadlineStatus("en_tiempo"), "se encuentra dentro del plazo establecido");
+  assert.equal(formatInvestigationEventType("accidente_trabajo"), "accidente de trabajo");
+  assert.equal(formatInvestigationStatus("en_proceso"), "en proceso");
+  assert.equal(formatInvestigationStatus("custom_status"), "Custom Status");
+  assert.equal(formatInvestigationActions(3, 8), "tiene 5 acciones pendientes de 8");
+  assert.equal(formatInvestigationActions(0, 1), "tiene 1 acción pendiente de 1");
+  assert.equal(formatInvestigationActions(12, 8), "tiene 0 acciones pendientes de 8");
+  assert.equal(formatInvestigationActions(0, 0), "No se encontraron acciones registradas");
+});
+
+test("Spanish plural helper keeps single registered records grammatical", () => {
+  assert.equal(pluralizeSpanish(1, "acción pendiente", "acciones pendientes"), "acción pendiente");
+  assert.equal(pluralizeSpanish(2, "acción pendiente", "acciones pendientes"), "acciones pendientes");
+});
+
+test("PDF summary item rendering is concise while structured facts remain separate", () => {
+  const line = formatLsoSummaryItemForPdf({
+    sourceLabel: "Evaluación de seguridad vial",
+    count: 54,
+    fact: "La evaluación registra 54% de cumplimiento.",
+    text: "La evaluación registra 54% de cumplimiento; requiere seguimiento.",
+  });
+  assert.equal(line, "La evaluación registra 54% de cumplimiento; requiere seguimiento. Origen: Evaluación de seguridad vial.");
+  assert.equal(line.includes("cantidad"), false);
+  assert.equal(line.includes("hecho verificado"), false);
+});
+
+test("executive selection is compact and omits empty recommendation periods", () => {
+  const entries = [
+    { sourceLabel: "A", count: 1, fact: "a", text: "a" },
+    { sourceLabel: "B", count: 2, fact: "b", text: "b" },
+    { sourceLabel: "C", count: 3, fact: "c", text: "c" },
+    { sourceLabel: "D", count: 4, fact: "d", text: "d" },
+  ];
+  assert.equal(limitExecutiveItems(entries, 3).length, 3);
+  const groups = selectExecutiveRecommendationGroups({
+    next30Days: entries,
+    next60Days: [],
+    continuityNext90Days: [],
+  }, 2);
+  assert.deepEqual(groups.map((group) => group.label), ["Próximos 30 días:"]);
+  assert.equal(groups[0].entries.length, 2);
+});
+
+test("full recommendation grouping preserves items beyond the executive limit", () => {
+  const entries = Array.from({ length: 6 }, (_, index) => ({
+    sourceLabel: "Acciones de seguridad y salud",
+    count: index + 1,
+    fact: `hecho ${index + 1}`,
+    text: `acción ${index + 1}`,
+  }));
+  const recommendations = {
+    next30Days: entries,
+    next60Days: [],
+    continuityNext90Days: [],
+  };
+  const executive = selectExecutiveRecommendationGroups(recommendations, 4);
+  const complete = groupRecommendationPeriods(recommendations);
+  assert.equal(executive[0].entries.length, 4);
+  assert.equal(complete[0].entries.length, 6);
+  assert.deepEqual(complete[0].entries.map((entry) => entry.fact), entries.map((entry) => entry.fact));
 });

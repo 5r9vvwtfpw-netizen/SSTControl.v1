@@ -307,3 +307,17 @@ mtime_ms = 1789153884381
 storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/ccec2879-1630-41db-8bf4-7c8813cc334e/41746f60-826b-4aa0-92e6-2932df7a8834"
 storage_version_token = "1789153895011264"
 content_type = "application/pdf"
+
+[[outputs]]
+id = "fGC3srZAkunKgXyOsBtGA"
+uri = "file://evidence/informe-gestion-lso-resumen-ejecutivo-2026.pdf"
+type = "pdf"
+title = "Informe LSO con resumen ejecutivo"
+description = "Versión final de prueba con apreciación general, fortalezas, asuntos pendientes, recomendaciones de 30/60/90 días, detalle por módulos y firmas."
+logical_id = "3b07b5ac-96c5-4542-8dba-d3092d180e93"
+content_hash = "sha256:69e558978e61580a4ffbc53bee102cb6242bea69546142926c18c85bbe6c996b"
+size = 773215
+mtime_ms = 1789376782617
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/3b07b5ac-96c5-4542-8dba-d3092d180e93/f560f0a9-6d82-4f9f-938e-e05ea262ace3"
+storage_version_token = "1789376866254667"
+content_type = "application/pdf"
