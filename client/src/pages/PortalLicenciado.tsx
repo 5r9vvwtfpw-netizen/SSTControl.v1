@@ -989,10 +989,12 @@ function InformeConsolidadoButton({
   companyId,
   companyName,
   compact = false,
+  className = "",
 }: {
   companyId: string;
   companyName: string;
   compact?: boolean;
+  className?: string;
 }) {
   const { toast } = useToast();
   const [isDownloading, setIsDownloading] = useState(false);
@@ -1056,7 +1058,7 @@ function InformeConsolidadoButton({
       variant="outline"
       onClick={handleDownload}
       disabled={isDownloading}
-      className="whitespace-nowrap"
+      className={`whitespace-nowrap ${className}`}
       data-testid={`button-download-informe-consolidado-${companyId}`}
       aria-label={`Descargar Informe consolidado SST y PESV de ${companyName}`}
     >
@@ -1189,8 +1191,8 @@ function EmpresasTab() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
+            <div className="overflow-x-auto rounded-md border">
+              <Table className="min-w-[1420px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Empresa</TableHead>
@@ -1202,7 +1204,9 @@ function EmpresasTab() {
                     <TableHead>Avance SG-SST</TableHead>
                     <TableHead>Última Actividad</TableHead>
                     <TableHead>Asignación</TableHead>
-                    <TableHead className="text-right">Acciones</TableHead>
+                    <TableHead className="sticky right-0 z-20 min-w-[360px] border-l bg-muted/95 text-left shadow-[-8px_0_12px_-12px_rgba(0,0,0,0.35)]">
+                      Acciones
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1250,11 +1254,12 @@ function EmpresasTab() {
                           {format(new Date(empresa.assignedAt), "dd MMM yyyy", { locale: es })}
                         </span>
                       </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
+                      <TableCell className="sticky right-0 z-10 min-w-[360px] border-l bg-background shadow-[-8px_0_12px_-12px_rgba(0,0,0,0.35)]">
+                        <div className="grid w-[336px] grid-cols-2 gap-2">
                           <Button
                             size="sm"
                             variant="outline"
+                            className="w-full justify-start whitespace-nowrap"
                             data-testid={`button-sst-${empresa.id}`}
                             onClick={() => {
                               localStorage.setItem("lso_company_context", JSON.stringify({
@@ -1272,6 +1277,7 @@ function EmpresasTab() {
                             <Button
                               size="sm"
                               variant="outline"
+                                className="w-full justify-start whitespace-nowrap"
                               data-testid={`button-pesv-${empresa.id}`}
                               onClick={() => {
                                 localStorage.setItem("lso_company_context", JSON.stringify({
@@ -1290,9 +1296,11 @@ function EmpresasTab() {
                             companyId={empresa.id}
                             companyName={empresa.name}
                             compact
+                            className="w-full justify-start"
                           />
                           <Button
                             size="sm"
+                            className="w-full justify-start whitespace-nowrap"
                             data-testid={`button-message-${empresa.id}`}
                             onClick={() => {
                               if (!empresa.adminUserId) {
@@ -1306,7 +1314,7 @@ function EmpresasTab() {
                             }}
                           >
                             <MessageSquare className="h-4 w-4 mr-1" />
-                            Mensaje
+                            Enviar mensaje
                           </Button>
                         </div>
                       </TableCell>
