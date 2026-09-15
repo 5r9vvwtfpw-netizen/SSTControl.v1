@@ -1564,7 +1564,10 @@ export function registerPesvPdfRoutes(app: Express) {
       if (!company) return res.status(404).send('Empresa no encontrada');
 
       const [enc] = await db.select().from(schema.pesvEncuestasConductor)
-        .where(eq(schema.pesvEncuestasConductor.id, id)).limit(1);
+        .where(and(
+          eq(schema.pesvEncuestasConductor.id, id),
+          eq(schema.pesvEncuestasConductor.companyId, companyId),
+        )).limit(1);
       if (!enc) return res.status(404).send('Encuesta no encontrada');
 
       const { default: PDFDocument } = await import('pdfkit');
@@ -1619,6 +1622,27 @@ export function registerPesvPdfRoutes(app: Express) {
         y = addLabeledField(doc, '  Detalle medicamentos', enc.medicamentosDetalle, { y });
       }
       y = addLabeledField(doc, '¿Consumió alcohol en las últimas 12 horas?', siNo(enc.consumoAlcohol), { y });
+      if (enc.resultadoAlcoholimetria != null || enc.declaracionNoAlcoholConfirmada === 1) {
+        if (enc.resultadoAlcoholimetria != null) {
+          y = addLabeledField(doc, 'Resultado de alcoholimetría', enc.resultadoAlcoholimetria, { y });
+        }
+        if (enc.declaracionNoAlcoholConfirmada === 1) {
+          y = addLabeledField(
+            doc,
+            'Declaración confirmada por el conductor',
+            'Declaro bajo mi responsabilidad no haber consumido alcohol en las últimas 12 horas',
+            { y },
+          );
+          if (enc.declaracionNoAlcoholConfirmadaAt) {
+            const fechaConfirmacion = new Intl.DateTimeFormat('es-CO', {
+              dateStyle: 'medium',
+              timeStyle: 'short',
+              timeZone: 'America/Bogota',
+            }).format(new Date(enc.declaracionNoAlcoholConfirmadaAt));
+            y = addLabeledField(doc, 'Fecha y hora de confirmación', fechaConfirmacion, { y });
+          }
+        }
+      }
       y = addLabeledField(doc, '¿Presenta enfermedad o molestia hoy?', siNo(enc.presentaEnfermedad), { y });
       if (enc.presentaEnfermedad && enc.enfermedadDetalle) {
         y = addLabeledField(doc, '  Detalle enfermedad', enc.enfermedadDetalle, { y });

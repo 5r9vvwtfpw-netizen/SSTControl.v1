@@ -638,6 +638,37 @@ export default function PesvEncuestaConductor() {
                       ? <Badge className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300 shrink-0">Sí</Badge>
                       : <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 shrink-0">No</Badge>}
                   </div>
+                  {(selectedEncuesta.resultadoAlcoholimetria != null ||
+                    Number(selectedEncuesta.declaracionNoAlcoholConfirmada) === 1) && (
+                    <div className="rounded-md bg-muted/50 p-3 space-y-2" data-testid="section-alcoholimetria-detalle">
+                      {selectedEncuesta.resultadoAlcoholimetria != null && (
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-medium">Resultado de alcoholimetría</span>
+                          <Badge variant="outline" data-testid="text-resultado-alcoholimetria">
+                            {selectedEncuesta.resultadoAlcoholimetria}
+                          </Badge>
+                        </div>
+                      )}
+                      {Number(selectedEncuesta.declaracionNoAlcoholConfirmada) === 1 && (
+                        <div className="space-y-1" data-testid="section-declaracion-no-alcohol">
+                          <p className="font-medium">Declaración confirmada por el conductor</p>
+                          <p className="text-xs text-muted-foreground">
+                            “Declaro bajo mi responsabilidad no haber consumido alcohol en las últimas 12 horas”.
+                          </p>
+                          {selectedEncuesta.declaracionNoAlcoholConfirmadaAt && (
+                            <p className="text-xs text-muted-foreground">
+                              Confirmada el{" "}
+                              {new Date(selectedEncuesta.declaracionNoAlcoholConfirmadaAt).toLocaleString("es-CO", {
+                                dateStyle: "medium",
+                                timeStyle: "short",
+                                timeZone: "America/Bogota",
+                              })}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
                   <div className="flex items-center justify-between gap-2">
                     <span>¿Presenta enfermedad o molestia hoy?</span>
                     {Number(selectedEncuesta.presentaEnfermedad) === 1
