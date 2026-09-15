@@ -1186,17 +1186,28 @@ export default function VigilanciaEpidemiologica() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="evaluatedBy">Evaluado Por *</Label>
+                <Label htmlFor="evaluatedBy">Evaluador / Profesional que realizó la evaluación *</Label>
                 <Input
                   id="evaluatedBy"
                   value={caseFormData.evaluatedBy}
                   onChange={(e) =>
                     setCaseFormData({ ...caseFormData, evaluatedBy: e.target.value })
                   }
-                  placeholder="Nombre del profesional"
+                  placeholder={
+                    caseFormData.evaluationType === "medica"
+                      ? "Nombre del médico ocupacional"
+                      : "Nombre del profesional competente"
+                  }
                   required
                   data-testid="input-case-evaluated-by"
                 />
+                <p className="text-xs text-muted-foreground">
+                  {caseFormData.evaluationType === "medica"
+                    ? "Debe ser un médico especialista en medicina del trabajo o salud ocupacional con licencia vigente."
+                    : caseFormData.evaluationType === "higienica"
+                      ? "Registre el profesional competente que realizó la medición o evaluación higiénica."
+                      : "Registre el profesional competente que realizó esta evaluación o seguimiento."}
+                </p>
               </div>
             </div>
 
