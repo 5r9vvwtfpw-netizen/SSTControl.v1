@@ -6098,6 +6098,8 @@ type PesvEncuestaConductorPortal = {
   tomaMedicamentos: number;
   medicamentosDetalle?: string | null;
   consumoAlcohol: number;
+  resultadoAlcoholimetria?: string | null;
+  declaracionNoAlcoholConfirmada: number;
   presentaEnfermedad: number;
   enfermedadDetalle?: string | null;
   resultado: string;
@@ -6113,7 +6115,10 @@ function EncuestaConductorPortalTab() {
   const [estadoEmocional, setEstadoEmocional] = useState<'bueno' | 'regular' | 'malo'>('bueno');
   const [tomaMedicamentos, setTomaMedicamentos] = useState(false);
   const [medicamentosDetalle, setMedicamentosDetalle] = useState('');
-  const [consumoAlcohol, setConsumoAlcohol] = useState(false);
+  const [consumoAlcohol, setConsumoAlcohol] = useState<boolean | null>(null);
+  const [resultadoAlcoholimetria, setResultadoAlcoholimetria] = useState('');
+  const [declaracionNoAlcoholConfirmada, setDeclaracionNoAlcoholConfirmada] = useState(false);
+  const [declaracionOpen, setDeclaracionOpen] = useState(false);
   const [presentaEnfermedad, setPresentaEnfermedad] = useState(false);
   const [enfermedadDetalle, setEnfermedadDetalle] = useState('');
   const [observaciones, setObservaciones] = useState('');
@@ -6123,11 +6128,13 @@ function EncuestaConductorPortalTab() {
   const { data: historialData, isLoading: historialLoading } = useQuery<{
     encuestas: PesvEncuestaConductorPortal[];
     conductorNombre: string | null;
+    dailyAlcoholTestingEnabled: boolean;
   }>({
     queryKey: ["/api/portal/mis-encuestas-conductor"],
   });
 
   const encuestas = historialData?.encuestas || [];
+  const dailyAlcoholTestingEnabled = historialData?.dailyAlcoholTestingEnabled === true;
 
   const hoyStr = getTodayDateString();
 
@@ -6143,6 +6150,8 @@ function EncuestaConductorPortalTab() {
         tomaMedicamentos: tomaMedicamentos ? 1 : 0,
         medicamentosDetalle: tomaMedicamentos ? medicamentosDetalle : null,
         consumoAlcohol: consumoAlcohol ? 1 : 0,
+        resultadoAlcoholimetria: dailyAlcoholTestingEnabled ? resultadoAlcoholimetria.trim() : null,
+        declaracionNoAlcoholConfirmada: consumoAlcohol === false && declaracionNoAlcoholConfirmada ? 1 : 0,
         presentaEnfermedad: presentaEnfermedad ? 1 : 0,
         enfermedadDetalle: presentaEnfermedad ? enfermedadDetalle : null,
         observaciones: observaciones || null,
@@ -6230,7 +6239,27 @@ function EncuestaConductorPortalTab() {
     </div>
   );
 
-  const hayAlertaNoApto = estadoFisico === 'malo' || estadoEmocional === 'malo' || consumoAlcohol || presentaEnfermedad || horasSueno < 6;
+  const seleccionarConsumoAlcohol = (value: boolean) => {
+    if (value) {
+      setConsumoAlcohol(true);
+      setDeclaracionNoAlcoholConfirmada(false);
+      return;
+    }
+    setDeclaracionOpen(true);
+  };
+
+  const confirmarNoConsumoAlcohol = () => {
+    setConsumoAlcohol(false);
+    setDeclaracionNoAlcoholConfirmada(true);
+    setDeclaracionOpen(false);
+  };
+
+  const alcoholimetriaValida = !dailyAlcoholTestingEnabled ||
+    (/^\d+([.,]\d+)?$/.test(resultadoAlcoholimetria.trim()));
+  const formularioValido = consumoAlcohol !== null &&
+    (consumoAlcohol === true || declaracionNoAlcoholConfirmada) &&
+    alcoholimetriaValida;
+  const hayAlertaNoApto = estadoFisico === 'malo' || estadoEmocional === 'malo' || consumoAlcohol === true || presentaEnfermedad || horasSueno < 6;
 
   return (
     <div className="space-y-6">
@@ -6315,6 +6344,52 @@ function EncuestaConductorPortalTab() {
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
+            {/* Consumo de alcohol — debe responderse primero */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center gap-2">
+                <Wine className="h-4 w-4 text-red-500" />
+                ¿Consumió bebidas alcohólicas en las últimas 12 horas?
+              </label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => seleccionarConsumoAlcohol(false)}
+                  data-testid="alcohol-no"
+                  className={`px-4 py-2 rounded-md text-sm font-medium border transition-colors ${
+                    consumoAlcohol === false ? 'bg-green-600 text-white border-transparent' : 'bg-background border-border text-foreground hover:bg-muted'
+                  }`}
+                >
+                  No
+                </button>
+                <button
+                  type="button"
+                  onClick={() => seleccionarConsumoAlcohol(true)}
+                  data-testid="alcohol-si"
+                  className={`px-4 py-2 rounded-md text-sm font-medium border transition-colors ${
+                    consumoAlcohol === true ? 'bg-red-600 text-white border-transparent' : 'bg-background border-border text-foreground hover:bg-muted'
+                  }`}
+                >
+                  Sí
+                </button>
+              </div>
+            </div>
+
+            {dailyAlcoholTestingEnabled && (
+              <div className="space-y-2">
+                <Label htmlFor="resultadoAlcoholimetria">Resultado de alcoholimetría</Label>
+                <Input
+                  id="resultadoAlcoholimetria"
+                  type="text"
+                  inputMode="decimal"
+                  value={resultadoAlcoholimetria}
+                  onChange={(event) => setResultadoAlcoholimetria(event.target.value)}
+                  placeholder="Ejemplo: 0.000"
+                  data-testid="input-resultado-alcoholimetria"
+                />
+                <p className="text-xs text-muted-foreground">Digite el valor numérico reportado por el equipo.</p>
+              </div>
+            )}
+
             {/* Horas de sueño */}
             <div className="space-y-2">
               <label className="text-sm font-medium flex items-center gap-2 flex-wrap">
@@ -6379,15 +6454,6 @@ function EncuestaConductorPortalTab() {
               )}
             </div>
 
-            {/* Consumo de alcohol */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium flex items-center gap-2">
-                <Wine className="h-4 w-4 text-red-500" />
-                ¿Consumió bebidas alcohólicas en las últimas 12 horas?
-              </label>
-              {renderToggle(consumoAlcohol, setConsumoAlcohol, "alcohol")}
-            </div>
-
             {/* Presenta enfermedad */}
             <div className="space-y-2">
               <label className="text-sm font-medium flex items-center gap-2">
@@ -6435,7 +6501,7 @@ function EncuestaConductorPortalTab() {
             <Button
               className="w-full"
               onClick={() => submitMutation.mutate()}
-              disabled={submitMutation.isPending}
+              disabled={submitMutation.isPending || !formularioValido}
               data-testid="button-enviar-encuesta-conductor"
             >
               {submitMutation.isPending ? "Enviando..." : "Enviar Encuesta"}
@@ -6443,6 +6509,26 @@ function EncuestaConductorPortalTab() {
           </CardContent>
         </Card>
       )}
+
+      <Dialog open={declaracionOpen} onOpenChange={() => {}}>
+        <DialogContent
+          onEscapeKeyDown={(event) => event.preventDefault()}
+          onPointerDownOutside={(event) => event.preventDefault()}
+          data-testid="dialog-declaracion-no-alcohol"
+        >
+          <DialogHeader>
+            <DialogTitle>Confirmación obligatoria</DialogTitle>
+            <DialogDescription className="text-base text-foreground pt-2">
+              Declaro bajo mi responsabilidad no haber consumido alcohol en las últimas 12 horas
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={confirmarNoConsumoAlcohol} data-testid="button-confirmar-no-alcohol">
+              Confirmar declaración
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Historial */}
       <Card data-testid="card-historial-encuestas-conductor">

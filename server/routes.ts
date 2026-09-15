@@ -27,6 +27,7 @@ import { users } from "@shared/schema";
 import { getPortalPendingCount } from "./services/portal-pending-count";
 import { getAuditContext } from "./lib/audit-logger";
 import { logger } from "./lib/logger";
+import { validateDailyAlcoholSubmission } from "./lib/pesv-daily-alcohol-validation";
 import { registerBillingRoutes } from "./routes/billing";
 import { registerStripeRoutes } from "./routes/stripe";
 import { registerWompiRoutes } from "./routes/wompi";
@@ -43966,14 +43967,17 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     try {
       const user = req.user as schema.User;
       const companyId = user.companyId;
-      if (!companyId) return res.json({ encuestas: [], conductorNombre: null });
+      if (!companyId) return res.json({ encuestas: [], conductorNombre: null, dailyAlcoholTestingEnabled: false });
+
+      const company = await storage.getCompany(companyId);
+      const dailyAlcoholTestingEnabled = company?.dailyAlcoholTestingEnabled === 1;
 
       let workerId = user.workerId;
       if (!workerId && user.email) {
         const worker = await storage.getWorkerByEmail(user.email, companyId);
         if (worker) workerId = worker.id;
       }
-      if (!workerId) return res.json({ encuestas: [], conductorNombre: null });
+      if (!workerId) return res.json({ encuestas: [], conductorNombre: null, dailyAlcoholTestingEnabled });
 
       // Obtener nombre del conductor desde drivers o worker
       const [driverRecord] = await db
@@ -43987,7 +43991,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
          const worker = await storage.getWorker(workerId, companyId);
         conductorNombre = worker?.name ?? '';
       }
-      if (!conductorNombre) return res.json({ encuestas: [], conductorNombre: null });
+      if (!conductorNombre) return res.json({ encuestas: [], conductorNombre: null, dailyAlcoholTestingEnabled });
 
       const encuestas = await db
         .select()
@@ -43999,7 +44003,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         .orderBy(desc(schema.pesvEncuestasConductor.fechaRegistro), desc(schema.pesvEncuestasConductor.createdAt))
         .limit(30);
 
-      res.json({ encuestas, conductorNombre });
+      res.json({ encuestas, conductorNombre, dailyAlcoholTestingEnabled });
     } catch (error: any) {
       console.error('[portal/mis-encuestas-conductor]', error);
       res.status(500).json({ error: error.message });
@@ -44012,6 +44016,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const user = req.user as schema.User;
       const companyId = user.companyId;
       if (!companyId) return res.status(403).json({ error: "Sin empresa asociada" });
+      const company = await storage.getCompany(companyId);
+      if (!company) return res.status(404).json({ error: "Empresa no encontrada" });
 
       let workerId = user.workerId;
       if (!workerId && user.email) {
@@ -44045,13 +44051,37 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         conductorNombre = worker.name;
       }
 
-      const { horasSueno, estadoFisico, estadoEmocional, tomaMedicamentos, medicamentosDetalle, consumoAlcohol, presentaEnfermedad, enfermedadDetalle, observaciones } = req.body;
+      const {
+        horasSueno,
+        estadoFisico,
+        estadoEmocional,
+        tomaMedicamentos,
+        medicamentosDetalle,
+        consumoAlcohol,
+        resultadoAlcoholimetria,
+        declaracionNoAlcoholConfirmada,
+        presentaEnfermedad,
+        enfermedadDetalle,
+        observaciones,
+      } = req.body;
+
+      const dailyAlcoholTestingEnabled = company.dailyAlcoholTestingEnabled === 1;
+      let alcoholSubmission;
+      try {
+        alcoholSubmission = validateDailyAlcoholSubmission({
+          consumoAlcohol,
+          declaracionNoAlcoholConfirmada,
+          resultadoAlcoholimetria,
+        }, dailyAlcoholTestingEnabled);
+      } catch (error: any) {
+        return res.status(400).json({ error: error.message });
+      }
 
       // Auto-calcular aptitud
       const resultado = (
         estadoFisico === 'malo' ||
         estadoEmocional === 'malo' ||
-        Number(consumoAlcohol) === 1 ||
+        alcoholSubmission.consumoAlcohol === 1 ||
         Number(presentaEnfermedad) === 1 ||
         Number(horasSueno) < 6
       ) ? 'no_apto' : 'apto';
@@ -44081,7 +44111,10 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
           estadoEmocional,
           tomaMedicamentos: Number(tomaMedicamentos) || 0,
           medicamentosDetalle: medicamentosDetalle || null,
-          consumoAlcohol: Number(consumoAlcohol) || 0,
+          consumoAlcohol: alcoholSubmission.consumoAlcohol,
+          resultadoAlcoholimetria: alcoholSubmission.resultadoAlcoholimetria,
+          declaracionNoAlcoholConfirmada: alcoholSubmission.declaracionNoAlcoholConfirmada,
+          declaracionNoAlcoholConfirmadaAt: alcoholSubmission.declaracionNoAlcoholConfirmadaAt,
           presentaEnfermedad: Number(presentaEnfermedad) || 0,
           enfermedadDetalle: enfermedadDetalle || null,
           resultado,

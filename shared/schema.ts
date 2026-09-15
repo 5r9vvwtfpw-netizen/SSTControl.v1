@@ -86,6 +86,7 @@ export const companies = pgTable("companies", {
   legalRepPosition: text("legal_rep_position"), // Cargo del representante legal
   numberOfWorkers: integer("number_of_workers").notNull().default(1),
   numberOfVehicles: integer("number_of_vehicles").default(0),
+  dailyAlcoholTestingEnabled: integer("daily_alcohol_testing_enabled").notNull().default(0),
   riskLevel: riskLevelEnum("risk_level").notNull().default("I"),
   calculatedChapter: chapterEnum("calculated_chapter").notNull().default("1"),
   // Configuración de afiliaciones por defecto (SST-2025-0038)
@@ -11295,6 +11296,9 @@ export const pesvEncuestasConductor = pgTable("pesv_encuestas_conductor", {
   tomaMedicamentos: integer("toma_medicamentos").notNull().default(0), // 0=no, 1=si
   medicamentosDetalle: text("medicamentos_detalle"),
   consumoAlcohol: integer("consumo_alcohol").notNull().default(0),       // 0=no, 1=si
+  resultadoAlcoholimetria: text("resultado_alcoholimetria"),
+  declaracionNoAlcoholConfirmada: integer("declaracion_no_alcohol_confirmada").notNull().default(0),
+  declaracionNoAlcoholConfirmadaAt: timestamp("declaracion_no_alcohol_confirmada_at"),
   presentaEnfermedad: integer("presenta_enfermedad").notNull().default(0), // 0=no, 1=si
   enfermedadDetalle: text("enfermedad_detalle"),
   resultado: varchar("resultado").notNull(), // apto, no_apto

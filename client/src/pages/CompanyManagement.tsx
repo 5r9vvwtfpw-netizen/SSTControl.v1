@@ -112,6 +112,7 @@ type CompanyFormData = {
   legalRepPosition: string;
   numberOfWorkers: number;
   numberOfVehicles: number;
+  dailyAlcoholTestingEnabled: number;
   riskLevel: "I" | "II" | "III" | "IV" | "V";
 };
 
@@ -143,6 +144,7 @@ const initialFormData: CompanyFormData = {
   legalRepPosition: "",
   numberOfWorkers: 1,
   numberOfVehicles: 0,
+  dailyAlcoholTestingEnabled: 0,
   riskLevel: "I",
 };
 
@@ -742,6 +744,7 @@ export default function CompanyManagement() {
       legalRepPosition: company.legalRepPosition || "",
       numberOfWorkers: company.numberOfWorkers || 1,
       numberOfVehicles: company.numberOfVehicles || quoteVehicles || 0,
+      dailyAlcoholTestingEnabled: company.dailyAlcoholTestingEnabled || 0,
       riskLevel: company.riskLevel,
     });
     // Solo mostrar preview si la URL es válida (empieza con /objects/ o http)
@@ -1237,6 +1240,24 @@ export default function CompanyManagement() {
                     <span className="font-medium">{getPesvLevel(formData.numberOfVehicles).level}</span>
                   </div>
                   <p className="text-xs text-muted-foreground">{getPesvLevel(formData.numberOfVehicles).description}</p>
+                </div>
+                <div className="col-span-2 space-y-2">
+                  <Label>¿La empresa realiza pruebas de alcoholimetría diarias a los conductores?</Label>
+                  <Select
+                    value={String(formData.dailyAlcoholTestingEnabled)}
+                    onValueChange={(value) => setFormData({ ...formData, dailyAlcoholTestingEnabled: Number(value) })}
+                  >
+                    <SelectTrigger data-testid="select-daily-alcohol-testing">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0">No</SelectItem>
+                      <SelectItem value="1">Sí</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Al activarla, el conductor deberá registrar el resultado de alcoholimetría en su encuesta diaria.
+                  </p>
                 </div>
               </div>
 

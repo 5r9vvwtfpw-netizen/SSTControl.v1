@@ -66,6 +66,7 @@ import { syncEppDeliveryGroups } from './migrations/sync-epp-delivery-groups';
 import { syncGuidedCommitteeActas } from './migrations/sync-guided-committee-actas';
 import { createLsoManagementReportArchives } from './migrations/create-lso-management-report-archives';
 import { createLsoArchiveCleanupJobs } from './migrations/create-lso-archive-cleanup-jobs';
+import { syncPesvDailyAlcoholTesting } from './migrations/sync-pesv-daily-alcohol-testing';
 
 /**
  * Ejecuta migraciones de base de datos automáticamente
@@ -120,6 +121,7 @@ export async function runMigrations() {
     await migratePesvVictimasTable();
     await syncOnboardingColumns();
     await createPesvEncuestaConductorTable();
+    await syncPesvDailyAlcoholTesting();
     await fixInvoiceStripeAmount();
     await syncRoadSafetyContentFields();
     await syncSstTrainingContentFields();
