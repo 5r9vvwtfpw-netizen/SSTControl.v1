@@ -1,7 +1,7 @@
 export const APP_RELEASE = {
-  version: "4.1.3",
-  label: "v4.1.3",
-  datePublished: "2026-09-09",
+  version: "4.1.4",
+  label: "v4.1.4",
+  datePublished: "2026-09-15",
   releaseNotes:
-    "Versión 4.1.3 con gestión de maquinaria amarilla y equipos especiales, mantenimiento H05 por horómetro e inspección preoperacional desde el Portal de Empleados.",
+    "Versión 4.1.4 con control condicional de alcoholimetría en la encuesta diaria PESV, declaración obligatoria de no consumo y trazabilidad en el detalle empresarial y el informe PDF.",
 } as const;
