@@ -61,7 +61,6 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
       setCurrentAccessSession(null);
       localStorage.removeItem("superadmin_selected_company");
       localStorage.removeItem("superadmin_access_session");
-      queryClient.removeQueries({ queryKey: ["/api/companies"] });
       localStorage.removeItem("mechanic_selected_company");
     }
   }, [canSelectCompany, queryClient]);
