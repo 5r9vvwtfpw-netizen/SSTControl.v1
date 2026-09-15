@@ -24,7 +24,6 @@
 - [Induction content isolation](induction-content-isolation.md) — el contenido enviado por Capacitaciones no debe aparecer en inducciones, aunque comparta URL o haya quedado en una instantánea.
 - [PESV vehicle step naming](pesv-vehicle-step-naming.md) — vehículos seguros corresponde a H04; H08 está reservado para rutas seguras.
 - [Production billing data alignment](production-billing-data-alignment.md) — separar registros locales de suscripciones/facturas de pagos confirmados por Stripe o Wompi.
-- [Colombia payment strategy](colombia-payment-strategy.md) — Colombia usará solo Wompi/PSE; mantenerlo apagado hasta aprobación y activar Stripe como respaldo únicamente mientras tanto.
 - [TypeScript cleanup workflow](typescript-cleanup-workflow.md) — las correcciones delegadas deben validarse de inmediato; pueden dejar mejoras parciales pero nunca sustituyen el chequeo global final.
 - [Worker and contract date synchronization](worker-contract-date-sync.md) — workers y contracts duplican fechas laborales; sincronizar solo el contrato activo en ambas direcciones.
 - [Development module access](development-module-access.md) — en desarrollo se omiten gates comerciales para probar módulos; producción conserva capítulo, suscripción y menú.

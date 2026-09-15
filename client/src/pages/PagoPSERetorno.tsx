@@ -30,7 +30,7 @@ function formatCurrency(cents: number): string {
   return '$' + new Intl.NumberFormat('es-CO', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(cents / 100);
+  }).format(cents);
 }
 
 const STATUS_MESSAGES: Record<string, { title: string; description: string }> = {

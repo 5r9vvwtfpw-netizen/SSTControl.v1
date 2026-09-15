@@ -8,7 +8,7 @@
  * 4. Banco redirige de vuelta a /pago-pse/retorno?id={transactionId}
  */
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import {
@@ -30,7 +30,6 @@ import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { ColombianFlag } from '@/components/ColombianFlag';
-import { ContractAcceptanceData } from '@/components/ContratoServiciosSaas';
 
 interface FinancialInstitution {
   financial_institution_code: string;
@@ -46,33 +45,8 @@ interface CompanyData {
 }
 
 interface WompiEstado {
-  enabled: boolean;
   configured: boolean;
   sandbox: boolean;
-}
-
-const PSE_CONTRACT_ACCEPTANCE_STORAGE_KEY = 'pse-contract-acceptance';
-
-function readContractAcceptance(): ContractAcceptanceData | null {
-  try {
-    const rawAcceptance = window.sessionStorage.getItem(PSE_CONTRACT_ACCEPTANCE_STORAGE_KEY);
-    if (!rawAcceptance) return null;
-
-    const acceptance = JSON.parse(rawAcceptance) as Partial<ContractAcceptanceData>;
-    if (
-      acceptance.acceptedTerms !== true ||
-      acceptance.acceptedDataTreatment !== true ||
-      acceptance.acceptedAutoRenewal !== true ||
-      typeof acceptance.acceptedAt !== 'string' ||
-      typeof acceptance.planName !== 'string'
-    ) {
-      return null;
-    }
-
-    return acceptance as ContractAcceptanceData;
-  } catch {
-    return null;
-  }
 }
 
 interface IniciarPseResponse {
@@ -110,13 +84,6 @@ export default function PagoPSE() {
   const [email, setEmail] = useState(user?.email || user?.username || '');
   const [fullName, setFullName] = useState('');
   const [isRedirecting, setIsRedirecting] = useState(false);
-  const [contractAcceptance] = useState<ContractAcceptanceData | null>(readContractAcceptance);
-
-  useEffect(() => {
-    if (!contractAcceptance) {
-      navigate('/checkout');
-    }
-  }, [contractAcceptance, navigate]);
 
   // Verificar si Wompi está configurado
   const { data: wompiEstado, isLoading: loadingEstado } = useQuery<WompiEstado>({
@@ -133,7 +100,7 @@ export default function PagoPSE() {
   // Lista de bancos PSE (solo si Wompi está configurado)
   const { data: bancosData, isLoading: loadingBancos } = useQuery<{ banks: FinancialInstitution[] }>({
     queryKey: ['/api/wompi/bancos'],
-    enabled: !!wompiEstado?.enabled && !!wompiEstado?.configured,
+    enabled: !!wompiEstado?.configured,
   });
 
   const iniciarPseMutation = useMutation({
@@ -142,9 +109,6 @@ export default function PagoPSE() {
       if (!idNumber.trim()) throw new Error('Ingrese su número de documento');
       if (!fullName.trim()) throw new Error('Ingrese su nombre completo');
       if (!email.trim()) throw new Error('Ingrese su email');
-      if (!contractAcceptance) {
-        throw new Error('Debe aceptar el contrato de servicios para continuar');
-      }
 
       const res = await apiRequest('POST', '/api/wompi/pse/iniciar', {
         bankCode,
@@ -153,7 +117,6 @@ export default function PagoPSE() {
         idNumber: idNumber.trim(),
         email: email.trim(),
         fullName: fullName.trim(),
-        contractAcceptance,
       });
 
       if (!res.ok) {
@@ -164,11 +127,6 @@ export default function PagoPSE() {
       return (await res.json()) as IniciarPseResponse;
     },
     onSuccess: (data) => {
-      try {
-        window.sessionStorage.removeItem(PSE_CONTRACT_ACCEPTANCE_STORAGE_KEY);
-      } catch {
-        // La transacción ya fue creada; no impedir la redirección si el almacenamiento no está disponible.
-      }
       setIsRedirecting(true);
       toast({
         title: 'Redirigiendo al banco',
@@ -196,7 +154,7 @@ export default function PagoPSE() {
     );
   }
 
-  if (!wompiEstado?.enabled || !wompiEstado?.configured) {
+  if (!wompiEstado?.configured) {
     return (
       <div className="container mx-auto py-8 px-4 max-w-2xl">
         <Alert variant="destructive">
