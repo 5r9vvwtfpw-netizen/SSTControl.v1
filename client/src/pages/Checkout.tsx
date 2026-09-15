@@ -30,6 +30,7 @@ interface CompanyData {
 }
 
 interface WompiEstado {
+  enabled: boolean;
   configured: boolean;
   sandbox: boolean;
 }
@@ -43,6 +44,7 @@ const riskLevelLabels: Record<RiskLevel, string> = {
 };
 
 type PaymentMethod = 'stripe' | 'pse';
+const PSE_CONTRACT_ACCEPTANCE_STORAGE_KEY = 'pse-contract-acceptance';
 
 export default function Checkout() {
   const [, navigate] = useLocation();
@@ -75,8 +77,12 @@ export default function Checkout() {
   });
 
   const isUpgradeFromFree = !currentSubscription || currentSubscription.status === 'trial' || currentSubscription.status === 'expired';
-  // PSE oculto hasta que Wompi apruebe la cuenta en producción
-  const isPseAvailable = false;
+  const isPseAvailable = !!wompiEstado?.enabled && !!wompiEstado?.configured;
+  const activePaymentMethod: PaymentMethod = isPseAvailable ? 'pse' : selectedMethod;
+
+  useEffect(() => {
+    setSelectedMethod(activePaymentMethod);
+  }, [activePaymentMethod]);
 
   const createCheckoutV2Mutation = useMutation({
     mutationFn: async (acceptanceData?: ContractAcceptanceData) => {
@@ -135,7 +141,25 @@ export default function Checkout() {
   }, [success, sessionId]);
 
   const handleCheckout = () => {
-    if (selectedMethod === 'pse') {
+    if (activePaymentMethod === 'pse') {
+      if (!contractAccepted || !contractAcceptanceData) {
+        setShowContract(true);
+        return;
+      }
+
+      try {
+        window.sessionStorage.setItem(
+          PSE_CONTRACT_ACCEPTANCE_STORAGE_KEY,
+          JSON.stringify(contractAcceptanceData),
+        );
+      } catch {
+        toast({
+          title: 'No se pudo continuar',
+          description: 'No fue posible guardar la aceptación del contrato. Intenta nuevamente.',
+          variant: 'destructive',
+        });
+        return;
+      }
       navigate('/pago-pse');
       return;
     }
@@ -158,6 +182,22 @@ export default function Checkout() {
       title: 'Contrato aceptado',
       description: 'Has aceptado los terminos del contrato de servicios.',
     });
+    if (activePaymentMethod === 'pse') {
+      try {
+        window.sessionStorage.setItem(
+          PSE_CONTRACT_ACCEPTANCE_STORAGE_KEY,
+          JSON.stringify(data),
+        );
+        navigate('/pago-pse');
+      } catch {
+        toast({
+          title: 'No se pudo continuar',
+          description: 'No fue posible guardar la aceptación del contrato. Intenta nuevamente.',
+          variant: 'destructive',
+        });
+      }
+      return;
+    }
     createCheckoutV2Mutation.mutate(data);
   };
 
@@ -424,28 +464,30 @@ export default function Checkout() {
             </CardHeader>
             <CardContent className="space-y-3">
               {/* Opción: Tarjeta (Stripe) */}
-              <button
-                type="button"
-                onClick={() => setSelectedMethod('stripe')}
-                data-testid="button-select-stripe"
-                className={`w-full flex items-center gap-3 p-3 rounded-md border text-left transition-colors ${
-                  selectedMethod === 'stripe'
-                    ? 'border-primary bg-primary/5'
-                    : 'border-border hover-elevate'
-                }`}
-              >
-                <div className={`h-4 w-4 rounded-full border-2 flex-shrink-0 ${
-                  selectedMethod === 'stripe'
-                    ? 'border-primary bg-primary'
-                    : 'border-muted-foreground'
-                }`} />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <CreditCard className="h-4 w-4 text-muted-foreground shrink-0" />
-                    <span className="font-medium text-sm">Tarjeta de crédito / débito</span>
+              {!isPseAvailable && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedMethod('stripe')}
+                  data-testid="button-select-stripe"
+                  className={`w-full flex items-center gap-3 p-3 rounded-md border text-left transition-colors ${
+                    activePaymentMethod === 'stripe'
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border hover-elevate'
+                  }`}
+                >
+                  <div className={`h-4 w-4 rounded-full border-2 flex-shrink-0 ${
+                    activePaymentMethod === 'stripe'
+                      ? 'border-primary bg-primary'
+                      : 'border-muted-foreground'
+                  }`} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <CreditCard className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <span className="font-medium text-sm">Tarjeta de crédito / débito</span>
+                    </div>
                   </div>
-                </div>
-              </button>
+                </button>
+              )}
 
               {/* Opción: PSE */}
               {isPseAvailable && (
@@ -454,13 +496,13 @@ export default function Checkout() {
                   onClick={() => setSelectedMethod('pse')}
                   data-testid="button-select-pse"
                   className={`w-full flex items-center gap-3 p-3 rounded-md border text-left transition-colors ${
-                    selectedMethod === 'pse'
+                    activePaymentMethod === 'pse'
                       ? 'border-primary bg-primary/5'
                       : 'border-border hover-elevate'
                   }`}
                 >
                   <div className={`h-4 w-4 rounded-full border-2 flex-shrink-0 ${
-                    selectedMethod === 'pse'
+                    activePaymentMethod === 'pse'
                       ? 'border-primary bg-primary'
                       : 'border-muted-foreground'
                   }`} />
@@ -475,7 +517,7 @@ export default function Checkout() {
             </CardContent>
           </Card>
 
-          {isUpgradeFromFree && selectedMethod === 'stripe' && (
+          {(isUpgradeFromFree || isPseAvailable) && (
             <Card className="border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/20" data-testid="card-contract-notice">
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-lg">
@@ -514,7 +556,7 @@ export default function Checkout() {
 
           <Card data-testid="card-payment">
             <CardContent className="pt-6 space-y-4">
-              {selectedMethod === 'stripe' ? (
+              {activePaymentMethod === 'stripe' ? (
                 <>
                   <div className="bg-muted/50 rounded-lg p-4 space-y-3">
                     <div className="flex items-center gap-2 text-sm">
@@ -571,7 +613,12 @@ export default function Checkout() {
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     Procesando...
                   </>
-                ) : selectedMethod === 'pse' ? (
+                ) : activePaymentMethod === 'pse' && !contractAccepted ? (
+                  <>
+                    <Scale className="h-4 w-4 mr-2" />
+                    Revisar Contrato y Continuar
+                  </>
+                ) : activePaymentMethod === 'pse' ? (
                   <>
                     <Landmark className="h-4 w-4 mr-2" />
                     Continuar con PSE

@@ -16,6 +16,9 @@ import crypto from "crypto";
 import logger from "../lib/logger";
 
 function getBaseUrl(): string {
+  if (!isWompiEnabled()) {
+    throw new Error("Wompi PSE está deshabilitado");
+  }
   return process.env.WOMPI_SANDBOX === "false"
     ? "https://production.wompi.co/v1"
     : "https://sandbox.wompi.co/v1";
@@ -52,6 +55,11 @@ export function isWompiConfigured(): boolean {
     process.env.WOMPI_EVENTS_SECRET &&
     process.env.WOMPI_INTEGRITY_SECRET
   );
+}
+
+/** Feature flag independiente de la presencia de credenciales. */
+export function isWompiEnabled(): boolean {
+  return process.env.WOMPI_PSE_ENABLED === "true";
 }
 
 export function getWompiPublicKey(): string | null {
@@ -243,13 +251,19 @@ export function verifyWebhookSignature(event: WompiWebhookEvent): boolean {
       return value ?? "";
     });
 
-    const toHash = values.join("") + eventsSecret;
-    const computed = crypto.createHash("sha256").update(toHash).digest("hex");
-    const valid = computed === signature.checksum;
+    // Wompi: propiedades indicadas, timestamp del evento y secreto de eventos.
+    const toHash = values.join("") + event.timestamp + eventsSecret;
+    const computed = crypto.createHash("sha256").update(toHash).digest();
+    const received = Buffer.from(signature.checksum, "hex");
+    // timingSafeEqual lanza si los buffers tienen distinta longitud.
+    const valid =
+      /^[a-f0-9]{64}$/i.test(signature.checksum) &&
+      received.length === computed.length &&
+      crypto.timingSafeEqual(computed, received);
 
     if (!valid) {
       logger.warn(
-        { computed: computed.slice(0, 8) + "...", received: signature.checksum.slice(0, 8) + "..." },
+        { received: signature.checksum.slice(0, 8) + "..." },
         "[Wompi] Firma de webhook no válida"
       );
     }

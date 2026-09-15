@@ -37,6 +37,8 @@ interface AccountingInvoiceData {
   snapshotNumberOfWorkers?: number | null;
   snapshotNumberOfVehicles?: number | null;
   stripePaymentId?: string;
+  wompiPaymentId?: string;
+  paymentMethod?: 'CARD' | 'PSE';
 }
 
 interface AccountingResponse {
@@ -155,7 +157,7 @@ class AccountingIntegrationService {
         totalRetefuente: 0,
         granTotal,
         formaPago: 'Contado',
-        medioPago: 'Tarjeta Credito',
+        medioPago: data.paymentMethod === 'PSE' ? 'Transferencia Bancaria' : 'Tarjeta Credito',
         observaciones: buildObservaciones(data.periodStart, data.invoiceNumber),
         items: data.lineItems.length > 0
           ? data.lineItems.map(item => ({
@@ -182,6 +184,7 @@ class AccountingIntegrationService {
         facturaOrigenNumero: data.invoiceNumber,
         empresaId: data.companyId,
         ...(data.stripePaymentId ? { stripePagoId: data.stripePaymentId } : {}),
+        ...(data.wompiPaymentId ? { wompiPagoId: data.wompiPaymentId } : {}),
       },
     };
 

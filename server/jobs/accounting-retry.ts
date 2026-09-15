@@ -65,6 +65,9 @@ export async function processAccountingRetries() {
         } catch {
           parsedLineItems = [];
         }
+        const paymentTransaction = invoice.transactionId
+          ? await storage.getTransaction(invoice.transactionId)
+          : undefined;
 
         const result = await accountingService.sendInvoiceToAccounting({
           invoiceId: invoice.id,
@@ -90,6 +93,8 @@ export async function processAccountingRetries() {
           snapshotCiiuCode: invoice.snapshotCiiuCode,
           snapshotNumberOfWorkers: invoice.snapshotNumberOfWorkers,
           snapshotNumberOfVehicles: invoice.snapshotNumberOfVehicles,
+          paymentMethod: paymentTransaction?.wompiPaymentMethod === 'PSE' ? 'PSE' : 'CARD',
+          wompiPaymentId: paymentTransaction?.wompiTransactionId || undefined,
         });
 
         if (result.success) {
