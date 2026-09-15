@@ -10,7 +10,7 @@ import { Plus, Search, Eye, FileText, Activity, AlertTriangle, Heart, Brain, Ear
 import { useState, useEffect, useCallback } from "react";
 import { Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { SveProgram, SveCase, insertSveProgramSchema, insertSveCaseSchema } from "@shared/schema";
+import { SveProgram, SveCase, Worker, insertSveProgramSchema, insertSveCaseSchema } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -224,6 +224,10 @@ export default function VigilanciaEpidemiologica() {
 
   const { data: allCases = [], isLoading: casesLoading } = useQuery<SveCase[]>({
     queryKey: ["/api/sve-cases"],
+  });
+
+  const { data: workers = [], isLoading: workersLoading } = useQuery<Worker[]>({
+    queryKey: ["/api/workers"],
   });
 
   const { data: lsoAssignment } = useQuery<{ ok: boolean; data: { type: string; name: string; licenseNumber?: string; licenseExpiry?: string } | null }>({
@@ -1106,16 +1110,45 @@ export default function VigilanciaEpidemiologica() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="workerId">ID Trabajador *</Label>
-                <Input
-                  id="workerId"
+                <Select
                   value={caseFormData.workerId}
-                  onChange={(e) =>
-                    setCaseFormData({ ...caseFormData, workerId: e.target.value })
+                  onValueChange={(value) =>
+                    setCaseFormData({ ...caseFormData, workerId: value })
                   }
-                  placeholder="ID del trabajador"
-                  required
-                  data-testid="input-case-worker-id"
-                />
+                >
+                  <SelectTrigger id="workerId" data-testid="select-case-worker">
+                    <SelectValue placeholder={workersLoading ? "Cargando trabajadores..." : "Seleccione un trabajador"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {workers
+                      .filter((worker) => worker.status === "activo")
+                      .sort((a, b) => a.name.localeCompare(b.name, "es"))
+                      .map((worker) => (
+                        <SelectItem
+                          key={worker.id}
+                          value={worker.identificationNumber}
+                        >
+                          {worker.name} — {worker.identificationNumber} · {worker.position}
+                        </SelectItem>
+                      ))}
+                    {!workersLoading && workers.filter((worker) => worker.status === "activo").length === 0 && (
+                      <SelectItem value="__no-workers__" disabled>
+                        No hay trabajadores activos disponibles
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+                {/* El valor almacenado en sve_cases.worker_id es la identificación, no el UUID. */}
+                {/* Mantiene visible un registro legado si ya no aparece entre los trabajadores activos. */}
+                {editingCase &&
+                  caseFormData.workerId &&
+                  !workers.some((worker) => worker.identificationNumber === caseFormData.workerId) && (
+                    <p className="text-xs text-muted-foreground">
+                      Identificación registrada anteriormente: {caseFormData.workerId}
+                    </p>
+                  )}
+                {/* Hidden native input keeps browser required validation for the custom select. */}
+                <input type="text" value={caseFormData.workerId} required readOnly tabIndex={-1} className="sr-only" aria-hidden="true" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="evaluationType">Tipo de Evaluación *</Label>
