@@ -989,6 +989,9 @@ export default function GestionUsuarios() {
                         <p className="text-sm text-muted-foreground">
                           Estos datos se toman de la configuración de la empresa y se utilizarán para crear la cuenta.
                         </p>
+                        <p className="text-sm text-muted-foreground">
+                          El nombre de usuario y la contraseña se generan automáticamente; en este formulario solo debe indicar el correo.
+                        </p>
                         <div className="grid gap-3 md:grid-cols-3">
                           <div>
                             <p className="text-xs text-muted-foreground">Nombre</p>

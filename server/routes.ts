@@ -3736,13 +3736,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/users", requirePermission("users:create"), checkUserLimit(), async (req, res) => {
     try {
       const validatedData = insertUserSchema.parse(req.body);
-      validatedData.identificationNumber = validatedData.identificationNumber
-        ? validatedData.identificationNumber.replace(/[\s.-]/g, "")
+      let userData = { ...validatedData };
+      userData.identificationNumber = userData.identificationNumber
+        ? userData.identificationNumber.replace(/[\s.-]/g, "")
         : null;
 
       const effectiveCompanyId = getEffectiveCompanyId(req);
-      if (validatedData.workerId) {
-        const linkedWorker = await storage.getWorkerById(validatedData.workerId);
+      if (userData.role === "admin" && !userData.workerId) {
+        const company = effectiveCompanyId ? await storage.getCompany(effectiveCompanyId) : null;
+        const legalRepName = company?.legalRepName?.trim();
+        const legalRepId = company?.legalRepId?.replace(/[\s.-]/g, "").trim();
+        if (!legalRepName || !legalRepId) {
+          return res.status(400).send("Configure primero el nombre y la cédula del representante legal de la empresa");
+        }
+
+        const nameParts = legalRepName
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/[^a-z0-9\s]/g, "")
+          .split(/\s+/)
+          .filter(Boolean);
+        const baseUsername = nameParts.length >= 2
+          ? `${nameParts[0]}_${nameParts[nameParts.length - 1]}`
+          : nameParts[0] || "gerente";
+        let generatedUsername = baseUsername;
+        let usernameSuffix = 1;
+        while (await storage.getUserByUsername(generatedUsername)) {
+          generatedUsername = `${baseUsername}${usernameSuffix}`;
+          usernameSuffix++;
+        }
+
+        userData = {
+          ...userData,
+          fullName: legalRepName,
+          identificationNumber: legalRepId,
+          department: company?.legalRepPosition?.trim() || "Dirección General",
+          username: generatedUsername,
+          password: `${legalRepId}21`,
+        };
+      }
+
+      if (userData.workerId) {
+        const linkedWorker = await storage.getWorkerById(userData.workerId);
         if (!linkedWorker) {
           return res.status(400).send("El trabajador seleccionado no existe");
         }
@@ -3750,61 +3786,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(403).send("El trabajador seleccionado no pertenece a la empresa activa");
         }
       }
-      if (validatedData.role === "tecnico_mecanico") {
-        if (!validatedData.workerId) {
+      if (userData.role === "tecnico_mecanico") {
+        if (!userData.workerId) {
           return res.status(400).send("El Técnico Mecánico debe estar vinculado a un trabajador");
         }
-        const mechanicWorker = await storage.getWorkerById(validatedData.workerId);
+        const mechanicWorker = await storage.getWorkerById(userData.workerId);
         if (!mechanicWorker?.identificationNumber) {
           return res.status(400).send("El trabajador vinculado no tiene número de identificación");
         }
-        validatedData.identificationNumber = mechanicWorker.identificationNumber;
+        userData.identificationNumber = mechanicWorker.identificationNumber;
       }
       
       // Check if username already exists
-      const existing = await storage.getUserByUsername(validatedData.username);
+      const existing = await storage.getUserByUsername(userData.username);
       if (existing) {
         return res.status(400).send("El nombre de usuario ya existe");
       }
 
       // Check if email already exists (if provided)
-      if (validatedData.email) {
-        const existingEmail = await storage.getUserByEmail(validatedData.email);
+      if (userData.email) {
+        const existingEmail = await storage.getUserByEmail(userData.email);
         // A worker can have one portal account and additional role accounts
         // (for example, trabajador + vigía) using the same contact email.
-        if (existingEmail && existingEmail.workerId !== validatedData.workerId) {
-          return res.status(400).send(`El correo electrónico ${validatedData.email} ya está registrado en el sistema`);
+        if (existingEmail && existingEmail.workerId !== userData.workerId) {
+          return res.status(400).send(`El correo electrónico ${userData.email} ya está registrado en el sistema`);
         }
       }
 
       // Hash password before storing
-      const hashedPassword = await hashPassword(validatedData.password);
+      const hashedPassword = await hashPassword(userData.password);
       
       // Force same company as requesting user
       const user = await storage.createUser({
-        ...validatedData,
+        ...userData,
         password: hashedPassword,
         companyId: effectiveCompanyId,
       });
 
-      const roleLabel = getRoleCredentialLabel(validatedData.role as UserRole);
+      const roleLabel = getRoleCredentialLabel(userData.role as UserRole);
       let emailSent = false;
       let emailMessageId: string | undefined;
       let emailError: string | undefined;
       let emailSkippedReason: string | undefined;
-      if (validatedData.email && roleLabel) {
-        const linkedWorker = validatedData.workerId
-          ? await storage.getWorkerById(validatedData.workerId)
+      if (userData.email && roleLabel) {
+        const linkedWorker = userData.workerId
+          ? await storage.getWorkerById(userData.workerId)
           : null;
         const company = effectiveCompanyId
           ? await storage.getCompany(effectiveCompanyId)
           : linkedWorker
             ? await storage.getCompany(linkedWorker.companyId)
             : null;
-        const emailResult = await sendPortalAccessEmail(validatedData.email, {
-          workerName: validatedData.fullName || linkedWorker?.name || validatedData.username,
-          username: validatedData.username,
-          temporaryPassword: validatedData.password,
+        const emailResult = await sendPortalAccessEmail(userData.email, {
+          workerName: userData.fullName || linkedWorker?.name || userData.username,
+          username: userData.username,
+          temporaryPassword: userData.password,
           companyName: company?.name || "Tu Empresa",
           loginUrl: `${process.env.VITE_APP_URL || `${req.protocol}://${req.get("host")}`}/auth`,
           companyEmail: company?.contactEmail || undefined,
@@ -3813,7 +3849,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         emailSent = emailResult.success;
         emailMessageId = emailResult.messageId;
         emailError = emailResult.error;
-      } else if (validatedData.role === "trabajador") {
+      } else if (userData.role === "trabajador") {
         emailSkippedReason = "Las credenciales del Portal de Empleados se gestionan desde el contrato.";
       }
 
