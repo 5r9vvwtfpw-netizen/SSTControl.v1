@@ -363,3 +363,17 @@ mtime_ms = 1789578788068
 storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/9f5a2f1d-406b-49e9-a9f9-082bc0114bea/50d853b8-acd9-4f01-bd96-87c29d5d02ef"
 storage_version_token = "1789578798649451"
 content_type = "text/html"
+
+[[outputs]]
+id = "xR8n_SV-TOvflrSvdwI1t"
+uri = "file://documents/manual-prueba-auditorias-internas-sst.pdf"
+type = "pdf"
+title = "Manual de prueba funcional — Auditorías Internas SST"
+description = "Guía paso a paso para probar desde la interfaz la creación, ejecución, checklist, hallazgos, planes de acción, cierre, eficacia e informe PDF."
+logical_id = "29454292-5442-4fe7-a6ba-b6be321612bd"
+content_hash = "sha256:70f9b7caddce5495cce7fc66a383f6e87c77d94314765b7445ce362fd89a1193"
+size = 17874
+mtime_ms = 1789579639196
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/29454292-5442-4fe7-a6ba-b6be321612bd/b388e5b0-4260-4b67-b164-6ea39f28a6e4"
+storage_version_token = "1789579645407346"
+content_type = "application/pdf"
