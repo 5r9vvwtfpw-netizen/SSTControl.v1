@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Evidencia de prueba funcional — Auditoría Interna SST</title>
+  <style>
+    :root { color-scheme: light; --navy: #12304a; --line: #d9e2ea; --soft: #f4f7fa; --ok: #146c43; }
+    body { font-family: Arial, sans-serif; color: #1d2935; line-height: 1.45; max-width: 980px; margin: 0 auto; padding: 36px; }
+    h1 { color: var(--navy); margin-bottom: 4px; }
+    h2 { color: var(--navy); border-bottom: 2px solid var(--line); padding-bottom: 6px; margin-top: 28px; }
+    .meta, table { width: 100%; border-collapse: collapse; }
+    .meta td, th, td { border: 1px solid var(--line); padding: 8px 10px; vertical-align: top; }
+    .meta td:first-child { width: 28%; font-weight: bold; background: var(--soft); }
+    th { background: var(--navy); color: white; text-align: left; }
+    .ok { color: var(--ok); font-weight: bold; }
+    .note { background: #fff8e6; border-left: 4px solid #d99b18; padding: 12px 14px; }
+    code { font-family: Consolas, monospace; font-size: 0.92em; }
+  </style>
+</head>
+<body>
+  <h1>Evidencia de prueba funcional E2E</h1>
+  <p>Auditorías Internas SST — ciclo completo de planificación, ejecución, hallazgos, cierre y eficacia.</p>
+
+  <table class="meta">
+    <tr><td>Empresa</td><td>DEMO-PRUEBA</td></tr>
+    <tr><td>Empresa ID</td><td><code>demo-company-001</code></td></tr>
+    <tr><td>Código de auditoría</td><td><code>AUD-INT-E2E-20260916-1615</code></td></tr>
+    <tr><td>Auditoría ID</td><td><code>276f2f3e-b22f-40c3-bb65-f8efcc637e37</code></td></tr>
+    <tr><td>Usuario ejecutor y aprobador</td><td>Administrador del Sistema<br><code>fd812731-2c1f-4836-9658-f32d0638c45c</code></td></tr>
+    <tr><td>Fase PHVA</td><td>Verificar</td></tr>
+    <tr><td>Proceso</td><td>Verificación y mejora del SG-SST</td></tr>
+    <tr><td>Estándar relacionado</td><td>Resolución 0312 de 2019 — Estándar 6.1.2</td></tr>
+  </table>
+
+  <h2>Resultados funcionales</h2>
+  <table>
+    <tr><th>Prueba</th><th>Resultado</th><th>Evidencia</th></tr>
+    <tr><td>Creación de auditoría</td><td class="ok">PASÓ</td><td>Auditoría creada y conservada en DEMO-PRUEBA.</td></tr>
+    <tr><td>Transición programada → en ejecución</td><td class="ok">PASÓ</td><td>Transición aceptada.</td></tr>
+    <tr><td>Checklist normativo</td><td class="ok">PASÓ</td><td>12 criterios generados; 12 evaluados.</td></tr>
+    <tr><td>Evaluación del checklist</td><td class="ok">PASÓ</td><td>11 “Cumple”, 1 “No cumple”; cumplimiento calculado: 92%.</td></tr>
+    <tr><td>Creación de hallazgo</td><td class="ok">PASÓ</td><td><code>NC-MEN-001-E2E</code>, no conformidad menor, severidad media.</td></tr>
+    <tr><td>Creación de plan de acción</td><td class="ok">PASÓ</td><td><code>ACC-001-E2E</code>, estado inicial abierto.</td></tr>
+    <tr><td>Completado de auditoría</td><td class="ok">PASÓ</td><td>Estado completada; 11 conformidades; 92%.</td></tr>
+    <tr><td>Cierre y aprobación</td><td class="ok">PASÓ</td><td>Estado cerrada; conclusiones, fecha y aprobador autenticado registrados.</td></tr>
+    <tr><td>Seguimiento posterior al cierre</td><td class="ok">PASÓ</td><td>Plan actualizado al 100% y con fecha de implementación.</td></tr>
+    <tr><td>Verificación de eficacia</td><td class="ok">PASÓ</td><td>Plan marcado eficaz y verificado por el usuario autenticado.</td></tr>
+    <tr><td>Cierre de hallazgo</td><td class="ok">PASÓ</td><td>Hallazgo pasó automáticamente a verificado y después a cerrado.</td></tr>
+    <tr><td>Protección de estructura cerrada</td><td class="ok">PASÓ</td><td>Edición de checklist y hallazgo rechazada con HTTP 409.</td></tr>
+    <tr><td>Informe individual PDF</td><td class="ok">PASÓ</td><td>PDF generado; 2 páginas; contiene checklist, hallazgo, acción, conclusiones y aprobación.</td></tr>
+  </table>
+
+  <h2>Estado final de registros</h2>
+  <table>
+    <tr><th>Registro</th><th>ID</th><th>Estado final</th><th>Resultado</th></tr>
+    <tr><td>Auditoría</td><td><code>276f2f3e-b22f-40c3-bb65-f8efcc637e37</code></td><td>CERRADA</td><td>11/12 conformes — 92%</td></tr>
+    <tr><td>Hallazgo</td><td><code>24d7591e-1630-4cc1-907e-693de578a2c0</code></td><td>CERRADO</td><td>Eficacia comprobada</td></tr>
+    <tr><td>Plan de acción</td><td><code>8b37fe1a-bf03-4a78-958a-4213d396099b</code></td><td>VERIFICADO</td><td>100% de avance — eficaz = 1</td></tr>
+  </table>
+
+  <h2>Conclusión</h2>
+  <p class="note">La prueba funcional E2E del ciclo de Auditorías Internas SST quedó completada satisfactoriamente. Los registros de prueba se conservaron en DEMO-PRUEBA para revisión manual.</p>
+</body>
+</html>
