@@ -203,7 +203,8 @@ numbered(2, "Pulse Marcar como completada.");
 numbered(3, "Compruebe el estado Completada y los resultados calculados.");
 callout("Debe ocurrir", "El sistema calcula el número de conformidades y el porcentaje de cumplimiento a partir del checklist guardado.", "#edf8f1");
 
-heading("9. Cerrar y aprobar la auditoría");
+heading("9. Conclusiones, recomendaciones y aprobación");
+paragraph("Esta sección se realiza desde el botón Cerrar auditoría, que solo aparece cuando el estado de la auditoría es Completada.");
 numbered(1, "Con la auditoría en estado Completada pulse Cerrar auditoría.");
 numbered(2, "Escriba las Conclusiones de cierre.");
 numbered(3, "Escriba Recomendaciones si aplica.");
