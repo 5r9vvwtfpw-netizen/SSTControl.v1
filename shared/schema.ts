@@ -8562,6 +8562,27 @@ export const evsFollowupStatusEnum = pgEnum("evs_followup_status", [
   "cerrado"           // Caso cerrado administrativamente
 ]);
 
+// Catálogo maestro normativo de programas EVS.
+// Las empresas pueden seleccionar una entrada estándar o registrar "Otro".
+export const evsProgramCatalog = pgTable("evs_program_catalog", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  code: varchar("code", { length: 80 }).notNull().unique(),
+  name: text("name").notNull(),
+  description: text("description"),
+  normativeBasis: text("normative_basis").notNull(),
+  isRequired: boolean("is_required").notNull().default(false),
+  isOther: boolean("is_other").notNull().default(false),
+  sortOrder: integer("sort_order").notNull().default(0),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertEvsProgramCatalogSchema = createInsertSchema(evsProgramCatalog)
+  .omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertEvsProgramCatalog = z.infer<typeof insertEvsProgramCatalogSchema>;
+export type EvsProgramCatalog = typeof evsProgramCatalog.$inferSelect;
+
 // Programa anual de Estilos de Vida Saludable
 export const evsPrograms = pgTable("evs_programs", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

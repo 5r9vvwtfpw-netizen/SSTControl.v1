@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { EvsProgram, EvsActivity, EvsControl, EvsIncident, EvsFollowup, Worker, ResourceAllocation } from "@shared/schema";
+import type { EvsProgram, EvsProgramCatalog, EvsActivity, EvsControl, EvsIncident, EvsFollowup, Worker, ResourceAllocation } from "@shared/schema";
 import { getTodayDateString, formatCurrency } from "@/lib/utils/formatters";
 
 const formatCurrencyDisplay = (value: string): string => {
@@ -232,6 +232,10 @@ export default function EstilosVidaSaludable() {
     queryKey: ["/api/evs/programs"],
   });
 
+  const { data: programCatalog = [], isLoading: loadingProgramCatalog } = useQuery<EvsProgramCatalog[]>({
+    queryKey: ["/api/evs/program-catalog"],
+  });
+
   const { data: activities = [], isLoading: loadingActivities } = useQuery<EvsActivity[]>({
     queryKey: ["/api/evs/activities"],
   });
@@ -330,7 +334,14 @@ export default function EstilosVidaSaludable() {
         </TabsList>
 
         <TabsContent value="programas">
-          <ProgramasTab programs={programs} workers={workers} financialResources={financialResources} isLoading={loadingPrograms} toast={toast} />
+          <ProgramasTab
+            programs={programs}
+            programCatalog={programCatalog}
+            workers={workers}
+            financialResources={financialResources}
+            isLoading={loadingPrograms || loadingProgramCatalog}
+            toast={toast}
+          />
         </TabsContent>
 
         <TabsContent value="actividades">
@@ -353,14 +364,17 @@ export default function EstilosVidaSaludable() {
   );
 }
 
-function ProgramasTab({ programs, workers, financialResources, isLoading, toast }: { programs: EvsProgram[]; workers: Worker[]; financialResources: ResourceAllocation[]; isLoading: boolean; toast: any }) {
+function ProgramasTab({ programs, programCatalog, workers, financialResources, isLoading, toast }: { programs: EvsProgram[]; programCatalog: EvsProgramCatalog[]; workers: Worker[]; financialResources: ResourceAllocation[]; isLoading: boolean; toast: any }) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingProgram, setEditingProgram] = useState<EvsProgram | null>(null);
   const [selectedResourceId, setSelectedResourceId] = useState<string>("");
+  const [selectedProgramCode, setSelectedProgramCode] = useState("");
+  const [customProgramName, setCustomProgramName] = useState("");
   
   const currentYear = new Date().getFullYear();
+  const selectedProgramCatalog = programCatalog.find(item => item.code === selectedProgramCode);
   const getDefaultValues = () => ({
-    name: `Programa EVS ${currentYear}`,
+    name: "",
     year: currentYear,
     policy: "La empresa se compromete a promover estilos de vida saludables, previniendo el consumo de tabaco, alcohol y sustancias psicoactivas, fomentando la actividad física y el bienestar integral de todos los trabajadores.",
     objectives: "1. Reducir factores de riesgo asociados al consumo de sustancias psicoactivas\n2. Promover hábitos de vida saludable\n3. Detectar de manera temprana casos de consumo problemático\n4. Brindar apoyo y acompañamiento a trabajadores en proceso de recuperación",
@@ -384,6 +398,18 @@ function ProgramasTab({ programs, workers, financialResources, isLoading, toast 
     setFormData(getDefaultValues());
     setEditingProgram(null);
     setSelectedResourceId("");
+    setSelectedProgramCode("");
+    setCustomProgramName("");
+  };
+
+  const handleProgramNameChange = (code: string) => {
+    const selected = programCatalog.find(item => item.code === code);
+    setSelectedProgramCode(code);
+    setCustomProgramName("");
+    setFormData({
+      ...formData,
+      name: selected?.isOther ? "" : selected?.name || "",
+    });
   };
   
   const handleSelectWorker = (workerId: string) => {
@@ -459,6 +485,9 @@ function ProgramasTab({ programs, workers, financialResources, isLoading, toast 
 
   const handleEdit = (program: EvsProgram) => {
     setEditingProgram(program);
+    const catalogEntry = programCatalog.find(item => !item.isOther && item.name === program.name);
+    setSelectedProgramCode(catalogEntry?.code || "OTRO");
+    setCustomProgramName(catalogEntry ? "" : program.name || "");
     setFormData({
       name: program.name || "",
       year: program.year,
@@ -481,6 +510,17 @@ function ProgramasTab({ programs, workers, financialResources, isLoading, toast 
   };
 
   const handleSubmit = () => {
+    if (!formData.name.trim()) {
+      toast({
+        title: "Nombre del programa requerido",
+        description: selectedProgramCatalog?.isOther
+          ? "Escriba el nombre del programa personalizado."
+          : "Seleccione un programa del catálogo normativo.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const payload = {
       ...formData,
       participationTarget: formData.participationTarget ? parseInt(formData.participationTarget) : null,
@@ -571,7 +611,37 @@ function ProgramasTab({ programs, workers, financialResources, isLoading, toast 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Nombre del programa *</Label>
-                <Input id="name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Ej: Programa EVS 2025" data-testid="input-program-name" />
+                <Select value={selectedProgramCode} onValueChange={handleProgramNameChange}>
+                  <SelectTrigger id="name" data-testid="select-program-name">
+                    <SelectValue placeholder="Seleccione un programa normativo..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {programCatalog.map((program) => (
+                      <SelectItem key={program.code} value={program.code}>
+                        <div className="flex flex-col items-start">
+                          <span>{program.name}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {program.isRequired ? "Requerido por SG-SST" : program.isOther ? "Definido por la empresa" : "Programa complementario"}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {selectedProgramCatalog?.isOther && (
+                  <Input
+                    value={customProgramName}
+                    onChange={(e) => {
+                      setCustomProgramName(e.target.value);
+                      setFormData({ ...formData, name: e.target.value });
+                    }}
+                    placeholder="Escriba el nombre del programa"
+                    data-testid="input-program-custom-name"
+                  />
+                )}
+                {selectedProgramCatalog && !selectedProgramCatalog.isOther && (
+                  <p className="text-xs text-muted-foreground">{selectedProgramCatalog.normativeBasis}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="year">Año *</Label>

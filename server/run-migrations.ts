@@ -67,6 +67,7 @@ import { syncGuidedCommitteeActas } from './migrations/sync-guided-committee-act
 import { createLsoManagementReportArchives } from './migrations/create-lso-management-report-archives';
 import { createLsoArchiveCleanupJobs } from './migrations/create-lso-archive-cleanup-jobs';
 import { syncPesvDailyAlcoholTesting } from './migrations/sync-pesv-daily-alcohol-testing';
+import { createEvsProgramCatalog } from './migrations/create-evs-program-catalog';
 
 /**
  * Ejecuta migraciones de base de datos automáticamente
@@ -147,6 +148,7 @@ export async function runMigrations() {
     await syncGuidedCommitteeActas();
     await createLsoManagementReportArchives();
     await createLsoArchiveCleanupJobs();
+    await createEvsProgramCatalog();
     console.log('✅ Migraciones completadas exitosamente');
   } catch (error: any) {
     console.error('⚠️ Error en migraciones:', error.message);

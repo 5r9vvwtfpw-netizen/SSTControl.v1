@@ -49347,6 +49347,16 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // =================================================================
 
   // EVS Programs
+  app.get("/api/evs/program-catalog", requireAuth, async (_req, res) => {
+    try {
+      const catalog = await storage.getEvsProgramCatalog();
+      res.json(catalog);
+    } catch (error: any) {
+      console.error("Error fetching EVS program catalog:", error);
+      res.status(500).json({ message: "Error al cargar el catálogo de programas EVS" });
+    }
+  });
+
   app.get("/api/evs/programs", requireAuth, async (req, res) => {
     const companyId = getEffectiveCompanyId(req);
     if (!companyId) return res.status(400).json({ message: "No company context" });
@@ -49397,6 +49407,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     const companyId = getEffectiveCompanyId(req);
     if (!companyId) return res.status(400).json({ message: "No company context" });
     try {
+      if (typeof req.body.name !== "string" || !req.body.name.trim()) {
+        return res.status(400).json({ message: "Debe seleccionar un programa EVS o escribir el nombre de 'Otro'." });
+      }
       const data = insertEvsProgramSchema.parse({ ...req.body, companyId, createdBy: req.user!.id });
       const program = await storage.createEvsProgram(data);
       res.status(201).json(program);
@@ -49408,6 +49421,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   app.patch("/api/evs/programs/:id", requireAuth, async (req, res) => {
     const companyId = getEffectiveCompanyId(req);
     if (!companyId) return res.status(400).json({ message: "No company context" });
+    if (req.body.name !== undefined && (typeof req.body.name !== "string" || !req.body.name.trim())) {
+      return res.status(400).json({ message: "El nombre del programa no puede estar vacío." });
+    }
     const program = await storage.updateEvsProgram(req.params.id, companyId, { ...req.body, updatedAt: new Date() });
     if (!program) return res.status(404).json({ message: "Program not found" });
     res.json(program);

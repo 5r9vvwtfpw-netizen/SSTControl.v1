@@ -341,6 +341,7 @@ import type {
   InsertAccidentStatistics,
   EvsProgram,
   InsertEvsProgram,
+  EvsProgramCatalog,
   EvsActivity,
   InsertEvsActivity,
   EvsControl,
@@ -2047,6 +2048,7 @@ export interface IStorage {
   deleteAccidentStatistics(id: string): Promise<void>;
 
   // EVS - Estilos de Vida Saludable (Standard 3.1.7)
+  getEvsProgramCatalog(): Promise<EvsProgramCatalog[]>;
   getEvsPrograms(companyId: string): Promise<EvsProgram[]>;
   getEvsProgram(id: string, companyId: string): Promise<EvsProgram | undefined>;
   createEvsProgram(program: InsertEvsProgram): Promise<EvsProgram>;
@@ -17109,6 +17111,14 @@ export class DbStorage implements IStorage {
   // ============================================================================
   // EVS - Estilos de Vida Saludable (Standard 3.1.7)
   // ============================================================================
+
+  async getEvsProgramCatalog(): Promise<EvsProgramCatalog[]> {
+    return await db
+      .select()
+      .from(schema.evsProgramCatalog)
+      .where(eq(schema.evsProgramCatalog.isActive, true))
+      .orderBy(asc(schema.evsProgramCatalog.sortOrder), asc(schema.evsProgramCatalog.name));
+  }
 
   async getEvsPrograms(companyId: string): Promise<EvsProgram[]> {
     return await db.select().from(schema.evsPrograms).where(eq(schema.evsPrograms.companyId, companyId)).orderBy(desc(schema.evsPrograms.createdAt));
