@@ -144,4 +144,19 @@ Problemas base identificados:
 - Informe individual en PDF con planificación, equipo, checklist, hallazgos, planes de acción, conclusiones y aprobación.
 - Aprobación de cierre vinculada al usuario autenticado y con recomendaciones opcionales.
 
-Las siguientes fases se implementarán sobre esta base, sin crear pantallas aisladas ni duplicar el modelo existente.
+### Entrega 5 — Seguimiento, eficacia, PHVA y permisos
+
+- Seguimiento en pantalla del estado, porcentaje de avance, fecha real de implementación y observaciones de cada plan.
+- Registro de fecha, responsable, resultado y evidencia de la verificación de eficacia.
+- Validación de servidor: un plan solo puede quedar verificado/cerrado con 100% de avance y eficacia confirmada.
+- Verificación y cierre formal de hallazgos con usuario, fecha y observaciones.
+- Un hallazgo solo puede verificarse cuando todos sus planes están verificados como eficaces; solo después puede cerrarse.
+- Las acciones y el cierre de hallazgos pueden continuar después del cierre de la auditoría; la auditoría cerrada no permite cambios estructurales.
+- Relación de cada auditoría con fase PHVA, proceso y estándar relacionado, incluida en el informe PDF.
+- Permisos específicos `auditorias_internas:view/create/edit/delete` para `auditor_interno`, con compatibilidad para administradores SST existentes.
+- Migración automática de las columnas PHVA para instalaciones existentes.
+
+## Validación final pendiente
+
+- Ejecutar una prueba funcional completa con datos controlados: creación, checklist, hallazgo, acción, avance, eficacia, verificación, cierre de hallazgo y seguimiento posterior al cierre de auditoría.
+- Repetir la prueba de aislamiento por empresa y de denegación para roles sin permisos de auditorías internas.

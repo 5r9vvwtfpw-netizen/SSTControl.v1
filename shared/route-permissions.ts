@@ -148,7 +148,7 @@ export const routePermissions: Record<string, Permission[]> = {
   "/indicador-incidencia": ["accidents:view", "sst_management:view"],
   "/estandares-sst": ["sst_standards:view"],
   "/iperc": ["sst_management:view"],
-  "/auditorias-internas": ["sst_management:view"],
+  "/auditorias-internas": ["auditorias_internas:view", "sst_management:view"],
   "/revisiones-direccion": ["sst_management:view"],
   "/dashboard-verificar": ["sst_management:view"],
   "/reportes/evaluaciones-sst-consolidado": ["sst_management:view"],

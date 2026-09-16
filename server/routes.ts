@@ -40130,9 +40130,11 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   // AUDITORÍAS INTERNAS SST - ISO 45001:2018 / Resolución 0312/2019
+  const requireAuditoriaPermission = (action: "view" | "create" | "edit" | "delete") =>
+    requireAnyPermission([`auditorias_internas:${action}`, `sst_management:${action}`] as any);
 
   // GET /api/auditorias-internas - Obtener todas las auditorías internas
-  app.get('/api/auditorias-internas', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
+  app.get('/api/auditorias-internas', requireAuth, requireAuditoriaPermission("view"), async (req, res) => {
     try {
       const isAdmin = hasGlobalAccess(req.user!.role);
       
@@ -40155,7 +40157,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   // GET /api/auditorias-internas/:id - Obtener una auditoría interna específica
-  app.get('/api/auditorias-internas/:id', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
+  app.get('/api/auditorias-internas/:id', requireAuth, requireAuditoriaPermission("view"), async (req, res) => {
     try {
       const isAdmin = hasGlobalAccess(req.user!.role);
       
@@ -40182,7 +40184,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   // POST /api/auditorias-internas - Crear nueva auditoría interna
-  app.post('/api/auditorias-internas', requireAuth, requirePermission('sst_management:create'), async (req, res) => {
+  app.post('/api/auditorias-internas', requireAuth, requireAuditoriaPermission("create"), async (req, res) => {
     try {
       const isAdmin = hasGlobalAccess(req.user!.role);
       let companyId: string;
@@ -40215,7 +40217,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   // PATCH /api/auditorias-internas/:id - Actualizar auditoría interna
-  app.patch('/api/auditorias-internas/:id', requireAuth, requirePermission('sst_management:edit'), async (req, res) => {
+  app.patch('/api/auditorias-internas/:id', requireAuth, requireAuditoriaPermission("edit"), async (req, res) => {
     try {
       const isAdmin = hasGlobalAccess(req.user!.role);
       const validatedData = insertAuditoriaInternaSchema.partial().parse(req.body);
@@ -40247,7 +40249,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   // Transiciones controladas del ciclo de auditoría.
-  app.post('/api/auditorias-internas/:id/transitions', requireAuth, requirePermission('sst_management:edit'), async (req, res) => {
+  app.post('/api/auditorias-internas/:id/transitions', requireAuth, requireAuditoriaPermission("edit"), async (req, res) => {
     try {
       const targetStatus = req.body?.estado;
       const allowedStatuses = ['en_ejecucion', 'completada', 'cerrada'];
@@ -40324,7 +40326,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   // DELETE /api/auditorias-internas/:id - Eliminar auditoría interna
-  app.delete('/api/auditorias-internas/:id', requireAuth, requirePermission('sst_management:delete'), async (req, res) => {
+  app.delete('/api/auditorias-internas/:id', requireAuth, requireAuditoriaPermission("delete"), async (req, res) => {
     try {
       const isAdmin = hasGlobalAccess(req.user!.role);
       
@@ -40350,7 +40352,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   // GET /api/auditorias-internas/:id/auditores - Obtener auditores de una auditoría
-  app.get('/api/auditorias-internas/:id/auditores', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
+  app.get('/api/auditorias-internas/:id/auditores', requireAuth, requireAuditoriaPermission("view"), async (req, res) => {
     try {
       const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
@@ -40369,7 +40371,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   // POST /api/auditorias-internas/:id/auditores - Agregar auditor a auditoría
-  app.post('/api/auditorias-internas/:id/auditores', requireAuth, requirePermission('sst_management:create'), async (req, res) => {
+  app.post('/api/auditorias-internas/:id/auditores', requireAuth, requireAuditoriaPermission("create"), async (req, res) => {
     try {
       const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
@@ -40401,7 +40403,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   // PATCH /api/auditores/:id - Actualizar auditor
-  app.patch('/api/auditores/:id', requireAuth, requirePermission('sst_management:edit'), async (req, res) => {
+  app.patch('/api/auditores/:id', requireAuth, requireAuditoriaPermission("edit"), async (req, res) => {
     try {
       const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
@@ -40430,7 +40432,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   // DELETE /api/auditores/:id - Eliminar auditor
-  app.delete('/api/auditores/:id', requireAuth, requirePermission('sst_management:delete'), async (req, res) => {
+  app.delete('/api/auditores/:id', requireAuth, requireAuditoriaPermission("delete"), async (req, res) => {
     try {
       const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
@@ -40453,7 +40455,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   // GET /api/auditorias-internas/:id/informe - Generar informe individual de auditoría
-  app.get('/api/auditorias-internas/:id/informe', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
+  app.get('/api/auditorias-internas/:id/informe', requireAuth, requireAuditoriaPermission("view"), async (req, res) => {
     try {
       const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
@@ -40507,6 +40509,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       field("Fecha de finalización", audit.fechaFin);
       field("Auditor líder", audit.auditoristaLider);
       field("Responsable auditado", audit.responsableAuditado);
+      field("Fase PHVA", audit.cicloPhva);
+      field("Proceso PHVA", audit.procesoPhva);
+      field("Estándar relacionado", audit.estandarRelacionado);
 
       section("2. Equipo auditor");
       if (auditores.length === 0) {
@@ -40573,7 +40578,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   // GET /api/auditorias-internas/:id/checklists - Obtener checklists de una auditoría
-  app.get('/api/auditorias-internas/:id/checklists', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
+  app.get('/api/auditorias-internas/:id/checklists', requireAuth, requireAuditoriaPermission("view"), async (req, res) => {
     try {
       const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
@@ -40590,7 +40595,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
   // POST /api/auditorias-internas/:id/checklists/:checklistId/evidence-upload-url
   // Generar una URL de carga únicamente para un checklist de la auditoría validada.
-  app.post('/api/auditorias-internas/:id/checklists/:checklistId/evidence-upload-url', requireAuth, requirePermission('sst_management:edit'), async (req, res) => {
+  app.post('/api/auditorias-internas/:id/checklists/:checklistId/evidence-upload-url', requireAuth, requireAuditoriaPermission("edit"), async (req, res) => {
     try {
       const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
@@ -40636,7 +40641,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   // POST /api/auditorias-internas/:id/checklists - Crear checklist
-  app.post('/api/auditorias-internas/:id/checklists', requireAuth, requirePermission('sst_management:create'), async (req, res) => {
+  app.post('/api/auditorias-internas/:id/checklists', requireAuth, requireAuditoriaPermission("create"), async (req, res) => {
     try {
       const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
@@ -40665,7 +40670,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   // POST /api/auditorias-internas/:id/checklists/template - Crear checklist normativo base
-  app.post('/api/auditorias-internas/:id/checklists/template', requireAuth, requirePermission('sst_management:create'), async (req, res) => {
+  app.post('/api/auditorias-internas/:id/checklists/template', requireAuth, requireAuditoriaPermission("create"), async (req, res) => {
     try {
       const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
@@ -40702,7 +40707,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   // PATCH /api/checklists/:id - Actualizar checklist
-  app.patch('/api/checklists/:id', requireAuth, requirePermission('sst_management:edit'), async (req, res) => {
+  app.patch('/api/checklists/:id', requireAuth, requireAuditoriaPermission("edit"), async (req, res) => {
     try {
       const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
@@ -40749,7 +40754,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   // DELETE /api/checklists/:id - Eliminar checklist
-  app.delete('/api/checklists/:id', requireAuth, requirePermission('sst_management:delete'), async (req, res) => {
+  app.delete('/api/checklists/:id', requireAuth, requireAuditoriaPermission("delete"), async (req, res) => {
     try {
       const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
@@ -40774,7 +40779,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   // GET /api/auditorias-internas/:id/hallazgos - Hallazgos de una auditoría
-  app.get('/api/auditorias-internas/:id/hallazgos', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
+  app.get('/api/auditorias-internas/:id/hallazgos', requireAuth, requireAuditoriaPermission("view"), async (req, res) => {
     try {
       const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
@@ -40793,7 +40798,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   // POST /api/auditorias-internas/:id/hallazgos - Registrar un hallazgo en una auditoría
-  app.post('/api/auditorias-internas/:id/hallazgos', requireAuth, requirePermission('sst_management:create'), async (req, res) => {
+  app.post('/api/auditorias-internas/:id/hallazgos', requireAuth, requireAuditoriaPermission("create"), async (req, res) => {
     try {
       const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
@@ -40835,7 +40840,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   // GET /api/hallazgos-auditoria - Obtener todos los hallazgos
-  app.get('/api/hallazgos-auditoria', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
+  app.get('/api/hallazgos-auditoria', requireAuth, requireAuditoriaPermission("view"), async (req, res) => {
     try {
       const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
@@ -40851,7 +40856,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   // POST /api/hallazgos-auditoria - Crear hallazgo
-  app.post('/api/hallazgos-auditoria', requireAuth, requirePermission('sst_management:create'), async (req, res) => {
+  app.post('/api/hallazgos-auditoria', requireAuth, requireAuditoriaPermission("create"), async (req, res) => {
     try {
       const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
@@ -40880,7 +40885,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   // PATCH /api/hallazgos-auditoria/:id - Actualizar hallazgo
-  app.patch('/api/hallazgos-auditoria/:id', requireAuth, requirePermission('sst_management:edit'), async (req, res) => {
+  app.patch('/api/hallazgos-auditoria/:id', requireAuth, requireAuditoriaPermission("edit"), async (req, res) => {
     try {
       const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
@@ -40909,8 +40914,59 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     }
   });
 
+  // PATCH /api/hallazgos-auditoria/:id/cierre - Verificar o cerrar un hallazgo
+  app.patch('/api/hallazgos-auditoria/:id/cierre', requireAuth, requireAuditoriaPermission("edit"), async (req, res) => {
+    try {
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) {
+        return res.status(403).send("Esta operación requiere pertenecer a una empresa");
+      }
+
+      const hallazgo = await storage.getHallazgoAuditoria(req.params.id, companyId);
+      if (!hallazgo) {
+        return res.status(404).send("Hallazgo no encontrado o no pertenece a su empresa");
+      }
+      const auditoria = await storage.getAuditoriaInterna(hallazgo.auditoriaId, companyId);
+      const targetStatus = req.body?.estadoCierre;
+      if (targetStatus !== "verificado" && targetStatus !== "cerrado") {
+        return res.status(400).send("El estado de cierre debe ser verificado o cerrado");
+      }
+
+      if (targetStatus === "verificado") {
+        const plans = await storage.getPlanesAccionAuditoria(hallazgo.id, companyId);
+        const allEffective = plans.length > 0 &&
+          plans.every((plan) => (plan.estado === "verificado" || plan.estado === "cerrado") && plan.eficaz === 1);
+        if (!allEffective) {
+          return res.status(409).send("El hallazgo requiere al menos un plan de acción y todos deben estar verificados como eficaces");
+        }
+      } else if (hallazgo.estadoCierre !== "verificado") {
+        return res.status(409).send("El hallazgo debe estar verificado antes de cerrarse");
+      }
+
+      const verifierName = (req.user as any).fullName || (req.user as any).name || req.user!.username;
+      const updated = await storage.updateHallazgoAuditoria(req.params.id, {
+        estadoCierre: targetStatus,
+        fechaCierre: targetStatus === "cerrado"
+          ? new Date()
+          : hallazgo.fechaCierre
+            ? new Date(hallazgo.fechaCierre)
+            : null,
+        verificadoPor: verifierName,
+        verificadoPorId: req.user!.id,
+        observacionesCierre: typeof req.body?.observacionesCierre === "string"
+          ? req.body.observacionesCierre.trim() || null
+          : hallazgo.observacionesCierre,
+      }, companyId);
+
+      res.json(updated);
+    } catch (error: any) {
+      console.error('Error actualizando cierre de hallazgo:', error);
+      res.status(400).send(error.message);
+    }
+  });
+
   // DELETE /api/hallazgos-auditoria/:id - Eliminar hallazgo
-  app.delete('/api/hallazgos-auditoria/:id', requireAuth, requirePermission('sst_management:delete'), async (req, res) => {
+  app.delete('/api/hallazgos-auditoria/:id', requireAuth, requireAuditoriaPermission("delete"), async (req, res) => {
     try {
       const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
@@ -40934,7 +40990,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   // GET /api/hallazgos-auditoria/:id/planes-accion - Obtener planes de acción de un hallazgo
-  app.get('/api/hallazgos-auditoria/:id/planes-accion', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
+  app.get('/api/hallazgos-auditoria/:id/planes-accion', requireAuth, requireAuditoriaPermission("view"), async (req, res) => {
     try {
       const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
@@ -40950,7 +41006,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   // POST /api/hallazgos-auditoria/:id/planes-accion - Crear plan de acción
-  app.post('/api/hallazgos-auditoria/:id/planes-accion', requireAuth, requirePermission('sst_management:create'), async (req, res) => {
+  app.post('/api/hallazgos-auditoria/:id/planes-accion', requireAuth, requireAuditoriaPermission("create"), async (req, res) => {
     try {
       const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
@@ -40985,7 +41041,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   // PATCH /api/planes-accion-auditoria/:id - Actualizar plan de acción
-  app.patch('/api/planes-accion-auditoria/:id', requireAuth, requirePermission('sst_management:edit'), async (req, res) => {
+  app.patch('/api/planes-accion-auditoria/:id', requireAuth, requireAuditoriaPermission("edit"), async (req, res) => {
     try {
       const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
@@ -40998,16 +41054,77 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       }
       const hallazgo = await storage.getHallazgoAuditoria(existing.hallazgoId, companyId);
       const auditoria = hallazgo ? await storage.getAuditoriaInterna(hallazgo.auditoriaId, companyId) : undefined;
+      const requestData = { ...req.body };
+      const trackingFields = new Set([
+        "estado",
+        "porcentajeAvance",
+        "fechaImplementacion",
+        "observacionesAvance",
+        "fechaVerificacion",
+        "verificadoPor",
+        "verificadoPorId",
+        "resultadoVerificacion",
+        "eficaz",
+      ]);
       if (auditoria?.estado === "cerrada") {
-        return res.status(409).send("No se puede editar un plan de una auditoría cerrada");
+        const nonTrackingFields = Object.keys(requestData).filter((key) => !trackingFields.has(key));
+        if (nonTrackingFields.length > 0) {
+          return res.status(409).send("Una auditoría cerrada solo permite actualizar el seguimiento y la eficacia de sus planes");
+        }
       }
-      const validatedData = insertPlanAccionAuditoriaSchema.partial().parse(req.body);
+      if (requestData.porcentajeAvance !== undefined) {
+        const progress = Number(requestData.porcentajeAvance);
+        if (!Number.isFinite(progress) || progress < 0 || progress > 100) {
+          return res.status(400).send("El porcentaje de avance debe estar entre 0 y 100");
+        }
+        if (progress === 100 && !requestData.fechaImplementacion) {
+          requestData.fechaImplementacion = new Date();
+        }
+        if (progress === 100 && !requestData.estado) {
+          requestData.estado = "completado";
+        }
+      }
+      if (requestData.eficaz !== undefined) {
+        if (requestData.fechaVerificacion === undefined) {
+          requestData.fechaVerificacion = new Date();
+        }
+        requestData.verificadoPorId = req.user!.id;
+        requestData.verificadoPor = (req.user as any).fullName || (req.user as any).name || req.user!.username;
+        requestData.estado = Number(requestData.eficaz) === 1 ? "verificado" : "en_progreso";
+      }
+      const requestedStatus = requestData.estado || existing.estado;
+      const requestedProgress = requestData.porcentajeAvance === undefined
+        ? Number(existing.porcentajeAvance || 0)
+        : Number(requestData.porcentajeAvance);
+      const requestedEffectiveness = requestData.eficaz === undefined
+        ? existing.eficaz
+        : Number(requestData.eficaz);
+      if ((requestedStatus === "verificado" || requestedStatus === "cerrado") &&
+          (requestedProgress < 100 || requestedEffectiveness !== 1)) {
+        return res.status(409).send("Un plan solo puede verificarse o cerrarse con 100% de avance y eficacia confirmada");
+      }
+
+      const validatedData = insertPlanAccionAuditoriaSchema.partial().parse(requestData);
       const plan = await storage.updatePlanAccionAuditoria(req.params.id, validatedData, companyId);
       
       if (!plan) {
         return res.status(404).send("Plan de acción no encontrado o no pertenece a su empresa");
       }
       
+      if (plan && hallazgo) {
+        const allPlans = await storage.getPlanesAccionAuditoria(hallazgo.id, companyId);
+        const allVerified = allPlans.length > 0 && allPlans.every((item) =>
+          (item.estado === "verificado" || item.estado === "cerrado") && item.eficaz === 1
+        );
+        if (allVerified) {
+          await storage.updateHallazgoAuditoria(hallazgo.id, {
+            estadoCierre: "verificado",
+            fechaCierre: new Date(),
+            verificadoPor: (req.user as any).fullName || (req.user as any).name || req.user!.username,
+            verificadoPorId: req.user!.id,
+          }, companyId);
+        }
+      }
       res.json(plan);
     } catch (error: any) {
       console.error('Error updating plan de acción:', error);
@@ -41016,7 +41133,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   // DELETE /api/planes-accion-auditoria/:id - Eliminar plan de acción
-  app.delete('/api/planes-accion-auditoria/:id', requireAuth, requirePermission('sst_management:delete'), async (req, res) => {
+  app.delete('/api/planes-accion-auditoria/:id', requireAuth, requireAuditoriaPermission("delete"), async (req, res) => {
     try {
       const companyId = getEffectiveCompanyId(req);
       if (!companyId) {

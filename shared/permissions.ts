@@ -152,6 +152,10 @@ export type Permission =
   | "sst_management:create"
   | "sst_management:edit"
   | "sst_management:delete"
+  | "auditorias_internas:view"
+  | "auditorias_internas:create"
+  | "auditorias_internas:edit"
+  | "auditorias_internas:delete"
   
   // Plan de Comunicación SST
   | "comunicacion_plan:view"
@@ -1072,6 +1076,10 @@ export const rolePermissions: Record<UserRole, Permission[]> = {
 
   // Auditor Interno SG-SST - Auditorías según ISO 45001 y Decreto 1072/2015
   auditor_interno: [
+    "auditorias_internas:view",
+    "auditorias_internas:create",
+    "auditorias_internas:edit",
+    "auditorias_internas:delete",
     "workers:view",
     "accidents:view",
     "trainings:view",

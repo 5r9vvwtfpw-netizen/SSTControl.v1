@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQueries, useQuery } from "@tanstack/react-query";
 import { useLocation, useParams } from "wouter";
 import { ArrowLeft, Calendar, CheckCircle2, Clock, Download, FileCheck2, FileText, Loader2, LockKeyhole, Play, Upload, Users, UserPlus } from "lucide-react";
@@ -38,6 +38,8 @@ export default function DetalleAuditoriaInterna() {
   const [newClause, setNewClause] = useState("");
   const [newArea, setNewArea] = useState("");
   const [findingDialogOpen, setFindingDialogOpen] = useState(false);
+  const [findingCloseDialogOpen, setFindingCloseDialogOpen] = useState(false);
+  const [findingCloseNotes, setFindingCloseNotes] = useState("");
   const [selectedFinding, setSelectedFinding] = useState<HallazgoAuditoria | null>(null);
   const [actionDialogOpen, setActionDialogOpen] = useState(false);
   const [findingForm, setFindingForm] = useState({
@@ -57,6 +59,22 @@ export default function DetalleAuditoriaInterna() {
     justificacion: "",
     responsable: "",
     fechaCompromiso: "",
+  });
+  const [trackingDialogOpen, setTrackingDialogOpen] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<PlanAccionAuditoria | null>(null);
+  const [trackingForm, setTrackingForm] = useState({
+    estado: "abierto",
+    porcentajeAvance: "0",
+    fechaImplementacion: "",
+    observacionesAvance: "",
+    fechaVerificacion: "",
+    eficaz: "",
+    resultadoVerificacion: "",
+  });
+  const [phvaForm, setPhvaForm] = useState({
+    cicloPhva: "verificar",
+    procesoPhva: "",
+    estandarRelacionado: "",
   });
   const [auditorDialogOpen, setAuditorDialogOpen] = useState(false);
   const [auditorForm, setAuditorForm] = useState({
@@ -93,6 +111,16 @@ export default function DetalleAuditoriaInterna() {
     queryKey: ["/api/users/company-members"],
     enabled: !!auditoria,
   });
+
+  useEffect(() => {
+    if (auditoria) {
+      setPhvaForm({
+        cicloPhva: auditoria.cicloPhva || "verificar",
+        procesoPhva: auditoria.procesoPhva || "",
+        estandarRelacionado: auditoria.estandarRelacionado || "",
+      });
+    }
+  }, [auditoria?.id]);
 
   const planQueries = useQueries({
     queries: hallazgos.map((hallazgo) => ({
@@ -288,6 +316,72 @@ export default function DetalleAuditoriaInterna() {
     },
   });
 
+  const trackingMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedPlan) throw new Error("Seleccione un plan de acción");
+      const payload: Record<string, unknown> = {
+        estado: trackingForm.estado,
+        porcentajeAvance: Number(trackingForm.porcentajeAvance),
+        fechaImplementacion: trackingForm.fechaImplementacion || null,
+        observacionesAvance: trackingForm.observacionesAvance || null,
+      };
+      if (trackingForm.eficaz !== "") {
+        payload.eficaz = Number(trackingForm.eficaz);
+        payload.fechaVerificacion = trackingForm.fechaVerificacion || new Date().toISOString();
+        payload.resultadoVerificacion = trackingForm.resultadoVerificacion || null;
+      }
+      const response = await apiRequest("PATCH", `/api/planes-accion-auditoria/${selectedPlan.id}`, payload);
+      return response.json();
+    },
+    onSuccess: () => {
+      if (selectedPlan) {
+        queryClient.invalidateQueries({ queryKey: [`/api/hallazgos-auditoria/${selectedPlan.hallazgoId}/planes-accion`] });
+      }
+      queryClient.invalidateQueries({ queryKey: [`/api/auditorias-internas/${id}/hallazgos`] });
+      setTrackingDialogOpen(false);
+      setSelectedPlan(null);
+      toast({ title: "Seguimiento actualizado", description: "El avance y la verificación quedaron registrados." });
+    },
+    onError: (error: Error) => {
+      toast({ title: "No se pudo actualizar el seguimiento", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const phvaMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("PATCH", `/api/auditorias-internas/${id}`, phvaForm);
+      return response.json();
+    },
+    onSuccess: (updated: AuditoriaInterna) => {
+      queryClient.setQueryData(["/api/auditorias-internas", id], updated);
+      queryClient.invalidateQueries({ queryKey: ["/api/auditorias-internas"] });
+      toast({ title: "Vínculo PHVA guardado", description: "La auditoría quedó relacionada con su proceso y estándar." });
+    },
+    onError: (error: Error) => {
+      toast({ title: "No se pudo guardar el vínculo PHVA", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const findingCloseMutation = useMutation({
+    mutationFn: async ({ hallazgoId, estadoCierre }: { hallazgoId: string; estadoCierre: "verificado" | "cerrado" }) => {
+      const response = await apiRequest("PATCH", `/api/hallazgos-auditoria/${hallazgoId}/cierre`, {
+        estadoCierre,
+        observacionesCierre: findingCloseNotes,
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/auditorias-internas/${id}/hallazgos`] });
+      setFindingCloseDialogOpen(false);
+      setFindingCloseNotes("");
+      setSelectedFinding(null);
+      toast({ title: "Estado del hallazgo actualizado" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "No se pudo actualizar el hallazgo", description: error.message, variant: "destructive" });
+    },
+  });
+
   if (isLoading) {
     return <div className="p-6 text-muted-foreground">Cargando auditoría...</div>;
   }
@@ -311,6 +405,7 @@ export default function DetalleAuditoriaInterna() {
   const canClose = auditoria.estado === "completada";
   const canEditChecklist = auditoria.estado === "programada" || auditoria.estado === "en_ejecucion";
   const canEditFindings = auditoria.estado !== "cerrada";
+  const canTrackFindings = true;
   const evaluatedCount = checklists.filter((item) => item.cumple !== null && item.cumple !== undefined).length;
   const conformCount = checklists.filter((item) => item.cumple === 1).length;
   const nonConformCount = checklists.filter((item) => item.cumple === 0).length;
@@ -430,6 +525,37 @@ export default function DetalleAuditoriaInterna() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Trazabilidad PHVA</CardTitle>
+          <CardDescription>Relacione la auditoría con la fase, el proceso y el estándar que serán objeto de verificación.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-3">
+          <div className="space-y-2">
+            <Label>Fase PHVA</Label>
+            <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={phvaForm.cicloPhva} disabled={auditoria.estado === "cerrada" || phvaMutation.isPending} onChange={(e) => setPhvaForm({ ...phvaForm, cicloPhva: e.target.value })}>
+              <option value="planear">Planear</option>
+              <option value="hacer">Hacer</option>
+              <option value="verificar">Verificar</option>
+              <option value="actuar">Actuar</option>
+            </select>
+          </div>
+          <div className="space-y-2">
+            <Label>Proceso PHVA</Label>
+            <Input value={phvaForm.procesoPhva} disabled={auditoria.estado === "cerrada"} onChange={(e) => setPhvaForm({ ...phvaForm, procesoPhva: e.target.value })} placeholder="Ej. Verificación y mejora" />
+          </div>
+          <div className="space-y-2">
+            <Label>Estándar relacionado</Label>
+            <Input value={phvaForm.estandarRelacionado} disabled={auditoria.estado === "cerrada"} onChange={(e) => setPhvaForm({ ...phvaForm, estandarRelacionado: e.target.value })} placeholder="Ej. Resolución 0312 — 6.1.2" />
+          </div>
+          <div className="md:col-span-3">
+            <Button variant="outline" disabled={auditoria.estado === "cerrada" || phvaMutation.isPending} onClick={() => phvaMutation.mutate()}>
+              {phvaMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null} Guardar trazabilidad PHVA
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -701,24 +827,78 @@ export default function DetalleAuditoriaInterna() {
                       <div className="rounded-md border bg-background p-3 space-y-2">
                         <p className="text-sm font-medium">Planes de acción ({plans.length})</p>
                         {plans.map((plan) => (
-                          <div key={plan.id} className="flex flex-wrap items-center justify-between gap-2 text-sm">
-                            <span>{plan.descripcionAccion}</span>
-                            <span className="text-muted-foreground">{plan.responsable} · vence {formatDate(plan.fechaCompromiso)} · {plan.estado}</span>
+                          <div key={plan.id} className="space-y-2 text-sm">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <span>{plan.descripcionAccion}</span>
+                              <span className="text-muted-foreground">{plan.responsable} · vence {formatDate(plan.fechaCompromiso)} · {plan.estado}</span>
+                            </div>
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <span className="text-xs text-muted-foreground">Avance: {plan.porcentajeAvance || 0}%{plan.eficaz !== null && plan.eficaz !== undefined ? ` · ${plan.eficaz === 1 ? "Eficaz" : "No eficaz"}` : ""}</span>
+                              {canTrackFindings && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    setSelectedPlan(plan);
+                                    setTrackingForm({
+                                      estado: plan.estado,
+                                      porcentajeAvance: String(plan.porcentajeAvance || 0),
+                                      fechaImplementacion: plan.fechaImplementacion ? String(plan.fechaImplementacion).slice(0, 10) : "",
+                                      observacionesAvance: plan.observacionesAvance || "",
+                                      fechaVerificacion: plan.fechaVerificacion ? String(plan.fechaVerificacion).slice(0, 10) : "",
+                                      eficaz: plan.eficaz === null || plan.eficaz === undefined ? "" : String(plan.eficaz),
+                                      resultadoVerificacion: plan.resultadoVerificacion || "",
+                                    });
+                                    setTrackingDialogOpen(true);
+                                  }}
+                                >
+                                  Actualizar seguimiento
+                                </Button>
+                              )}
+                            </div>
                           </div>
                         ))}
                       </div>
                     )}
                     {canEditFindings && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedFinding(hallazgo);
-                          setActionDialogOpen(true);
-                        }}
-                      >
-                        Crear plan de acción
-                      </Button>
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedFinding(hallazgo);
+                            setActionDialogOpen(true);
+                          }}
+                        >
+                          Crear plan de acción
+                        </Button>
+                        {canTrackFindings && hallazgo.estadoCierre === "en_correccion" && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedFinding(hallazgo);
+                              setFindingCloseNotes("");
+                              setFindingCloseDialogOpen(true);
+                            }}
+                          >
+                            Verificar eficacia
+                          </Button>
+                        )}
+                        {canTrackFindings && hallazgo.estadoCierre === "verificado" && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedFinding(hallazgo);
+                              setFindingCloseNotes("");
+                              setFindingCloseDialogOpen(true);
+                            }}
+                          >
+                            Cerrar hallazgo
+                          </Button>
+                        )}
+                      </div>
                     )}
                   </CardContent>
                 </Card>
@@ -729,9 +909,9 @@ export default function DetalleAuditoriaInterna() {
       </Card>
 
       <Card className="border-dashed">
-        <CardHeader><CardTitle className="text-base">Siguiente etapa</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-base">Seguimiento posterior</CardTitle></CardHeader>
         <CardContent className="text-sm text-muted-foreground">
-          Checklist y evidencias ya están operativos. La siguiente fase convertirá los criterios “No cumple” en hallazgos con clasificación, responsable, fecha de compromiso y plan de acción.
+          El seguimiento de avance, la verificación de eficacia y el cierre formal de cada hallazgo quedan disponibles mientras la auditoría permanezca abierta. Las acciones pueden continuar después del cierre de la auditoría.
         </CardContent>
       </Card>
 
@@ -892,6 +1072,88 @@ export default function DetalleAuditoriaInterna() {
               onClick={() => actionMutation.mutate()}
             >
               {actionMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null} Guardar plan
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={trackingDialogOpen} onOpenChange={setTrackingDialogOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Seguimiento del plan de acción</DialogTitle>
+            <DialogDescription>Registre el avance, la implementación y la verificación de eficacia.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Estado</Label>
+                <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={trackingForm.estado} onChange={(e) => setTrackingForm({ ...trackingForm, estado: e.target.value })}>
+                  <option value="abierto">Abierto</option>
+                  <option value="en_progreso">En progreso</option>
+                  <option value="completado">Completado</option>
+                  <option value="verificado">Verificado</option>
+                  <option value="cerrado">Cerrado</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label>Porcentaje de avance</Label>
+                <Input type="number" min="0" max="100" value={trackingForm.porcentajeAvance} onChange={(e) => setTrackingForm({ ...trackingForm, porcentajeAvance: e.target.value })} />
+              </div>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2"><Label>Fecha de implementación</Label><Input type="date" value={trackingForm.fechaImplementacion} onChange={(e) => setTrackingForm({ ...trackingForm, fechaImplementacion: e.target.value })} /></div>
+              <div className="space-y-2"><Label>Observaciones de avance</Label><Input value={trackingForm.observacionesAvance} onChange={(e) => setTrackingForm({ ...trackingForm, observacionesAvance: e.target.value })} /></div>
+            </div>
+            <div className="rounded-lg border p-3 space-y-3">
+              <p className="text-sm font-medium">Verificación de eficacia</p>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Resultado</Label>
+                  <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={trackingForm.eficaz} onChange={(e) => setTrackingForm({ ...trackingForm, eficaz: e.target.value })}>
+                    <option value="">Pendiente de verificar</option>
+                    <option value="1">Eficaz</option>
+                    <option value="0">No eficaz</option>
+                  </select>
+                </div>
+                <div className="space-y-2"><Label>Fecha de verificación</Label><Input type="date" value={trackingForm.fechaVerificacion} onChange={(e) => setTrackingForm({ ...trackingForm, fechaVerificacion: e.target.value })} /></div>
+              </div>
+              <div className="space-y-2"><Label>Resultado y evidencia de eficacia</Label><Textarea value={trackingForm.resultadoVerificacion} onChange={(e) => setTrackingForm({ ...trackingForm, resultadoVerificacion: e.target.value })} placeholder="Describa cómo se verificó que la acción fue eficaz..." /></div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTrackingDialogOpen(false)}>Cancelar</Button>
+            <Button disabled={trackingMutation.isPending || !trackingForm.porcentajeAvance || Number(trackingForm.porcentajeAvance) < 0 || Number(trackingForm.porcentajeAvance) > 100 || (trackingForm.eficaz !== "" && !trackingForm.resultadoVerificacion.trim())} onClick={() => trackingMutation.mutate()}>
+              {trackingMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null} Guardar seguimiento
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={findingCloseDialogOpen} onOpenChange={setFindingCloseDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{selectedFinding?.estadoCierre === "verificado" ? "Cerrar hallazgo" : "Verificar eficacia del hallazgo"}</DialogTitle>
+            <DialogDescription>
+              {selectedFinding?.estadoCierre === "verificado"
+                ? "Confirme el cierre formal del hallazgo."
+                : "El servidor comprobará que todas las acciones estén verificadas como eficaces."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label>Observaciones de cierre</Label>
+            <Textarea value={findingCloseNotes} onChange={(e) => setFindingCloseNotes(e.target.value)} placeholder="Registre la evidencia y las observaciones de la verificación..." />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setFindingCloseDialogOpen(false)}>Cancelar</Button>
+            <Button
+              disabled={findingCloseMutation.isPending || !selectedFinding || !findingCloseNotes.trim()}
+              onClick={() => selectedFinding && findingCloseMutation.mutate({
+                hallazgoId: selectedFinding.id,
+                estadoCierre: selectedFinding.estadoCierre === "verificado" ? "cerrado" : "verificado",
+              })}
+            >
+              {findingCloseMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+              Confirmar
             </Button>
           </DialogFooter>
         </DialogContent>

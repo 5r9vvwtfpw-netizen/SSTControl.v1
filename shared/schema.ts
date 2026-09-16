@@ -298,7 +298,7 @@ export const consentRecords = pgTable("consent_records", {
   workerName: text("worker_name").notNull(), // Denormalized for audit trail
   workerEmail: text("worker_email"),
   workerIdentification: text("worker_identification").notNull(), // CC, CE, Pasaporte
-  
+
   // Consent details
   consentType: consentTypeEnum("consent_type").notNull(),
   status: consentStatusEnum("status").notNull().default("otorgado"),
@@ -5391,7 +5391,12 @@ export const auditoriasInternas = pgTable("auditorias_internas", {
   aprobadoPorId: varchar("aprobado_por_id").references(() => users.id),
   fechaAprobacion: date("fecha_aprobacion"),
   observacionesCierre: text("observaciones_cierre"),
-  
+
+  // Trazabilidad del ciclo PHVA
+  cicloPhva: cicloPhvaEnum("ciclo_phva").notNull().default("verificar"),
+  procesoPhva: text("proceso_phva"),
+  estandarRelacionado: text("estandar_relacionado"),
+
   // Integración con COPASST - Estándar 6.1.4 Resolución 0312/2019
   planificadaConCopasst: boolean("planificada_con_copasst").default(false), // Si fue planificada con participación COPASST
   copasstActaId: varchar("copasst_acta_id").references(() => copasstActas.id), // Acta COPASST donde se planificó/discutió
@@ -5545,6 +5550,7 @@ export const insertAuditoriaInternaSchema = createInsertSchema(auditoriasInterna
     numeroNoConformidadesMayores: z.number().min(0).default(0),
     numeroObservaciones: z.number().min(0).default(0),
     porcentajeCumplimiento: z.number().min(0).max(100).optional().nullable(),
+    cicloPhva: z.enum(["planear", "hacer", "verificar", "actuar"]).default("verificar"),
   });
 export type InsertAuditoriaInterna = z.infer<typeof insertAuditoriaInternaSchema>;
 export type AuditoriaInterna = typeof auditoriasInternas.$inferSelect;
