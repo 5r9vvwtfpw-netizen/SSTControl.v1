@@ -321,3 +321,17 @@ mtime_ms = 1789376782617
 storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/3b07b5ac-96c5-4542-8dba-d3092d180e93/f560f0a9-6d82-4f9f-938e-e05ea262ace3"
 storage_version_token = "1789376866254667"
 content_type = "application/pdf"
+
+[[outputs]]
+id = "MbOO_lCvaYJ4agTWqdyt2"
+uri = "file://docs/evidence/medicion-ambiental-demo-prueba-2026-09-16.pdf"
+type = "pdf"
+title = "Evidencia — Medición ambiental DEMO-PRUEBA"
+description = "PDF generado por el sistema después de crear la medición, registrar 80 dB(A) y confirmar el estado Conforme."
+logical_id = "e50dacda-3961-4f80-8914-482f3413a6c0"
+content_hash = "sha256:609d501fc9cf4cb6419ef15c0ecbf835fe938460901c526c26578c269e7bae98"
+size = 767214
+mtime_ms = 1789554613650
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/e50dacda-3961-4f80-8914-482f3413a6c0/988a19a6-5931-4711-980b-d9157f8623ad"
+storage_version_token = "1789554629606404"
+content_type = "application/pdf"

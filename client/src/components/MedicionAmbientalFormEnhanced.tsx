@@ -237,6 +237,15 @@ export function MedicionAmbientalFormEnhanced({
 
   const handleSubmit = async (data: EnhancedFormData) => {
     try {
+      if (!selectedMeasurementReference) {
+        toast({
+          title: "Referencia requerida",
+          description: "Seleccione el caso normativo que corresponde a la medición.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       // Add tracking number and creation info to observations for traceability
       const enhancedObservations = `[Trazabilidad: ${trackingNumber}]\n${data.observations || ""}`;
       

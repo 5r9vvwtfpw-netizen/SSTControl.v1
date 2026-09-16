@@ -55,7 +55,10 @@ import { mechanicCompanyContextMiddleware } from "./middleware/mechanic-company-
 import { registerMechanicAccessRoutes } from "./routes/mechanic-access";
 import { checkWorkerLimit, checkUserLimit } from "./middleware/subscription-limits";
 import { calcularIndicador, parsePeriodoToDateRange } from "./indicadores-calculators";
-import { isAllowedEnvironmentalMeasurementValue } from "@shared/environmental-measurement-catalog";
+import {
+  evaluateEnvironmentalMeasurementStatus,
+  isNumericEnvironmentalMeasurementValue,
+} from "@shared/environmental-measurement-catalog";
 import { z } from "zod";
 import multer from "multer";
 import { ObjectStorageService, ObjectNotFoundError, objectStorageService } from "./objectStorage";
@@ -23950,10 +23953,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!parsed.success) {
         return res.status(400).send(parsed.error.message);
       }
-      if (!isAllowedEnvironmentalMeasurementValue(parsed.data.measurementType, parsed.data.valueNumeric)) {
-        return res.status(400).send("Seleccione un resultado válido para el tipo de medición");
+      if (parsed.data.valueNumeric && !isNumericEnvironmentalMeasurementValue(parsed.data.valueNumeric)) {
+        return res.status(400).send("El resultado de la medición debe ser numérico");
       }
-      const measurement = await storage.createEnvironmentalMeasurement(parsed.data, companyId);
+      const normalizedValue = parsed.data.valueNumeric?.trim() || undefined;
+      const measurement = await storage.createEnvironmentalMeasurement({
+        ...parsed.data,
+        valueNumeric: normalizedValue,
+        status: normalizedValue
+          ? evaluateEnvironmentalMeasurementStatus(
+              parsed.data.measurementType,
+              parsed.data.legalLimit,
+              normalizedValue,
+            )
+          : "pendiente_analisis",
+      }, companyId);
       res.json(measurement);
     } catch (error: any) {
       res.status(500).send(error.message);
@@ -23975,20 +23989,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!parsed.success) {
           return res.status(400).send(parsed.error.message);
         }
-        const measurement = await storage.updateEnvironmentalMeasurement(req.params.id, parsed.data, existingMeasurement.companyId);
+        if (parsed.data.valueNumeric && !isNumericEnvironmentalMeasurementValue(parsed.data.valueNumeric)) {
+          return res.status(400).send("El resultado de la medición debe ser numérico");
+        }
+        const normalizedValue = parsed.data.valueNumeric?.trim();
+        const resultObservation = parsed.data.observations?.trim();
+        const mergedObservation = resultObservation
+          ? [
+              existingMeasurement.observations,
+              `[Resultado registrado] ${resultObservation}`,
+            ].filter(Boolean).join("\n")
+          : undefined;
+        const updateData = normalizedValue
+          ? {
+              ...parsed.data,
+              valueNumeric: normalizedValue,
+              ...(mergedObservation ? { observations: mergedObservation } : {}),
+              status: evaluateEnvironmentalMeasurementStatus(
+                parsed.data.measurementType || existingMeasurement.measurementType,
+                parsed.data.legalLimit ?? existingMeasurement.legalLimit,
+                normalizedValue,
+              ),
+            }
+          : parsed.data;
+        const measurement = await storage.updateEnvironmentalMeasurement(req.params.id, updateData, existingMeasurement.companyId);
         res.json(measurement);
       } else {
         if (!userCompanyId) {
           return res.status(403).send("Usuario no asociado a una empresa");
         }
+        const existingMeasurement = await storage.getEnvironmentalMeasurement(req.params.id, userCompanyId);
+        if (!existingMeasurement) {
+          return res.status(404).send("Medición ambiental no encontrada");
+        }
         const parsed = insertEnvironmentalMeasurementSchema.partial().safeParse(req.body);
         if (!parsed.success) {
           return res.status(400).send(parsed.error.message);
         }
-        const measurement = await storage.updateEnvironmentalMeasurement(req.params.id, parsed.data, userCompanyId);
-        if (!measurement) {
-          return res.status(404).send("Medición ambiental no encontrada");
+        if (parsed.data.valueNumeric && !isNumericEnvironmentalMeasurementValue(parsed.data.valueNumeric)) {
+          return res.status(400).send("El resultado de la medición debe ser numérico");
         }
+        const normalizedValue = parsed.data.valueNumeric?.trim();
+        const resultObservation = parsed.data.observations?.trim();
+        const mergedObservation = resultObservation
+          ? [
+              existingMeasurement.observations,
+              `[Resultado registrado] ${resultObservation}`,
+            ].filter(Boolean).join("\n")
+          : undefined;
+        const updateData = normalizedValue
+          ? {
+              ...parsed.data,
+              valueNumeric: normalizedValue,
+              ...(mergedObservation ? { observations: mergedObservation } : {}),
+              status: evaluateEnvironmentalMeasurementStatus(
+                parsed.data.measurementType || existingMeasurement.measurementType,
+                parsed.data.legalLimit ?? existingMeasurement.legalLimit,
+                normalizedValue,
+              ),
+            }
+          : parsed.data;
+        const measurement = await storage.updateEnvironmentalMeasurement(req.params.id, updateData, userCompanyId);
         res.json(measurement);
       }
     } catch (error: any) {
@@ -24977,9 +25038,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       doc.fontSize(8).fillColor('#000000');
       if (measurement.status === 'conforme' && measurement.valueNumeric && measurement.legalLimit && measurement.unit) {
-        doc.text(`La medición se encuentra CONFORME con los límites legales establecidos. El valor medido (${measurement.valueNumeric} ${measurement.unit}) es menor o igual al límite legal permitido (${measurement.legalLimit} ${measurement.unit}).`);
+        const isMinimumReference = measurement.measurementType === 'iluminacion';
+        const comparisonText = isMinimumReference ? 'es igual o mayor al mínimo requerido' : 'se encuentra dentro del límite permitido';
+        doc.text(`La medición se encuentra CONFORME con la referencia aplicable. El valor medido (${measurement.valueNumeric} ${measurement.unit}) ${comparisonText} (${measurement.legalLimit} ${measurement.unit}).`);
       } else if (measurement.status === 'no_conforme' && measurement.valueNumeric && measurement.legalLimit && measurement.unit) {
-        doc.fillColor('#ef4444').text(`⚠️ ALERTA: La medición se encuentra NO CONFORME con los límites legales. El valor medido (${measurement.valueNumeric} ${measurement.unit}) supera el límite legal permitido (${measurement.legalLimit} ${measurement.unit}).`);
+        const isMinimumReference = measurement.measurementType === 'iluminacion';
+        const comparisonText = isMinimumReference ? 'es menor al mínimo requerido' : 'supera el límite permitido';
+        doc.fillColor('#ef4444').text(`⚠️ ALERTA: La medición se encuentra NO CONFORME. El valor medido (${measurement.valueNumeric} ${measurement.unit}) ${comparisonText} (${measurement.legalLimit} ${measurement.unit}).`);
         doc.fillColor('#000000').moveDown(0.5);
         doc.text('Se requiere implementar acciones correctivas inmediatas para garantizar la seguridad y salud de los trabajadores.');
       } else if (measurement.status === 'conforme') {

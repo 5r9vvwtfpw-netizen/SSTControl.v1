@@ -5,11 +5,14 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Search, Filter, Droplet, Sun, Thermometer, FlaskConical, Wind, Activity, Download, CalendarDays } from "lucide-react";
+import { Plus, Search, Filter, Droplet, Sun, Thermometer, FlaskConical, Wind, Activity, Download, CalendarDays, ClipboardCheck, Pencil } from "lucide-react";
 import { Link } from "wouter";
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { EnvironmentalMeasurement, Company, insertEnvironmentalMeasurementSchema } from "@shared/schema";
+import {
+  isNumericEnvironmentalMeasurementValue,
+} from "@shared/environmental-measurement-catalog";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -75,6 +78,10 @@ export default function MedicionesAmbientales() {
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("todas");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [resultDialogOpen, setResultDialogOpen] = useState(false);
+  const [selectedMeasurement, setSelectedMeasurement] = useState<EnvironmentalMeasurement | null>(null);
+  const [resultValue, setResultValue] = useState("");
+  const [resultObservations, setResultObservations] = useState("");
   const [formData, setFormData] = useState({
     companyId: "",
     measurementType: "ruido" as const,
@@ -155,6 +162,61 @@ export default function MedicionesAmbientales() {
       });
     },
   });
+
+  const resultMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedMeasurement) {
+        throw new Error("No se seleccionó una medición");
+      }
+      const res = await apiRequest("PATCH", `/api/environmental-measurements/${selectedMeasurement.id}`, {
+        valueNumeric: resultValue.trim(),
+        observations: resultObservations.trim() || undefined,
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/environmental-measurements"] });
+      setResultDialogOpen(false);
+      setSelectedMeasurement(null);
+      setResultValue("");
+      setResultObservations("");
+      toast({
+        title: "Resultado registrado",
+        description: "El resultado real quedó guardado y la medición fue evaluada.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error al registrar el resultado",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const openResultDialog = (measurement: EnvironmentalMeasurement) => {
+    setSelectedMeasurement(measurement);
+    setResultValue(
+      measurement.valueNumeric && isNumericEnvironmentalMeasurementValue(measurement.valueNumeric)
+        ? measurement.valueNumeric
+        : "",
+    );
+    setResultObservations("");
+    setResultDialogOpen(true);
+  };
+
+  const submitResult = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!isNumericEnvironmentalMeasurementValue(resultValue)) {
+      toast({
+        title: "Resultado requerido",
+        description: "Ingrese el valor numérico real obtenido con el equipo de medición.",
+        variant: "destructive",
+      });
+      return;
+    }
+    resultMutation.mutate();
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -245,6 +307,85 @@ export default function MedicionesAmbientales() {
             />
           </DialogContent>
         </Dialog>
+        <Dialog
+          open={resultDialogOpen}
+          onOpenChange={(open) => {
+            setResultDialogOpen(open);
+            if (!open) {
+              setSelectedMeasurement(null);
+              setResultValue("");
+              setResultObservations("");
+            }
+          }}
+        >
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>
+                {selectedMeasurement?.valueNumeric && isNumericEnvironmentalMeasurementValue(selectedMeasurement.valueNumeric)
+                  ? "Editar resultado de medición"
+                  : "Registrar resultado de medición"}
+              </DialogTitle>
+              <DialogDescription>
+                Ingrese el valor real obtenido con el equipo. La unidad y el estado se gestionan automáticamente.
+              </DialogDescription>
+            </DialogHeader>
+            {selectedMeasurement && (
+              <form onSubmit={submitResult} className="space-y-4">
+                <div className="rounded-lg border bg-muted/30 p-3 text-sm">
+                  <p className="font-medium">
+                    {measurementTypeLabels[selectedMeasurement.measurementType] || selectedMeasurement.measurementType}
+                  </p>
+                  <p className="text-muted-foreground">{selectedMeasurement.area}</p>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Referencia: {selectedMeasurement.legalLimit || "Pendiente de definir"}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="environmental-result-value">Resultado real *</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="environmental-result-value"
+                      type="number"
+                      step="any"
+                      min="0"
+                      value={resultValue}
+                      onChange={(event) => setResultValue(event.target.value)}
+                      placeholder="Ej.: 80"
+                      autoFocus
+                      data-testid="input-environmental-result"
+                    />
+                    <span className="min-w-fit text-sm font-medium text-muted-foreground">
+                      {selectedMeasurement.unit || "unidad"}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Este es el valor que debe copiar de la lectura del instrumento, no el límite legal.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="environmental-result-observations">Observaciones del resultado</Label>
+                  <Textarea
+                    id="environmental-result-observations"
+                    value={resultObservations}
+                    onChange={(event) => setResultObservations(event.target.value)}
+                    placeholder="Equipo utilizado, condiciones de la medición o aclaraciones"
+                    rows={3}
+                    className="resize-none"
+                    data-testid="input-environmental-result-observations"
+                  />
+                </div>
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={() => setResultDialogOpen(false)}>
+                    Cancelar
+                  </Button>
+                  <Button type="submit" disabled={resultMutation.isPending} data-testid="button-save-environmental-result">
+                    {resultMutation.isPending ? "Guardando..." : "Guardar resultado"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
 
       <AutomationAssistant
@@ -292,7 +433,8 @@ export default function MedicionesAmbientales() {
           </div>
         ) : (
           filteredMeasurements.map((measurement) => {
-            const Icon = measurementTypeIcons[measurement.measurementType];
+            const Icon = measurementTypeIcons[measurement.measurementType] || Activity;
+            const hasNumericResult = isNumericEnvironmentalMeasurementValue(measurement.valueNumeric);
             return (
               <Card key={measurement.id} data-testid={`card-measurement-${measurement.id}`}>
                 <CardHeader>
@@ -317,10 +459,17 @@ export default function MedicionesAmbientales() {
                     <span className="text-muted-foreground">Fecha:</span>
                     <span className="font-medium">{formatDate(measurement.measurementDate)}</span>
                   </div>
-                  {measurement.valueNumeric && (
+                  {hasNumericResult ? (
                     <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Valor:</span>
+                      <span className="text-muted-foreground">Resultado:</span>
                       <span className="font-bold text-lg">{measurement.valueNumeric} {measurement.unit || ""}</span>
+                    </div>
+                  ) : (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Resultado:</span>
+                      <span className="px-2 py-1 rounded text-xs font-medium bg-yellow-500/10 text-yellow-700 dark:text-yellow-300">
+                        Pendiente de registrar
+                      </span>
                     </div>
                   )}
                   {measurement.legalLimit && (
@@ -350,7 +499,19 @@ export default function MedicionesAmbientales() {
                       {measurement.observations}
                     </div>
                   )}
-                  <div className="flex gap-2 mt-4">
+                  <div className="mt-4">
+                    <Button
+                      variant={hasNumericResult ? "outline" : "default"}
+                      size="sm"
+                      className="w-full"
+                      onClick={() => openResultDialog(measurement)}
+                      data-testid={`button-register-result-${measurement.id}`}
+                    >
+                      {hasNumericResult ? <Pencil className="h-4 w-4 mr-2" /> : <ClipboardCheck className="h-4 w-4 mr-2" />}
+                      {hasNumericResult ? "Editar resultado" : "Registrar resultado"}
+                    </Button>
+                  </div>
+                  <div className="flex gap-2">
                     <Button
                       variant="outline"
                       size="sm"
