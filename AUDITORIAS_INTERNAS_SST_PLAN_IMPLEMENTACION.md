@@ -137,4 +137,11 @@ Problemas base identificados:
 - Responsable y fecha de compromiso obligatorios para cada plan.
 - Seguimiento inicial del estado del hallazgo y bloqueo de cambios al cerrar la auditoría.
 
+### Entrega 4 — Equipo auditor e informe
+
+- Asignación de auditores internos y externos, con rol y áreas asignadas.
+- Validación de pertenencia a la empresa y bloqueo de cambios al cerrar.
+- Informe individual en PDF con planificación, equipo, checklist, hallazgos, planes de acción, conclusiones y aprobación.
+- Aprobación de cierre vinculada al usuario autenticado y con recomendaciones opcionales.
+
 Las siguientes fases se implementarán sobre esta base, sin crear pantallas aisladas ni duplicar el modelo existente.

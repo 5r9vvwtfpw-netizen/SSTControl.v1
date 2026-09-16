@@ -40300,7 +40300,11 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
           return res.status(400).send("El cierre requiere conclusiones y responsable de aprobación");
         }
         updateData.conclusiones = conclusiones;
-        updateData.aprobadoPor = aprobadoPor;
+        updateData.recomendaciones = typeof req.body?.recomendaciones === 'string'
+          ? req.body.recomendaciones.trim() || null
+          : null;
+        updateData.aprobadoPor = (req.user as any).fullName || (req.user as any).name || req.user!.username || aprobadoPor;
+        updateData.aprobadoPorId = req.user!.id;
         updateData.fechaInforme = new Date();
         updateData.fechaAprobacion = new Date();
         updateData.observacionesCierre = typeof req.body?.observacionesCierre === 'string'
@@ -40352,7 +40356,10 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       if (!companyId) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      
+      const auditoria = await storage.getAuditoriaInterna(req.params.id, companyId);
+      if (!auditoria) {
+        return res.status(404).send("Auditoría no encontrada o no pertenece a su empresa");
+      }
       const auditores = await storage.getAuditoriaAuditores(req.params.id, companyId);
       res.json(auditores);
     } catch (error: any) {
@@ -40368,7 +40375,18 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       if (!companyId) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      
+      const auditoria = await storage.getAuditoriaInterna(req.params.id, companyId);
+      if (!auditoria) {
+        return res.status(404).send("Auditoría no encontrada o no pertenece a su empresa");
+      }
+      if (auditoria.estado === "cerrada") {
+        return res.status(409).send("No se puede modificar el equipo auditor de una auditoría cerrada");
+      }
+      const hasInternal = typeof req.body?.auditorId === "string" && req.body.auditorId.trim().length > 0;
+      const hasExternal = typeof req.body?.nombreExterno === "string" && req.body.nombreExterno.trim().length > 0;
+      if (hasInternal === hasExternal) {
+        return res.status(400).send("Debe seleccionar un usuario interno o registrar un auditor externo");
+      }
       const validatedData = insertAuditoriaAuditorSchema.parse({
         ...req.body,
         auditoriaId: req.params.id
@@ -40389,7 +40407,14 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       if (!companyId) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      
+      const existing = await storage.getAuditoriaAuditor(req.params.id, companyId);
+      if (!existing) {
+        return res.status(404).send("Auditor no encontrado o no pertenece a una auditoría de su empresa");
+      }
+      const auditoria = await storage.getAuditoriaInterna(existing.auditoriaId, companyId);
+      if (auditoria?.estado === "cerrada") {
+        return res.status(409).send("No se puede editar el equipo auditor de una auditoría cerrada");
+      }
       const validatedData = insertAuditoriaAuditorSchema.partial().parse(req.body);
       const auditor = await storage.updateAuditoriaAuditor(req.params.id, validatedData, companyId);
       
@@ -40411,12 +40436,139 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       if (!companyId) {
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
-      
+      const existing = await storage.getAuditoriaAuditor(req.params.id, companyId);
+      if (!existing) {
+        return res.status(404).send("Auditor no encontrado o no pertenece a una auditoría de su empresa");
+      }
+      const auditoria = await storage.getAuditoriaInterna(existing.auditoriaId, companyId);
+      if (auditoria?.estado === "cerrada") {
+        return res.status(409).send("No se puede eliminar el equipo auditor de una auditoría cerrada");
+      }
       await storage.deleteAuditoriaAuditor(req.params.id, companyId);
       res.status(204).send();
     } catch (error: any) {
       console.error('Error deleting auditor:', error);
       res.status(500).send(error.message);
+    }
+  });
+
+  // GET /api/auditorias-internas/:id/informe - Generar informe individual de auditoría
+  app.get('/api/auditorias-internas/:id/informe', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
+    try {
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) {
+        return res.status(403).send("Esta operación requiere pertenecer a una empresa");
+      }
+      const audit = await storage.getAuditoriaInterna(req.params.id, companyId);
+      if (!audit) {
+        return res.status(404).send("Auditoría no encontrada o no pertenece a su empresa");
+      }
+
+      const [checklists, hallazgos, auditores] = await Promise.all([
+        storage.getAuditoriaChecklists(audit.id, companyId),
+        storage.getHallazgosAuditoria(audit.id, companyId),
+        storage.getAuditoriaAuditores(audit.id, companyId),
+      ]);
+      const plans = (await Promise.all(
+        hallazgos.map((hallazgo) => storage.getPlanesAccionAuditoria(hallazgo.id, companyId)),
+      )).flat();
+      const doc = new PDFDocument({ size: "LETTER", margin: 45, bufferPages: true });
+      const filename = `informe-${audit.codigo || audit.id}.pdf`.replace(/[^a-zA-Z0-9._-]/g, "_");
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
+      doc.pipe(res);
+
+      const navy = "#12304a";
+      const section = (title: string) => {
+        doc.moveDown(0.8);
+        doc.fillColor(navy).font("Helvetica-Bold").fontSize(12).text(title);
+        doc.moveDown(0.3);
+        doc.fillColor("#000000").font("Helvetica").fontSize(9);
+      };
+      const field = (label: string, value: unknown) => {
+        doc.font("Helvetica-Bold").text(`${label}: `, { continued: true });
+        doc.font("Helvetica").text(value ? String(value) : "No registrado");
+        doc.moveDown(0.2);
+      };
+
+      doc.fillColor(navy).font("Helvetica-Bold").fontSize(18).text("INFORME DE AUDITORÍA INTERNA SST", { align: "center" });
+      doc.moveDown(0.3);
+      doc.fillColor("#555555").font("Helvetica").fontSize(10).text(`${audit.codigo} · ${audit.estado.toUpperCase()}`, { align: "center" });
+      doc.moveDown(1);
+
+      section("1. Identificación y planificación");
+      field("Título", audit.titulo);
+      field("Tipo", audit.tipo);
+      field("Norma de referencia", audit.normaReferencia);
+      field("Objetivo", audit.objetivo);
+      field("Alcance", audit.alcance);
+      field("Fecha programada", audit.fechaProgramada);
+      field("Fecha de inicio", audit.fechaInicio);
+      field("Fecha de finalización", audit.fechaFin);
+      field("Auditor líder", audit.auditoristaLider);
+      field("Responsable auditado", audit.responsableAuditado);
+
+      section("2. Equipo auditor");
+      if (auditores.length === 0) {
+        doc.text("No se registraron auditores adicionales.");
+      } else {
+        auditores.forEach((auditor) => {
+          const nombre = auditor.nombreExterno || auditor.auditorId || "Auditor interno";
+          doc.font("Helvetica-Bold").text(`${nombre} · ${auditor.rol}`, { continued: true });
+          doc.font("Helvetica").text(auditor.areasAsignadas ? ` · Áreas: ${auditor.areasAsignadas}` : "");
+          if (auditor.emailExterno || auditor.organizacionExterna) {
+            doc.fillColor("#555555").text([auditor.emailExterno, auditor.organizacionExterna].filter(Boolean).join(" · "));
+            doc.fillColor("#000000");
+          }
+          doc.moveDown(0.3);
+        });
+      }
+
+      section("3. Resultado del checklist");
+      field("Criterios evaluados", `${checklists.filter((item) => item.cumple !== null && item.cumple !== undefined).length} de ${checklists.length}`);
+      field("Cumplimiento", audit.porcentajeCumplimiento !== null && audit.porcentajeCumplimiento !== undefined ? `${audit.porcentajeCumplimiento}%` : "Pendiente");
+      checklists.forEach((item) => {
+        const resultado = item.cumple === 1 ? "Cumple" : item.cumple === 0 ? "No cumple" : "Pendiente";
+        doc.font("Helvetica-Bold").text(`${item.numeroItem}. ${resultado} — ${item.criterioAuditoria}`);
+        doc.font("Helvetica").text(`Referencia: ${item.clausulaReferencia || "No especificada"} · Área: ${item.areaProcesoAuditado || "No especificada"}`);
+        if (item.observaciones || item.evidenciasObtenidas) {
+          doc.fillColor("#555555").text(`Evidencia/observación: ${[item.evidenciasObtenidas, item.observaciones].filter(Boolean).join(" · ")}`);
+          doc.fillColor("#000000");
+        }
+        doc.moveDown(0.35);
+      });
+
+      section("4. Hallazgos y planes de acción");
+      if (hallazgos.length === 0) {
+        doc.text("No se registraron hallazgos.");
+      } else {
+        hallazgos.forEach((hallazgo) => {
+          doc.font("Helvetica-Bold").text(`${hallazgo.numeroHallazgo} · ${hallazgo.tipo} · Severidad ${hallazgo.severidad}`);
+          doc.font("Helvetica").text(hallazgo.descripcion);
+          doc.text(`Requisito: ${hallazgo.requisito} · Área: ${hallazgo.areaAfectada}`);
+          if (hallazgo.evidencia) doc.text(`Evidencia: ${hallazgo.evidencia}`);
+          const linkedPlans = plans.filter((plan) => plan.hallazgoId === hallazgo.id);
+          linkedPlans.forEach((plan) => {
+            doc.fillColor("#8a5a00").text(`Acción ${plan.numeroAccion}: ${plan.descripcionAccion} · Responsable: ${plan.responsable} · Compromiso: ${plan.fechaCompromiso}`);
+            doc.fillColor("#000000");
+          });
+          doc.moveDown(0.5);
+        });
+      }
+
+      section("5. Conclusiones, recomendaciones y aprobación");
+      field("Conclusiones", audit.conclusiones);
+      field("Recomendaciones", audit.recomendaciones);
+      field("Aprobado por", audit.aprobadoPor);
+      field("Fecha de aprobación", audit.fechaAprobacion);
+      if (audit.observacionesCierre) field("Observaciones de cierre", audit.observacionesCierre);
+
+      doc.end();
+    } catch (error: any) {
+      console.error("Error generating internal audit report:", error);
+      if (!res.headersSent) {
+        res.status(500).send("No se pudo generar el informe de auditoría");
+      }
     }
   });
 

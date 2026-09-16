@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQueries, useQuery } from "@tanstack/react-query";
 import { useLocation, useParams } from "wouter";
-import { ArrowLeft, Calendar, CheckCircle2, Clock, Download, FileCheck2, FileText, Loader2, LockKeyhole, Play, Upload, Users } from "lucide-react";
+import { ArrowLeft, Calendar, CheckCircle2, Clock, Download, FileCheck2, FileText, Loader2, LockKeyhole, Play, Upload, Users, UserPlus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { AuditoriaChecklist, AuditoriaInterna, HallazgoAuditoria, PlanAccionAuditoria } from "@shared/schema";
+import { AuditoriaAuditor, AuditoriaChecklist, AuditoriaInterna, HallazgoAuditoria, PlanAccionAuditoria } from "@shared/schema";
 
 const statusConfig: Record<string, { label: string; className: string; icon: typeof Calendar }> = {
   programada: { label: "Programada", className: "bg-blue-500/10 text-blue-700", icon: Calendar },
@@ -33,6 +33,7 @@ export default function DetalleAuditoriaInterna() {
   const { toast } = useToast();
   const [closeDialogOpen, setCloseDialogOpen] = useState(false);
   const [closeNotes, setCloseNotes] = useState("");
+  const [closeRecommendations, setCloseRecommendations] = useState("");
   const [newCriterion, setNewCriterion] = useState("");
   const [newClause, setNewClause] = useState("");
   const [newArea, setNewArea] = useState("");
@@ -57,6 +58,16 @@ export default function DetalleAuditoriaInterna() {
     responsable: "",
     fechaCompromiso: "",
   });
+  const [auditorDialogOpen, setAuditorDialogOpen] = useState(false);
+  const [auditorForm, setAuditorForm] = useState({
+    tipo: "interno",
+    auditorId: "",
+    nombreExterno: "",
+    emailExterno: "",
+    organizacionExterna: "",
+    rol: "auditor",
+    areasAsignadas: "",
+  });
 
   const { data: auditoria, isLoading } = useQuery<AuditoriaInterna>({
     queryKey: ["/api/auditorias-internas", id],
@@ -71,6 +82,16 @@ export default function DetalleAuditoriaInterna() {
   const { data: hallazgos = [], isLoading: hallazgosLoading } = useQuery<HallazgoAuditoria[]>({
     queryKey: [`/api/auditorias-internas/${id}/hallazgos`],
     enabled: !!id && !!auditoria,
+  });
+
+  const { data: auditores = [], isLoading: auditoresLoading } = useQuery<AuditoriaAuditor[]>({
+    queryKey: [`/api/auditorias-internas/${id}/auditores`],
+    enabled: !!id && !!auditoria,
+  });
+
+  const { data: companyMembers = [] } = useQuery<Array<{ id: string; fullName: string | null; role: string }>>({
+    queryKey: ["/api/users/company-members"],
+    enabled: !!auditoria,
   });
 
   const planQueries = useQueries({
@@ -93,6 +114,7 @@ export default function DetalleAuditoriaInterna() {
       queryClient.invalidateQueries({ queryKey: ["/api/auditorias-internas"] });
       setCloseDialogOpen(false);
       setCloseNotes("");
+      setCloseRecommendations("");
       toast({
         title: "Estado actualizado",
         description: `La auditoría ahora está ${statusConfig[updated.estado]?.label?.toLowerCase() || updated.estado}.`,
@@ -101,6 +123,35 @@ export default function DetalleAuditoriaInterna() {
     },
     onError: (error: Error) => {
       toast({ title: "No se pudo cambiar el estado", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const auditorMutation = useMutation({
+    mutationFn: async () => {
+      const payload = auditorForm.tipo === "interno"
+        ? {
+            auditorId: auditorForm.auditorId,
+            rol: auditorForm.rol,
+            areasAsignadas: auditorForm.areasAsignadas || null,
+          }
+        : {
+            nombreExterno: auditorForm.nombreExterno,
+            emailExterno: auditorForm.emailExterno || null,
+            organizacionExterna: auditorForm.organizacionExterna || null,
+            rol: auditorForm.rol,
+            areasAsignadas: auditorForm.areasAsignadas || null,
+          };
+      const response = await apiRequest("POST", `/api/auditorias-internas/${id}/auditores`, payload);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/auditorias-internas/${id}/auditores`] });
+      setAuditorDialogOpen(false);
+      setAuditorForm({ tipo: "interno", auditorId: "", nombreExterno: "", emailExterno: "", organizacionExterna: "", rol: "auditor", areasAsignadas: "" });
+      toast({ title: "Auditor agregado", description: "El integrante quedó asignado a la auditoría." });
+    },
+    onError: (error: Error) => {
+      toast({ title: "No se pudo agregar el auditor", description: error.message, variant: "destructive" });
     },
   });
 
@@ -291,6 +342,7 @@ export default function DetalleAuditoriaInterna() {
   const plansByFinding = new Map<string, PlanAccionAuditoria[]>(
     hallazgos.map((hallazgo, index) => [hallazgo.id, (planQueries[index]?.data as PlanAccionAuditoria[] | undefined) || []]),
   );
+  const internalAuditorNames = new Map(companyMembers.map((member) => [member.id, member.fullName || member.id]));
 
   return (
     <div className="space-y-6">
@@ -378,6 +430,60 @@ export default function DetalleAuditoriaInterna() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <CardTitle>Equipo auditor</CardTitle>
+              <CardDescription>Registre auditores internos o externos, su rol y las áreas asignadas.</CardDescription>
+            </div>
+            {auditoria.estado !== "cerrada" && (
+              <Button variant="outline" onClick={() => setAuditorDialogOpen(true)}>
+                <UserPlus className="h-4 w-4 mr-2" /> Agregar integrante
+              </Button>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          {auditoresLoading ? (
+            <div className="flex items-center text-sm text-muted-foreground"><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Cargando equipo...</div>
+          ) : auditores.length === 0 ? (
+            <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+              No hay integrantes adicionales registrados. El auditor líder está en la planificación.
+            </div>
+          ) : (
+            <div className="grid gap-3 md:grid-cols-2">
+              {auditores.map((auditor) => (
+                <div key={auditor.id} className="rounded-lg border p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="font-medium">{auditor.nombreExterno || internalAuditorNames.get(auditor.auditorId || "") || auditor.auditorId || "Auditor"}</p>
+                    <Badge variant="secondary">{auditor.rol}</Badge>
+                  </div>
+                  {(auditor.emailExterno || auditor.organizacionExterna) && (
+                    <p className="text-xs text-muted-foreground mt-1">{[auditor.emailExterno, auditor.organizacionExterna].filter(Boolean).join(" · ")}</p>
+                  )}
+                  {auditor.areasAsignadas && <p className="text-sm text-muted-foreground mt-2">Áreas: {auditor.areasAsignadas}</p>}
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle>Informe individual</CardTitle><CardDescription>Genere el PDF con planificación, equipo auditor, checklist, hallazgos, acciones y aprobación.</CardDescription></CardHeader>
+        <CardContent className="flex flex-wrap items-center justify-between gap-3">
+          <div className="text-sm text-muted-foreground">
+            {auditoria.fechaInforme ? `Emitido el ${formatDate(auditoria.fechaInforme)}` : "Aún no se ha emitido el informe final."}
+          </div>
+          <Button variant="outline" asChild>
+            <a href={`/api/auditorias-internas/${id}/informe`} target="_blank" rel="noopener noreferrer">
+              <Download className="h-4 w-4 mr-2" /> Descargar informe PDF
+            </a>
+          </Button>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -695,6 +801,56 @@ export default function DetalleAuditoriaInterna() {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={auditorDialogOpen} onOpenChange={setAuditorDialogOpen}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Agregar integrante al equipo auditor</DialogTitle>
+            <DialogDescription>Los auditores externos no requieren una cuenta en el sistema.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Tipo de auditor</Label>
+              <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={auditorForm.tipo} onChange={(e) => setAuditorForm({ ...auditorForm, tipo: e.target.value, auditorId: "", nombreExterno: "" })}>
+                <option value="interno">Usuario interno</option>
+                <option value="externo">Auditor externo</option>
+              </select>
+            </div>
+            {auditorForm.tipo === "interno" ? (
+              <div className="space-y-2">
+                <Label>Usuario interno</Label>
+                <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={auditorForm.auditorId} onChange={(e) => setAuditorForm({ ...auditorForm, auditorId: e.target.value })}>
+                  <option value="">Seleccione un usuario</option>
+                  {companyMembers.map((member) => <option key={member.id} value={member.id}>{member.fullName || member.id} · {member.role}</option>)}
+                </select>
+              </div>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2"><Label>Nombre completo</Label><Input value={auditorForm.nombreExterno} onChange={(e) => setAuditorForm({ ...auditorForm, nombreExterno: e.target.value })} /></div>
+                <div className="space-y-2"><Label>Correo (opcional)</Label><Input type="email" value={auditorForm.emailExterno} onChange={(e) => setAuditorForm({ ...auditorForm, emailExterno: e.target.value })} /></div>
+                <div className="space-y-2 md:col-span-2"><Label>Organización (opcional)</Label><Input value={auditorForm.organizacionExterna} onChange={(e) => setAuditorForm({ ...auditorForm, organizacionExterna: e.target.value })} /></div>
+              </div>
+            )}
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label>Rol</Label>
+                <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={auditorForm.rol} onChange={(e) => setAuditorForm({ ...auditorForm, rol: e.target.value })}>
+                  <option value="auditor">Auditor</option>
+                  <option value="auditor_lider">Auditor líder</option>
+                  <option value="observador">Observador</option>
+                </select>
+              </div>
+              <div className="space-y-2"><Label>Áreas asignadas (opcional)</Label><Input value={auditorForm.areasAsignadas} onChange={(e) => setAuditorForm({ ...auditorForm, areasAsignadas: e.target.value })} placeholder="Ej. Compras, producción" /></div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAuditorDialogOpen(false)}>Cancelar</Button>
+            <Button disabled={(auditorForm.tipo === "interno" ? !auditorForm.auditorId : !auditorForm.nombreExterno.trim()) || auditorMutation.isPending} onClick={() => auditorMutation.mutate()}>
+              {auditorMutation.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null} Agregar integrante
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={actionDialogOpen} onOpenChange={setActionDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -751,11 +907,15 @@ export default function DetalleAuditoriaInterna() {
             <Label htmlFor="close-notes">Conclusiones de cierre</Label>
             <Textarea id="close-notes" value={closeNotes} onChange={(event) => setCloseNotes(event.target.value)} placeholder="Resuma el resultado general de la auditoría..." />
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="close-recommendations">Recomendaciones (opcional)</Label>
+            <Textarea id="close-recommendations" value={closeRecommendations} onChange={(event) => setCloseRecommendations(event.target.value)} placeholder="Indique recomendaciones para el seguimiento del SG-SST..." />
+          </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCloseDialogOpen(false)}>Cancelar</Button>
             <Button
               disabled={!closeNotes.trim() || transitionMutation.isPending}
-              onClick={() => transitionMutation.mutate({ estado: "cerrada", data: { conclusiones: closeNotes.trim(), aprobadoPor: "Usuario autorizado" } })}
+              onClick={() => transitionMutation.mutate({ estado: "cerrada", data: { conclusiones: closeNotes.trim(), recomendaciones: closeRecommendations.trim() } })}
             >
               Confirmar cierre
             </Button>
