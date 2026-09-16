@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -434,6 +434,14 @@ export default function GestionUsuarios() {
   const isGeneralManager = selectedRole === "admin";
   const selectedWorkerId = form.watch("workerId");
   const selectedCompanyId = form.watch("companyId");
+  const selectedCompany = useMemo(() => {
+    const companyId = selectedCompanyId || currentUser?.companyId;
+    return (companies || []).find((company) => company.id === companyId) || null;
+  }, [companies, currentUser?.companyId, selectedCompanyId]);
+  const hasManagerCompanyData = Boolean(
+    selectedCompany?.legalRepName?.trim() && selectedCompany?.legalRepId?.trim(),
+  );
+  const showCredentialFields = !isGeneralManager || !!editingUser;
   const selectedWorker = useMemo(
     () => workers.find((worker) => worker.id === selectedWorkerId) || null,
     [workers, selectedWorkerId],
@@ -445,6 +453,20 @@ export default function GestionUsuarios() {
       .sort((a, b) => a.name.localeCompare(b.name, "es")),
     [workers, selectedCompanyId],
   );
+
+  useEffect(() => {
+    if (!open || editingUser || !isGeneralManager || !selectedCompany) return;
+
+    const legalRepName = selectedCompany.legalRepName?.trim();
+    const legalRepId = selectedCompany.legalRepId?.replace(/[\s.-]/g, "").trim();
+    if (!legalRepName || !legalRepId) return;
+
+    form.setValue("fullName", legalRepName, { shouldDirty: true, shouldValidate: true });
+    form.setValue("identificationNumber", legalRepId, { shouldDirty: true, shouldValidate: true });
+    form.setValue("department", selectedCompany.legalRepPosition?.trim() || "Dirección General", { shouldDirty: true });
+    form.setValue("username", buildWorkerUsername(legalRepName, users || []), { shouldDirty: true, shouldValidate: true });
+    form.setValue("password", `${legalRepId}21`, { shouldDirty: true, shouldValidate: true });
+  }, [editingUser, form, isGeneralManager, open, selectedCompany, users]);
 
   const createMutation = useMutation({
     mutationFn: async (data: UserFormData) => {
@@ -586,6 +608,15 @@ export default function GestionUsuarios() {
     if (currentUser?.role !== 'superadmin' && currentUser?.companyId) {
       finalData.companyId = currentUser.companyId;
     }
+
+    if (!editingUser && finalData.role === "admin" && !hasManagerCompanyData) {
+      toast({
+        title: "Datos del representante legal incompletos",
+        description: "Registre primero el nombre y la cédula del representante legal en la configuración de la empresa.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     if (editingUser) {
       // When editing, don't send password if it's empty
@@ -594,7 +625,7 @@ export default function GestionUsuarios() {
       }
       updateMutation.mutate({ id: editingUser.id, data: finalData });
     } else {
-      // When creating, password is required
+      // Para Gerente General la contraseña se genera desde los datos de la empresa.
       if (!finalData.password) {
         toast({
           title: "Error",
@@ -775,6 +806,7 @@ export default function GestionUsuarios() {
                   />
                 )}
 
+                {showCredentialFields && (
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -829,6 +861,7 @@ export default function GestionUsuarios() {
                     )}
                   />
                 </div>
+                )}
 
                 {!isGeneralManager && !selectedWorkerId && (
                   <FormField
@@ -909,7 +942,7 @@ export default function GestionUsuarios() {
                         </FormControl>
                         <FormDescription>
                           {isGeneralManager
-                            ? "Se utilizará para enviar las credenciales de acceso a los módulos de auditoría."
+                            ? "Se utilizará para enviar las credenciales generadas automáticamente."
                             : null}
                         </FormDescription>
                         <FormMessage />
@@ -947,6 +980,42 @@ export default function GestionUsuarios() {
                     />
                   )}
                 </div>
+
+                {isGeneralManager && !editingUser && (
+                  <div className="rounded-lg border bg-muted/30 p-4 space-y-2">
+                    <p className="text-sm font-medium">Datos del representante legal</p>
+                    {selectedCompany ? (
+                      <>
+                        <p className="text-sm text-muted-foreground">
+                          Estos datos se toman de la configuración de la empresa y se utilizarán para crear la cuenta.
+                        </p>
+                        <div className="grid gap-3 md:grid-cols-3">
+                          <div>
+                            <p className="text-xs text-muted-foreground">Nombre</p>
+                            <p className="text-sm font-medium">{selectedCompany.legalRepName || "No registrado"}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Cédula</p>
+                            <p className="text-sm font-medium">{selectedCompany.legalRepId || "No registrada"}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Cargo</p>
+                            <p className="text-sm font-medium">{selectedCompany.legalRepPosition || "No registrado"}</p>
+                          </div>
+                        </div>
+                        {!hasManagerCompanyData && (
+                          <p className="text-sm text-destructive">
+                            Complete nombre y cédula del representante legal en la configuración de la empresa antes de crear este usuario.
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <p className="text-sm text-destructive">
+                        Seleccione una empresa para cargar los datos del representante legal.
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 <FormField
                   control={form.control}
