@@ -47,3 +47,4 @@
 - [React Query shared-key lifecycle](react-query-shared-key-lifecycle.md) — no eliminar una query compartida desde un provider al montar; puede dejar observadores activos en loading aunque la API responda.
 - [Credenciales de roles vinculados](user-role-credential-linking.md) — un trabajador puede tener cuentas adicionales por rol; la contraseña de rol usa cédula+21 y el nombre de usuario debe diferenciarse.
 - [Identidad de Técnico Mecánico](mechanic-user-identity.md) — la identificación se deriva del trabajador vinculado y no se solicita una segunda vez en el formulario.
+- [Layout de opciones Select](select-item-layout.md) — usar contenido inline o texto plano en SelectItem; los bloques anidados pueden superponerse visualmente.

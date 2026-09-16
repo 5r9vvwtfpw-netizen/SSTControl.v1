@@ -612,18 +612,17 @@ function ProgramasTab({ programs, programCatalog, workers, financialResources, i
               <div className="space-y-2">
                 <Label htmlFor="name">Nombre del programa *</Label>
                 <Select value={selectedProgramCode} onValueChange={handleProgramNameChange}>
-                  <SelectTrigger id="name" data-testid="select-program-name">
+                  <SelectTrigger
+                    id="name"
+                    className="h-auto min-h-9 py-2 [&>span]:line-clamp-2 [&>span]:whitespace-normal [&>span]:leading-snug"
+                    data-testid="select-program-name"
+                  >
                     <SelectValue placeholder="Seleccione un programa normativo..." />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="w-[var(--radix-select-trigger-width)] max-w-[min(90vw,32rem)]">
                     {programCatalog.map((program) => (
-                      <SelectItem key={program.code} value={program.code}>
-                        <div className="flex flex-col items-start">
-                          <span>{program.name}</span>
-                          <span className="text-xs text-muted-foreground">
-                            {program.isRequired ? "Requerido por SG-SST" : program.isOther ? "Definido por la empresa" : "Programa complementario"}
-                          </span>
-                        </div>
+                      <SelectItem key={program.code} value={program.code} className="whitespace-normal py-2 leading-snug">
+                        {program.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -640,7 +639,7 @@ function ProgramasTab({ programs, programCatalog, workers, financialResources, i
                   />
                 )}
                 {selectedProgramCatalog && !selectedProgramCatalog.isOther && (
-                  <p className="text-xs text-muted-foreground">{selectedProgramCatalog.normativeBasis}</p>
+                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{selectedProgramCatalog.normativeBasis}</p>
                 )}
               </div>
               <div className="space-y-2">
