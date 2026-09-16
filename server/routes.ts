@@ -40297,7 +40297,12 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
       if (targetStatus === 'cerrada') {
         const conclusiones = typeof req.body?.conclusiones === 'string' ? req.body.conclusiones.trim() : '';
-        const aprobadoPor = typeof req.body?.aprobadoPor === 'string' ? req.body.aprobadoPor.trim() : '';
+        const aprobadoPor = (
+          (req.user as any).fullName ||
+          (req.user as any).name ||
+          req.user!.username ||
+          (typeof req.body?.aprobadoPor === 'string' ? req.body.aprobadoPor.trim() : '')
+        ).trim();
         if (!conclusiones || !aprobadoPor) {
           return res.status(400).send("El cierre requiere conclusiones y responsable de aprobación");
         }
@@ -40305,7 +40310,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         updateData.recomendaciones = typeof req.body?.recomendaciones === 'string'
           ? req.body.recomendaciones.trim() || null
           : null;
-        updateData.aprobadoPor = (req.user as any).fullName || (req.user as any).name || req.user!.username || aprobadoPor;
+        updateData.aprobadoPor = aprobadoPor;
         updateData.aprobadoPorId = req.user!.id;
         updateData.fechaInforme = new Date();
         updateData.fechaAprobacion = new Date();

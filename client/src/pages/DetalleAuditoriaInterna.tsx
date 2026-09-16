@@ -100,6 +100,11 @@ export default function DetalleAuditoriaInterna() {
     enabled: !!id,
   });
 
+  const { data: currentUser } = useQuery<{ id: string; username: string; fullName?: string | null }>({
+    queryKey: ["/api/user"],
+    enabled: !!auditoria,
+  });
+
   const { data: checklists = [], isLoading: checklistsLoading } = useQuery<AuditoriaChecklist[]>({
     queryKey: [`/api/auditorias-internas/${id}/checklists`],
     enabled: !!id && !!auditoria,
@@ -414,6 +419,7 @@ export default function DetalleAuditoriaInterna() {
   const canEditChecklist = auditoria.estado === "programada" || auditoria.estado === "en_ejecucion";
   const canEditFindings = auditoria.estado !== "cerrada";
   const canTrackFindings = true;
+  const approvalResponsible = currentUser?.fullName?.trim() || currentUser?.username?.trim() || "";
   const evaluatedCount = checklists.filter((item) => item.cumple !== null && item.cumple !== undefined).length;
   const conformCount = checklists.filter((item) => item.cumple === 1).length;
   const nonConformCount = checklists.filter((item) => item.cumple === 0).length;
@@ -1287,11 +1293,30 @@ export default function DetalleAuditoriaInterna() {
             <Label htmlFor="close-recommendations">Recomendaciones (opcional)</Label>
             <Textarea id="close-recommendations" value={closeRecommendations} onChange={(event) => setCloseRecommendations(event.target.value)} placeholder="Indique recomendaciones para el seguimiento del SG-SST..." />
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="close-approver">Responsable de aprobación</Label>
+            <Input
+              id="close-approver"
+              value={approvalResponsible || "Cargando usuario autenticado..."}
+              readOnly
+              disabled
+            />
+            <p className="text-xs text-muted-foreground">
+              Se registra automáticamente con el usuario que está conectado.
+            </p>
+          </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCloseDialogOpen(false)}>Cancelar</Button>
             <Button
-              disabled={!closeNotes.trim() || transitionMutation.isPending}
-              onClick={() => transitionMutation.mutate({ estado: "cerrada", data: { conclusiones: closeNotes.trim(), recomendaciones: closeRecommendations.trim() } })}
+              disabled={!closeNotes.trim() || !approvalResponsible || transitionMutation.isPending}
+              onClick={() => transitionMutation.mutate({
+                estado: "cerrada",
+                data: {
+                  conclusiones: closeNotes.trim(),
+                  recomendaciones: closeRecommendations.trim(),
+                  aprobadoPor: approvalResponsible,
+                },
+              })}
             >
               Confirmar cierre
             </Button>
