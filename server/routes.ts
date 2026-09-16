@@ -3753,9 +3753,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
         companyId: effectiveCompanyId,
       });
 
+      let emailSent = false;
+      let emailMessageId: string | undefined;
+      let emailError: string | undefined;
+      if (validatedData.email) {
+        const linkedWorker = validatedData.workerId
+          ? await storage.getWorkerById(validatedData.workerId)
+          : null;
+        const company = effectiveCompanyId
+          ? await storage.getCompany(effectiveCompanyId)
+          : linkedWorker
+            ? await storage.getCompany(linkedWorker.companyId)
+            : null;
+        const emailResult = await sendPortalAccessEmail(validatedData.email, {
+          workerName: validatedData.fullName || linkedWorker?.name || validatedData.username,
+          username: validatedData.username,
+          temporaryPassword: validatedData.password,
+          companyName: company?.name || "Tu Empresa",
+          loginUrl: `${process.env.VITE_APP_URL || `${req.protocol}://${req.get("host")}`}/portal-empleados`,
+          companyEmail: company?.contactEmail || undefined,
+        });
+        emailSent = emailResult.success;
+        emailMessageId = emailResult.messageId;
+        emailError = emailResult.error;
+      }
+
       // Don't send password to frontend
       const { password, ...userWithoutPassword } = user;
-      res.status(201).json(userWithoutPassword);
+      res.status(emailError ? 207 : 201).json({
+        ...userWithoutPassword,
+        emailSent,
+        emailMessageId,
+        ...(emailError
+          ? {
+              partialSuccess: true,
+              message: "Usuario creado, pero no se pudo enviar el correo de credenciales.",
+              emailError,
+            }
+          : {}),
+      });
     } catch (error: any) {
       console.error('[POST /api/users] Error creating user:', error.message, error.code);
       if (error.code === '23505') {

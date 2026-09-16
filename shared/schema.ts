@@ -755,7 +755,7 @@ export const insertUserSchema = createInsertSchema(users)
     fullName: z.string()
       .min(1, "El nombre es requerido")
       .max(50, "El nombre debe tener máximo 50 caracteres")
-      .regex(/^[A-Z][a-záéíóúñA-Z\s\-]*$/, "El nombre debe empezar con mayúscula, contener solo letras, espacios y guiones")
+      .regex(/^[A-ZÁÉÍÓÚÜÑ][A-Za-zÁÉÍÓÚÜÑáéíóúüñ\s\-]*$/u, "El nombre debe empezar con mayúscula, contener solo letras, espacios y guiones")
       .optional(),
     username: z.string()
       .min(1, "El usuario es requerido")

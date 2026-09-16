@@ -469,12 +469,22 @@ export default function GestionUsuarios() {
       }
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data: UserWithoutPassword & {
+      emailSent?: boolean;
+      partialSuccess?: boolean;
+    }) => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      const emailStatus = data.emailSent
+        ? " Las credenciales fueron enviadas al correo registrado."
+        : data.partialSuccess
+          ? " El usuario fue creado, pero no se pudo enviar el correo de credenciales."
+          : "";
       toast({
-        title: "Usuario creado",
-        description: "El usuario ha sido creado exitosamente",
-        className: "bg-yellow-50 border-yellow-200",
+        title: data.emailSent ? "Usuario creado y correo enviado" : "Usuario creado",
+        description: `El usuario ha sido creado exitosamente.${emailStatus}`,
+        className: data.emailSent
+          ? "bg-green-50 border-green-200"
+          : "bg-yellow-50 border-yellow-200",
       });
       setOpen(false);
       form.reset();
