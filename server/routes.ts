@@ -4727,6 +4727,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: "Contraseña restablecida, pero falló el envío del email. Entregue las credenciales manualmente.",
           credentials: { username: existingUser.username, temporaryPassword },
           emailSent: false,
+           emailMessageId: emailResult.messageId,
           emailError: emailResult.error,
         });
       }
@@ -4735,6 +4736,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         success: true,
         message: `Credenciales reenviadas exitosamente a ${worker.email}.`,
         emailSent: true,
+        emailMessageId: emailResult.messageId,
       });
     } catch (error: any) {
       console.error("Error resending portal credentials:", error);
