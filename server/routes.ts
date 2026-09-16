@@ -62,6 +62,7 @@ import {
 import { z } from "zod";
 import multer from "multer";
 import { ObjectStorageService, ObjectNotFoundError, objectStorageService } from "./objectStorage";
+import { AUDITORIA_CHECKLIST_TEMPLATE } from "@shared/auditoria-checklist-template";
 import { randomUUID } from "crypto";
 import { isIP } from "net";
 import path from "path";
@@ -40287,6 +40288,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
           return res.status(400).send("No se puede completar la auditoría mientras existan ítems del checklist sin evaluar");
         }
         updateData.fechaFin = new Date();
+        const conformes = checklists.filter((item) => item.cumple === 1).length;
+        updateData.numeroConformidades = conformes;
+        updateData.porcentajeCumplimiento = Math.round((conformes / checklists.length) * 100);
       }
 
       if (targetStatus === 'cerrada') {
@@ -40432,6 +40436,53 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     }
   });
 
+  // POST /api/auditorias-internas/:id/checklists/:checklistId/evidence-upload-url
+  // Generar una URL de carga únicamente para un checklist de la auditoría validada.
+  app.post('/api/auditorias-internas/:id/checklists/:checklistId/evidence-upload-url', requireAuth, requirePermission('sst_management:edit'), async (req, res) => {
+    try {
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) {
+        return res.status(403).send("Esta operación requiere pertenecer a una empresa");
+      }
+
+      const auditoria = await storage.getAuditoriaInterna(req.params.id, companyId);
+      const checklist = await storage.getAuditoriaChecklist(req.params.checklistId, companyId);
+      if (!auditoria || !checklist || checklist.auditoriaId !== auditoria.id) {
+        return res.status(404).send("Checklist no encontrado o no pertenece a esta auditoría");
+      }
+      if (auditoria.estado === "cerrada") {
+        return res.status(409).send("No se pueden cargar evidencias en una auditoría cerrada");
+      }
+
+      const { name, size, contentType } = req.body || {};
+      const allowedContentTypes = new Set([
+        "image/jpeg",
+        "image/png",
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      ]);
+      if (typeof name !== "string" || !name.trim()) {
+        return res.status(400).send("El nombre del archivo es obligatorio");
+      }
+      if (typeof size !== "number" || size <= 0 || size > 10 * 1024 * 1024) {
+        return res.status(400).send("La evidencia debe pesar entre 1 byte y 10 MB");
+      }
+      if (typeof contentType !== "string" || !allowedContentTypes.has(contentType)) {
+        return res.status(415).send("Tipo de archivo no permitido para evidencias");
+      }
+
+      const storageService = new ObjectStorageService();
+      const { uploadUrl, objectPath } = await storageService.getPresignedUploadUrl(name.trim(), contentType);
+      res.json({ uploadURL: uploadUrl, objectPath, metadata: { name: name.trim(), size, contentType } });
+    } catch (error: any) {
+      console.error("Error generating audit evidence upload URL:", error);
+      res.status(500).send("Error al generar URL de subida para la evidencia");
+    }
+  });
+
   // POST /api/auditorias-internas/:id/checklists - Crear checklist
   app.post('/api/auditorias-internas/:id/checklists', requireAuth, requirePermission('sst_management:create'), async (req, res) => {
     try {
@@ -40440,6 +40491,14 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
       
+      const auditoria = await storage.getAuditoriaInterna(req.params.id, companyId);
+      if (!auditoria) {
+        return res.status(404).send("Auditoría no encontrada o no pertenece a su empresa");
+      }
+      if (auditoria.estado === "cerrada") {
+        return res.status(409).send("No se pueden agregar criterios a una auditoría cerrada");
+      }
+
       const validatedData = insertAuditoriaChecklistSchema.parse({
         ...req.body,
         auditoriaId: req.params.id
@@ -40453,6 +40512,43 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     }
   });
 
+  // POST /api/auditorias-internas/:id/checklists/template - Crear checklist normativo base
+  app.post('/api/auditorias-internas/:id/checklists/template', requireAuth, requirePermission('sst_management:create'), async (req, res) => {
+    try {
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) {
+        return res.status(403).send("Esta operación requiere pertenecer a una empresa");
+      }
+
+      const auditoria = await storage.getAuditoriaInterna(req.params.id, companyId);
+      if (!auditoria) {
+        return res.status(404).send("Auditoría no encontrada o no pertenece a su empresa");
+      }
+      if (auditoria.estado === "cerrada") {
+        return res.status(409).send("No se puede crear un checklist en una auditoría cerrada");
+      }
+
+      const existing = await storage.getAuditoriaChecklists(req.params.id, companyId);
+      if (existing.length > 0) {
+        return res.status(409).send("La auditoría ya tiene criterios de checklist");
+      }
+
+      const created = [];
+      for (const item of AUDITORIA_CHECKLIST_TEMPLATE) {
+        const checklist = await storage.createAuditoriaChecklist({
+          ...item,
+          auditoriaId: req.params.id,
+        }, companyId);
+        created.push(checklist);
+      }
+
+      res.status(201).json(created);
+    } catch (error: any) {
+      console.error('Error creating audit checklist template:', error);
+      res.status(400).send(error.message);
+    }
+  });
+
   // PATCH /api/checklists/:id - Actualizar checklist
   app.patch('/api/checklists/:id', requireAuth, requirePermission('sst_management:edit'), async (req, res) => {
     try {
@@ -40461,7 +40557,32 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
       
-      const validatedData = insertAuditoriaChecklistSchema.partial().parse(req.body);
+      const existing = await storage.getAuditoriaChecklist(req.params.id, companyId);
+      if (!existing) {
+        return res.status(404).send("Checklist no encontrado o no pertenece a una auditoría de su empresa");
+      }
+      const auditoria = await storage.getAuditoriaInterna(existing.auditoriaId, companyId);
+      if (!auditoria) {
+        return res.status(404).send("Auditoría no encontrada o no pertenece a su empresa");
+      }
+      if (auditoria.estado === "cerrada") {
+        return res.status(409).send("No se puede editar el checklist de una auditoría cerrada");
+      }
+
+      const requestData = { ...req.body };
+      if (Object.prototype.hasOwnProperty.call(requestData, "cumple")) {
+        if (requestData.cumple === null || requestData.cumple === undefined) {
+          requestData.fechaEvaluacion = null;
+          requestData.evaluadoPorId = null;
+          requestData.evaluadoPor = null;
+        } else {
+          requestData.fechaEvaluacion = new Date();
+          requestData.evaluadoPorId = req.user!.id;
+          requestData.evaluadoPor = (req.user as any).fullName || (req.user as any).name || req.user!.username;
+        }
+      }
+
+      const validatedData = insertAuditoriaChecklistSchema.partial().parse(requestData);
       const checklist = await storage.updateAuditoriaChecklist(req.params.id, validatedData, companyId);
       
       if (!checklist) {
@@ -40483,11 +40604,81 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
       
+      const existing = await storage.getAuditoriaChecklist(req.params.id, companyId);
+      if (!existing) {
+        return res.status(404).send("Checklist no encontrado o no pertenece a una auditoría de su empresa");
+      }
+      const auditoria = await storage.getAuditoriaInterna(existing.auditoriaId, companyId);
+      if (auditoria?.estado === "cerrada") {
+        return res.status(409).send("No se puede eliminar el checklist de una auditoría cerrada");
+      }
+
       await storage.deleteAuditoriaChecklist(req.params.id, companyId);
       res.status(204).send();
     } catch (error: any) {
       console.error('Error deleting checklist:', error);
       res.status(500).send(error.message);
+    }
+  });
+
+  // GET /api/auditorias-internas/:id/hallazgos - Hallazgos de una auditoría
+  app.get('/api/auditorias-internas/:id/hallazgos', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
+    try {
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) {
+        return res.status(403).send("Esta operación requiere pertenecer a una empresa");
+      }
+      const auditoria = await storage.getAuditoriaInterna(req.params.id, companyId);
+      if (!auditoria) {
+        return res.status(404).send("Auditoría no encontrada o no pertenece a su empresa");
+      }
+      const hallazgos = await storage.getHallazgosAuditoria(req.params.id, companyId);
+      res.json(hallazgos);
+    } catch (error: any) {
+      console.error('Error fetching audit findings:', error);
+      res.status(500).send(error.message);
+    }
+  });
+
+  // POST /api/auditorias-internas/:id/hallazgos - Registrar un hallazgo en una auditoría
+  app.post('/api/auditorias-internas/:id/hallazgos', requireAuth, requirePermission('sst_management:create'), async (req, res) => {
+    try {
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) {
+        return res.status(403).send("Esta operación requiere pertenecer a una empresa");
+      }
+      const auditoria = await storage.getAuditoriaInterna(req.params.id, companyId);
+      if (!auditoria) {
+        return res.status(404).send("Auditoría no encontrada o no pertenece a su empresa");
+      }
+      if (auditoria.estado === "cerrada") {
+        return res.status(409).send("No se pueden registrar hallazgos en una auditoría cerrada");
+      }
+
+      const existing = await storage.getHallazgosAuditoria(req.params.id, companyId);
+      const nextNumber = existing.length + 1;
+      const validatedData = insertHallazgoAuditoriaSchema.parse({
+        ...req.body,
+        auditoriaId: req.params.id,
+        numeroHallazgo: req.body?.numeroHallazgo || `HALL-${String(nextNumber).padStart(3, "0")}`,
+        fechaDeteccion: req.body?.fechaDeteccion || new Date(),
+        detectadoPorId: req.user!.id,
+        detectadoPor: (req.user as any).fullName || (req.user as any).name || req.user!.username,
+      });
+
+      const hallazgo = await storage.createHallazgoAuditoria(validatedData, companyId);
+      const allFindings = [...existing, hallazgo];
+      await storage.updateAuditoriaInterna(req.params.id, {
+        numeroHallazgos: allFindings.length,
+        numeroNoConformidadesMenores: allFindings.filter((item) => item.tipo === "no_conformidad_menor").length,
+        numeroNoConformidadesMayores: allFindings.filter((item) => item.tipo === "no_conformidad_mayor").length,
+        numeroObservaciones: allFindings.filter((item) => item.tipo === "observacion").length,
+      }, companyId);
+
+      res.status(201).json(hallazgo);
+    } catch (error: any) {
+      console.error('Error creating audit finding:', error);
+      res.status(400).send(error.message);
     }
   });
 
@@ -40515,7 +40706,18 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
       
-      const validatedData = insertHallazgoAuditoriaSchema.parse(req.body);
+      const auditoria = await storage.getAuditoriaInterna(req.body?.auditoriaId, companyId);
+      if (!auditoria) {
+        return res.status(404).send("Auditoría no encontrada o no pertenece a su empresa");
+      }
+      if (auditoria.estado === "cerrada") {
+        return res.status(409).send("No se pueden registrar hallazgos en una auditoría cerrada");
+      }
+      const validatedData = insertHallazgoAuditoriaSchema.parse({
+        ...req.body,
+        detectadoPorId: req.user!.id,
+        detectadoPor: (req.user as any).fullName || (req.user as any).name || req.user!.username,
+      });
       const hallazgo = await storage.createHallazgoAuditoria(validatedData, companyId);
       
       res.status(201).json(hallazgo);
@@ -40533,6 +40735,14 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
       
+      const existing = await storage.getHallazgoAuditoria(req.params.id, companyId);
+      if (!existing) {
+        return res.status(404).send("Hallazgo no encontrado o no pertenece a su empresa");
+      }
+      const auditoria = await storage.getAuditoriaInterna(existing.auditoriaId, companyId);
+      if (auditoria?.estado === "cerrada") {
+        return res.status(409).send("No se puede editar un hallazgo de una auditoría cerrada");
+      }
       const validatedData = insertHallazgoAuditoriaSchema.partial().parse(req.body);
       const hallazgo = await storage.updateHallazgoAuditoria(req.params.id, validatedData, companyId);
       
@@ -40555,6 +40765,14 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
       
+      const existing = await storage.getHallazgoAuditoria(req.params.id, companyId);
+      if (!existing) {
+        return res.status(404).send("Hallazgo no encontrado o no pertenece a su empresa");
+      }
+      const auditoria = await storage.getAuditoriaInterna(existing.auditoriaId, companyId);
+      if (auditoria?.estado === "cerrada") {
+        return res.status(409).send("No se puede eliminar un hallazgo de una auditoría cerrada");
+      }
       await storage.deleteHallazgoAuditoria(req.params.id, companyId);
       res.status(204).send();
     } catch (error: any) {
@@ -40587,12 +40805,26 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
       
+      const hallazgo = await storage.getHallazgoAuditoria(req.params.id, companyId);
+      if (!hallazgo) {
+        return res.status(404).send("Hallazgo no encontrado o no pertenece a su empresa");
+      }
+      const auditoria = await storage.getAuditoriaInterna(hallazgo.auditoriaId, companyId);
+      if (auditoria?.estado === "cerrada") {
+        return res.status(409).send("No se pueden crear planes en una auditoría cerrada");
+      }
+
+      const existingPlans = await storage.getPlanesAccionAuditoria(req.params.id, companyId);
       const validatedData = insertPlanAccionAuditoriaSchema.parse({
         ...req.body,
-        hallazgoId: req.params.id
+        hallazgoId: req.params.id,
+        numeroAccion: req.body?.numeroAccion || `ACC-${String(existingPlans.length + 1).padStart(3, "0")}`,
       });
       
       const plan = await storage.createPlanAccionAuditoria(validatedData, companyId);
+      if (hallazgo.estadoCierre === "abierto") {
+        await storage.updateHallazgoAuditoria(req.params.id, { estadoCierre: "en_correccion" }, companyId);
+      }
       res.status(201).json(plan);
     } catch (error: any) {
       console.error('Error creating plan de acción:', error);
@@ -40608,6 +40840,15 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
       
+      const existing = await storage.getPlanAccionAuditoria(req.params.id, companyId);
+      if (!existing) {
+        return res.status(404).send("Plan de acción no encontrado o no pertenece a su empresa");
+      }
+      const hallazgo = await storage.getHallazgoAuditoria(existing.hallazgoId, companyId);
+      const auditoria = hallazgo ? await storage.getAuditoriaInterna(hallazgo.auditoriaId, companyId) : undefined;
+      if (auditoria?.estado === "cerrada") {
+        return res.status(409).send("No se puede editar un plan de una auditoría cerrada");
+      }
       const validatedData = insertPlanAccionAuditoriaSchema.partial().parse(req.body);
       const plan = await storage.updatePlanAccionAuditoria(req.params.id, validatedData, companyId);
       
@@ -40630,6 +40871,15 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(403).send("Esta operación requiere pertenecer a una empresa");
       }
       
+      const existing = await storage.getPlanAccionAuditoria(req.params.id, companyId);
+      if (!existing) {
+        return res.status(404).send("Plan de acción no encontrado o no pertenece a su empresa");
+      }
+      const hallazgo = await storage.getHallazgoAuditoria(existing.hallazgoId, companyId);
+      const auditoria = hallazgo ? await storage.getAuditoriaInterna(hallazgo.auditoriaId, companyId) : undefined;
+      if (auditoria?.estado === "cerrada") {
+        return res.status(409).send("No se puede eliminar un plan de una auditoría cerrada");
+      }
       await storage.deletePlanAccionAuditoria(req.params.id, companyId);
       res.status(204).send();
     } catch (error: any) {

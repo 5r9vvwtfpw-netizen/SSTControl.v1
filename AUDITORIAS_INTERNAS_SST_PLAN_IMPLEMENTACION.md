@@ -109,13 +109,32 @@ Problemas base identificados:
 - Las acciones correctivas pueden continuar abiertas después del cierre de la auditoría,
   pero deben quedar en seguimiento y con fecha de verificación.
 
-## Primera entrega implementada
+## Entregas implementadas
 
-La primera entrega se enfocará en la Fase 0 y el inicio de la Fase 1:
+### Entrega 1 — Base y ciclo de estados
 
 - Corrección de la referencia normativa y etiquetas de estado.
 - Navegación desde la tarjeta hacia el detalle.
 - Pantalla de detalle con resumen y ciclo de estados.
 - Endpoints de transición con validaciones básicas.
 
-Las fases siguientes se implementarán sobre esta base, sin crear pantallas aisladas ni duplicar el modelo existente.
+### Entrega 2 — Checklist y evidencias
+
+- Plantilla normativa base con criterios de Decreto 1072, Resolución 0312 e ISO 45001.
+- Creación de checklist personalizado.
+- Evaluación de cada criterio como pendiente, cumple o no cumple.
+- Registro de evidencia obtenida y observaciones del auditor.
+- Carga privada de archivos PDF, imágenes, Word y Excel de hasta 10 MB.
+- Restricción de carga y edición cuando la auditoría está cerrada.
+- El porcentaje de cumplimiento se calcula al completar la auditoría.
+
+### Entrega 3 — Hallazgos y planes de acción
+
+- Registro de hallazgos desde la auditoría o directamente desde un criterio “No cumple”.
+- Clasificación por tipo y severidad.
+- Requisito, área afectada, evidencia objetiva y causa raíz inicial.
+- Registro de planes correctivos, preventivos o de mejora.
+- Responsable y fecha de compromiso obligatorios para cada plan.
+- Seguimiento inicial del estado del hallazgo y bloqueo de cambios al cerrar la auditoría.
+
+Las siguientes fases se implementarán sobre esta base, sin crear pantallas aisladas ni duplicar el modelo existente.
