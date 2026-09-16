@@ -40245,6 +40245,76 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     }
   });
 
+  // Transiciones controladas del ciclo de auditoría.
+  app.post('/api/auditorias-internas/:id/transitions', requireAuth, requirePermission('sst_management:edit'), async (req, res) => {
+    try {
+      const targetStatus = req.body?.estado;
+      const allowedStatuses = ['en_ejecucion', 'completada', 'cerrada'];
+      if (!allowedStatuses.includes(targetStatus)) {
+        return res.status(400).send("Estado de transición no válido");
+      }
+
+      const isAdmin = hasGlobalAccess(req.user!.role);
+      const companyId = isAdmin ? undefined : getEffectiveCompanyId(req);
+      const existing = isAdmin
+        ? await storage.getAuditoriaInternaById(req.params.id)
+        : companyId ? await storage.getAuditoriaInterna(req.params.id, companyId) : undefined;
+
+      if (!existing) {
+        return res.status(404).send("Auditoría interna no encontrada o no pertenece a su empresa");
+      }
+
+      const transitionRules: Record<string, string[]> = {
+        en_ejecucion: ['programada'],
+        completada: ['en_ejecucion'],
+        cerrada: ['completada'],
+      };
+      if (!transitionRules[targetStatus].includes(existing.estado)) {
+        return res.status(400).send(`No se puede pasar de ${existing.estado} a ${targetStatus}`);
+      }
+
+      const updateData: Record<string, unknown> = { estado: targetStatus };
+      if (targetStatus === 'en_ejecucion') {
+        updateData.fechaInicio = existing.fechaInicio || new Date();
+      }
+
+      if (targetStatus === 'completada') {
+        const checklists = await storage.getAuditoriaChecklists(existing.id, existing.companyId);
+        if (checklists.length === 0) {
+          return res.status(400).send("No se puede completar la auditoría sin un checklist normativo");
+        }
+        if (checklists.some((item) => item.cumple === null || item.cumple === undefined)) {
+          return res.status(400).send("No se puede completar la auditoría mientras existan ítems del checklist sin evaluar");
+        }
+        updateData.fechaFin = new Date();
+      }
+
+      if (targetStatus === 'cerrada') {
+        const conclusiones = typeof req.body?.conclusiones === 'string' ? req.body.conclusiones.trim() : '';
+        const aprobadoPor = typeof req.body?.aprobadoPor === 'string' ? req.body.aprobadoPor.trim() : '';
+        if (!conclusiones || !aprobadoPor) {
+          return res.status(400).send("El cierre requiere conclusiones y responsable de aprobación");
+        }
+        updateData.conclusiones = conclusiones;
+        updateData.aprobadoPor = aprobadoPor;
+        updateData.fechaInforme = new Date();
+        updateData.fechaAprobacion = new Date();
+        updateData.observacionesCierre = typeof req.body?.observacionesCierre === 'string'
+          ? req.body.observacionesCierre.trim() || null
+          : null;
+      }
+
+      const updated = await storage.updateAuditoriaInterna(req.params.id, updateData as any, existing.companyId);
+      if (!updated) {
+        return res.status(404).send("No se pudo actualizar la auditoría");
+      }
+      res.json(updated);
+    } catch (error: any) {
+      console.error('Error en transición de auditoría interna:', error);
+      res.status(400).send(error.message);
+    }
+  });
+
   // DELETE /api/auditorias-internas/:id - Eliminar auditoría interna
   app.delete('/api/auditorias-internas/:id', requireAuth, requirePermission('sst_management:delete'), async (req, res) => {
     try {

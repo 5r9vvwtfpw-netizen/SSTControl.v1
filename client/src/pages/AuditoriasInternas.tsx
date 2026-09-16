@@ -43,7 +43,7 @@ const normativaAuditorias = [
   {
     codigo: 'RES-0312-EST-3.1.1',
     norma: 'Resolución 0312/2019',
-    articulo: 'Estándar 3.1.1',
+    articulo: 'Estándar 6.1.2',
     descripcion: 'Auditoría anual del SG-SST',
     requisitos: [
       'Auditoría anual con alcance definido',
@@ -195,10 +195,9 @@ export default function AuditoriasInternas() {
   const getEstadoBadge = (estado: string) => {
     const config = {
       "programada": { label: "Programada", className: "bg-blue-500/10 text-blue-700 dark:text-blue-400", icon: Calendar },
-      "en_progreso": { label: "En Progreso", className: "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400", icon: Clock },
+      "en_ejecucion": { label: "En ejecución", className: "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400", icon: Clock },
       "completada": { label: "Completada", className: "bg-green-500/10 text-green-700 dark:text-green-400", icon: CheckCircle2 },
-      "aprobada": { label: "Aprobada", className: "bg-green-600/10 text-green-800 dark:text-green-300", icon: Shield },
-      "cancelada": { label: "Cancelada", className: "bg-red-500/10 text-red-700 dark:text-red-400", icon: FileText },
+      "cerrada": { label: "Cerrada", className: "bg-green-600/10 text-green-800 dark:text-green-300", icon: Shield },
     };
     const item = config[estado as keyof typeof config] || config["programada"];
     const Icon = item.icon;
@@ -616,7 +615,8 @@ export default function AuditoriasInternas() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filteredAuditorias.map((auditoria) => (
-            <Card key={auditoria.id} className="hover-elevate cursor-pointer" data-testid={`card-audit-${auditoria.id}`}>
+            <Link key={auditoria.id} href={`/auditorias-internas/${auditoria.id}`} className="block">
+            <Card className="hover-elevate cursor-pointer h-full" data-testid={`card-audit-${auditoria.id}`}>
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="space-y-1 flex-1">
@@ -668,6 +668,7 @@ export default function AuditoriasInternas() {
                 )}
               </CardContent>
             </Card>
+            </Link>
           ))}
         </div>
       )}

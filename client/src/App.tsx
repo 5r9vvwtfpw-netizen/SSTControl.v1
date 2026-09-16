@@ -157,6 +157,7 @@ import PortalEmpleados from "@/pages/PortalEmpleados";
 import Iperc from "@/pages/Iperc";
 import PlanEmergencias from "@/pages/PlanEmergencias";
 import AuditoriasInternas from "@/pages/AuditoriasInternas";
+import DetalleAuditoriaInterna from "@/pages/DetalleAuditoriaInterna";
 import RevisionesDireccion from "@/pages/RevisionesDireccion";
 import RecomendacionesArl from "@/pages/RecomendacionesArl";
 import DashboardHacer from "@/pages/DashboardHacer";
@@ -362,6 +363,7 @@ function Router() {
       <ProtectedRoute path="/planes-trabajo-anual" component={PlanesTrabajoAnual} />
       <ProtectedRoute path="/iperc" component={Iperc} />
       <ProtectedRoute path="/plan-emergencias" component={PlanEmergencias} />
+      <SubscriptionProtectedRoute path="/auditorias-internas/:id" component={DetalleAuditoriaInterna} feature="hasAuditorias" featureName="Auditorías Internas SST" />
       <SubscriptionProtectedRoute path="/auditorias-internas" component={AuditoriasInternas} feature="hasAuditorias" featureName="Auditorías Internas SST" />
       <SubscriptionProtectedRoute path="/revisiones-direccion" component={RevisionesDireccion} feature="hasRevisionDireccion" featureName="Revisión por la Dirección" />
       <ProtectedRoute path="/recomendaciones-arl" component={RecomendacionesArl} />
