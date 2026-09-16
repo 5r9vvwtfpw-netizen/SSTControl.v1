@@ -568,9 +568,20 @@ export default function GestionUsuarios() {
   const handleSubmit = (data: UserFormData) => {
     // Para usuarios no-superadmin, forzar el companyId al del usuario actual
     const finalData = { ...data };
-    if (finalData.role === "tecnico_mecanico" && !finalData.identificationNumber?.trim()) {
-      toast({ title: "Cédula requerida", description: "El número de cédula es obligatorio para Técnicos Mecánicos", variant: "destructive" });
-      return;
+    if (finalData.role === "tecnico_mecanico") {
+      const linkedWorker = finalData.workerId
+        ? workers.find((worker) => worker.id === finalData.workerId)
+        : null;
+      if (linkedWorker?.identificationNumber) {
+        finalData.identificationNumber = linkedWorker.identificationNumber;
+      } else if (!editingUser || !finalData.identificationNumber?.trim()) {
+        toast({
+          title: "Trabajador requerido",
+          description: "Seleccione un trabajador vinculado para crear un Técnico Mecánico.",
+          variant: "destructive",
+        });
+        return;
+      }
     }
     if (currentUser?.role !== 'superadmin' && currentUser?.companyId) {
       finalData.companyId = currentUser.companyId;
@@ -1010,23 +1021,6 @@ export default function GestionUsuarios() {
                     </FormItem>
                   )}
                 />
-
-                {selectedRole === "tecnico_mecanico" && (
-                  <FormField
-                    control={form.control}
-                    name="identificationNumber"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Número de cédula</FormLabel>
-                        <FormControl>
-                          <Input {...field} value={field.value || ""} required placeholder="Ej.: 1.234.567.890" data-testid="input-mechanic-identification-number" />
-                        </FormControl>
-                        <FormDescription>Se usa para recibir invitaciones de otras empresas.</FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
 
                 {/* Sección de Credenciales SST - Solo visible para roles SST */}
                 {selectedRole && SST_ROLES.includes(selectedRole as typeof SST_ROLES[number]) && (

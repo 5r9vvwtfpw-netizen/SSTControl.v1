@@ -3734,9 +3734,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       validatedData.identificationNumber = validatedData.identificationNumber
         ? validatedData.identificationNumber.replace(/[\s.-]/g, "")
         : null;
-      if (validatedData.role === "tecnico_mecanico" && !validatedData.identificationNumber) {
-        return res.status(400).send("El número de cédula es obligatorio para Técnicos Mecánicos");
-      }
 
       const effectiveCompanyId = getEffectiveCompanyId(req);
       if (validatedData.workerId) {
@@ -3747,6 +3744,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (effectiveCompanyId && linkedWorker.companyId !== effectiveCompanyId) {
           return res.status(403).send("El trabajador seleccionado no pertenece a la empresa activa");
         }
+      }
+      if (validatedData.role === "tecnico_mecanico") {
+        if (!validatedData.workerId) {
+          return res.status(400).send("El Técnico Mecánico debe estar vinculado a un trabajador");
+        }
+        const mechanicWorker = await storage.getWorkerById(validatedData.workerId);
+        if (!mechanicWorker?.identificationNumber) {
+          return res.status(400).send("El trabajador vinculado no tiene número de identificación");
+        }
+        validatedData.identificationNumber = mechanicWorker.identificationNumber;
       }
       
       // Check if username already exists
@@ -3926,9 +3933,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const existingUser = await storage.getUser(req.params.id);
       if (!existingUser) return res.status(404).send("Usuario no encontrado");
       const resultingRole = updateData.role || existingUser.role;
+      if (resultingRole === "tecnico_mecanico") {
+        const resultingWorkerId = updateData.workerId ?? existingUser.workerId;
+        if (resultingWorkerId) {
+          const mechanicWorker = await storage.getWorkerById(resultingWorkerId);
+          if (mechanicWorker?.identificationNumber) {
+            updateData.identificationNumber = mechanicWorker.identificationNumber;
+          }
+        }
+      }
       const resultingIdentification = updateData.identificationNumber ?? existingUser.identificationNumber;
       if (resultingRole === "tecnico_mecanico" && !resultingIdentification) {
-        return res.status(400).send("El número de cédula es obligatorio para Técnicos Mecánicos");
+        return res.status(400).send("El Técnico Mecánico debe estar vinculado a un trabajador con identificación registrada");
       }
 
       // If password is being updated, hash it
