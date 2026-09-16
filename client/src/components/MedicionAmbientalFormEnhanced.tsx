@@ -210,7 +210,7 @@ export function MedicionAmbientalFormEnhanced({
   const [trackingNumber] = useState(generateTrackingNumber());
   const [createdAt] = useState(new Date().toISOString());
   const [selectedMeasurementType, setSelectedMeasurementType] = useState<string>("ruido");
-  const [selectedMeasurementValue, setSelectedMeasurementValue] = useState("");
+  const [selectedMeasurementReference, setSelectedMeasurementReference] = useState("");
 
   const form = useForm<EnhancedFormData>({
     resolver: zodResolver(enhancedFormSchema),
@@ -227,11 +227,10 @@ export function MedicionAmbientalFormEnhanced({
     },
   });
 
-  // Reset the normative result and update the reference values when the type changes.
+  // Reset the normative reference and update the unit when the type changes.
   useEffect(() => {
     const catalogEntry = getEnvironmentalMeasurementCatalogEntry(selectedMeasurementType);
-    setSelectedMeasurementValue("");
-    form.setValue("valueNumeric", "", { shouldValidate: true });
+    setSelectedMeasurementReference("");
     form.setValue("legalLimit", catalogEntry?.legalLimit || "");
     form.setValue("unit", catalogEntry?.unit || "");
   }, [selectedMeasurementType, form]);
@@ -243,6 +242,7 @@ export function MedicionAmbientalFormEnhanced({
       
       await onSubmit({
         ...data,
+        valueNumeric: data.valueNumeric?.trim() || undefined,
         observations: enhancedObservations,
       });
     } catch (error) {
@@ -255,11 +255,11 @@ export function MedicionAmbientalFormEnhanced({
   };
 
   const currentCatalogEntry = getEnvironmentalMeasurementCatalogEntry(selectedMeasurementType);
-  const selectedValueOption = currentCatalogEntry?.options.find(
-    (option) => option.value === selectedMeasurementValue,
+  const selectedReferenceOption = currentCatalogEntry?.options.find(
+    (option) => option.value === selectedMeasurementReference,
   );
-  const currentLegalLimit = selectedValueOption?.legalLimit || currentCatalogEntry?.legalLimit || "";
-  const currentUnit = selectedValueOption?.unit || currentCatalogEntry?.unit || "";
+  const currentLegalLimit = selectedReferenceOption?.legalLimit || currentCatalogEntry?.legalLimit || "";
+  const currentUnit = selectedReferenceOption?.unit || currentCatalogEntry?.unit || "";
 
   return (
     <div className="space-y-6">
@@ -385,6 +385,39 @@ export function MedicionAmbientalFormEnhanced({
                 />
               </div>
 
+              <div className="space-y-2">
+                <Label>Referencia normativa / caso de medición *</Label>
+                <Select
+                  value={selectedMeasurementReference}
+                  onValueChange={(value) => {
+                    const option = currentCatalogEntry?.options.find(
+                      (catalogOption) => catalogOption.value === value,
+                    );
+                    setSelectedMeasurementReference(value);
+                    form.setValue("unit", option?.unit || currentCatalogEntry?.unit || "");
+                    form.setValue("legalLimit", option?.legalLimit || currentCatalogEntry?.legalLimit || "");
+                  }}
+                >
+                  <SelectTrigger data-testid="select-measurement-reference-enhanced">
+                    <SelectValue placeholder="Seleccione el caso que se va a medir" />
+                  </SelectTrigger>
+                  <SelectContent className="max-w-[min(90vw,34rem)]">
+                    {currentCatalogEntry?.options.map((option) => (
+                      <SelectItem
+                        key={option.value}
+                        value={option.value}
+                        className="whitespace-normal py-2 leading-snug"
+                      >
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  Seleccione la referencia que corresponde al área o condición evaluada. El resultado real se registrará después desde la tarjeta.
+                </p>
+              </div>
+
               {/* Auto-filled Legal Limit Display */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-green-50/50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-800">
                 <div className="flex items-start gap-3">
@@ -418,6 +451,9 @@ export function MedicionAmbientalFormEnhanced({
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Datos de la Medición</CardTitle>
+              <CardDescription>
+                Esta primera etapa registra qué se va a medir. El valor real del equipo se agrega después desde la tarjeta.
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -441,49 +477,12 @@ export function MedicionAmbientalFormEnhanced({
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="valueNumeric"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Resultado de la medición *</FormLabel>
-                      <Select
-                        value={field.value || ""}
-                        onValueChange={(value) => {
-                          const option = currentCatalogEntry?.options.find(
-                            (catalogOption) => catalogOption.value === value,
-                          );
-                          field.onChange(value);
-                          setSelectedMeasurementValue(value);
-                          form.setValue("unit", option?.unit || currentCatalogEntry?.unit || "");
-                          form.setValue("legalLimit", option?.legalLimit || currentCatalogEntry?.legalLimit || "");
-                        }}
-                      >
-                        <FormControl>
-                          <SelectTrigger data-testid="select-measurement-value-enhanced">
-                            <SelectValue placeholder="Seleccione el resultado según la medición" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent className="max-w-[min(90vw,34rem)]">
-                          {currentCatalogEntry?.options.map((option) => (
-                            <SelectItem
-                              key={option.value}
-                              value={option.value}
-                              className="whitespace-normal py-2 leading-snug"
-                            >
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormDescription className="text-xs leading-relaxed">
-                        Unidad: {currentUnit}. Seleccione una opción; no es necesario digitar valores.
-                        {selectedValueOption?.reference ? ` Referencia: ${selectedValueOption.reference}.` : ""}
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="rounded-lg border border-dashed bg-muted/30 p-4 text-sm text-muted-foreground">
+                  <p className="font-medium text-foreground">Resultado pendiente</p>
+                  <p className="mt-1">
+                    Después de realizar la medición en campo, use el botón <strong>Registrar resultado</strong> de la tarjeta para ingresar el valor real en {currentUnit || "la unidad correspondiente"}.
+                  </p>
+                </div>
               </div>
 
               <FormField

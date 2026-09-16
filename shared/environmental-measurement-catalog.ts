@@ -282,3 +282,58 @@ export function isAllowedEnvironmentalMeasurementValue(
     ),
   );
 }
+
+export function isNumericEnvironmentalMeasurementValue(
+  value: string | null | undefined,
+): boolean {
+  return Boolean(value && /^\d+(?:[.,]\d+)?$/.test(value.trim()));
+}
+
+export type EnvironmentalMeasurementStatus =
+  | "conforme"
+  | "no_conforme"
+  | "pendiente_analisis";
+
+/**
+ * Compares a real result only where the selected reference has a clear
+ * numeric direction. Substance-specific, vibration and method-dependent
+ * references remain pending for professional review.
+ */
+export function evaluateEnvironmentalMeasurementStatus(
+  measurementType: string,
+  legalLimit: string | null | undefined,
+  value: string | null | undefined,
+): EnvironmentalMeasurementStatus {
+  if (!isNumericEnvironmentalMeasurementValue(value)) {
+    return "pendiente_analisis";
+  }
+
+  const measuredValue = Number(value!.replace(",", "."));
+  const referenceNumbers = (legalLimit || "")
+    .match(/\d+(?:[.,]\d+)?/g)
+    ?.map((number) => Number(number.replace(",", "."))) || [];
+
+  if (!Number.isFinite(measuredValue) || referenceNumbers.length === 0) {
+    return "pendiente_analisis";
+  }
+
+  if (measurementType === "ruido" || measurementType === "material_particulado") {
+    return measuredValue <= referenceNumbers[0] ? "conforme" : "no_conforme";
+  }
+
+  if (measurementType === "iluminacion") {
+    return measuredValue >= referenceNumbers[0] ? "conforme" : "no_conforme";
+  }
+
+  if (
+    measurementType === "temperatura" &&
+    referenceNumbers.length >= 2 &&
+    (legalLimit || "").toLowerCase().includes("rango")
+  ) {
+    return measuredValue >= referenceNumbers[0] && measuredValue <= referenceNumbers[1]
+      ? "conforme"
+      : "no_conforme";
+  }
+
+  return "pendiente_analisis";
+}

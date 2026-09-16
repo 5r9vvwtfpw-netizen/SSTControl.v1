@@ -2284,7 +2284,7 @@ export const insertEnvironmentalMeasurementSchema = createInsertSchema(environme
     calibrationDate: z.coerce.date().optional(),
     area: z.string().min(1, "El área de medición es obligatoria"),
     measuredBy: z.string().min(1, "El responsable de medición es obligatorio"),
-    valueNumeric: z.string().min(1, "Seleccione el resultado de la medición"),
+    valueNumeric: z.string().optional(),
   });
 export type InsertEnvironmentalMeasurement = z.infer<typeof insertEnvironmentalMeasurementSchema>;
 export type EnvironmentalMeasurement = typeof environmentalMeasurements.$inferSelect;
