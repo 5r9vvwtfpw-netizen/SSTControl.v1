@@ -1643,16 +1643,23 @@ export interface PortalAccessEmailData {
   companyName: string;
   loginUrl: string;
   companyEmail?: string;
+  roleLabel?: string;
 }
 
 function getPortalAccessEmailHTML(data: PortalAccessEmailData): string {
+  const isRoleAccount = Boolean(data.roleLabel);
+  const accountTitle = data.roleLabel ? `Cuenta ${data.roleLabel}` : "Portal de Empleados";
+  const accessDescription = data.roleLabel
+    ? `<strong>${data.companyName}</strong> te asignó el rol de <strong>${data.roleLabel}</strong> en el sistema:`
+    : `<strong>${data.companyName}</strong> te da acceso al Portal de Empleados:`;
+  const accessButtonLabel = isRoleAccount ? "Ingresar al Sistema" : "Ingresar al Portal";
   return `
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bienvenido al Portal de Empleados - SST Colombia</title>
+  <title>${accountTitle} - SST Colombia</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6;">
   <table role="presentation" style="width: 100%; border-collapse: collapse;">
@@ -1667,7 +1674,7 @@ function getPortalAccessEmailHTML(data: PortalAccessEmailData): string {
                 SST Colombia
               </h1>
               <p style="margin: 0; color: #bbf7d0; font-size: 14px; font-weight: 500;">
-                Portal de Empleados
+                ${accountTitle}
               </p>
             </td>
           </tr>
@@ -1679,7 +1686,7 @@ function getPortalAccessEmailHTML(data: PortalAccessEmailData): string {
                 Hola, ${data.workerName}
               </h2>
               <p style="margin: 0 0 24px 0; color: #374151; font-size: 14px;">
-                <strong>${data.companyName}</strong> te da acceso al Portal de Empleados:
+                ${accessDescription}
               </p>
 
               <!-- Credentials Box -->
@@ -1714,7 +1721,7 @@ function getPortalAccessEmailHTML(data: PortalAccessEmailData): string {
               <!-- CTA Button -->
               <div style="text-align: center; margin: 0 0 12px 0;">
                 <a href="${data.loginUrl}" style="display: inline-block; background: linear-gradient(135deg, #166534 0%, #15803d 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 10px; font-size: 17px; font-weight: 700; letter-spacing: 0.3px;">
-                  Ingresar al Portal &rarr;
+                  ${accessButtonLabel} &rarr;
                 </a>
               </div>
 
@@ -1757,7 +1764,9 @@ export async function sendPortalAccessEmail(
   data: PortalAccessEmailData
 ): Promise<{ success: boolean; messageId?: string; error?: string }> {
   try {
-    const subject = 'Tus credenciales de acceso - Portal SST Colombia';
+    const subject = data.roleLabel
+      ? `Tus credenciales de acceso - ${data.roleLabel} - SST Colombia`
+      : 'Tus credenciales de acceso - Portal SST Colombia';
     
     const emailOptions: any = {
       from: `${FROM_NAME} <${FROM_EMAIL}>`,

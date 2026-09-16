@@ -1480,6 +1480,28 @@ function hasGlobalAccess(role: UserRole): boolean {
   return role === 'superadmin';
 }
 
+const roleCredentialLabels: Partial<Record<UserRole, string>> = {
+  superadmin: "Super Administrador",
+  soporte: "Soporte Técnico",
+  superusuario: "Super Usuario",
+  admin: "Gerente General",
+  responsable_sst: "Responsable SST",
+  coordinador_salud: "Coordinador de Salud Ocupacional",
+  lso: "Licenciado en Salud Ocupacional",
+  lso_externo: "Licenciado en Salud Ocupacional Externo",
+  coordinador_sst: "Coordinador SST",
+  coordinador_rrhh: "Coordinador RRHH",
+  jefe_personal: "Jefe de Personal",
+  supervisor: "Supervisor",
+  vigia_sst: "Vigía SST",
+  auditor_interno: "Auditor Interno SG-SST",
+  tecnico_mecanico: "Técnico Mecánico",
+};
+
+function getRoleCredentialLabel(role: UserRole): string | undefined {
+  return role === "trabajador" ? undefined : roleCredentialLabels[role];
+}
+
 /**
  * Verifica que un LSO tenga asignación activa a la empresa indicada.
  * Úsase en todos los endpoints donde userRole === 'lso' actúa como admin.
@@ -3753,10 +3775,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         companyId: effectiveCompanyId,
       });
 
+      const roleLabel = getRoleCredentialLabel(validatedData.role as UserRole);
       let emailSent = false;
       let emailMessageId: string | undefined;
       let emailError: string | undefined;
-      if (validatedData.email) {
+      let emailSkippedReason: string | undefined;
+      if (validatedData.email && roleLabel) {
         const linkedWorker = validatedData.workerId
           ? await storage.getWorkerById(validatedData.workerId)
           : null;
@@ -3770,12 +3794,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           username: validatedData.username,
           temporaryPassword: validatedData.password,
           companyName: company?.name || "Tu Empresa",
-          loginUrl: `${process.env.VITE_APP_URL || `${req.protocol}://${req.get("host")}`}/portal-empleados`,
+          loginUrl: `${process.env.VITE_APP_URL || `${req.protocol}://${req.get("host")}`}/auth`,
           companyEmail: company?.contactEmail || undefined,
+          roleLabel,
         });
         emailSent = emailResult.success;
         emailMessageId = emailResult.messageId;
         emailError = emailResult.error;
+      } else if (validatedData.role === "trabajador") {
+        emailSkippedReason = "Las credenciales del Portal de Empleados se gestionan desde el contrato.";
       }
 
       // Don't send password to frontend
@@ -3784,6 +3811,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...userWithoutPassword,
         emailSent,
         emailMessageId,
+        ...(emailSkippedReason ? { emailSkippedReason } : {}),
         ...(emailError
           ? {
               partialSuccess: true,
@@ -3804,6 +3832,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).send("Ya existe un registro con estos datos");
       }
       res.status(400).send(error.message);
+    }
+  });
+
+  // Reenviar credenciales de una cuenta de rol adicional.
+  // Las cuentas con rol trabajador se gestionan exclusivamente desde el contrato.
+  app.post("/api/users/:id/resend-role-credentials", requirePermission("users:edit"), async (req, res) => {
+    try {
+      const existingUser = await storage.getUser(req.params.id);
+      if (!existingUser) {
+        return res.status(404).json({ error: "Usuario no encontrado" });
+      }
+
+      if (existingUser.role === "trabajador") {
+        return res.status(400).json({
+          error: "Las credenciales del Portal de Empleados se gestionan desde el contrato.",
+        });
+      }
+
+      const roleLabel = getRoleCredentialLabel(existingUser.role as UserRole);
+      if (!roleLabel || !existingUser.workerId) {
+        return res.status(400).json({
+          error: "Solo se pueden reenviar credenciales de roles adicionales vinculados a un trabajador.",
+        });
+      }
+
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!hasGlobalAccess(req.user!.role) && existingUser.companyId !== effectiveCompanyId) {
+        return res.status(403).json({ error: "No tiene permisos para este usuario" });
+      }
+
+      const worker = await storage.getWorkerById(existingUser.workerId);
+      if (!worker || worker.companyId !== existingUser.companyId) {
+        return res.status(400).json({ error: "El trabajador vinculado no está disponible en la empresa del usuario." });
+      }
+      if (!worker.email || !worker.identificationNumber) {
+        return res.status(400).json({ error: "El trabajador debe tener correo e identificación para generar las credenciales." });
+      }
+
+      const temporaryPassword = `${worker.identificationNumber}21`;
+      await storage.updateUser(existingUser.id, {
+        password: await hashPassword(temporaryPassword),
+        email: worker.email,
+      });
+
+      const company = await storage.getCompany(worker.companyId);
+      const baseUrl = process.env.VITE_APP_URL || `${req.protocol}://${req.get("host")}`;
+      const emailResult = await sendPortalAccessEmail(worker.email, {
+        workerName: worker.name,
+        username: existingUser.username,
+        temporaryPassword,
+        companyName: company?.name || "Tu Empresa",
+        loginUrl: `${baseUrl}/auth`,
+        companyEmail: company?.contactEmail || undefined,
+        roleLabel,
+      });
+
+      if (!emailResult.success) {
+        return res.status(207).json({
+          success: true,
+          partialSuccess: true,
+          emailSent: false,
+          emailError: emailResult.error,
+          message: "La contraseña fue actualizada, pero no se pudo enviar el correo del rol.",
+        });
+      }
+
+      return res.json({
+        success: true,
+        emailSent: true,
+        emailMessageId: emailResult.messageId,
+        role: existingUser.role,
+        username: existingUser.username,
+      });
+    } catch (error: any) {
+      console.error("[POST /api/users/:id/resend-role-credentials] Error:", error);
+      return res.status(500).json({ error: "Error al reenviar las credenciales del rol." });
     }
   });
 
