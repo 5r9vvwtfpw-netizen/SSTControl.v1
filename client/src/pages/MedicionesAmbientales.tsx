@@ -53,7 +53,7 @@ const measurementTypeIcons: Record<string, typeof Droplet> = {
   "ruido": Activity,
   "iluminacion": Sun,
   "temperatura": Thermometer,
-  "agente_quimico": FlaskConical,
+  "agentes_quimicos": FlaskConical,
   "material_particulado": Wind,
   "vibraciones": Activity,
 };
@@ -62,7 +62,7 @@ const measurementTypeLabels: Record<string, string> = {
   "ruido": "Ruido",
   "iluminacion": "Iluminación",
   "temperatura": "Temperatura",
-  "agente_quimico": "Agente Químico",
+  "agentes_quimicos": "Agente Químico",
   "material_particulado": "Material Particulado",
   "vibraciones": "Vibraciones",
 };
@@ -276,7 +276,7 @@ export default function MedicionesAmbientales() {
             <SelectItem value="ruido">Ruido</SelectItem>
             <SelectItem value="iluminacion">Iluminación</SelectItem>
             <SelectItem value="temperatura">Temperatura</SelectItem>
-            <SelectItem value="agente_quimico">Agente Químico</SelectItem>
+            <SelectItem value="agentes_quimicos">Agente Químico</SelectItem>
             <SelectItem value="material_particulado">Material Particulado</SelectItem>
             <SelectItem value="vibraciones">Vibraciones</SelectItem>
           </SelectContent>

@@ -48,3 +48,4 @@
 - [Credenciales de roles vinculados](user-role-credential-linking.md) — un trabajador puede tener cuentas adicionales por rol; la contraseña de rol usa cédula+21 y el nombre de usuario debe diferenciarse.
 - [Identidad de Técnico Mecánico](mechanic-user-identity.md) — la identificación se deriva del trabajador vinculado y no se solicita una segunda vez en el formulario.
 - [Layout de opciones Select](select-item-layout.md) — usar contenido inline o texto plano en SelectItem; los bloques anidados pueden superponerse visualmente.
+- [Catálogo de mediciones ambientales](environmental-measurement-catalog.md) — los resultados se seleccionan por tipo desde una fuente compartida; no aceptar valores libres ni límites universales ficticios.

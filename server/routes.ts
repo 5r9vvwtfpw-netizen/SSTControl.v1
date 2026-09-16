@@ -55,6 +55,7 @@ import { mechanicCompanyContextMiddleware } from "./middleware/mechanic-company-
 import { registerMechanicAccessRoutes } from "./routes/mechanic-access";
 import { checkWorkerLimit, checkUserLimit } from "./middleware/subscription-limits";
 import { calcularIndicador, parsePeriodoToDateRange } from "./indicadores-calculators";
+import { isAllowedEnvironmentalMeasurementValue } from "@shared/environmental-measurement-catalog";
 import { z } from "zod";
 import multer from "multer";
 import { ObjectStorageService, ObjectNotFoundError, objectStorageService } from "./objectStorage";
@@ -23949,6 +23950,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!parsed.success) {
         return res.status(400).send(parsed.error.message);
       }
+      if (!isAllowedEnvironmentalMeasurementValue(parsed.data.measurementType, parsed.data.valueNumeric)) {
+        return res.status(400).send("Seleccione un resultado válido para el tipo de medición");
+      }
       const measurement = await storage.createEnvironmentalMeasurement(parsed.data, companyId);
       res.json(measurement);
     } catch (error: any) {
@@ -24893,7 +24897,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         "ruido": "Ruido",
         "iluminacion": "Iluminación",
         "temperatura": "Temperatura",
-        "agente_quimico": "Agente Químico",
+        "agentes_quimicos": "Agente Químico",
         "material_particulado": "Material Particulado",
         "vibraciones": "Vibraciones",
       };

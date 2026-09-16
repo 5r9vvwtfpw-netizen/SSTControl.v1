@@ -22,7 +22,7 @@ const measurementTypeLabels: Record<string, string> = {
   ruido: "Ruido",
   iluminacion: "Iluminación",
   temperatura: "Temperatura",
-  agente_quimico: "Agente Químico",
+  agentes_quimicos: "Agente Químico",
   material_particulado: "Material Particulado",
   vibraciones: "Vibraciones",
 };

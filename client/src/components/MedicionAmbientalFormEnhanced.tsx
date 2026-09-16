@@ -14,28 +14,13 @@ import { AlertCircle, CheckCircle2, Clock, User, Tag, Zap } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { insertEnvironmentalMeasurementSchema, type InsertEnvironmentalMeasurement } from "@shared/schema";
+import {
+  ENVIRONMENTAL_MEASUREMENT_CATALOG,
+  getEnvironmentalMeasurementCatalogEntry,
+} from "@shared/environmental-measurement-catalog";
 
 // Schema for the enhanced form (without readonly fields)
 const enhancedFormSchema = insertEnvironmentalMeasurementSchema;
-
-// Legal limits configuration for Colombian regulations (Resolución 2400/1979, Decreto 1072/2015)
-const LEGAL_LIMITS_BY_TYPE: Record<string, string> = {
-  ruido: "85 dB (Res. 2400/1979)",
-  iluminacion: "300-500 lux (oficinas) / 500-1000 lux (manufactura)",
-  temperatura: "16-24°C",
-  agente_quimico: "Según sustancia específica",
-  material_particulado: "Según tipo de partícula",
-  vibraciones: "Según Res. 2400/1979",
-};
-
-const MEASUREMENT_UNITS_BY_TYPE: Record<string, string> = {
-  ruido: "dB",
-  iluminacion: "lux",
-  temperatura: "°C",
-  agente_quimico: "mg/m³ o ppm",
-  material_particulado: "mg/m³",
-  vibraciones: "m/s²",
-};
 
 // Comprehensive work areas based on Colombian CIIU economic sectors
 const COMMON_WORK_AREAS = [
@@ -225,6 +210,7 @@ export function MedicionAmbientalFormEnhanced({
   const [trackingNumber] = useState(generateTrackingNumber());
   const [createdAt] = useState(new Date().toISOString());
   const [selectedMeasurementType, setSelectedMeasurementType] = useState<string>("ruido");
+  const [selectedMeasurementValue, setSelectedMeasurementValue] = useState("");
 
   const form = useForm<EnhancedFormData>({
     resolver: zodResolver(enhancedFormSchema),
@@ -234,19 +220,20 @@ export function MedicionAmbientalFormEnhanced({
       measurementDate: new Date(),
       measuredBy: user?.fullName || "",
       valueNumeric: "",
-      unit: MEASUREMENT_UNITS_BY_TYPE["ruido"],
-      legalLimit: LEGAL_LIMITS_BY_TYPE["ruido"],
+      unit: ENVIRONMENTAL_MEASUREMENT_CATALOG.ruido.unit,
+      legalLimit: ENVIRONMENTAL_MEASUREMENT_CATALOG.ruido.legalLimit,
       status: "pendiente_analisis",
       observations: "",
     },
   });
 
-  // Auto-fill legal limit and unit when measurement type changes
+  // Reset the normative result and update the reference values when the type changes.
   useEffect(() => {
-    if (selectedMeasurementType) {
-      form.setValue("legalLimit", LEGAL_LIMITS_BY_TYPE[selectedMeasurementType] || "");
-      form.setValue("unit", MEASUREMENT_UNITS_BY_TYPE[selectedMeasurementType] || "");
-    }
+    const catalogEntry = getEnvironmentalMeasurementCatalogEntry(selectedMeasurementType);
+    setSelectedMeasurementValue("");
+    form.setValue("valueNumeric", "", { shouldValidate: true });
+    form.setValue("legalLimit", catalogEntry?.legalLimit || "");
+    form.setValue("unit", catalogEntry?.unit || "");
   }, [selectedMeasurementType, form]);
 
   const handleSubmit = async (data: EnhancedFormData) => {
@@ -267,8 +254,12 @@ export function MedicionAmbientalFormEnhanced({
     }
   };
 
-  const currentLegalLimit = LEGAL_LIMITS_BY_TYPE[selectedMeasurementType];
-  const currentUnit = MEASUREMENT_UNITS_BY_TYPE[selectedMeasurementType];
+  const currentCatalogEntry = getEnvironmentalMeasurementCatalogEntry(selectedMeasurementType);
+  const selectedValueOption = currentCatalogEntry?.options.find(
+    (option) => option.value === selectedMeasurementValue,
+  );
+  const currentLegalLimit = selectedValueOption?.legalLimit || currentCatalogEntry?.legalLimit || "";
+  const currentUnit = selectedValueOption?.unit || currentCatalogEntry?.unit || "";
 
   return (
     <div className="space-y-6">
@@ -358,7 +349,7 @@ export function MedicionAmbientalFormEnhanced({
                           <SelectItem value="ruido">Ruido Ocupacional</SelectItem>
                           <SelectItem value="iluminacion">Iluminación</SelectItem>
                           <SelectItem value="temperatura">Temperatura</SelectItem>
-                          <SelectItem value="agente_quimico">Agente Químico</SelectItem>
+                           <SelectItem value="agentes_quimicos">Agente Químico</SelectItem>
                           <SelectItem value="material_particulado">Material Particulado</SelectItem>
                           <SelectItem value="vibraciones">Vibraciones</SelectItem>
                         </SelectContent>
@@ -455,20 +446,39 @@ export function MedicionAmbientalFormEnhanced({
                   name="valueNumeric"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Valor Medido</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          step="0.1"
-                          placeholder="Ej: 85.5"
-                          value={field.value || ''}
-                          onChange={(e) => field.onChange(e.target.value || '')}
-                          onBlur={field.onBlur}
-                          data-testid="input-value-numeric-enhanced"
-                        />
-                      </FormControl>
-                      <FormDescription className="text-xs">
-                        Unidad: {currentUnit}
+                      <FormLabel>Resultado de la medición *</FormLabel>
+                      <Select
+                        value={field.value || ""}
+                        onValueChange={(value) => {
+                          const option = currentCatalogEntry?.options.find(
+                            (catalogOption) => catalogOption.value === value,
+                          );
+                          field.onChange(value);
+                          setSelectedMeasurementValue(value);
+                          form.setValue("unit", option?.unit || currentCatalogEntry?.unit || "");
+                          form.setValue("legalLimit", option?.legalLimit || currentCatalogEntry?.legalLimit || "");
+                        }}
+                      >
+                        <FormControl>
+                          <SelectTrigger data-testid="select-measurement-value-enhanced">
+                            <SelectValue placeholder="Seleccione el resultado según la medición" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent className="max-w-[min(90vw,34rem)]">
+                          {currentCatalogEntry?.options.map((option) => (
+                            <SelectItem
+                              key={option.value}
+                              value={option.value}
+                              className="whitespace-normal py-2 leading-snug"
+                            >
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormDescription className="text-xs leading-relaxed">
+                        Unidad: {currentUnit}. Seleccione una opción; no es necesario digitar valores.
+                        {selectedValueOption?.reference ? ` Referencia: ${selectedValueOption.reference}.` : ""}
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
