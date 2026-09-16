@@ -696,54 +696,6 @@ export default function GestionUsuarios() {
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="username"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Nombre de Usuario</FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            disabled={!!editingUser}
-                            autoComplete="off"
-                            data-testid="input-username"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>
-                          Contraseña {editingUser && "(dejar vacío para no cambiar)"}
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            {...field}
-                            type="password"
-                            disabled={!!selectedWorkerId && !editingUser}
-                            autoComplete="new-password"
-                            placeholder={
-                              selectedWorkerId && !editingUser
-                                ? "Generada automáticamente: cédula + 21"
-                                : undefined
-                            }
-                            data-testid="input-password"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
                 <FormField
                   control={form.control}
                   name="workerId"
@@ -795,6 +747,61 @@ export default function GestionUsuarios() {
                     </FormItem>
                   )}
                 />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="username"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nombre de Usuario</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            disabled={!!selectedWorkerId || !!editingUser}
+                            autoComplete="off"
+                            placeholder={selectedWorkerId ? "Generado automáticamente" : undefined}
+                            data-testid="input-username"
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Se genera automáticamente al seleccionar el trabajador.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          Contraseña {editingUser && "(dejar vacío para no cambiar)"}
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            type="password"
+                            disabled={!!selectedWorkerId && !editingUser}
+                            autoComplete="new-password"
+                            placeholder={
+                              selectedWorkerId
+                                ? "Generada automáticamente: cédula + 21"
+                                : undefined
+                            }
+                            data-testid="input-password"
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Se genera con la cédula del trabajador más el sufijo 21.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
                 {!selectedWorkerId && (
                   <FormField
