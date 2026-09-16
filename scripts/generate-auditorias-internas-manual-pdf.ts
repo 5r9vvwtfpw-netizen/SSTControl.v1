@@ -157,13 +157,25 @@ numbered(4, "Compruebe que aparecen los criterios y que cada uno muestra Resulta
 callout("Regla de negocio", "La auditoría no puede completarse mientras exista un criterio con estado Pendiente de evaluar.", "#fff8e6");
 
 heading("5. Evaluar criterios y registrar evidencias");
-paragraph("Para cada criterio use el selector Resultado de la evaluación. Después complete Evidencia obtenida y Observaciones del auditor. Los textos se guardan al salir del campo.");
+paragraph("Para cada criterio use el selector Resultado de la evaluación. Después complete la fuente de evidencia, Evidencia obtenida y Observaciones del auditor. Los textos se guardan al salir del campo.");
 paragraph("Para reproducir la prueba de referencia:", { bold: true });
 bullet("En el primer criterio seleccione No cumple.");
 bullet("En los demás criterios seleccione Cumple.");
+bullet("En Fuente de evidencia seleccione Registro interno del sistema si el soporte ya existe en otro módulo.");
+bullet("Para un registro interno, indique el Módulo o proceso de origen, la Referencia de la fuente y la Fecha de la evidencia.");
 bullet("En el primer criterio escriba una evidencia y observación que expliquen la desviación.");
-bullet("Opcionalmente pulse Adjuntar evidencia y cargue un archivo de hasta 10 MB.");
+bullet("Use Archivo o documento externo únicamente cuando el soporte venga de fuera del sistema.");
+bullet("Use Observación o entrevista para recorridos, entrevistas u observaciones directas.");
+bullet("Adjuntar archivo externo es opcional y acepta archivos de hasta 10 MB.");
 callout("Resultado esperado", "Todos los criterios deben quedar evaluados. Con 12 criterios, 11 Cumple y 1 No cumple, el resultado será 92% de cumplimiento.", "#edf8f1");
+
+heading("5.1. Cómo documentar un registro interno", 2);
+paragraph("No vuelva a cargar un informe que ya existe en el sistema. Seleccione Registro interno del sistema y complete los campos de trazabilidad.");
+field("Módulo o proceso de origen", "Capacitaciones, Inspecciones, EPP, Matriz legal u otro módulo.");
+field("Referencia de la fuente", "Nombre del informe, número, ID o referencia interna.");
+field("Fecha de la evidencia", "Fecha del registro o del informe consultado.");
+field("Evidencia obtenida", "Qué se revisó y cuál fue el resultado.");
+callout("Ejemplo", "Módulo: Capacitaciones · Referencia: Informe de capacitaciones SST de junio de 2026 · Fecha: 30/06/2026. Se verificaron 12 asistentes y sus evaluaciones.", "#edf8f1");
 
 heading("6. Registrar un hallazgo");
 paragraph("En el criterio marcado como No cumple pulse Registrar hallazgo. También puede usar el botón Registrar hallazgo de la sección Hallazgos y planes de acción.");

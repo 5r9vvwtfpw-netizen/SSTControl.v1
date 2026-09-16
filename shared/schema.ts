@@ -5440,6 +5440,10 @@ export const auditoriaChecklists = pgTable("auditoria_checklists", {
   cumple: integer("cumple"), // 1 = cumple, 0 = no cumple, NULL = no evaluado aún
   evidenciasObtenidas: text("evidencias_obtenidas"), // Descripción de evidencias encontradas
   observaciones: text("observaciones"), // Observaciones del auditor
+  fuenteEvidencia: text("fuente_evidencia").notNull().default("registro_interno"), // registro_interno, archivo_externo, observacion_entrevista
+  moduloEvidencia: text("modulo_evidencia"), // Módulo o proceso donde existe el registro interno
+  referenciaEvidencia: text("referencia_evidencia"), // Nombre, ID o referencia del registro/documento
+  fechaEvidencia: date("fecha_evidencia"), // Fecha del registro o de la observación
   archivoEvidencia: text("archivo_evidencia"), // Ruta a archivo de evidencia (foto, doc)
   
   // Evaluación

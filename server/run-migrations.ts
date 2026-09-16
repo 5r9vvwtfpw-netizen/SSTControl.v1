@@ -69,6 +69,7 @@ import { createLsoArchiveCleanupJobs } from './migrations/create-lso-archive-cle
 import { syncPesvDailyAlcoholTesting } from './migrations/sync-pesv-daily-alcohol-testing';
 import { createEvsProgramCatalog } from './migrations/create-evs-program-catalog';
 import { syncAuditoriasInternasPhva } from './migrations/sync-auditorias-internas-phva';
+import { syncAuditoriaChecklistEvidenceSource } from './migrations/sync-auditoria-checklist-evidence-source';
 
 /**
  * Ejecuta migraciones de base de datos automáticamente
@@ -151,6 +152,7 @@ export async function runMigrations() {
     await createLsoArchiveCleanupJobs();
     await createEvsProgramCatalog();
     await syncAuditoriasInternasPhva();
+    await syncAuditoriaChecklistEvidenceSource();
     console.log('✅ Migraciones completadas exitosamente');
   } catch (error: any) {
     console.error('⚠️ Error en migraciones:', error.message);

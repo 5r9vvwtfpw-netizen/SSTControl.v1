@@ -27,6 +27,13 @@ function formatDate(value: string | Date | null | undefined) {
   return new Date(value).toLocaleDateString("es-CO");
 }
 
+type EvidenceForm = {
+  fuenteEvidencia: string;
+  moduloEvidencia: string;
+  referenciaEvidencia: string;
+  fechaEvidencia: string;
+};
+
 export default function DetalleAuditoriaInterna() {
   const { id } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
@@ -37,6 +44,7 @@ export default function DetalleAuditoriaInterna() {
   const [newCriterion, setNewCriterion] = useState("");
   const [newClause, setNewClause] = useState("");
   const [newArea, setNewArea] = useState("");
+  const [evidenceForms, setEvidenceForms] = useState<Record<string, EvidenceForm>>({});
   const [findingDialogOpen, setFindingDialogOpen] = useState(false);
   const [findingCloseDialogOpen, setFindingCloseDialogOpen] = useState(false);
   const [findingCloseNotes, setFindingCloseNotes] = useState("");
@@ -419,6 +427,34 @@ export default function DetalleAuditoriaInterna() {
     uploadEvidenceMutation.mutate({ checklistId, file });
   };
 
+  const getEvidenceForm = (item: AuditoriaChecklist): EvidenceForm => evidenceForms[item.id] || {
+    fuenteEvidencia: item.fuenteEvidencia || "registro_interno",
+    moduloEvidencia: item.moduloEvidencia || "",
+    referenciaEvidencia: item.referenciaEvidencia || "",
+    fechaEvidencia: item.fechaEvidencia ? String(item.fechaEvidencia).slice(0, 10) : "",
+  };
+
+  const setEvidenceFormValue = (item: AuditoriaChecklist, key: keyof EvidenceForm, value: string) => {
+    const current = getEvidenceForm(item);
+    setEvidenceForms((previous) => ({
+      ...previous,
+      [item.id]: { ...current, [key]: value },
+    }));
+  };
+
+  const saveEvidenceForm = (item: AuditoriaChecklist) => {
+    const evidence = getEvidenceForm(item);
+    updateChecklistMutation.mutate({
+      checklistId: item.id,
+      data: {
+        fuenteEvidencia: evidence.fuenteEvidencia,
+        moduloEvidencia: evidence.moduloEvidencia || null,
+        referenciaEvidencia: evidence.referenciaEvidencia || null,
+        fechaEvidencia: evidence.fechaEvidencia || null,
+      },
+    });
+  };
+
   const openFindingDialog = (item?: AuditoriaChecklist) => {
     setFindingForm({
       tipo: "no_conformidad_menor",
@@ -701,6 +737,84 @@ export default function DetalleAuditoriaInterna() {
                     </div>
                   </div>
 
+                  {(() => {
+                    const evidence = getEvidenceForm(item);
+                    const sourceHelp = evidence.fuenteEvidencia === "registro_interno"
+                      ? "Use esta opción cuando la evidencia ya existe en otro módulo del sistema."
+                      : evidence.fuenteEvidencia === "archivo_externo"
+                        ? "Use esta opción para documentos, fotos o archivos que vienen de fuera del sistema."
+                        : "Use esta opción para recorridos, entrevistas u observaciones directas.";
+                    const referencePlaceholder = evidence.fuenteEvidencia === "registro_interno"
+                      ? "Nombre del informe, ID o referencia interna"
+                      : evidence.fuenteEvidencia === "archivo_externo"
+                        ? "Nombre del documento, proveedor o archivo"
+                        : "Persona, área, recorrido o referencia de la observación";
+                    return (
+                      <div className="rounded-lg border bg-background p-3 space-y-3">
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <div className="space-y-2">
+                            <Label htmlFor={`evidence-source-${item.id}`}>Fuente de evidencia</Label>
+                            <select
+                              id={`evidence-source-${item.id}`}
+                              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                              value={evidence.fuenteEvidencia}
+                              disabled={!canEditChecklist || updateChecklistMutation.isPending}
+                              onChange={(event) => {
+                                setEvidenceFormValue(item, "fuenteEvidencia", event.target.value);
+                                updateChecklistMutation.mutate({
+                                  checklistId: item.id,
+                                  data: { fuenteEvidencia: event.target.value },
+                                });
+                              }}
+                            >
+                              <option value="registro_interno">Registro interno del sistema</option>
+                              <option value="archivo_externo">Archivo o documento externo</option>
+                              <option value="observacion_entrevista">Observación o entrevista</option>
+                            </select>
+                            <p className="text-xs text-muted-foreground">{sourceHelp}</p>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor={`evidence-date-${item.id}`}>Fecha de la evidencia</Label>
+                            <Input
+                              id={`evidence-date-${item.id}`}
+                              type="date"
+                              value={evidence.fechaEvidencia}
+                              disabled={!canEditChecklist}
+                              onChange={(event) => setEvidenceFormValue(item, "fechaEvidencia", event.target.value)}
+                              onBlur={() => saveEvidenceForm(item)}
+                            />
+                          </div>
+                        </div>
+                        <div className="grid gap-4 md:grid-cols-2">
+                          {evidence.fuenteEvidencia === "registro_interno" && (
+                            <div className="space-y-2">
+                              <Label htmlFor={`evidence-module-${item.id}`}>Módulo o proceso de origen</Label>
+                              <Input
+                                id={`evidence-module-${item.id}`}
+                                value={evidence.moduloEvidencia}
+                                disabled={!canEditChecklist}
+                                placeholder="Ej. Capacitaciones, Inspecciones, EPP"
+                                onChange={(event) => setEvidenceFormValue(item, "moduloEvidencia", event.target.value)}
+                                onBlur={() => saveEvidenceForm(item)}
+                              />
+                            </div>
+                          )}
+                          <div className={`space-y-2 ${evidence.fuenteEvidencia === "registro_interno" ? "" : "md:col-span-2"}`}>
+                            <Label htmlFor={`evidence-reference-${item.id}`}>Referencia de la fuente</Label>
+                            <Input
+                              id={`evidence-reference-${item.id}`}
+                              value={evidence.referenciaEvidencia}
+                              disabled={!canEditChecklist}
+                              placeholder={referencePlaceholder}
+                              onChange={(event) => setEvidenceFormValue(item, "referenciaEvidencia", event.target.value)}
+                              onBlur={() => saveEvidenceForm(item)}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
                   <div className="space-y-2">
                     <Label htmlFor={`observations-${item.id}`}>Observaciones del auditor</Label>
                     <Textarea
@@ -718,7 +832,7 @@ export default function DetalleAuditoriaInterna() {
 
                   <div className="flex flex-wrap items-center gap-3 border-t pt-3">
                     <Label htmlFor={`file-${item.id}`} className="inline-flex items-center gap-2 cursor-pointer">
-                      <Upload className="h-4 w-4" /> Adjuntar evidencia
+                      <Upload className="h-4 w-4" /> Adjuntar archivo externo (opcional)
                     </Label>
                     <Input
                       id={`file-${item.id}`}
@@ -734,7 +848,7 @@ export default function DetalleAuditoriaInterna() {
                     {item.archivoEvidencia && (
                       <Button variant="outline" size="sm" asChild>
                         <a href={item.archivoEvidencia} target="_blank" rel="noopener noreferrer">
-                          <Download className="h-4 w-4 mr-2" /> Ver evidencia
+                          <Download className="h-4 w-4 mr-2" /> Ver archivo adjunto
                         </a>
                       </Button>
                     )}

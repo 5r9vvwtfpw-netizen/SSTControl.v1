@@ -40536,8 +40536,21 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         const resultado = item.cumple === 1 ? "Cumple" : item.cumple === 0 ? "No cumple" : "Pendiente";
         doc.font("Helvetica-Bold").text(`${item.numeroItem}. ${resultado} — ${item.criterioAuditoria}`);
         doc.font("Helvetica").text(`Referencia: ${item.clausulaReferencia || "No especificada"} · Área: ${item.areaProcesoAuditado || "No especificada"}`);
-        if (item.observaciones || item.evidenciasObtenidas) {
-          doc.fillColor("#555555").text(`Evidencia/observación: ${[item.evidenciasObtenidas, item.observaciones].filter(Boolean).join(" · ")}`);
+        if (item.observaciones || item.evidenciasObtenidas || item.referenciaEvidencia || item.moduloEvidencia) {
+          const sourceLabel = item.fuenteEvidencia === "archivo_externo"
+            ? "Archivo externo"
+            : item.fuenteEvidencia === "observacion_entrevista"
+              ? "Observación/entrevista"
+              : "Registro interno";
+          const sourceDetails = [
+            `${sourceLabel}${item.moduloEvidencia ? ` · ${item.moduloEvidencia}` : ""}`,
+            item.referenciaEvidencia,
+            item.fechaEvidencia ? `Fecha: ${item.fechaEvidencia}` : null,
+          ].filter(Boolean).join(" · ");
+          doc.fillColor("#555555").text(`Fuente: ${sourceDetails || "No especificada"}`);
+          if (item.evidenciasObtenidas || item.observaciones) {
+            doc.text(`Evidencia/observación: ${[item.evidenciasObtenidas, item.observaciones].filter(Boolean).join(" · ")}`);
+          }
           doc.fillColor("#000000");
         }
         doc.moveDown(0.35);
