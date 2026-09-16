@@ -40528,119 +40528,216 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const plans = (await Promise.all(
         hallazgos.map((hallazgo) => storage.getPlanesAccionAuditoria(hallazgo.id, companyId)),
       )).flat();
-      const doc = new PDFDocument({ size: "LETTER", margin: 45, bufferPages: true });
+      const company = await storage.getCompany(companyId);
+      const logoBuffer = company?.logoUrl ? await loadCompanyLogo(company.logoUrl) : null;
+      const signers = await getSignersForCompany(companyId, false);
+      const subscription = await storage.getSubscriptionByCompany(companyId);
+      const trialStatus = getTrialStatus(
+        subscription?.status || 'trial',
+        subscription?.trialEnd || null,
+        true,
+        true,
+      );
+
+      const doc = new PDFDocument({
+        size: PDF_CONFIG.PAGE_SIZE,
+        margin: PDF_CONFIG.MARGIN,
+        bufferPages: true,
+        info: {
+          Title: `Informe de auditoría interna SST - ${audit.codigo}`,
+          Author: 'SST-Colombia',
+          Subject: audit.titulo,
+          CreationDate: new Date(),
+        },
+      });
+      setupTrialWatermarkOnAllPages(doc, trialStatus.requiresWatermark);
       const filename = `informe-${audit.codigo || audit.id}.pdf`.replace(/[^a-zA-Z0-9._-]/g, "_");
       res.setHeader("Content-Type", "application/pdf");
       res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
       doc.pipe(res);
 
-      const navy = "#12304a";
-      const section = (title: string) => {
-        doc.moveDown(0.8);
-        doc.fillColor(navy).font("Helvetica-Bold").fontSize(12).text(title);
-        doc.moveDown(0.3);
-        doc.fillColor("#000000").font("Helvetica").fontSize(9);
+      const formatValue = (value: unknown): string => {
+        if (value === null || value === undefined || value === "") return "No registrado";
+        return String(value);
       };
-      const field = (label: string, value: unknown) => {
-        doc.font("Helvetica-Bold").text(`${label}: `, { continued: true });
-        doc.font("Helvetica").text(value ? String(value) : "No registrado");
-        doc.moveDown(0.2);
+      const dateValue = (value: unknown): string => value ? formatDate(value as Date | string) : "No registrada";
+      const statusLabels: Record<string, string> = {
+        programada: "Programada",
+        en_ejecucion: "En ejecución",
+        completada: "Completada",
+        cerrada: "Cerrada",
       };
+      const typeLabels: Record<string, string> = {
+        interna: "Interna",
+        externa: "Externa",
+        seguimiento: "Seguimiento",
+      };
+      const normLabels: Record<string, string> = {
+        ISO_45001: "ISO 45001:2018",
+        res_0312_2019: "Resolución 0312 de 2019",
+        ambas: "ISO 45001:2018 y Resolución 0312 de 2019",
+      };
+      const phvaLabels: Record<string, string> = {
+        planear: "Planear",
+        hacer: "Hacer",
+        verificar: "Verificar",
+        actuar: "Actuar",
+      };
+      const sourceLabels: Record<string, string> = {
+        archivo_externo: "Archivo externo",
+        observacion_entrevista: "Observación / entrevista",
+        registro_interno: "Registro interno",
+      };
+      const resultLabel = (value: number | null): string =>
+        value === 1 ? "Cumple" : value === 0 ? "No cumple" : "Pendiente";
+      const contentWidth = doc.page.width - PDF_CONFIG.MARGIN * 2;
+      const twoColumnWidths = [contentWidth * 0.3, contentWidth * 0.7];
+      const checklistWidths = [
+        contentWidth * 0.08,
+        contentWidth * 0.32,
+        contentWidth * 0.16,
+        contentWidth * 0.44,
+      ];
 
-      doc.fillColor(navy).font("Helvetica-Bold").fontSize(18).text("INFORME DE AUDITORÍA INTERNA SST", { align: "center" });
-      doc.moveDown(0.3);
-      doc.fillColor("#555555").font("Helvetica").fontSize(10).text(`${audit.codigo} · ${audit.estado.toUpperCase()}`, { align: "center" });
-      doc.moveDown(1);
-
-      section("1. Identificación y planificación");
-      field("Título", audit.titulo);
-      field("Tipo", audit.tipo);
-      field("Norma de referencia", audit.normaReferencia);
-      field("Objetivo", audit.objetivo);
-      field("Alcance", audit.alcance);
-      field("Fecha programada", audit.fechaProgramada);
-      field("Fecha de inicio", audit.fechaInicio);
-      field("Fecha de finalización", audit.fechaFin);
-      field("Auditor líder", audit.auditoristaLider);
-      field("Responsable auditado", audit.responsableAuditado);
-      field("Fase PHVA", audit.cicloPhva);
-      field("Proceso PHVA", audit.procesoPhva);
-      field("Estándar relacionado", audit.estandarRelacionado);
-
-      section("2. Equipo auditor");
-      if (auditores.length === 0) {
-        doc.text("No se registraron auditores adicionales.");
-      } else {
-        auditores.forEach((auditor) => {
-          const nombre = auditor.nombreExterno || auditor.auditorId || "Auditor interno";
-          doc.font("Helvetica-Bold").text(`${nombre} · ${auditor.rol}`, { continued: true });
-          doc.font("Helvetica").text(auditor.areasAsignadas ? ` · Áreas: ${auditor.areasAsignadas}` : "");
-          if (auditor.emailExterno || auditor.organizacionExterna) {
-            doc.fillColor("#555555").text([auditor.emailExterno, auditor.organizacionExterna].filter(Boolean).join(" · "));
-            doc.fillColor("#000000");
-          }
-          doc.moveDown(0.3);
-        });
-      }
-
-      section("3. Resultado del checklist");
-      field("Criterios evaluados", `${checklists.filter((item) => item.cumple !== null && item.cumple !== undefined).length} de ${checklists.length}`);
-      field("Cumplimiento", audit.porcentajeCumplimiento !== null && audit.porcentajeCumplimiento !== undefined ? `${audit.porcentajeCumplimiento}%` : "Pendiente");
-      checklists.forEach((item) => {
-        const resultado = item.cumple === 1 ? "Cumple" : item.cumple === 0 ? "No cumple" : "Pendiente";
-        doc.font("Helvetica-Bold").text(`${item.numeroItem}. ${resultado} — ${item.criterioAuditoria}`);
-        doc.font("Helvetica").text(`Referencia: ${item.clausulaReferencia || "No especificada"} · Área: ${item.areaProcesoAuditado || "No especificada"}`);
-        if (item.observaciones || item.evidenciasObtenidas || item.referenciaEvidencia || item.moduloEvidencia) {
-          const sourceLabel = item.fuenteEvidencia === "archivo_externo"
-            ? "Archivo externo"
-            : item.fuenteEvidencia === "observacion_entrevista"
-              ? "Observación/entrevista"
-              : "Registro interno";
-          const sourceDetails = [
-            `${sourceLabel}${item.moduloEvidencia ? ` · ${item.moduloEvidencia}` : ""}`,
-            item.referenciaEvidencia,
-            item.fechaEvidencia ? `Fecha: ${item.fechaEvidencia}` : null,
-          ].filter(Boolean).join(" · ");
-          doc.fillColor("#555555").text(`Fuente: ${sourceDetails || "No especificada"}`);
-          if (item.evidenciasObtenidas || item.observaciones) {
-            doc.text(`Evidencia/observación: ${[item.evidenciasObtenidas, item.observaciones].filter(Boolean).join(" · ")}`);
-          }
-          doc.fillColor("#000000");
-        }
-        doc.moveDown(0.35);
+      let y = await addStandardHeader({
+        doc,
+        company: {
+          id: companyId,
+          name: company?.name || "Empresa no registrada",
+          nit: company?.nit || "N/A",
+          address: company?.address,
+          logoUrl: company?.logoUrl,
+        },
+        documentTitle: "INFORME DE AUDITORÍA INTERNA SST",
+        documentCode: audit.codigo || getDocumentCode("internal_audit", company?.nit),
+        version: "1.0",
+        date: audit.fechaInforme ? new Date(audit.fechaInforme) : new Date(),
+        logoBuffer,
       });
 
-      section("4. Hallazgos y planes de acción");
-      if (hallazgos.length === 0) {
-        doc.text("No se registraron hallazgos.");
+      y = addSectionBar(doc, "1. IDENTIFICACIÓN Y PLANIFICACIÓN", y);
+      y = addSimpleTable(doc, ["Campo", "Valor"], [
+        ["Código", formatValue(audit.codigo)],
+        ["Título", formatValue(audit.titulo)],
+        ["Tipo", typeLabels[audit.tipo] || formatValue(audit.tipo)],
+        ["Estado", statusLabels[audit.estado] || formatValue(audit.estado)],
+        ["Norma de referencia", normLabels[audit.normaReferencia] || formatValue(audit.normaReferencia)],
+        ["Objetivo", formatValue(audit.objetivo)],
+        ["Alcance", formatValue(audit.alcance)],
+        ["Fecha programada", dateValue(audit.fechaProgramada)],
+        ["Fecha de inicio", dateValue(audit.fechaInicio)],
+        ["Fecha de finalización", dateValue(audit.fechaFin)],
+        ["Duración estimada", audit.duracionEstimadaHoras ? `${audit.duracionEstimadaHoras} horas` : "No registrada"],
+        ["Auditor líder", formatValue(audit.auditoristaLider)],
+        ["Responsable auditado", formatValue(audit.responsableAuditado)],
+        ["Fase PHVA", phvaLabels[audit.cicloPhva] || formatValue(audit.cicloPhva)],
+        ["Proceso PHVA", formatValue(audit.procesoPhva)],
+        ["Estándar relacionado", formatValue(audit.estandarRelacionado)],
+        ["Planificada con COPASST", audit.planificadaConCopasst ? "Sí" : "No"],
+        ["Fecha aprobación COPASST", dateValue(audit.fechaAprobacionCopasst)],
+        ["Observaciones COPASST", formatValue(audit.observacionesCopasst)],
+      ], { y, columnWidths: twoColumnWidths });
+
+      y = addSectionBar(doc, "2. EQUIPO AUDITOR", y);
+      if (auditores.length === 0) {
+        y = addParagraph(doc, "No se registraron auditores adicionales.", { y });
       } else {
-        hallazgos.forEach((hallazgo) => {
-          doc.font("Helvetica-Bold").text(`${hallazgo.numeroHallazgo} · ${hallazgo.tipo} · Severidad ${hallazgo.severidad}`);
-          doc.font("Helvetica").text(hallazgo.descripcion);
-          doc.text(`Requisito: ${hallazgo.requisito} · Área: ${hallazgo.areaAfectada}`);
-          if (hallazgo.evidencia) doc.text(`Evidencia: ${hallazgo.evidencia}`);
+        y = addSimpleTable(doc, ["Auditor", "Rol / áreas asignadas", "Contacto / organización"], auditores.map((auditor) => [
+          auditor.nombreExterno || auditor.auditorId || "Auditor interno",
+          [auditor.rol, auditor.areasAsignadas ? `Áreas: ${auditor.areasAsignadas}` : null].filter(Boolean).join(" · "),
+          [auditor.emailExterno, auditor.organizacionExterna].filter(Boolean).join(" · ") || "No registrado",
+        ]), { y, columnWidths: [contentWidth * 0.28, contentWidth * 0.39, contentWidth * 0.33] });
+      }
+
+      y = addSectionBar(doc, "3. RESULTADO DEL CHECKLIST", y);
+      const evaluatedCount = checklists.filter((item) => item.cumple !== null && item.cumple !== undefined).length;
+      y = addSimpleTable(doc, ["Indicador", "Resultado"], [
+        ["Criterios evaluados", `${evaluatedCount} de ${checklists.length}`],
+        ["Cumplimiento global", audit.porcentajeCumplimiento !== null && audit.porcentajeCumplimiento !== undefined
+          ? `${audit.porcentajeCumplimiento}%`
+          : "Pendiente"],
+        ["Conformidades", formatValue(audit.numeroConformidades)],
+        ["No conformidades menores", formatValue(audit.numeroNoConformidadesMenores)],
+        ["No conformidades mayores", formatValue(audit.numeroNoConformidadesMayores)],
+        ["Observaciones", formatValue(audit.numeroObservaciones)],
+      ], { y, columnWidths: twoColumnWidths });
+
+      if (checklists.length === 0) {
+        y = addParagraph(doc, "No se registraron criterios en el checklist.", { y });
+      } else {
+        y = addSimpleTable(doc, ["Ítem", "Criterio / referencia", "Resultado", "Evidencia y observaciones"], checklists.map((item) => {
+          const source = sourceLabels[item.fuenteEvidencia] || formatValue(item.fuenteEvidencia);
+          const evidence = [
+            `Fuente: ${source}`,
+            item.moduloEvidencia ? `Módulo: ${item.moduloEvidencia}` : null,
+            item.referenciaEvidencia ? `Referencia: ${item.referenciaEvidencia}` : null,
+            item.fechaEvidencia ? `Fecha: ${dateValue(item.fechaEvidencia)}` : null,
+            item.evidenciasObtenidas ? `Evidencia: ${item.evidenciasObtenidas}` : null,
+            item.observaciones ? `Observaciones: ${item.observaciones}` : null,
+            item.archivoEvidencia ? `Archivo: ${item.archivoEvidencia}` : null,
+          ].filter(Boolean).join("\n") || "Sin evidencia u observaciones registradas";
+          return [
+            formatValue(item.numeroItem),
+            [item.criterioAuditoria, item.clausulaReferencia ? `Referencia: ${item.clausulaReferencia}` : null, item.areaProcesoAuditado ? `Área: ${item.areaProcesoAuditado}` : null]
+              .filter(Boolean).join("\n"),
+            resultLabel(item.cumple),
+            evidence,
+          ];
+        }), { y, columnWidths: checklistWidths });
+      }
+
+      y = addSectionBar(doc, "4. HALLAZGOS Y PLANES DE ACCIÓN", y);
+      if (hallazgos.length === 0) {
+        y = addParagraph(doc, "No se registraron hallazgos.", { y });
+      } else {
+        y = addSimpleTable(doc, ["Hallazgo", "Descripción / requisito", "Clasificación", "Planes de acción"], hallazgos.map((hallazgo) => {
           const linkedPlans = plans.filter((plan) => plan.hallazgoId === hallazgo.id);
-          linkedPlans.forEach((plan) => {
-            doc.fillColor("#8a5a00").text(`Acción ${plan.numeroAccion}: ${plan.descripcionAccion} · Responsable: ${plan.responsable} · Compromiso: ${plan.fechaCompromiso}`);
-            doc.fillColor("#000000");
-          });
-          doc.moveDown(0.5);
+          const planText = linkedPlans.length === 0
+            ? "Sin plan de acción registrado"
+            : linkedPlans.map((plan) => [
+              `${plan.numeroAccion}: ${plan.descripcionAccion}`,
+              `Responsable: ${plan.responsable}`,
+              `Compromiso: ${dateValue(plan.fechaCompromiso)}`,
+              `Estado: ${formatValue(plan.estado)} · Avance: ${formatValue(plan.porcentajeAvance)}%`,
+              plan.fechaImplementacion ? `Implementación: ${dateValue(plan.fechaImplementacion)}` : null,
+              plan.resultadoVerificacion ? `Verificación: ${plan.resultadoVerificacion}` : null,
+              plan.eficaz === 1 ? "Eficacia: Eficaz" : plan.eficaz === 0 ? "Eficacia: No eficaz" : null,
+            ].filter(Boolean).join("\n")).join("\n\n");
+          return [
+            formatValue(hallazgo.numeroHallazgo),
+            [hallazgo.descripcion, `Requisito: ${hallazgo.requisito}`, `Área: ${hallazgo.areaAfectada}`, hallazgo.clausulaReferencia ? `Referencia: ${hallazgo.clausulaReferencia}` : null, hallazgo.evidencia ? `Evidencia: ${hallazgo.evidencia}` : null]
+              .filter(Boolean).join("\n"),
+            `${formatValue(hallazgo.tipo)}\nSeveridad: ${formatValue(hallazgo.severidad)}`,
+            planText,
+          ];
+        }), { y, columnWidths: [contentWidth * 0.12, contentWidth * 0.36, contentWidth * 0.19, contentWidth * 0.33] });
+      }
+
+      y = addSectionBar(doc, "5. CONCLUSIONES, RECOMENDACIONES Y APROBACIÓN", y);
+      y = addSimpleTable(doc, ["Campo", "Contenido"], [
+        ["Conclusiones", formatValue(audit.conclusiones)],
+        ["Recomendaciones", formatValue(audit.recomendaciones)],
+        ["Aprobado por", formatValue(audit.aprobadoPor)],
+        ["Fecha de aprobación", dateValue(audit.fechaAprobacion)],
+        ["Fecha de emisión del informe", dateValue(audit.fechaInforme)],
+        ["Observaciones de cierre", formatValue(audit.observacionesCierre)],
+      ], { y, columnWidths: twoColumnWidths });
+
+      await addSignatureFooter(doc, signers, false);
+
+      const pageRange = doc.bufferedPageRange();
+      for (let pageIndex = pageRange.start; pageIndex < pageRange.start + pageRange.count; pageIndex++) {
+        doc.switchToPage(pageIndex);
+        doc.font("Helvetica").fontSize(7).fillColor("#666666");
+        doc.text(`Página ${pageIndex - pageRange.start + 1} de ${pageRange.count}`, PDF_CONFIG.MARGIN, 14, {
+          width: contentWidth,
+          align: "right",
+          lineBreak: false,
         });
       }
-
-      section("5. Conclusiones, recomendaciones y aprobación");
-      field("Conclusiones", audit.conclusiones);
-      field("Recomendaciones", audit.recomendaciones);
-      field("Aprobado por", audit.aprobadoPor);
-      field("Fecha de aprobación", audit.fechaAprobacion);
-      if (audit.observacionesCierre) field("Observaciones de cierre", audit.observacionesCierre);
-
       doc.end();
     } catch (error: any) {
-      console.error("Error generating internal audit report:", error);
-      if (!res.headersSent) {
-        res.status(500).send("No se pudo generar el informe de auditoría");
-      }
+      handlePdfError(error, res, "internal-audit-report");
     }
   });
 
