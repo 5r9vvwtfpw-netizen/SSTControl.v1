@@ -3,7 +3,7 @@ name: Credenciales de roles vinculados
 description: Regla para crear cuentas adicionales asociadas al mismo trabajador.
 ---
 
-Un mismo trabajador puede tener una cuenta base del Portal de Empleados y cuentas adicionales para roles como Vigía SST. Las cuentas adicionales pueden compartir el correo de contacto, pero deben tener un nombre de usuario distinto y usar la contraseña inicial formada por la identificación del trabajador seguida de `21`. La cuenta base del portal se asigna desde el contrato, no desde Gestión de Usuarios; `superusuario` es una cuenta única provisionada al crear la empresa.
+Un mismo trabajador puede tener una cuenta base del Portal de Empleados y cuentas adicionales para roles como Vigía SST. Las cuentas adicionales pueden compartir el correo de contacto, pero deben tener un nombre de usuario distinto y usar la contraseña inicial formada por la identificación del trabajador seguida de `21`. La cuenta base del portal se asigna desde el contrato, no desde Gestión de Usuarios; `superusuario` es una cuenta única provisionada al crear la empresa. El Gerente General solo necesita credenciales de acceso y no datos profesionales SST.
 
 **Why:** El trabajador puede cambiar la contraseña de su portal base usando solo su cédula; el sufijo `21` evita que la cuenta adicional comparta esa credencial inicial.
 
