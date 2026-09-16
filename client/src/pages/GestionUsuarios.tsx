@@ -41,7 +41,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertUserSchema, type User, type UserRole } from "@shared/schema";
+import { insertUserSchema, type User, type UserRole, type Worker } from "@shared/schema";
 import { roleLabels, roleDescriptions, hasGlobalAccess, getRolePermissions } from "@shared/permissions";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Plus, Pencil, Trash2, Shield, Info, Building2, Award, Search, X, ChevronRight, ArrowLeft, Users } from "lucide-react";
@@ -149,6 +149,26 @@ const userFormSchema = insertUserSchema.omit({ password: true }).extend({
 type UserFormData = z.infer<typeof userFormSchema>;
 
 type UserWithoutPassword = Omit<User, "password">;
+
+const NO_WORKER_VALUE = "__no_worker__";
+
+function buildWorkerUsername(workerName: string, existingUsers: UserWithoutPassword[] = []) {
+  const nameParts = workerName.toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s]/g, "")
+    .split(/\s+/)
+    .filter(Boolean);
+  const baseUsername = nameParts.length >= 2
+    ? `${nameParts[0]}_${nameParts[nameParts.length - 1]}`
+    : nameParts[0] || "usuario";
+  const existingUsernames = new Set(existingUsers.map((user) => user.username.toLowerCase()));
+  if (!existingUsernames.has(baseUsername)) return baseUsername;
+
+  let counter = 1;
+  while (existingUsernames.has(`${baseUsername}${counter}`)) counter++;
+  return `${baseUsername}${counter}`;
+}
 
 type MechanicSearchResult = {
   id: string;
@@ -314,6 +334,11 @@ export default function GestionUsuarios() {
     enabled: currentUser?.role !== "tecnico_mecanico",
   });
 
+  const { data: workers = [], isLoading: workersLoading } = useQuery<Worker[]>({
+    queryKey: ["/api/workers"],
+    enabled: open,
+  });
+
   const hasGlobalCompanyAccess = currentUser?.role ? hasGlobalAccess(currentUser.role) : false;
   const canManageMechanicAccess = (currentUser?.role === "superusuario" || currentUser?.role === "admin") &&
     getRolePermissions(currentUser.role).includes("mechanic_access:manage");
@@ -406,6 +431,19 @@ export default function GestionUsuarios() {
 
   // Watch the role to conditionally show SST credentials section
   const selectedRole = form.watch("role");
+  const selectedWorkerId = form.watch("workerId");
+  const selectedCompanyId = form.watch("companyId");
+  const selectedWorker = useMemo(
+    () => workers.find((worker) => worker.id === selectedWorkerId) || null,
+    [workers, selectedWorkerId],
+  );
+  const availableWorkers = useMemo(
+    () => workers
+      .filter((worker) => worker.status === "activo")
+      .filter((worker) => !selectedCompanyId || worker.companyId === selectedCompanyId)
+      .sort((a, b) => a.name.localeCompare(b.name, "es")),
+    [workers, selectedCompanyId],
+  );
 
   const createMutation = useMutation({
     mutationFn: async (data: UserFormData) => {
@@ -544,6 +582,24 @@ export default function GestionUsuarios() {
     }
   };
 
+  const handleWorkerSelection = (workerId: string) => {
+    const worker = workers.find((candidate) => candidate.id === workerId);
+    if (!worker) {
+      form.setValue("workerId", null, { shouldDirty: true });
+      return;
+    }
+
+    form.setValue("workerId", worker.id, { shouldDirty: true, shouldValidate: true });
+    form.setValue("fullName", worker.name, { shouldDirty: true, shouldValidate: true });
+    form.setValue("email", worker.email || "", { shouldDirty: true });
+    form.setValue("department", worker.department || "", { shouldDirty: true });
+    form.setValue("password", `${worker.identificationNumber}21`, { shouldDirty: true });
+    form.setValue("username", buildWorkerUsername(worker.name, users || []), { shouldDirty: true });
+    if (hasGlobalCompanyAccess) {
+      form.setValue("companyId", worker.companyId, { shouldDirty: true });
+    }
+  };
+
   const handleEdit = (user: UserWithoutPassword) => {
     setEditingUser(user);
     form.reset({
@@ -672,7 +728,13 @@ export default function GestionUsuarios() {
                           <Input
                             {...field}
                             type="password"
+                            disabled={!!selectedWorkerId && !editingUser}
                             autoComplete="new-password"
+                            placeholder={
+                              selectedWorkerId && !editingUser
+                                ? "Generada automáticamente: cédula + 21"
+                                : undefined
+                            }
                             data-testid="input-password"
                           />
                         </FormControl>
@@ -684,17 +746,74 @@ export default function GestionUsuarios() {
 
                 <FormField
                   control={form.control}
-                  name="fullName"
+                  name="workerId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Nombre Completo</FormLabel>
-                      <FormControl>
-                        <Input {...field} value={field.value || ""} data-testid="input-fullname" />
-                      </FormControl>
+                      <FormLabel>Trabajador / Nombre Completo</FormLabel>
+                      <Select
+                        onValueChange={(value) => {
+                          if (value === NO_WORKER_VALUE) {
+                            field.onChange(null);
+                            if (!editingUser) {
+                              form.setValue("username", "", { shouldDirty: true });
+                              form.setValue("fullName", "", { shouldDirty: true });
+                              form.setValue("email", "", { shouldDirty: true });
+                              form.setValue("department", "", { shouldDirty: true });
+                            }
+                            form.setValue("password", "", { shouldDirty: true });
+                            return;
+                          }
+                          handleWorkerSelection(value);
+                        }}
+                        value={field.value || NO_WORKER_VALUE}
+                      >
+                        <FormControl>
+                          <SelectTrigger data-testid="select-user-worker">
+                            <SelectValue placeholder={workersLoading ? "Cargando trabajadores..." : "Seleccionar trabajador"} />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value={NO_WORKER_VALUE}>
+                            <span className="text-muted-foreground">Sin trabajador vinculado</span>
+                          </SelectItem>
+                          {availableWorkers.map((worker) => (
+                            <SelectItem key={worker.id} value={worker.id}>
+                              {worker.name} — {worker.identificationNumber}
+                            </SelectItem>
+                          ))}
+                          {editingUser && field.value && !availableWorkers.some((worker) => worker.id === field.value) && (
+                            <SelectItem value={field.value}>
+                              {selectedWorker?.name || form.getValues("fullName")} — trabajador actual
+                            </SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        Al seleccionar un trabajador se completan el usuario, email, área y contraseña.
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+
+                {!selectedWorkerId && (
+                  <FormField
+                    control={form.control}
+                    name="fullName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nombre Completo</FormLabel>
+                        <FormControl>
+                          <Input {...field} value={field.value || ""} data-testid="input-fullname" />
+                        </FormControl>
+                        <FormDescription>
+                          Úselo únicamente para usuarios que no estén vinculados a un trabajador.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
 
                 {/* Empresa (solo visible para superadmin - otros usuarios usan su propia empresa) */}
                 {currentUser && hasGlobalAccess(currentUser.role) ? (
@@ -838,6 +957,9 @@ export default function GestionUsuarios() {
                           </SelectItem>
                           <SelectItem value="supervisor">
                             {roleLabels.supervisor}
+                          </SelectItem>
+                          <SelectItem value="vigia_sst">
+                            {roleLabels.vigia_sst}
                           </SelectItem>
 
                           {/* Rol PESV */}

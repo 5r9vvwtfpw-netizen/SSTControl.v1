@@ -3715,6 +3715,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (validatedData.role === "tecnico_mecanico" && !validatedData.identificationNumber) {
         return res.status(400).send("El número de cédula es obligatorio para Técnicos Mecánicos");
       }
+
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (validatedData.workerId) {
+        const linkedWorker = await storage.getWorkerById(validatedData.workerId);
+        if (!linkedWorker) {
+          return res.status(400).send("El trabajador seleccionado no existe");
+        }
+        if (effectiveCompanyId && linkedWorker.companyId !== effectiveCompanyId) {
+          return res.status(403).send("El trabajador seleccionado no pertenece a la empresa activa");
+        }
+      }
       
       // Check if username already exists
       const existing = await storage.getUserByUsername(validatedData.username);
@@ -3725,7 +3736,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if email already exists (if provided)
       if (validatedData.email) {
         const existingEmail = await storage.getUserByEmail(validatedData.email);
-        if (existingEmail) {
+        // A worker can have one portal account and additional role accounts
+        // (for example, trabajador + vigía) using the same contact email.
+        if (existingEmail && existingEmail.workerId !== validatedData.workerId) {
           return res.status(400).send(`El correo electrónico ${validatedData.email} ya está registrado en el sistema`);
         }
       }
@@ -3737,7 +3750,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const user = await storage.createUser({
         ...validatedData,
         password: hashedPassword,
-        companyId: getEffectiveCompanyId(req),
+        companyId: effectiveCompanyId,
       });
 
       // Don't send password to frontend
