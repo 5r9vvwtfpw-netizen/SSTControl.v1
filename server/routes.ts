@@ -3735,7 +3735,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/users", requirePermission("users:create"), checkUserLimit(), async (req, res) => {
     try {
-      const validatedData = insertUserSchema.parse(req.body);
+      const requestData = req.body && typeof req.body === "object"
+        ? req.body as Record<string, unknown>
+        : {};
+      const isAutomaticManager = requestData.role === "admin" && !requestData.workerId;
+      const validatedData = insertUserSchema.parse(
+        isAutomaticManager
+          ? {
+              ...requestData,
+              username: requestData.username || "gerente_temporal",
+              password: requestData.password || "GerenteTemporal123!",
+              fullName: requestData.fullName || "Representante Legal",
+            }
+          : req.body,
+      );
       let userData = { ...validatedData };
       userData.identificationNumber = userData.identificationNumber
         ? userData.identificationNumber.replace(/[\s.-]/g, "")
