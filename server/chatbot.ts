@@ -496,21 +496,21 @@ Los trabajadores se registran desde el menú Planear > Trabajadores. Es el prime
 - **Qué incluye el plan de emergencias**: Abra su Evaluación Inicial y busque el estándar 5.1.1. Haga clic en él y se abrirá el modo de verificación. Ahí encontrará el módulo de Plan de Emergencias donde puede registrar amenazas, conformar brigadas y programar simulacros.
 
 ### Auditorías Internas SST — ciclo completo de planificación, ejecución, hallazgos, cierre y eficacia
-- **Qué es y dónde está**: Es el módulo para planificar y ejecutar auditorías del SG-SST conforme a **ISO 45001:2018, numeral 9.2**, y a la **Resolución 0312/2019, Estándares 6.1.2 (auditoría anual del SG-SST) y 6.1.4 (participación del COPASST)**. Se encuentra en **VERIFICAR → Auditorías Internas SST**, ruta `/auditorias-internas`. También se puede abrir desde los botones de los estándares 6.1.2 y 6.1.4 en la Evaluación Inicial. Requiere permisos para ver, crear/editar auditorías, gestionar checklist, hallazgos y planes de acción; si no aparece **Nueva Auditoría**, **Generar checklist normativo** o **Registrar hallazgo**, el usuario debe solicitar el permiso correspondiente al administrador.
+- **Qué es y dónde está**: Es el módulo para planificar y ejecutar auditorías del SG-SST conforme a **ISO 45001:2018, numeral 9.2**, y a la **Resolución 0312/2019, Estándares 6.1.2 (auditoría anual del SG-SST) y 6.1.4 (participación del COPASST)**. Se encuentra en **VERIFICAR → Auditorías Internas SST**, ruta /auditorias-internas. También se puede abrir desde los botones de los estándares 6.1.2 y 6.1.4 en la Evaluación Inicial. Requiere permisos para ver, crear/editar auditorías, gestionar checklist, hallazgos y planes de acción; si no aparece **Nueva Auditoría**, **Generar checklist normativo** o **Registrar hallazgo**, el usuario debe solicitar el permiso correspondiente al administrador.
 - **Estados del ciclo**: La auditoría avanza únicamente en este orden: **Programada → En ejecución → Completada → Cerrada**. La auditoría no se puede completar si queda algún criterio del checklist en **Pendiente de evaluar**. Al cerrarla se bloquean los cambios estructurales, pero continúa disponible el seguimiento de los planes de acción.
-- **Crear una auditoría — botón Nueva Auditoría**: Complete los campos reales del formulario: **Empresa** (solo cuando el usuario tiene acceso global), **Código**, **Fecha Programada**, **Título**, **Tipo** (`Interna`, `Externa` o `Seguimiento`), **Norma de Referencia** (`ISO 45001:2018`, `Resolución 0312/2019` o `Ambas Normas`), **Objetivo**, **Alcance** y **Auditor Líder**. El asistente **Smart Form** es opcional: puede auto-completar código, título, objetivo, alcance y auditor líder con trazabilidad SST; también se puede diligenciar todo manualmente. Si se activa **Planificada con COPASST**, debe seleccionarse el acta COPASST y registrar la fecha de aprobación.
-- **Ejemplo de datos para una prueba**: Código `AUD-INT-MANUAL-001`; título `Prueba funcional auditoría interna SST`; tipo `Interna`; norma `Ambas Normas`; objetivo `Verificar la conformidad del Sistema de Gestión de SST`; alcance `Procesos administrativos y operativos de la empresa`; auditor líder seleccionado del personal disponible. Al guardar, la auditoría queda en estado **Programada** y aparece la tarjeta **Ciclo de la auditoría**.
-- **Trazabilidad PHVA**: Dentro del detalle, en **Trazabilidad PHVA**, seleccione la fase (normalmente `Verificar`), escriba **Proceso PHVA** y **Estándar relacionado**, y pulse **Guardar trazabilidad PHVA**. Un ejemplo válido es: fase `Verificar`, proceso `Verificación y mejora del SG-SST`, estándar `Resolución 0312 de 2019 — Estándar 6.1.2`. Esta información se incorpora al informe individual.
-- **Equipo auditor**: En **Equipo auditor → Agregar integrante** se puede agregar un **Usuario interno** (seleccionándolo de la empresa) o un **Auditor externo** (nombre completo obligatorio; correo y organización opcionales). Para ambos se puede indicar el rol `Auditor`, `Auditor líder` u `Observador`, y las **Áreas asignadas**. El auditor líder de la planificación y los integrantes adicionales son registros relacionados, no la misma operación.
-- **Iniciar y generar checklist**: Abra la auditoría Programada y pulse **Iniciar auditoría**; el estado cambia a **En ejecución**. En **Checklist normativo y evidencias**, pulse **Generar checklist normativo**. En la prueba funcional de referencia se generaron **12 criterios**. Cada criterio tiene el selector **Resultado de la evaluación** con `Pendiente de evaluar`, `Cumple` y `No cumple`.
-- **Evaluar criterios y documentar evidencia**: Para cada criterio seleccione `Cumple` o `No cumple`, complete **Evidencia obtenida** y **Observaciones del auditor**. En **Fuente de evidencia** seleccione una de estas opciones exactas: `Registro interno del sistema`, `Archivo o documento externo` u `Observación o entrevista`. Para un registro interno complete **Módulo o proceso de origen**, **Referencia de la fuente** y **Fecha de la evidencia**; por ejemplo, Capacitaciones, Inspecciones, EPP o Matriz legal, con el nombre/ID del informe y su fecha. No vuelva a cargar un informe que ya existe en otro módulo. Para soportes externos use **Archivo o documento externo** y adjunte el archivo opcional; acepta `.jpg`, `.jpeg`, `.png`, `.pdf`, `.doc`, `.docx`, `.xls` y `.xlsx`, hasta **10 MB**. Para recorridos o entrevistas use **Observación o entrevista**.
-- **Resultado de cumplimiento**: El porcentaje se calcula desde el checklist guardado. En la prueba del manual, con 12 criterios evaluados, 11 `Cumple` y 1 `No cumple`, el resultado fue **92%**. Cuando todos los criterios estén evaluados, pulse **Marcar como completada**; se calculan las conformidades, no conformidades, hallazgos y porcentaje.
-- **Registrar un hallazgo**: En un criterio `No cumple` pulse **Registrar hallazgo**, o use el botón de la sección **Hallazgos y planes de acción**. El formulario tiene **Tipo** (`No conformidad menor`, `No conformidad mayor`, `Observación` o `Conformidad`), **Severidad** (`Baja`, `Media`, `Alta` o `Crítica`), **Descripción del hallazgo**, **Requisito incumplido o verificado**, **Área afectada**, **Referencia normativa**, **Responsable del área**, **Evidencia objetiva** y **Causa raíz inicial (opcional)**. Al guardar, el hallazgo inicia normalmente en estado **Abierto**.
-- **Crear el plan de acción**: En el hallazgo pulse **Crear plan de acción**. Complete **Tipo de acción** (`Correctiva`, `Preventiva` o `Mejora`), **Descripción de la acción**, **Justificación (opcional)**, **Responsable** y **Fecha compromiso**. Al guardar, el plan queda inicialmente **Abierto** con avance **0%**.
+- **Crear una auditoría — botón Nueva Auditoría**: Complete los campos reales del formulario: **Empresa** (solo cuando el usuario tiene acceso global), **Código**, **Fecha Programada**, **Título**, **Tipo** (Interna, Externa o Seguimiento), **Norma de Referencia** (ISO 45001:2018, Resolución 0312/2019 o Ambas Normas), **Objetivo**, **Alcance** y **Auditor Líder**. El asistente **Smart Form** es opcional: puede auto-completar código, título, objetivo, alcance y auditor líder con trazabilidad SST; también se puede diligenciar todo manualmente. Si se activa **Planificada con COPASST**, debe seleccionarse el acta COPASST y registrar la fecha de aprobación.
+- **Ejemplo de datos para una prueba**: Código AUD-INT-MANUAL-001; título Prueba funcional auditoría interna SST; tipo Interna; norma Ambas Normas; objetivo Verificar la conformidad del Sistema de Gestión de SST; alcance Procesos administrativos y operativos de la empresa; auditor líder seleccionado del personal disponible. Al guardar, la auditoría queda en estado **Programada** y aparece la tarjeta **Ciclo de la auditoría**.
+- **Trazabilidad PHVA**: Dentro del detalle, en **Trazabilidad PHVA**, seleccione la fase (normalmente Verificar), escriba **Proceso PHVA** y **Estándar relacionado**, y pulse **Guardar trazabilidad PHVA**. Un ejemplo válido es: fase Verificar, proceso Verificación y mejora del SG-SST, estándar Resolución 0312 de 2019 — Estándar 6.1.2. Esta información se incorpora al informe individual.
+- **Equipo auditor**: En **Equipo auditor → Agregar integrante** se puede agregar un **Usuario interno** (seleccionándolo de la empresa) o un **Auditor externo** (nombre completo obligatorio; correo y organización opcionales). Para ambos se puede indicar el rol Auditor, Auditor líder u Observador, y las **Áreas asignadas**. El auditor líder de la planificación y los integrantes adicionales son registros relacionados, no la misma operación.
+- **Iniciar y generar checklist**: Abra la auditoría Programada y pulse **Iniciar auditoría**; el estado cambia a **En ejecución**. En **Checklist normativo y evidencias**, pulse **Generar checklist normativo**. En la prueba funcional de referencia se generaron **12 criterios**. Cada criterio tiene el selector **Resultado de la evaluación** con Pendiente de evaluar, Cumple y No cumple.
+- **Evaluar criterios y documentar evidencia**: Para cada criterio seleccione Cumple o No cumple, complete **Evidencia obtenida** y **Observaciones del auditor**. En **Fuente de evidencia** seleccione Registro interno del sistema, Archivo o documento externo u Observación o entrevista. Para un registro interno complete **Módulo o proceso de origen**, **Referencia de la fuente** y **Fecha de la evidencia**; por ejemplo, Capacitaciones, Inspecciones, EPP o Matriz legal, con el nombre/ID del informe y su fecha. No vuelva a cargar un informe que ya existe en otro módulo. Para soportes externos use **Archivo o documento externo** y adjunte el archivo opcional; acepta JPG, JPEG, PNG, PDF, DOC, DOCX, XLS y XLSX, hasta **10 MB**. Para recorridos o entrevistas use **Observación o entrevista**.
+- **Resultado de cumplimiento**: El porcentaje se calcula desde el checklist guardado. En la prueba del manual, con 12 criterios evaluados, 11 Cumple y 1 No cumple, el resultado fue **92%**. Cuando todos los criterios estén evaluados, pulse **Marcar como completada**; se calculan las conformidades, no conformidades, hallazgos y porcentaje.
+- **Registrar un hallazgo**: En un criterio No cumple pulse **Registrar hallazgo**, o use el botón de la sección **Hallazgos y planes de acción**. El formulario tiene **Tipo** (No conformidad menor, No conformidad mayor, Observación o Conformidad), **Severidad** (Baja, Media, Alta o Crítica), **Descripción del hallazgo**, **Requisito incumplido o verificado**, **Área afectada**, **Referencia normativa**, **Responsable del área**, **Evidencia objetiva** y **Causa raíz inicial (opcional)**. Al guardar, el hallazgo inicia normalmente en estado **Abierto**.
+- **Crear el plan de acción**: En el hallazgo pulse **Crear plan de acción**. Complete **Tipo de acción** (Correctiva, Preventiva o Mejora), **Descripción de la acción**, **Justificación (opcional)**, **Responsable** y **Fecha compromiso**. Al guardar, el plan queda inicialmente **Abierto** con avance **0%**.
 - **Completar y cerrar la auditoría**: Cuando no haya criterios pendientes, pulse **Marcar como completada**. Después pulse **Cerrar auditoría**, que solo aparece en estado Completada. Registre **Conclusiones de cierre** y, si aplica, **Recomendaciones**; el **Responsable de aprobación** se registra automáticamente con el usuario autenticado. Confirme el cierre y verifique el estado **Cerrada**.
-- **Seguimiento, eficacia y cierre del hallazgo**: En el plan pulse **Actualizar seguimiento**. Registre **Estado** (`Abierto`, `En progreso`, `Completado`, `Verificado` o `Cerrado`), **Porcentaje de avance** (0 a 100), **Fecha de implementación**, **Observaciones de avance**, y en **Verificación de eficacia** seleccione `Eficaz` o `No eficaz`, indique **Fecha de verificación** y escriba **Resultado y evidencia de eficacia**. Para que un plan pueda quedar **Verificado** o **Cerrado** debe tener 100% de avance y eficacia confirmada. Cuando el plan sea eficaz, use **Verificar eficacia** en el hallazgo y luego **Cerrar hallazgo**, escribiendo las observaciones de cierre. Un hallazgo solo se cierra después de estar verificado y con sus planes al 100% y eficaces.
+- **Seguimiento, eficacia y cierre del hallazgo**: En el plan pulse **Actualizar seguimiento**. Registre **Estado** (Abierto, En progreso, Completado, Verificado o Cerrado), **Porcentaje de avance** (0 a 100), **Fecha de implementación**, **Observaciones de avance**, y en **Verificación de eficacia** seleccione Eficaz o No eficaz, indique **Fecha de verificación** y escriba **Resultado y evidencia de eficacia**. Para que un plan pueda quedar **Verificado** o **Cerrado** debe tener 100% de avance y eficacia confirmada. Cuando el plan sea eficaz, use **Verificar eficacia** en el hallazgo y luego **Cerrar hallazgo**, escribiendo las observaciones de cierre. Un hallazgo solo se cierra después de estar verificado y con sus planes al 100% y eficaces.
 - **Informe y protección**: En **Informe individual** pulse **Descargar informe PDF**. El informe incluye planificación, equipo auditor, trazabilidad PHVA, checklist, porcentaje de cumplimiento, hallazgos, planes, conclusiones y aprobación. Después de cerrar la auditoría, no se deben editar criterios, agregar/cambiar criterios, cambiar la descripción del hallazgo ni modificar la trazabilidad PHVA; esas ediciones estructurales están bloqueadas. **Actualizar seguimiento** de los planes sigue disponible.
-- **Resultado de referencia del manual**: En la empresa `DEMO-PRUEBA`, la auditoría `AUD-INT-E2E-20260916-1615` quedó **Cerrada**, con **12/12 criterios evaluados**, **11 conformes**, **92%**, hallazgo `NC-MEN-001-E2E` **Cerrado**, plan `ACC-001-E2E` **Verificado**, **100%** y eficaz. Esta auditoría se conserva como evidencia; para repetir la prueba se debe crear una auditoría nueva, no modificar esta evidencia cerrada.
+- **Resultado de referencia del manual**: En la empresa DEMO-PRUEBA, la auditoría AUD-INT-E2E-20260916-1615 quedó **Cerrada**, con **12/12 criterios evaluados**, **11 conformes**, **92%**, hallazgo NC-MEN-001-E2E **Cerrado**, plan ACC-001-E2E **Verificado**, **100%** y eficaz. Esta auditoría se conserva como evidencia; para repetir la prueba se debe crear una auditoría nueva, no modificar esta evidencia cerrada.
 
 ### Revisión por la Dirección (Estándar 6.1.3)
 - **Qué debe incluir la revisión**: Abra su Evaluación Inicial y busque el estándar 6.1.3. Haga clic en él y se abrirá el modo de verificación. Ahí encontrará el módulo donde puede generar el formato con auditorías, indicadores, acciones correctivas y conclusiones.
@@ -810,7 +810,7 @@ Reglas importantes:
    1. En la Evaluación Inicial, buscar el **Estándar 3.2.1** "Reporte de AT e Incidente de Trabajo"...
    2. Clic en el botón del módulo → en /accidentes clic "Nuevo Accidente"...
    3. ..."
-3. REGLA FUNDAMENTAL: Cuando el usuario pregunte cómo hacer algo relacionado con cumplimiento SST (registrar accidentes, capacitaciones, inspecciones, EPP, COPASST, etc.), el punto de partida SIEMPRE es la **Evaluación Inicial**. ASUME que el usuario ya sabe cómo llegar a ella — NUNCA expliques cómo abrir la Evaluación Inicial ni cómo navegar hasta ella. Ve directo al grano: indica qué estándar buscar y cómo usar el módulo. El flujo que debes describir es: buscar el **Estándar X.X.X** en la Evaluación Inicial → clic en el botón del módulo → completar los campos → Guardar. NUNCA digas "Ir a Hacer → Accidentes" o "Ir a Planear → Capacitaciones" directamente. NUNCA digas "Ir a la pestaña PLANEAR, seleccionar Gestión Integral, luego Evaluación Inicial". Todo se gestiona DESDE la Evaluación Inicial que el usuario ya tiene. **Excepción para Auditorías Internas SST:** también se puede entrar directamente por **VERIFICAR → Auditorías Internas SST** (ruta `/auditorias-internas`); los estándares 6.1.2 y 6.1.4 incluyen botones que llevan al mismo módulo. LA ÚNICA OTRA EXCEPCIÓN es el módulo de **Trabajadores**: los trabajadores se registran SIEMPRE desde el menú Planear > Trabajadores, NUNCA desde la Evaluación Inicial. Es el primer paso antes de crear la Evaluación Inicial.
+3. REGLA FUNDAMENTAL: Cuando el usuario pregunte cómo hacer algo relacionado con cumplimiento SST (registrar accidentes, capacitaciones, inspecciones, EPP, COPASST, etc.), el punto de partida SIEMPRE es la **Evaluación Inicial**. ASUME que el usuario ya sabe cómo llegar a ella — NUNCA expliques cómo abrir la Evaluación Inicial ni cómo navegar hasta ella. Ve directo al grano: indica qué estándar buscar y cómo usar el módulo. El flujo que debes describir es: buscar el **Estándar X.X.X** en la Evaluación Inicial → clic en el botón del módulo → completar los campos → Guardar. NUNCA digas "Ir a Hacer → Accidentes" o "Ir a Planear → Capacitaciones" directamente. NUNCA digas "Ir a la pestaña PLANEAR, seleccionar Gestión Integral, luego Evaluación Inicial". Todo se gestiona DESDE la Evaluación Inicial que el usuario ya tiene. **Excepción para Auditorías Internas SST:** también se puede entrar directamente por **VERIFICAR → Auditorías Internas SST** (ruta /auditorias-internas); los estándares 6.1.2 y 6.1.4 incluyen botones que llevan al mismo módulo. LA ÚNICA OTRA EXCEPCIÓN es el módulo de **Trabajadores**: los trabajadores se registran SIEMPRE desde el menú Planear > Trabajadores, NUNCA desde la Evaluación Inicial. Es el primer paso antes de crear la Evaluación Inicial.
 4. REGLA DE ESTÁNDARES Y DILIGENCIAMIENTO (OBLIGATORIA): Cuando respondas sobre cómo hacer cualquier actividad SST, SIEMPRE debes:
    a) Mencionar el número exacto del estándar de la Resolución 0312/2019 que corresponde (ejemplo: "Estándar 3.2.1", "Estándar 2.6.1"). Búscalo en la sección "ESTÁNDARES DE LA RESOLUCIÓN 0312/2019" de tu base de conocimiento.
    b) Explicar paso a paso cómo diligenciar el módulo: qué campos llenar, qué botones usar, qué información se requiere.
@@ -864,6 +864,156 @@ export function getDirectGuidanceForQuestion(question: string): string | null {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
+
+  const asksInternalAudit =
+    (normalizedQuestion.includes("auditoria interna") || normalizedQuestion.includes("auditorias internas")) &&
+    !normalizedQuestion.includes("pesv");
+
+  if (asksInternalAudit) {
+    return `**Auditorías Internas SST:** el módulo permite planificar, ejecutar, documentar, cerrar y verificar la eficacia de una auditoría del SG-SST.
+
+Leer más...
+
+### Manual paso a paso — Auditoría Interna SST
+
+**Referencia y ubicación**
+- Corresponde a **ISO 45001:2018, numeral 9.2**, y a la **Resolución 0312/2019, Estándares 6.1.2 y 6.1.4**.
+- Entra por **VERIFICAR → Auditorías Internas SST**, ruta **/auditorias-internas**. También puedes llegar desde los botones de los estándares 6.1.2 y 6.1.4 en la Evaluación Inicial.
+- Necesitas permisos para ver, crear o editar auditorías y para gestionar checklist, hallazgos y planes. Si no aparecen **Nueva Auditoría**, **Generar checklist normativo** o **Registrar hallazgo**, solicita esos permisos al administrador.
+
+### 1. Preparar la prueba
+Usa una empresa y un usuario con permisos de auditorías internas. Puedes preparar un PDF o una imagen para probar el cargue de evidencia; el archivo es opcional. Para repetir la prueba, crea una auditoría nueva: la auditoría de evidencia cerrada no debe modificarse.
+
+Datos sugeridos:
+- Código: **AUD-INT-MANUAL-001**
+- Título: **Prueba funcional auditoría interna SST**
+- Tipo: **Interna**
+- Norma de referencia: **Ambas Normas**
+- Objetivo: **Verificar la conformidad del Sistema de Gestión de SST**
+- Alcance: **Procesos administrativos y operativos de la empresa**
+- Fase PHVA: **Verificar**
+- Proceso PHVA: **Verificación y mejora del SG-SST**
+- Estándar relacionado: **Resolución 0312 de 2019 — Estándar 6.1.2**
+
+### 2. Crear la auditoría
+1. Pulsa **Nueva Auditoría**.
+2. Completa **Código**, **Fecha Programada**, **Título**, **Tipo**, **Norma de Referencia**, **Objetivo**, **Alcance** y **Auditor Líder**.
+3. Si aparece **Smart Form**, puedes aplicarlo para autocompletar datos o diligenciarlos manualmente.
+4. Si activas **Planificada con COPASST**, selecciona el acta COPASST y registra la fecha de aprobación.
+5. Pulsa **Crear auditoría**.
+
+La auditoría debe aparecer en estado **Programada** y mostrar la tarjeta **Ciclo de la auditoría**. Los tipos disponibles son **Interna**, **Externa** y **Seguimiento**. Las normas disponibles son **ISO 45001:2018**, **Resolución 0312/2019** y **Ambas Normas**.
+
+### 3. Guardar la trazabilidad PHVA
+1. En **Trazabilidad PHVA**, selecciona la fase **Verificar**.
+2. Escribe el **Proceso PHVA**.
+3. Escribe el **Estándar relacionado**.
+4. Pulsa **Guardar trazabilidad PHVA**.
+
+La trazabilidad se incluirá en el informe individual.
+
+### 4. Registrar el equipo auditor
+1. En **Equipo auditor**, pulsa **Agregar integrante**.
+2. Selecciona **Usuario interno** o **Auditor externo**.
+3. Para un usuario interno, selecciona el usuario de la empresa.
+4. Para un auditor externo, registra el nombre completo; el correo y la organización son opcionales.
+5. Selecciona el rol **Auditor**, **Auditor líder** u **Observador**.
+6. Registra las **Áreas asignadas** si aplica y pulsa **Agregar integrante**.
+
+### 5. Iniciar la auditoría y generar el checklist
+1. Abre la auditoría en estado **Programada**.
+2. Pulsa **Iniciar auditoría**.
+3. Confirma que el estado cambió a **En ejecución**.
+4. En **Checklist normativo y evidencias**, pulsa **Generar checklist normativo**.
+
+En la prueba funcional de referencia se generaron **12 criterios**. Cada criterio tiene **Resultado de la evaluación** con tres opciones: **Pendiente de evaluar**, **Cumple** y **No cumple**.
+
+### 6. Evaluar criterios y registrar evidencias
+Para cada criterio:
+1. Selecciona **Cumple** o **No cumple** en **Resultado de la evaluación**.
+2. Escribe la **Evidencia obtenida**.
+3. Selecciona la **Fuente de evidencia**:
+   - **Registro interno del sistema**: cuando el soporte ya existe en Capacitaciones, Inspecciones, EPP, Matriz legal u otro módulo.
+   - **Archivo o documento externo**: cuando el soporte viene de fuera del sistema.
+   - **Observación o entrevista**: para recorridos, entrevistas u observaciones directas.
+4. Si eliges **Registro interno del sistema**, completa **Módulo o proceso de origen**, **Referencia de la fuente** y **Fecha de la evidencia**. No vuelvas a cargar un informe que ya existe en la plataforma.
+5. Escribe las **Observaciones del auditor**. Los textos se guardan al salir del campo.
+6. Si usas un archivo externo, pulsa **Adjuntar archivo externo (opcional)**. Se aceptan JPG, JPEG, PNG, PDF, DOC, DOCX, XLS y XLSX de hasta **10 MB**.
+
+### 7. Registrar un hallazgo
+Si un criterio queda en **No cumple**, pulsa **Registrar hallazgo**. También puedes usar el botón de la sección **Hallazgos y planes de acción**.
+
+Completa:
+- **Tipo**: No conformidad menor, No conformidad mayor, Observación o Conformidad.
+- **Severidad**: Baja, Media, Alta o Crítica.
+- **Descripción del hallazgo**.
+- **Requisito incumplido o verificado**.
+- **Área afectada**.
+- **Referencia normativa**.
+- **Responsable del área**.
+- **Evidencia objetiva**.
+- **Causa raíz inicial (opcional)**.
+
+Pulsa **Guardar hallazgo** y verifica que aparezca en estado **Abierto**.
+
+### 8. Crear el plan de acción
+1. En el hallazgo pulsa **Crear plan de acción**.
+2. Selecciona el **Tipo de acción**: Correctiva, Preventiva o Mejora.
+3. Escribe la **Descripción de la acción**.
+4. Registra la **Justificación** si aplica.
+5. Indica el **Responsable**.
+6. Indica la **Fecha compromiso**.
+7. Pulsa **Guardar plan**.
+
+El plan debe aparecer inicialmente en estado **Abierto** y con avance de **0%**.
+
+### 9. Completar la auditoría
+1. Revisa todos los criterios del checklist.
+2. Verifica que ninguno esté en **Pendiente de evaluar**.
+3. Pulsa **Marcar como completada**.
+4. Confirma el estado **Completada** y los resultados calculados.
+
+El porcentaje se calcula con el checklist. En la prueba del manual, 12 criterios evaluados con 11 **Cumple** y 1 **No cumple** produjeron **92% de cumplimiento**.
+
+### 10. Registrar conclusiones, recomendaciones y aprobación
+1. Con la auditoría en estado **Completada**, pulsa **Cerrar auditoría**.
+2. Escribe las **Conclusiones de cierre**.
+3. Escribe las **Recomendaciones** si aplica.
+4. Verifica el **Responsable de aprobación**, que se registra automáticamente con el usuario autenticado.
+5. Pulsa **Confirmar cierre**.
+
+El estado final de la auditoría debe ser **Cerrada**.
+
+### 11. Actualizar el plan después del cierre
+El cierre de la auditoría no elimina el seguimiento de las acciones correctivas.
+1. En el plan pulsa **Actualizar seguimiento**.
+2. Registra el **Estado**.
+3. Registra el **Porcentaje de avance**; para verificarlo debe ser **100**.
+4. Registra la **Fecha de implementación** y las **Observaciones de avance**.
+5. En **Verificación de eficacia**, selecciona **Eficaz**.
+6. Registra la **Fecha de verificación**.
+7. Escribe el **Resultado y evidencia de eficacia**.
+8. Pulsa **Guardar seguimiento**.
+
+Un plan solo puede pasar a **Verificado** o **Cerrado** cuando tiene 100% de avance y eficacia confirmada.
+
+### 12. Verificar y cerrar el hallazgo
+1. Cuando el plan sea eficaz, pulsa **Verificar eficacia** en el hallazgo.
+2. Escribe las observaciones solicitadas y confirma.
+3. Cuando el hallazgo esté en estado **Verificado**, pulsa **Cerrar hallazgo**.
+4. Escribe las observaciones de cierre y pulsa **Confirmar**.
+
+El estado final del hallazgo debe ser **Cerrado**.
+
+### 13. Descargar el informe
+En la tarjeta **Informe individual**, pulsa **Descargar informe PDF**. El informe debe contener la planificación, la trazabilidad PHVA, el equipo auditor, el checklist, el porcentaje de cumplimiento, los hallazgos, los planes, las conclusiones y la aprobación.
+
+### 14. Validar la protección de una auditoría cerrada
+Después del cierre, intenta editar un criterio, agregar o cambiar criterios, cambiar la descripción del hallazgo o cambiar la trazabilidad PHVA. Esas ediciones estructurales deben estar bloqueadas. **Actualizar seguimiento** del plan debe continuar disponible.
+
+### Resultado de referencia en DEMO-PRUEBA
+La prueba funcional conservada en DEMO-PRUEBA terminó con la auditoría **Cerrada**, **12/12 criterios evaluados**, **11 conformes**, **92%**, un hallazgo cerrado y un plan verificado al **100%** y eficaz. Para repetirla, crea otra auditoría y no modifiques la evidencia cerrada.`;
+  }
 
   if (!normalizedQuestion.includes("convivencia")) {
     return null;

@@ -18,3 +18,9 @@ For short, high-intent names that must always route to one known workflow, add d
 **Why:** Prompt instructions alone cannot reliably make a language model infer that a one-word query is a navigation request.
 
 **How to apply:** Reserve deterministic guidance for unambiguous phrases with one supported workflow; keep the LLM path for broader, contextual, or explanatory questions.
+
+Auditorías Internas SST is a high-intent workflow that needs the same deterministic treatment: the response must reproduce the manual's ordered steps from planning through checklist, findings, action-plan efficacy, PDF report, and closed-audit protection. It is a direct Verificar module, not only an Evaluación Inicial submodule; exclude Auditoría Interna PESV from this routing.
+
+**Why:** The global assistant navigation rule starts most SST activities from Evaluación Inicial, but this module has its own Verificar route and a long stateful workflow. A generic LLM response omitted the controls that prevent completion or finding closure.
+
+**How to apply:** Keep exact labels and options from the audit forms in the knowledge base, and route unambiguous queries containing Auditoría Interna to deterministic guidance before the model call. Test the SSE endpoint for the ordered sections and the 92% reference result.
