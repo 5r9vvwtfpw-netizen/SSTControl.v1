@@ -112,7 +112,7 @@ import {
 } from "@/components/ui/tooltip";
 
 // Roles que requieren credenciales SST
-const SST_ROLES = ["coordinador_sst", "lso", "coordinador_salud", "responsable_sst", "admin"] as const;
+const SST_ROLES = ["coordinador_sst", "lso", "coordinador_salud", "responsable_sst"] as const;
 
 // Opciones para tipo de profesión SST
 const SST_PROFESSION_OPTIONS = [
@@ -413,7 +413,7 @@ export default function GestionUsuarios() {
     defaultValues: {
       username: "",
       password: "",
-      role: "trabajador",
+      role: "vigia_sst",
       fullName: "",
       email: "",
       identificationNumber: "",
@@ -431,6 +431,7 @@ export default function GestionUsuarios() {
 
   // Watch the role to conditionally show SST credentials section
   const selectedRole = form.watch("role");
+  const isGeneralManager = selectedRole === "admin";
   const selectedWorkerId = form.watch("workerId");
   const selectedCompanyId = form.watch("companyId");
   const selectedWorker = useMemo(
@@ -642,7 +643,7 @@ export default function GestionUsuarios() {
     form.reset({
       username: "",
       password: "",
-      role: "trabajador",
+      role: "vigia_sst",
       fullName: "",
       email: "",
       identificationNumber: "",
@@ -709,57 +710,59 @@ export default function GestionUsuarios() {
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="workerId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Trabajador / Nombre Completo</FormLabel>
-                      <Select
-                        onValueChange={(value) => {
-                          if (value === NO_WORKER_VALUE) {
-                            field.onChange(null);
-                            if (!editingUser) {
-                              form.setValue("username", "", { shouldDirty: true });
-                              form.setValue("fullName", "", { shouldDirty: true });
-                              form.setValue("email", "", { shouldDirty: true });
-                              form.setValue("department", "", { shouldDirty: true });
+                {!isGeneralManager && (
+                  <FormField
+                    control={form.control}
+                    name="workerId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Trabajador / Nombre Completo</FormLabel>
+                        <Select
+                          onValueChange={(value) => {
+                            if (value === NO_WORKER_VALUE) {
+                              field.onChange(null);
+                              if (!editingUser) {
+                                form.setValue("username", "", { shouldDirty: true });
+                                form.setValue("fullName", "", { shouldDirty: true });
+                                form.setValue("email", "", { shouldDirty: true });
+                                form.setValue("department", "", { shouldDirty: true });
+                              }
+                              form.setValue("password", "", { shouldDirty: true });
+                              return;
                             }
-                            form.setValue("password", "", { shouldDirty: true });
-                            return;
-                          }
-                          handleWorkerSelection(value);
-                        }}
-                        value={field.value || NO_WORKER_VALUE}
-                      >
-                        <FormControl>
-                          <SelectTrigger data-testid="select-user-worker">
-                            <SelectValue placeholder={workersLoading ? "Cargando trabajadores..." : "Seleccionar trabajador"} />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value={NO_WORKER_VALUE}>
-                            <span className="text-muted-foreground">Sin trabajador vinculado</span>
-                          </SelectItem>
-                          {availableWorkers.map((worker) => (
-                            <SelectItem key={worker.id} value={worker.id}>
-                              {worker.name} — {worker.identificationNumber}
+                            handleWorkerSelection(value);
+                          }}
+                          value={field.value || NO_WORKER_VALUE}
+                        >
+                          <FormControl>
+                            <SelectTrigger data-testid="select-user-worker">
+                              <SelectValue placeholder={workersLoading ? "Cargando trabajadores..." : "Seleccionar trabajador"} />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value={NO_WORKER_VALUE}>
+                              <span className="text-muted-foreground">Sin trabajador vinculado</span>
                             </SelectItem>
-                          ))}
-                          {editingUser && field.value && !availableWorkers.some((worker) => worker.id === field.value) && (
-                            <SelectItem value={field.value}>
-                              {selectedWorker?.name || form.getValues("fullName")} — trabajador actual
-                            </SelectItem>
-                          )}
-                        </SelectContent>
-                      </Select>
-                      <FormDescription>
-                        Al seleccionar un trabajador se completan el usuario, email, área y contraseña.
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                            {availableWorkers.map((worker) => (
+                              <SelectItem key={worker.id} value={worker.id}>
+                                {worker.name} — {worker.identificationNumber}
+                              </SelectItem>
+                            ))}
+                            {editingUser && field.value && !availableWorkers.some((worker) => worker.id === field.value) && (
+                              <SelectItem value={field.value}>
+                                {selectedWorker?.name || form.getValues("fullName")} — trabajador actual
+                              </SelectItem>
+                            )}
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          Al seleccionar un trabajador se completan el usuario, email, área y contraseña.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
 
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
@@ -816,7 +819,7 @@ export default function GestionUsuarios() {
                   />
                 </div>
 
-                {!selectedWorkerId && (
+                {!isGeneralManager && !selectedWorkerId && (
                   <FormField
                     control={form.control}
                     name="fullName"
@@ -877,7 +880,7 @@ export default function GestionUsuarios() {
                   <input type="hidden" {...form.register("companyId")} />
                 )}
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className={isGeneralManager ? "" : "grid grid-cols-2 gap-4"}>
                   <FormField
                     control={form.control}
                     name="email"
@@ -893,38 +896,45 @@ export default function GestionUsuarios() {
                             data-testid="input-email"
                           />
                         </FormControl>
+                        <FormDescription>
+                          {isGeneralManager
+                            ? "Se utilizará para enviar las credenciales de acceso a los módulos de auditoría."
+                            : null}
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
 
-                  <FormField
-                    control={form.control}
-                    name="department"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Área / Departamento</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value || ""}
-                        >
-                          <FormControl>
-                            <SelectTrigger data-testid="select-department">
-                              <SelectValue placeholder="Seleccionar área" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {AREAS_EMPRESA.map((area) => (
-                              <SelectItem key={area} value={area}>
-                                {area}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  {!isGeneralManager && (
+                    <FormField
+                      control={form.control}
+                      name="department"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Área / Departamento</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value || ""}
+                          >
+                            <FormControl>
+                              <SelectTrigger data-testid="select-department">
+                                <SelectValue placeholder="Seleccionar área" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {AREAS_EMPRESA.map((area) => (
+                                <SelectItem key={area} value={area}>
+                                  {area}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
                 </div>
 
                 <FormField
@@ -941,12 +951,11 @@ export default function GestionUsuarios() {
                         </FormControl>
                         <SelectContent>
                           {/* Roles de administración de nivel empresa */}
-                          <SelectItem value="superusuario">
-                            <div className="flex items-center gap-2">
-                              <Shield className="h-4 w-4 text-yellow-600" />
-                              <span>{roleLabels.superusuario}</span>
-                            </div>
-                          </SelectItem>
+                          {editingUser && field.value === "superusuario" && (
+                            <SelectItem value="superusuario">
+                              {roleLabels.superusuario} (provisionado al crear la empresa)
+                            </SelectItem>
+                          )}
                           <SelectItem value="admin">
                             <div className="flex items-center gap-2">
                               <Shield className="h-4 w-4" />
@@ -987,10 +996,11 @@ export default function GestionUsuarios() {
                             {roleLabels.tecnico_mecanico}
                           </SelectItem>
 
-                          {/* Rol básico */}
-                          <SelectItem value="trabajador">
-                            {roleLabels.trabajador}
-                          </SelectItem>
+                          {editingUser && field.value === "trabajador" && (
+                            <SelectItem value="trabajador">
+                              {roleLabels.trabajador} (gestionado desde contrato)
+                            </SelectItem>
+                          )}
                         </SelectContent>
                       </Select>
                       <FormDescription>
