@@ -472,10 +472,13 @@ export default function GestionUsuarios() {
     onSuccess: (data: UserWithoutPassword & {
       emailSent?: boolean;
       partialSuccess?: boolean;
+      emailSkippedReason?: string;
     }) => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       const emailStatus = data.emailSent
         ? " Las credenciales fueron enviadas al correo registrado."
+        : data.emailSkippedReason
+          ? ` ${data.emailSkippedReason}`
         : data.partialSuccess
           ? " El usuario fue creado, pero no se pudo enviar el correo de credenciales."
           : "";
