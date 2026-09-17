@@ -206,7 +206,7 @@ export function getEstandaresLiberados(chapter: Chapter): EstandarInfo[] {
 export function calcularEstandaresLiberados(
   trabajadores: number,
   nivelRiesgoManual: RiskLevel | null | undefined,
-  ciiuCode?: string | null
+  ciiuCode?: string | string[] | null
 ): EstandaresLiberadosResult {
   // Determinar nivel de riesgo: prioridad al manual, luego CIIU, luego default
   let nivelRiesgo: RiskLevel;
@@ -215,8 +215,12 @@ export function calcularEstandaresLiberados(
   if (nivelRiesgoManual) {
     nivelRiesgo = nivelRiesgoManual;
     riesgoSource = 'manual';
-  } else if (ciiuCode) {
-    const riesgoCiiu = getRiskLevelFromCiiu(ciiuCode);
+  } else if (ciiuCode && (Array.isArray(ciiuCode) ? ciiuCode.length > 0 : true)) {
+    const codes = Array.isArray(ciiuCode) ? ciiuCode.filter(Boolean) : [ciiuCode];
+    const riesgoCiiu = codes
+      .map(code => getRiskLevelFromCiiu(code))
+      .filter(Boolean)
+      .sort((a, b) => "I II III IV V".split(" ").indexOf(b!) - "I II III IV V".split(" ").indexOf(a!))[0] as RiskLevel | undefined;
     if (riesgoCiiu) {
       nivelRiesgo = riesgoCiiu;
       riesgoSource = 'ciiu';
@@ -232,7 +236,7 @@ export function calcularEstandaresLiberados(
   const totalSistema = CATALOGO_ESTANDARES.length;
   
   const sourceMsg = riesgoSource === 'ciiu' 
-    ? ` (Riesgo ${nivelRiesgo} determinado automáticamente desde CIIU ${ciiuCode})`
+      ? ` (Riesgo ${nivelRiesgo} determinado automáticamente desde CIIU ${Array.isArray(ciiuCode) ? ciiuCode.filter(Boolean).join(", ") : ciiuCode})`
     : riesgoSource === 'manual' 
       ? ` (Riesgo ${nivelRiesgo} asignado manualmente)`
       : ' (Riesgo I por defecto)';
@@ -256,7 +260,7 @@ export interface EstandaresLiberadosCiiuProps {
   /** Nivel de riesgo manual (opcional - si no se proporciona, se deriva del CIIU) */
   nivelRiesgo?: RiskLevel | null;
   /** Código CIIU de la empresa (se usa para derivar el riesgo si no hay riesgo manual) */
-  ciiuCode?: string | null;
+  ciiuCode?: string | string[] | null;
   companyName?: string;
   showDetails?: boolean;
 }
@@ -284,8 +288,12 @@ export function EstandaresLiberadosCiiu({
   // Calcular el nivel de riesgo efectivo (para mostrar en la UI)
   const riesgoEfectivo = useMemo((): RiskLevel => {
     if (nivelRiesgo) return nivelRiesgo;
-    if (ciiuCode) {
-      const riesgoCiiu = getRiskLevelFromCiiu(ciiuCode);
+    if (ciiuCode && (Array.isArray(ciiuCode) ? ciiuCode.length > 0 : true)) {
+      const codes = Array.isArray(ciiuCode) ? ciiuCode.filter(Boolean) : [ciiuCode];
+      const riesgoCiiu = codes
+        .map(code => getRiskLevelFromCiiu(code))
+        .filter(Boolean)
+        .sort((a, b) => "I II III IV V".split(" ").indexOf(b!) - "I II III IV V".split(" ").indexOf(a!))[0] as RiskLevel | undefined;
       if (riesgoCiiu) return riesgoCiiu;
     }
     return "I";
@@ -328,9 +336,9 @@ export function EstandaresLiberadosCiiu({
             <Badge className={getRiskBadgeColor(riesgoEfectivo)} data-testid="badge-riesgo">
               Riesgo {riesgoEfectivo}
             </Badge>
-            {ciiuCode && (
+            {ciiuCode && (Array.isArray(ciiuCode) ? ciiuCode.length > 0 : true) && (
               <Badge variant="outline" data-testid="badge-ciiu">
-                CIIU {ciiuCode}
+                CIIU {Array.isArray(ciiuCode) ? ciiuCode.filter(Boolean).join(", ") : ciiuCode}
               </Badge>
             )}
           </div>

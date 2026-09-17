@@ -42,23 +42,22 @@ import { getCiiuRiskClassification, MARCO_LEGAL_CLASIFICACION_RIESGOS } from "@s
  */
 export function getRiskLevelFromCiiu(ciiuCode: string | null | undefined): RiskLevel | null {
   if (!ciiuCode) return null;
-  
+
   const riesgoPeligros = getRiskFromPeligros(ciiuCode);
   if (riesgoPeligros) return riesgoPeligros;
-  
+
   const clasificacion = getCiiuRiskClassification(ciiuCode);
-  if (clasificacion.found) {
-    return clasificacion.riskLevel;
-  }
-  
-  return null;
+  return clasificacion.found ? clasificacion.riskLevel : null;
 }
 
 export { MARCO_LEGAL_CLASIFICACION_RIESGOS };
 
 export interface CompanyContext {
-  /** Código CIIU de la empresa (4 dígitos) */
+  /** Códigos CIIU de la empresa (principal y actividades adicionales) */
   ciiuCode: string | null;
+  ciiuCode2?: string | null;
+  ciiuCode3?: string | null;
+  ciiuCode4?: string | null;
   /** Número de trabajadores */
   trabajadores: number;
   /** Nivel de riesgo manual (opcional - se deriva del CIIU si no se proporciona) */
@@ -90,7 +89,8 @@ export interface IpercIntegracionResult {
  * Esta función es la fuente de verdad para la integración CIIU→Riesgo→Capítulo→Estándares
  */
 export function calcularContextoIperc(context: CompanyContext): IpercIntegracionResult {
-  const { ciiuCode, trabajadores, nivelRiesgoManual } = context;
+  const { ciiuCode, ciiuCode2, ciiuCode3, ciiuCode4, trabajadores, nivelRiesgoManual } = context;
+  const ciiuCodes = [ciiuCode, ciiuCode2, ciiuCode3, ciiuCode4].filter(Boolean) as string[];
   
   // 1. Determinar nivel de riesgo
   let nivelRiesgo: RiskLevel;
@@ -99,8 +99,11 @@ export function calcularContextoIperc(context: CompanyContext): IpercIntegracion
   if (nivelRiesgoManual) {
     nivelRiesgo = nivelRiesgoManual;
     riesgoSource = 'manual';
-  } else if (ciiuCode) {
-    const riesgoCiiu = getRiskLevelFromCiiu(ciiuCode);
+  } else if (ciiuCodes.length > 0) {
+    const riesgoCiiu = ciiuCodes
+      .map(code => getRiskLevelFromCiiu(code))
+      .filter(Boolean)
+      .sort((a, b) => "I II III IV V".split(" ").indexOf(b!) - "I II III IV V".split(" ").indexOf(a!))[0] as RiskLevel | undefined;
     if (riesgoCiiu) {
       nivelRiesgo = riesgoCiiu;
       riesgoSource = 'ciiu';
@@ -118,12 +121,12 @@ export function calcularContextoIperc(context: CompanyContext): IpercIntegracion
   const estandares = getEstandaresLiberados(chapter);
   
   // 3. Obtener peligros del CIIU
-  const ciiuData = getCiiuPeligrosData(ciiuCode);
+  const ciiuData = getCiiuPeligrosData(ciiuCodes);
   
   // 4. Generar mensaje
   let mensaje = "";
   if (riesgoSource === 'ciiu') {
-    mensaje = `CIIU ${ciiuCode} → Riesgo ${nivelRiesgo} → ${estandares.length} estándares obligatorios`;
+    mensaje = `CIIU ${ciiuCodes.join(", ")} → Riesgo ${nivelRiesgo} → ${estandares.length} estándares obligatorios`;
   } else if (riesgoSource === 'manual') {
     mensaje = `Riesgo ${nivelRiesgo} (manual) → ${estandares.length} estándares obligatorios`;
   } else {
@@ -180,7 +183,7 @@ export function IpercIntegracionCiiu({
       <EstandaresLiberadosCiiu
         trabajadores={company.trabajadores}
         nivelRiesgo={company.nivelRiesgoManual}
-        ciiuCode={company.ciiuCode}
+        ciiuCode={[company.ciiuCode, company.ciiuCode2, company.ciiuCode3, company.ciiuCode4].filter(Boolean) as string[]}
         companyName={company.companyName}
       />
     );
@@ -189,7 +192,7 @@ export function IpercIntegracionCiiu({
   if (soloPeligros) {
     return (
       <IpercCiiuFilter
-        ciiuCode={company.ciiuCode}
+          ciiuCode={[company.ciiuCode, company.ciiuCode2, company.ciiuCode3, company.ciiuCode4].filter(Boolean) as string[]}
         companyName={company.companyName}
         riskLevel={contexto.nivelRiesgo}
         onSelectPeligro={onSelectPeligro}
@@ -211,9 +214,9 @@ export function IpercIntegracionCiiu({
               </CardTitle>
             </div>
             <div className="flex gap-2 flex-wrap">
-              {company.ciiuCode && (
+              {[company.ciiuCode, company.ciiuCode2, company.ciiuCode3, company.ciiuCode4].filter(Boolean).length > 0 && (
                 <Badge variant="outline" data-testid="badge-ciiu-context">
-                  CIIU {company.ciiuCode}
+                  CIIU {[company.ciiuCode, company.ciiuCode2, company.ciiuCode3, company.ciiuCode4].filter(Boolean).join(", ")}
                 </Badge>
               )}
               <Badge 
@@ -233,7 +236,7 @@ export function IpercIntegracionCiiu({
         </CardHeader>
       </Card>
 
-      {!company.ciiuCode && (
+      {[company.ciiuCode, company.ciiuCode2, company.ciiuCode3, company.ciiuCode4].filter(Boolean).length === 0 && (
         <Alert data-testid="alert-sin-ciiu">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Sin código CIIU</AlertTitle>
@@ -271,14 +274,14 @@ export function IpercIntegracionCiiu({
           <EstandaresLiberadosCiiu
             trabajadores={company.trabajadores}
             nivelRiesgo={company.nivelRiesgoManual}
-            ciiuCode={company.ciiuCode}
+            ciiuCode={[company.ciiuCode, company.ciiuCode2, company.ciiuCode3, company.ciiuCode4].filter(Boolean) as string[]}
             companyName={company.companyName}
           />
         </TabsContent>
         
         <TabsContent value="peligros" className="mt-4">
           <IpercCiiuFilter
-            ciiuCode={company.ciiuCode}
+            ciiuCode={[company.ciiuCode, company.ciiuCode2, company.ciiuCode3, company.ciiuCode4].filter(Boolean) as string[]}
             companyName={company.companyName}
             riskLevel={contexto.nivelRiesgo}
             onSelectPeligro={onSelectPeligro}

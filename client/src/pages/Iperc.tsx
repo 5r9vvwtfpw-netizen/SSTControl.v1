@@ -21,6 +21,8 @@ import { z } from "zod";
 import { RiskHeatmap } from "@/components/RiskHeatmap";
 import { peligrosGTC45Predefinidos, getPeligroByCodigo, clasificacionPeligroLabels } from "@/data/peligros-gtc45-predefinidos";
 import { PeligroDialog } from "@/components/PeligroDialog";
+import { IpercIntegracionCiiu } from "@/components/IpercIntegracionCiiu";
+import { PeligroEspecificoSector } from "@/data/peligros-por-ciiu";
 import { hasCompanyAdminAccess, hasGlobalAccess } from "@shared/permissions";
 import { useSearch } from "wouter";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -287,6 +289,13 @@ export default function Iperc() {
   }, [selectedArea, dialogOpen, matrices.length, editingMatriz]);
 
   const selectedMatriz = matrices.find(m => m.id === selectedMatrizId);
+  const selectedCompany = useMemo(() => {
+    if (selectedMatriz?.companyId) {
+      return companies.find(company => company.id === selectedMatriz.companyId)
+        || (currentCompany?.id === selectedMatriz.companyId ? currentCompany : undefined);
+    }
+    return currentCompany || companies[0];
+  }, [selectedMatriz, companies, currentCompany]);
 
   const openHeatmap = (matrizId: string) => {
     setSelectedMatrizId(matrizId);
@@ -311,6 +320,23 @@ export default function Iperc() {
 
   const openPeligroDialog = (peligro?: PeligroIperc) => {
     setSelectedPeligro(peligro || null);
+    setPeligroDialogOpen(true);
+  };
+
+  const handleSelectCiiuPeligro = (peligro: PeligroEspecificoSector) => {
+    setSelectedPeligro(null);
+    setPeligroPrefillValues({
+      clasificacion: peligro.clasificacion,
+      descripcionPeligro: peligro.peligro,
+      fuenteGeneradora: peligro.descripcion,
+      actividadProceso: selectedMatriz?.proceso || "Actividad relacionada con la operación",
+      ubicacion: selectedMatriz?.area || "Área de trabajo",
+      efectosPosibles: peligro.efectosPosibles,
+      controlesPropuestos: peligro.medidasControl.join(", "),
+      nivelProbabilidad: "media",
+      nivelSeveridad: "danino",
+      tipoControlPrincipal: "ingenieria",
+    });
     setPeligroDialogOpen(true);
   };
 
@@ -1013,6 +1039,22 @@ export default function Iperc() {
           </SheetHeader>
           
           <div className="mt-6 space-y-6">
+            {selectedCompany && (
+              <IpercIntegracionCiiu
+                company={{
+                  ciiuCode: selectedCompany.ciiuCode,
+                  ciiuCode2: selectedCompany.ciiuCode2,
+                  ciiuCode3: selectedCompany.ciiuCode3,
+                  ciiuCode4: selectedCompany.ciiuCode4,
+                  trabajadores: selectedCompany.numberOfWorkers,
+                  nivelRiesgoManual: selectedCompany.riskLevel,
+                  companyName: selectedCompany.name,
+                }}
+                soloPeligros
+                onSelectPeligro={handleSelectCiiuPeligro}
+              />
+            )}
+
             {/* Asistente Inteligente - Informativo sobre peligros GTC-45 */}
             <Card className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
                 <CardHeader>
@@ -1207,6 +1249,7 @@ export default function Iperc() {
           matrizId={selectedMatrizId}
           peligro={selectedPeligro}
           prefillValues={peligroPrefillValues || undefined}
+          company={selectedCompany}
         />
       )}
 

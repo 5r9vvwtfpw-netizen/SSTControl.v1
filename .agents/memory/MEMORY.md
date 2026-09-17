@@ -9,6 +9,7 @@
 - [Subscription grace period](subscription-grace-period.md) — expired subscriptions don't auto-block; a daily cron with a configurable grace period flips status to past_due after current_period_end.
 - [LSO and worker portals are free](free-portals-lso-trabajador.md) — roles lso/lso_externo/trabajador must be exempt from every subscription-block check (frontend + backend); several duplicate exemption lists exist and drift out of sync.
 - [CIIU automation entry points](ciiu-automation-entry-points.md) — every company create/update path must explicitly call prepareCompanyWithCiiuAutomation or riskLevel silently defaults to "I", misclassifying SST standards (pricing is unaffected, it's worker-count only).
+- [IPER CIIU integration boundary](iperc-ciiu-integration.md) — CIIU classification sets risk/standards; IPER must separately merge four-code suggestions and let the user confirm each concrete hazard.
 - [Accounting sync test-company exclusion](accounting-test-company-exclusion.md) — hardcoded companyId allowlist skips Cloud Books sync for demo/test companies; must be checked in all 3 send sites plus the retry query.
 - [Effective companyId resolution pattern](effective-company-id-pattern.md) — superadmin elige contexto; LSO requiere asignación activa y las rutas usan solo la empresa validada.
 - [PESV PDF routes duplicate getEffectiveCompanyId](pesv-pdf-routes-company-id.md) — pesv-pdf-routes.ts has its own local getEffectiveCompanyId that only read query params, not X-Company-Id header; must stay in sync with the one in routes.ts.

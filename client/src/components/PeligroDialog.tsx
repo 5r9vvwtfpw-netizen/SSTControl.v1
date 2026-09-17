@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Bot } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertPeligroIpercSchema, PeligroIperc } from "@shared/schema";
+import { insertPeligroIpercSchema, PeligroIperc, Company } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation } from "@tanstack/react-query";
@@ -68,9 +68,10 @@ interface PeligroDialogProps {
   matrizId: string;
   peligro?: PeligroIperc | null;
   prefillValues?: Partial<z.infer<typeof formSchema>>;
+  company?: Company | null;
 }
 
-export function PeligroDialog({ open, onOpenChange, matrizId, peligro, prefillValues }: PeligroDialogProps) {
+export function PeligroDialog({ open, onOpenChange, matrizId, peligro, prefillValues, company }: PeligroDialogProps) {
   const { toast } = useToast();
   const [selectedPredefPeligro, setSelectedPredefPeligro] = useState("");
   const isEditing = !!peligro;
@@ -345,6 +346,7 @@ export function PeligroDialog({ open, onOpenChange, matrizId, peligro, prefillVa
         {/* Sugerencias de Peligros según CIIU de la empresa - Solo visible al crear */}
         {!isEditing && (
           <SugerenciaPeligrosCIIU
+            company={company}
             onSelectPeligroGTC45={(codigo) => {
               setSelectedPredefPeligro(codigo);
             }}

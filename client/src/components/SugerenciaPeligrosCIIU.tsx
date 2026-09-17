@@ -9,6 +9,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { AlertTriangle, Factory, Shield, BookOpen, HardHat, FileText, ChevronRight, Lightbulb, Check, Star } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { getPeligrosPorCIIU, buscarCIIUSimilar, PeligroPorCIIU, PeligroEspecificoSector } from "@/data/peligros-por-ciiu";
+import { getCiiuPeligrosData } from "@/components/IpercCiiuFilter";
 import { peligrosGTC45Predefinidos, clasificacionPeligroLabels } from "@/data/peligros-gtc45-predefinidos";
 import { Company } from "@shared/schema";
 
@@ -16,17 +17,23 @@ interface SugerenciaPeligrosCIIUProps {
   onSelectPeligroGTC45: (codigo: string) => void;
   onSelectPeligroEspecifico: (peligro: PeligroEspecificoSector) => void;
   selectedCodigos?: string[];
+  company?: Company | null;
 }
 
 export function SugerenciaPeligrosCIIU({ 
   onSelectPeligroGTC45, 
   onSelectPeligroEspecifico,
-  selectedCodigos = []
+  selectedCodigos = [],
+  company: providedCompany
 }: SugerenciaPeligrosCIIUProps) {
-  // Obtener datos de la empresa actual
-  const { data: company, isLoading } = useQuery<Company>({
+  // Cuando el diálogo se abre desde una matriz, usar la empresa de esa matriz.
+  // El fallback mantiene el comportamiento para otros usos del componente.
+  const { data: currentCompany, isLoading: isLoadingCurrentCompany } = useQuery<Company>({
     queryKey: ['/api/company/current'],
+    enabled: !providedCompany,
   });
+  const company = providedCompany || currentCompany;
+  const isLoading = !providedCompany && isLoadingCurrentCompany;
 
   if (isLoading) {
     return (
@@ -41,7 +48,13 @@ export function SugerenciaPeligrosCIIU({
     );
   }
 
-  const ciiuCode = company?.ciiuCode;
+  const ciiuCodes = [
+    company?.ciiuCode,
+    company?.ciiuCode2,
+    company?.ciiuCode3,
+    company?.ciiuCode4,
+  ].filter(Boolean) as string[];
+  const ciiuCode = ciiuCodes[0];
   
   if (!ciiuCode) {
     return (
@@ -63,13 +76,37 @@ export function SugerenciaPeligrosCIIU({
     );
   }
 
-  // Buscar peligros específicos para este CIIU
-  let peligrosCIIU = getPeligrosPorCIIU(ciiuCode);
-  
-  // Si no hay coincidencia exacta, buscar similar
-  if (!peligrosCIIU) {
-    peligrosCIIU = buscarCIIUSimilar(ciiuCode);
-  }
+  // Combinar peligros de las cuatro actividades sin duplicar sugerencias.
+  const matchedCiiuData = ciiuCodes
+    .map(code => getPeligrosPorCIIU(code) || buscarCIIUSimilar(code))
+    .filter(Boolean) as PeligroPorCIIU[];
+  const exactData = getCiiuPeligrosData(ciiuCodes);
+  const riskOrder: Record<string, number> = { I: 1, II: 2, III: 3, IV: 4, V: 5 };
+  const highestRisk = matchedCiiuData
+    .map(data => data.nivelRiesgo)
+    .sort((a, b) => riskOrder[b] - riskOrder[a])[0];
+  const peligrosCIIU: PeligroPorCIIU | undefined = matchedCiiuData.length > 0
+    ? {
+        ...matchedCiiuData[0],
+        codigoCIIU: ciiuCodes.join(", "),
+        descripcionCIIU: matchedCiiuData.map(data => data.descripcionCIIU).join(" • "),
+        nivelRiesgo: highestRisk,
+        sector: Array.from(new Set(matchedCiiuData.map(data => data.sector))).join(" / "),
+        peligrosPrioritarios: Array.from(new Set(matchedCiiuData.flatMap(data => data.peligrosPrioritarios))),
+        peligrosEspecificos: exactData.found
+          ? exactData.peligrosEspecificos
+          : Array.from(new Map(matchedCiiuData.flatMap(data => data.peligrosEspecificos).map(p => [p.codigo, p])).values()),
+        normativaEspecifica: exactData.found
+          ? exactData.normativaEspecifica
+          : Array.from(new Map(matchedCiiuData.flatMap(data => data.normativaEspecifica).map(n => [n.codigo, n])).values()),
+        eppRecomendado: exactData.found
+          ? exactData.eppRecomendado
+          : Array.from(new Set(matchedCiiuData.flatMap(data => data.eppRecomendado))),
+        capacitacionesObligatorias: exactData.found
+          ? exactData.capacitacionesObligatorias
+          : Array.from(new Set(matchedCiiuData.flatMap(data => data.capacitacionesObligatorias))),
+      }
+    : undefined;
 
   if (!peligrosCIIU) {
     return (

@@ -22,7 +22,7 @@ import { useMemo, useState } from "react";
 import { peligrosPorCIIU, PeligroPorCIIU, PeligroEspecificoSector } from "@/data/peligros-por-ciiu";
 
 export interface IpercCiiuFilterProps {
-  ciiuCode?: string | null;
+  ciiuCode?: string | string[] | null;
   companyName?: string;
   riskLevel?: "I" | "II" | "III" | "IV" | "V" | null;
   onSelectPeligro?: (peligro: PeligroEspecificoSector) => void;
@@ -144,6 +144,8 @@ export function IpercCiiuFilter({
   onSelectPeligro 
 }: IpercCiiuFilterProps) {
   const [selectedClasificacion, setSelectedClasificacion] = useState<string>("todos");
+  const ciiuCodes = (Array.isArray(ciiuCode) ? ciiuCode : [ciiuCode]).filter(Boolean) as string[];
+  const ciiuLabel = ciiuCodes.join(", ");
   
   const filterResult = useMemo(() => getCiiuPeligrosData(ciiuCode), [ciiuCode]);
   
@@ -165,7 +167,7 @@ export function IpercCiiuFilter({
     return unique;
   }, [filterResult.peligrosEspecificos]);
 
-  if (!ciiuCode) {
+  if (ciiuCodes.length === 0) {
     return (
       <Alert data-testid="alert-no-ciiu">
         <AlertTriangle className="h-4 w-4" />
@@ -183,9 +185,9 @@ export function IpercCiiuFilter({
     return (
       <Alert data-testid="alert-ciiu-not-found">
         <Building2 className="h-4 w-4" />
-        <AlertTitle>CIIU {ciiuCode} sin mapeo específico</AlertTitle>
+          <AlertTitle>CIIU {ciiuLabel} sin mapeo específico</AlertTitle>
         <AlertDescription>
-          El código CIIU {ciiuCode} no tiene peligros específicos predefinidos en el sistema.
+          Los códigos CIIU {ciiuLabel} no tienen peligros específicos predefinidos en el sistema.
           Utilice el selector general de peligros GTC-45 para identificar los riesgos aplicables.
         </AlertDescription>
       </Alert>
@@ -201,7 +203,7 @@ export function IpercCiiuFilter({
             <CardTitle className="text-lg">Peligros por Sector Económico</CardTitle>
           </div>
           <Badge variant="outline" data-testid="badge-ciiu-code">
-            CIIU {ciiuCode} - Riesgo {riskLevel || "N/A"}
+            CIIU {ciiuLabel} - Riesgo {riskLevel || "N/A"}
           </Badge>
         </div>
         <CardDescription>
