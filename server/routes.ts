@@ -26197,6 +26197,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(politicas);
   });
 
+  app.get("/api/politicas-sst/signers", requireAuth, async (req, res) => {
+    const companyId = getEffectiveCompanyId(req);
+    if (!companyId) {
+      return res.status(403).send("Usuario no asociado a una empresa");
+    }
+
+    const [company, configuredSigners] = await Promise.all([
+      storage.getCompany(companyId),
+      getSignersForCompany(companyId, true),
+    ]);
+
+    if (!company) {
+      return res.status(404).send("Empresa no encontrada");
+    }
+
+    res.json({
+      elaboro: {
+        name: configuredSigners.elaboro.name,
+        role: configuredSigners.elaboro.role,
+      },
+      autorizo: configuredSigners.lso
+        ? {
+            name: configuredSigners.lso.name,
+            role: "Licenciado SST",
+            licenseNumber: configuredSigners.lso.licenseNumber,
+          }
+        : {
+            name: "",
+            role: "LSO no configurado",
+            licenseNumber: "",
+          },
+      aprobo: {
+        name: configuredSigners.aprobo.name,
+        role: configuredSigners.aprobo.role,
+      },
+      legalRepId: company.legalRepId || "",
+    });
+  });
+
   app.get("/api/politicas-sst/vigente", requireAuth, async (req, res) => {
     const companyId = getEffectiveCompanyId(req);
     if (!companyId) {
@@ -26300,32 +26339,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Preload company logo and signers for standardized header
       const logoBuffer = await loadCompanyLogo(company.logoUrl);
-      const defaultSigners = await getSignersForCompany(companyId, false);
-      const [elaboroWorker, autorizoWorker, aproboWorker] = await Promise.all([
-        politica.elaboradoPorId ? storage.getWorker(politica.elaboradoPorId, companyId) : Promise.resolve(undefined),
-        politica.autorizadoPorId ? storage.getWorker(politica.autorizadoPorId, companyId) : Promise.resolve(undefined),
-        politica.aprobadoPorId ? storage.getWorker(politica.aprobadoPorId, companyId) : Promise.resolve(undefined),
-      ]);
-      const workerSigner = (worker: typeof elaboroWorker | undefined, fallbackName: string, fallbackRole: string) => ({
-        name: worker ? `${worker.name} - ${worker.position}` : fallbackName,
-        role: worker?.position || fallbackRole,
-      });
+      const configuredSigners = await getSignersForCompany(companyId, true);
       const policySigners: PdfSigners = {
-        elaboro: workerSigner(
-          elaboroWorker,
-          politica.responsableSst || defaultSigners.elaboro.name,
-          'Responsable del SG-SST',
-        ),
-        autorizo: workerSigner(
-          autorizoWorker,
-          politica.responsableSst || defaultSigners.autorizo.name,
-          'Responsable / Profesional SST',
-        ),
-        aprobo: workerSigner(
-          aproboWorker,
-          politica.representanteLegal || defaultSigners.aprobo.name,
-          company.legalRepPosition || 'Representante Legal',
-        ),
+        elaboro: configuredSigners.elaboro,
+        autorizo: configuredSigners.lso
+          ? {
+              name: configuredSigners.lso.name,
+              role: "Licenciado SST",
+              signatureUrl: configuredSigners.lso.signatureUrl,
+            }
+          : {
+              name: "LSO no configurado",
+              role: "Licenciado SST",
+            },
+        aprobo: configuredSigners.aprobo,
       };
 
       const contentStartY = await addStandardHeader({

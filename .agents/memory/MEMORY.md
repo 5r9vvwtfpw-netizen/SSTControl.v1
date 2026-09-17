@@ -51,4 +51,4 @@
 - [Layout de opciones Select](select-item-layout.md) — usar contenido inline o texto plano en SelectItem; los bloques anidados pueden superponerse visualmente.
 - [Catálogo de mediciones ambientales](environmental-measurement-catalog.md) — los resultados se seleccionan por tipo desde una fuente compartida; no aceptar valores libres ni límites universales ficticios.
 - [Seguimiento de auditorías internas](internal-audit-follow-up.md) — auditorías cerradas permiten seguimiento de eficacia; un hallazgo exige acciones al 100% y eficaces antes de cerrar.
-- [Firmantes de políticas SST](policy-pdf-signers.md) — el informe debe usar los tres firmantes guardados en la política, no los firmantes genéricos de la empresa.
+- [Firmantes de políticas SST](policy-pdf-signers.md) — formulario y PDF deben usar SST-Colombia, LSO asignado y representante legal configurados en Empresas.

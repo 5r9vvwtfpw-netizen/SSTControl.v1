@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -7,14 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { type PoliticaSst, type Worker, type ResponsibleDesignation } from "@shared/schema";
-import { Plus, Pencil, Trash2, FileText, FileDown, CheckCircle2, Clock, Archive, Bot, Target, Check, ChevronsUpDown } from "lucide-react";
+import { type PoliticaSst } from "@shared/schema";
+import { Plus, Pencil, Trash2, FileText, FileDown, CheckCircle2, Clock, Archive, Bot, Target } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -24,70 +22,12 @@ import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
 import { getTodayDateString, toDateInputValue } from "@/lib/utils/formatters";
 
-function getWorkerLabel(worker: Worker): string {
-  return `${worker.name} - ${worker.position}`;
-}
-
-function WorkerPicker({
-  id,
-  workers,
-  value,
-  onChange,
-  placeholder,
-}: {
-  id: string;
-  workers: Worker[];
-  value: string;
-  onChange: (workerId: string) => void;
-  placeholder: string;
-}) {
-  const [open, setOpen] = useState(false);
-  const selectedWorker = workers.find((worker) => worker.id === value);
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          id={id}
-          type="button"
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className="w-full justify-between font-normal"
-          data-testid={id}
-        >
-          <span className="truncate text-left">
-            {selectedWorker ? getWorkerLabel(selectedWorker) : placeholder}
-          </span>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
-        <Command>
-          <CommandInput placeholder="Buscar por nombre, cargo o identificación..." />
-          <CommandList>
-            <CommandEmpty>No se encontraron trabajadores.</CommandEmpty>
-            {workers.map((worker) => (
-              <CommandItem
-                key={worker.id}
-                value={`${worker.name} ${worker.position} ${worker.identificationNumber}`}
-                onSelect={() => {
-                  onChange(worker.id);
-                  setOpen(false);
-                }}
-              >
-                <Check className={`mr-2 h-4 w-4 ${worker.id === value ? "opacity-100" : "opacity-0"}`} />
-                <span className="min-w-0 truncate">
-                  {getWorkerLabel(worker)} ({worker.identificationNumber})
-                </span>
-              </CommandItem>
-            ))}
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
-  );
-}
+type ConfiguredPolicySigners = {
+  elaboro: { name: string; role: string };
+  autorizo: { name: string; role: string; licenseNumber?: string };
+  aprobo: { name: string; role: string };
+  legalRepId: string;
+};
 
 const normativaPoliticas = [
   {
@@ -213,83 +153,32 @@ export default function PoliticasSstPage() {
     queryKey: ["/api/politicas-sst"],
   });
 
-  const { data: workers } = useQuery<Worker[]>({
-    queryKey: ["/api/workers"],
+  const { data: configuredSigners } = useQuery<ConfiguredPolicySigners>({
+    queryKey: ["/api/politicas-sst/signers"],
+    enabled: dialogOpen,
   });
-
-  const { data: contracts = [] } = useQuery<any[]>({
-    queryKey: ["/api/contracts"],
-  });
-
-  // Obtener designaciones de responsable SST para pre-poblar el campo
-  const { data: responsibleDesignations = [] } = useQuery<ResponsibleDesignation[]>({
-    queryKey: ["/api/responsible-designations"],
-  });
-
-  // Obtener el responsable SST activo (el más reciente con status activo)
-  const activeResponsible = useMemo(() => {
-    const activos = responsibleDesignations
-      .filter((d) => {
-        if (d.status !== "activo") return false;
-        const position = d.position.toLowerCase();
-        return position.includes("sg-sst") || position.includes("responsable sst");
-      })
-      .sort((a, b) => {
-        const byDesignationDate = new Date(b.designationDate).getTime() - new Date(a.designationDate).getTime();
-        if (byDesignationDate !== 0) return byDesignationDate;
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      });
-    if (activos.length === 0) return null;
-    const designacion = activos[0];
-    const worker = workers?.find((w) => w.id === designacion.workerId);
-    const name =
-      worker?.name ||
-      designacion.externalLsoName ||
-      designacion.licenciaSstTitular;
-    if (!name) return null;
-    return {
-      workerId: worker?.id || null,
-      name,
-      position: designacion.position,
-      licenciaSst: designacion.licenciaSstNumero || "",
-      value: `${name} - ${designacion.position}`,
-      isExternal: !worker,
-    };
-  }, [responsibleDesignations, workers]);
 
   useEffect(() => {
-    if (!dialogOpen || editingPolitica || !activeResponsible) return;
+    if (!dialogOpen || !configuredSigners) return;
+
+    const representativeName = configuredSigners.aprobo.name || "";
+    const lsoName = configuredSigners.autorizo.name || "";
+    const lsoLicense = configuredSigners.autorizo.licenseNumber || "";
+
     setFormData((current) => {
-      if (
-        current.responsableSst === activeResponsible.value &&
-        current.licenciaSst === activeResponsible.licenciaSst &&
-        current.elaboradoPorId === (activeResponsible.workerId || "")
-      ) {
-        return current;
-      }
-      return {
+      const next = {
         ...current,
-        responsableSst: activeResponsible.value,
-        licenciaSst: activeResponsible.licenciaSst,
-        elaboradoPorId: activeResponsible.workerId || "",
+        representanteLegal: representativeName,
+        cedulaRepresentante: configuredSigners.legalRepId,
+        responsableSst: lsoName,
+        licenciaSst: lsoLicense,
+        elaboradoPorId: "",
+        autorizadoPorId: "",
+        aprobadoPorId: "",
       };
+      return JSON.stringify(next) === JSON.stringify(current) ? current : next;
     });
-  }, [dialogOpen, editingPolitica, activeResponsible]);
-
-  // Filtrar trabajadores que tienen contratos activos
-  const workersConContrato = useMemo(() => {
-    if (!workers || !contracts) return [];
-    const workerIdsConContrato = new Set(
-      contracts
-        .filter((c: any) => c.status === "activo")
-        .map((c: any) => c.workerId)
-    );
-    return workers.filter((w) => workerIdsConContrato.has(w.id));
-  }, [workers, contracts]);
-
-  const representanteLegalWorkerId = useMemo(() => {
-    return workers?.find((worker) => getWorkerLabel(worker) === formData.representanteLegal)?.id || "";
-  }, [workers, formData.representanteLegal]);
+  }, [dialogOpen, configuredSigners]);
 
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -304,9 +193,9 @@ export default function PoliticasSstPage() {
         }),
         // Convert empty strings to null for optional fields
         licenciaSst: data.licenciaSst?.trim() || null,
-        elaboradoPorId: activeResponsible?.workerId || null,
-        autorizadoPorId: data.autorizadoPorId?.trim() || null,
-        aprobadoPorId: data.aprobadoPorId?.trim() || null,
+        elaboradoPorId: null,
+        autorizadoPorId: null,
+        aprobadoPorId: null,
         observaciones: data.observaciones?.trim() || null,
       };
       const res = await apiRequest("POST", "/api/politicas-sst", payload);
@@ -457,10 +346,6 @@ export default function PoliticasSstPage() {
       nextYear.setFullYear(nextYear.getFullYear() + 1);
       const nextYearStr = nextYear.toLocaleDateString('en-CA', { timeZone: 'America/Bogota' });
       
-      // Pre-poblar el responsable SST si existe una designación activa
-      const responsableSstDefault = activeResponsible?.value || "";
-      const licenciaSstDefault = activeResponsible?.licenciaSst || "";
-      
       setFormData({
         codigo: `POL-SST-${(politicas.length + 1).toString().padStart(3, '0')}`,
         version: "1.0",
@@ -478,10 +363,10 @@ export default function PoliticasSstPage() {
         revisionComunicacion: PLANTILLA_ESTANDAR.revisionComunicacion,
         representanteLegal: "",
         cedulaRepresentante: "",
-        responsableSst: responsableSstDefault,
-        licenciaSst: licenciaSstDefault,
+        responsableSst: "",
+        licenciaSst: "",
         fechaFirma: todayStr,
-        elaboradoPorId: activeResponsible?.workerId || "",
+        elaboradoPorId: "",
         autorizadoPorId: "",
         aprobadoPorId: "",
       });
@@ -1081,20 +966,13 @@ export default function PoliticasSstPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="representanteLegal">Representante Legal *</Label>
-                      <WorkerPicker
-                        id="select-representante-legal"
-                        workers={workers || []}
-                        value={representanteLegalWorkerId}
-                        placeholder="Seleccione representante legal"
-                        onChange={(value) => {
-                          const selectedWorker = workers?.find((worker) => worker.id === value);
-                          if (!selectedWorker) return;
-                          setFormData({
-                            ...formData,
-                            representanteLegal: getWorkerLabel(selectedWorker),
-                            cedulaRepresentante: selectedWorker.identificationNumber || "",
-                          });
-                        }}
+                      <Input
+                        id="representanteLegal"
+                        data-testid="input-representante-legal-configurado"
+                        value={formData.representanteLegal}
+                        readOnly
+                        placeholder="Configure el representante legal en Empresas"
+                        className="bg-muted"
                       />
                     </div>
                     <div>
@@ -1103,9 +981,9 @@ export default function PoliticasSstPage() {
                         id="cedulaRepresentante"
                         data-testid="input-cedula-representante"
                         value={formData.cedulaRepresentante}
-                        onChange={(e) => setFormData({ ...formData, cedulaRepresentante: e.target.value })}
-                        placeholder="Número de cédula (se autocompleta al seleccionar)"
-                        className={formData.cedulaRepresentante ? "bg-muted" : ""}
+                        readOnly
+                        placeholder="Configure la cédula en Empresas"
+                        className="bg-muted"
                       />
                     </div>
                   </div>
@@ -1123,47 +1001,51 @@ export default function PoliticasSstPage() {
 
                   {/* Firmas de Aprobación */}
                   <div className="border-t pt-4 space-y-4">
-                    <h3 className="font-semibold text-sm">Firmas de Aprobación</h3>
-                    {workersConContrato.length === 0 && (
+                    <div>
+                      <h3 className="font-semibold text-sm">Firmas de Aprobación (configuradas en Empresas)</h3>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Estos firmantes y sus firmas se toman automáticamente de la configuración de la empresa.
+                      </p>
+                    </div>
+                    {!configuredSigners && (
                       <p className="text-sm text-muted-foreground">
-                        No hay trabajadores con contratos activos para seleccionar como autorizador o aprobador.
+                        Cargando firmantes configurados...
                       </p>
                     )}
                     <div className="grid grid-cols-1 gap-3">
                       <div>
-                        <Label htmlFor="elaboradoPorAsignado">Elaborado por — LSO asignado</Label>
+                        <Label htmlFor="elaboradoPorAsignado">Elaborado por</Label>
                         <Input
                           id="elaboradoPorAsignado"
-                          data-testid="input-elaborado-por-lso-asignado"
-                          value={formData.responsableSst}
+                          data-testid="input-elaborado-por-configurado"
+                          value={configuredSigners?.elaboro.name || ""}
                           readOnly
-                          placeholder="No hay un Responsable del SG-SST designado"
+                          placeholder="SST-Colombia — Sistema Automatizado"
                           className="bg-muted"
                         />
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          Este dato se carga automáticamente y no se selecciona de la lista de trabajadores.
-                        </p>
                       </div>
 
                       <div>
-                        <Label htmlFor="autorizadoPorId">Autorizado por</Label>
-                        <WorkerPicker
-                          id="select-autorizado-por-worker"
-                          workers={workersConContrato}
-                          value={formData.autorizadoPorId}
-                          placeholder="Buscar trabajador con contrato"
-                          onChange={(value) => setFormData({ ...formData, autorizadoPorId: value })}
+                        <Label htmlFor="autorizadoPorConfigurado">Autorizado por (LSO)</Label>
+                        <Input
+                          id="autorizadoPorConfigurado"
+                          data-testid="input-autorizado-por-configurado"
+                          value={configuredSigners?.autorizo.name || ""}
+                          readOnly
+                          placeholder="No hay un LSO configurado"
+                          className="bg-muted"
                         />
                       </div>
 
                       <div>
-                        <Label htmlFor="aprobadoPorId">Aprobado por</Label>
-                        <WorkerPicker
-                          id="select-aprobado-por-worker"
-                          workers={workersConContrato}
-                          value={formData.aprobadoPorId}
-                          placeholder="Buscar trabajador con contrato"
-                          onChange={(value) => setFormData({ ...formData, aprobadoPorId: value })}
+                        <Label htmlFor="aprobadoPorConfigurado">Aprobado por (Gerente/Representante Legal)</Label>
+                        <Input
+                          id="aprobadoPorConfigurado"
+                          data-testid="input-aprobado-por-configurado"
+                          value={configuredSigners?.aprobo.name || ""}
+                          readOnly
+                          placeholder="Configure el representante legal en Empresas"
+                          className="bg-muted"
                         />
                       </div>
                     </div>
