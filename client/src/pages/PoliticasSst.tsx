@@ -126,6 +126,7 @@ export default function PoliticasSstPage() {
   
   const [formData, setFormData] = useState({
     codigo: "",
+    nombre: "",
     version: "",
     estado: "borrador" as "borrador" | "vigente" | "archivada",
     fechaEmision: "",
@@ -285,6 +286,7 @@ export default function PoliticasSstPage() {
   const resetForm = () => {
     setFormData({
       codigo: "",
+      nombre: "",
       version: "",
       estado: "borrador",
       fechaEmision: "",
@@ -308,6 +310,7 @@ export default function PoliticasSstPage() {
       aprobadoPorId: "",
     });
     setEditingPolitica(null);
+    setSelectedPredefinido("");
   };
 
   const handleOpenDialog = (politica?: PoliticaSst) => {
@@ -316,6 +319,7 @@ export default function PoliticasSstPage() {
       const responsabilidades = JSON.parse(politica.responsabilidades);
       setFormData({
         codigo: politica.codigo,
+        nombre: politica.nombre || "",
         version: politica.version,
         estado: politica.estado,
         fechaEmision: toDateInputValue(politica.fechaEmision),
@@ -338,6 +342,7 @@ export default function PoliticasSstPage() {
         autorizadoPorId: politica.autorizadoPorId || "",
         aprobadoPorId: politica.aprobadoPorId || "",
       });
+      setSelectedPredefinido(politica.nombre ? politica.codigo : "");
       setEditingPolitica(politica);
     } else {
       // Auto-aplicar plantilla estándar para nuevas políticas
@@ -348,6 +353,7 @@ export default function PoliticasSstPage() {
       
       setFormData({
         codigo: `POL-SST-${(politicas.length + 1).toString().padStart(3, '0')}`,
+        nombre: "",
         version: "1.0",
         estado: "borrador",
         fechaEmision: todayStr,
@@ -370,6 +376,7 @@ export default function PoliticasSstPage() {
         autorizadoPorId: "",
         aprobadoPorId: "",
       });
+      setSelectedPredefinido("");
       setEditingPolitica(null);
     }
     setDialogOpen(true);
@@ -575,6 +582,7 @@ export default function PoliticasSstPage() {
 
     setFormData((prev) => ({
       ...prev,
+      nombre: politica.titulo,
       codigo: politica.codigo,
       declaracionCompromiso: politica.contenido,
       objetivos: objectives,
@@ -736,6 +744,11 @@ export default function PoliticasSstPage() {
                                 })}
                               </SelectContent>
                             </Select>
+                            {formData.nombre && (
+                              <p className="mt-2 text-xs text-muted-foreground">
+                                Nombre que aparecerá en el PDF: <span className="font-medium">{formData.nombre}</span>
+                              </p>
+                            )}
                           </div>
                         </div>
                       </div>

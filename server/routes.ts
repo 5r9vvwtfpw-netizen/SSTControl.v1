@@ -26364,7 +26364,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           address: company.address,
           logoUrl: company.logoUrl,
         },
-        documentTitle: 'POLÍTICA DE SEGURIDAD Y SALUD EN EL TRABAJO',
+        documentTitle: (politica.nombre?.trim() || 'POLÍTICA DE SEGURIDAD Y SALUD EN EL TRABAJO').toLocaleUpperCase('es-CO'),
         documentCode: `SST-POL-${politica.codigo}`,
         version: politica.version,
         date: new Date(politica.fechaEmision),

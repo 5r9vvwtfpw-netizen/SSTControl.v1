@@ -2855,6 +2855,7 @@ export const politicasSst = pgTable("politicas_sst", {
   
   // Metadatos del documento
   codigo: text("codigo").notNull(), // Ej: POL-SST-001
+  nombre: text("nombre"), // Nombre/título de la política seleccionada o definido por el usuario
   version: text("version").notNull().default("1.0"),
   fechaEmision: date("fecha_emision").notNull(),
   fechaProximaRevision: date("fecha_proxima_revision").notNull(),

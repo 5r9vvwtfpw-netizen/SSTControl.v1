@@ -447,3 +447,17 @@ mtime_ms = 1789628141385
 storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/14e8e786-7671-4647-8def-cf4ba9a12ca0/32692226-6663-4af4-a505-2cd507e171cd"
 storage_version_token = "1789628174687695"
 content_type = "application/pdf"
+
+[[outputs]]
+id = "C4NuS6VTQnXGH9ie6EtKG"
+uri = "file://test-evidence/politica-sst-nombre-seleccionado-acoso-laboral.pdf"
+type = "pdf"
+title = "Evidencia — Nombre de política seleccionado en el PDF"
+description = "POL-SAL-01 · El encabezado muestra POLÍTICA DE PREVENCIÓN DE ACOSO LABORAL, el nombre elegido en el formulario."
+logical_id = "71c9eb91-8354-4ed6-a842-7c920ffab49e"
+content_hash = "sha256:0448442bdc222ede7c42244566946d263a4d12db3bdf1fe12342c9bf85eab97b"
+size = 480296
+mtime_ms = 1789629552646
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/71c9eb91-8354-4ed6-a842-7c920ffab49e/5e8cd977-7682-4602-98fe-f57f3b1c374a"
+storage_version_token = "1789629609146865"
+content_type = "application/pdf"
