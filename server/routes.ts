@@ -25019,12 +25019,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         "pendiente_analisis": "Pendiente de Análisis",
       };
 
-      const statusColors: Record<string, string> = {
-        "conforme": "#22c55e",
-        "no_conforme": "#ef4444",
-        "pendiente_analisis": "#f59e0b",
-      };
-
       const measurementDate = String(measurement.measurementDate);
 
       res.setHeader('Content-Type', 'application/pdf');
@@ -25041,93 +25035,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
         doc,
         company,
         documentTitle: 'INFORME DE MEDICIÓN AMBIENTAL OCUPACIONAL',
-        documentCode: `SST-MA-${new Date(measurement.measurementDate).getFullYear()}-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`,
+        documentCode: getDocumentCode('environmental_measurement', company.nit),
         version: '1.0',
         date: new Date(measurement.measurementDate),
         logoBuffer,
       });
 
-      doc.y = currentY;
+      // El cuerpo usa los mismos componentes que el resto de informes
+      // institucionales para evitar solapamientos y conservar los saltos de página.
+      currentY = addSectionBar(doc, 'Datos de la medición', currentY);
+      currentY = addSimpleTable(
+        doc,
+        ['Campo', 'Información registrada'],
+        [
+          ['Tipo de medición', measurementTypeLabels[measurement.measurementType] || measurement.measurementType],
+          ['Área o puesto de trabajo', measurement.area],
+          ['Fecha de medición', formatDate(measurement.measurementDate)],
+          ['Responsable de la medición', measurement.measuredBy || 'No especificado'],
+        ],
+        { y: currentY, columnWidths: [175, 347] },
+      );
 
-      // Measurement Type and Status
-      doc.fontSize(9).fillColor('#166534').text(`Tipo de Medición: ${measurementTypeLabels[measurement.measurementType] || measurement.measurementType}`, { continued: false });
-      doc.moveDown(0.5);
-      
-      const statusColor = statusColors[measurement.status] || '#666666';
-      doc.fontSize(9).fillColor(statusColor).text(`Estado: ${statusLabels[measurement.status] || measurement.status}`, { continued: false });
-      doc.moveDown(1);
+      const conditionRows: string[][] = [];
+      if (measurement.equipment) conditionRows.push(['Equipo utilizado', measurement.equipment]);
+      if (measurement.calibrationDate) conditionRows.push(['Última calibración', formatDate(measurement.calibrationDate)]);
+      if (measurement.temperature) conditionRows.push(['Temperatura ambiente', measurement.temperature]);
+      if (measurement.humidity) conditionRows.push(['Humedad relativa', measurement.humidity]);
 
-      // Measurement Details
-      doc.fontSize(9).fillColor('#000000');
-      
-      const details: Array<{ label: string; value: string }> = [
-        { label: 'Área de Medición', value: measurement.area },
-        { label: 'Fecha de Medición', value: measurementDate },
-        { label: 'Medido por', value: measurement.measuredBy || 'No especificado' },
+      if (conditionRows.length > 0) {
+        currentY = addSectionBar(doc, 'Equipo y condiciones de medición', currentY);
+        currentY = addSimpleTable(
+          doc,
+          ['Campo', 'Información registrada'],
+          conditionRows,
+          { y: currentY, columnWidths: [175, 347] },
+        );
+      }
+
+      currentY = addSectionBar(doc, 'Resultado y análisis de conformidad', currentY);
+      const resultRows: string[][] = [
+        ['Estado', statusLabels[measurement.status] || measurement.status],
       ];
-
-      // Add value and limit only if they exist
-      if (measurement.valueNumeric && measurement.unit) {
-        details.push({ label: 'Valor Medido', value: `${measurement.valueNumeric} ${measurement.unit}` });
+      if (measurement.valueNumeric) {
+        resultRows.unshift(['Valor medido', `${measurement.valueNumeric}${measurement.unit ? ` ${measurement.unit}` : ''}`]);
       }
-      if (measurement.legalLimit && measurement.unit) {
-        details.push({ label: 'Límite Legal', value: `${measurement.legalLimit} ${measurement.unit}` });
+      if (measurement.legalLimit) {
+        resultRows.push(['Límite o referencia aplicable', `${measurement.legalLimit}${measurement.unit ? ` ${measurement.unit}` : ''}`]);
       }
+      currentY = addSimpleTable(
+        doc,
+        ['Resultado', 'Valor'],
+        resultRows,
+        { y: currentY, columnWidths: [175, 347] },
+      );
 
-      details.forEach(({ label, value }) => {
-        doc.fontSize(8).fillColor('#666666').text(label + ':', { continued: true });
-        doc.fontSize(9).fillColor('#000000').text(' ' + value);
-        doc.moveDown(0.3);
-      });
-
-      doc.moveDown(1);
-
-      // Analysis Section
-      doc.fontSize(9).fillColor('#166534').text('ANÁLISIS DE CONFORMIDAD', { underline: true });
-      doc.moveDown(0.5);
-      
-      doc.fontSize(8).fillColor('#000000');
+      let analysisText: string;
       if (measurement.status === 'conforme' && measurement.valueNumeric && measurement.legalLimit && measurement.unit) {
         const isMinimumReference = measurement.measurementType === 'iluminacion';
         const comparisonText = isMinimumReference ? 'es igual o mayor al mínimo requerido' : 'se encuentra dentro del límite permitido';
-        doc.text(`La medición se encuentra CONFORME con la referencia aplicable. El valor medido (${measurement.valueNumeric} ${measurement.unit}) ${comparisonText} (${measurement.legalLimit} ${measurement.unit}).`);
+        analysisText = `La medición se encuentra CONFORME con la referencia aplicable. El valor medido (${measurement.valueNumeric} ${measurement.unit}) ${comparisonText} (${measurement.legalLimit} ${measurement.unit}).`;
       } else if (measurement.status === 'no_conforme' && measurement.valueNumeric && measurement.legalLimit && measurement.unit) {
         const isMinimumReference = measurement.measurementType === 'iluminacion';
         const comparisonText = isMinimumReference ? 'es menor al mínimo requerido' : 'supera el límite permitido';
-        doc.fillColor('#ef4444').text(`⚠️ ALERTA: La medición se encuentra NO CONFORME. El valor medido (${measurement.valueNumeric} ${measurement.unit}) ${comparisonText} (${measurement.legalLimit} ${measurement.unit}).`);
-        doc.fillColor('#000000').moveDown(0.5);
-        doc.text('Se requiere implementar acciones correctivas inmediatas para garantizar la seguridad y salud de los trabajadores.');
+        analysisText = `ALERTA: La medición se encuentra NO CONFORME. El valor medido (${measurement.valueNumeric} ${measurement.unit}) ${comparisonText} (${measurement.legalLimit} ${measurement.unit}). Se requiere implementar acciones correctivas para garantizar la seguridad y salud de los trabajadores.`;
       } else if (measurement.status === 'conforme') {
-        doc.text('La medición se encuentra CONFORME con los límites legales establecidos.');
+        analysisText = 'La medición se encuentra CONFORME con los límites legales establecidos.';
       } else if (measurement.status === 'no_conforme') {
-        doc.fillColor('#ef4444').text('⚠️ ALERTA: La medición se encuentra NO CONFORME con los límites legales.');
-        doc.fillColor('#000000').moveDown(0.5);
-        doc.text('Se requiere implementar acciones correctivas inmediatas para garantizar la seguridad y salud de los trabajadores.');
+        analysisText = 'ALERTA: La medición se encuentra NO CONFORME con los límites legales. Se requiere implementar acciones correctivas para garantizar la seguridad y salud de los trabajadores.';
       } else {
-        doc.text('Esta medición se encuentra pendiente de análisis por parte del equipo técnico.');
+        analysisText = 'Esta medición se encuentra pendiente de análisis por parte del equipo técnico.';
+      }
+      currentY = addParagraph(doc, analysisText, { fontSize: 8, y: currentY });
+
+      if (measurement.observations || measurement.correctiveActions) {
+        currentY = addSectionBar(doc, 'Observaciones y acciones', currentY);
+        if (measurement.observations) {
+          currentY = addLabeledField(doc, 'Observaciones', measurement.observations, { y: currentY, labelWidth: 115 });
+        }
+        if (measurement.correctiveActions) {
+          currentY = addLabeledField(doc, 'Acciones correctivas', measurement.correctiveActions, { y: currentY, labelWidth: 115 });
+      }
       }
 
-      doc.moveDown(1);
-
-      // Observations
-      if (measurement.observations) {
-        doc.fontSize(9).fillColor('#166534').text('OBSERVACIONES', { underline: true });
-        doc.moveDown(0.5);
-        doc.fontSize(8).fillColor('#000000').text(measurement.observations);
-        doc.moveDown(1);
-      }
-
-      // Footer with regulatory info
-      doc.moveDown(2);
-      doc.strokeColor('#cccccc').lineWidth(1).moveTo(50, doc.y).lineTo(562, doc.y).stroke();
-      doc.moveDown(0.5);
-      doc.fontSize(8).fillColor('#666666').text(
-        'Este informe se genera en cumplimiento de la Resolución 0312 de 2019 del Ministerio del Trabajo\n' +
-        'Sistema de Gestión de Seguridad y Salud en el Trabajo (SG-SST)',
-        { align: 'center' }
+      currentY = addSectionBar(doc, 'Referencia normativa', currentY);
+      currentY = addParagraph(
+        doc,
+        'Este informe se genera como evidencia del seguimiento a las condiciones ambientales de trabajo, en el marco de la Resolución 0312 de 2019 y del Decreto 1072 de 2015. Fecha de generación: ' +
+          formatDate(new Date()),
+        { fontSize: 8, y: currentY },
       );
-      doc.moveDown(0.3);
-      doc.text(`Fecha de generación: ${new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' })}`, { align: 'center' });
 
       // Add signature footer
       await addSignatureFooter(doc, signers, true);
