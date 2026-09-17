@@ -26287,27 +26287,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).send("Empresa no encontrada");
       }
 
-      // Fetch worker data for approval signatures if IDs are present
-      let elaboroName = 'SST-Colombia';
-      let autorizoName = politica.responsableSst;
-      let aproboName = politica.representanteLegal;
-
-      if (politica.autorizadoPorId) {
-        const worker = await storage.getWorker(politica.autorizadoPorId, companyId);
-        if (worker && worker.companyId === companyId) {
-          autorizoName = `${worker.name} - ${worker.position}`;
-        }
-      }
-
-      if (company?.legalRepName) {
-        aproboName = `${company.legalRepName} - ${company.legalRepPosition || 'Representante Legal'}`;
-      } else if (politica.aprobadoPorId) {
-        const worker = await storage.getWorker(politica.aprobadoPorId, companyId);
-        if (worker && worker.companyId === companyId) {
-          aproboName = `${worker.name} - ${worker.position}`;
-        }
-      }
-
       const doc = new PDFDocument({ size: 'LETTER', margin: PDF_CONFIG.MARGIN });
       
       // Add trial watermark if subscription is in trial period
@@ -26321,7 +26300,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Preload company logo and signers for standardized header
       const logoBuffer = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId, true);
+      const defaultSigners = await getSignersForCompany(companyId, false);
+      const [elaboroWorker, autorizoWorker, aproboWorker] = await Promise.all([
+        politica.elaboradoPorId ? storage.getWorker(politica.elaboradoPorId, companyId) : Promise.resolve(undefined),
+        politica.autorizadoPorId ? storage.getWorker(politica.autorizadoPorId, companyId) : Promise.resolve(undefined),
+        politica.aprobadoPorId ? storage.getWorker(politica.aprobadoPorId, companyId) : Promise.resolve(undefined),
+      ]);
+      const workerSigner = (worker: typeof elaboroWorker | undefined, fallbackName: string, fallbackRole: string) => ({
+        name: worker ? `${worker.name} - ${worker.position}` : fallbackName,
+        role: worker?.position || fallbackRole,
+      });
+      const policySigners: PdfSigners = {
+        elaboro: workerSigner(
+          elaboroWorker,
+          politica.responsableSst || defaultSigners.elaboro.name,
+          'Responsable del SG-SST',
+        ),
+        autorizo: workerSigner(
+          autorizoWorker,
+          politica.responsableSst || defaultSigners.autorizo.name,
+          'Responsable / Profesional SST',
+        ),
+        aprobo: workerSigner(
+          aproboWorker,
+          politica.representanteLegal || defaultSigners.aprobo.name,
+          company.legalRepPosition || 'Representante Legal',
+        ),
+      };
 
       const contentStartY = await addStandardHeader({
         doc,
@@ -26453,17 +26458,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       addTextSection('Revisión y comunicación', revisionConEmpresa);
 
       standardY = addSectionBar(doc, 'Aprobación de la política', standardY + 2);
-      standardY = addSimpleTable(doc, ['Representante legal', 'Identificación', 'Responsable SG-SST', 'Fecha de firma'], [[
-        politica.representanteLegal || aproboName || '—',
-        politica.cedulaRepresentante || '—',
-        politica.responsableSst || autorizoName || '—',
+      standardY = addSimpleTable(doc, ['Elaborado por', 'Autorizado por', 'Aprobado por', 'Fecha de firma'], [[
+        policySigners.elaboro.name || '—',
+        policySigners.autorizo.name || '—',
+        policySigners.aprobo.name || '—',
         formatDate(politica.fechaFirma),
       ]], {
         y: standardY,
-        columnWidths: [150, 110, 172, 110],
+        columnWidths: [150, 150, 172, 70],
       });
 
-      await addSignatureFooter(doc, signers, true, { startY: standardY + 5 });
+      await addSignatureFooter(doc, policySigners, false, { startY: standardY + 5 });
       doc.end();
       return;
 
@@ -27630,8 +27635,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.font('Helvetica-Bold').text('Fecha de Firma: ', margin, currentY, { continued: true });
       doc.font('Helvetica').text(new Date(legacyPolitica.fechaFirma).toLocaleDateString('es-CO'));
 
-      // Add standardized signature footer (no LSO required)
-      await addSignatureFooter(doc, signers, true);
+      // Add standardized signature footer using the policy's saved signers.
+      await addSignatureFooter(doc, policySigners, false);
 
       doc.end();
     } catch (error: any) {

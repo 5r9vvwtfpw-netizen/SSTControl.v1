@@ -7,12 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { type PoliticaSst, type Worker, type ResponsibleDesignation } from "@shared/schema";
-import { Plus, Pencil, Trash2, FileText, FileDown, CheckCircle2, Clock, Archive, Bot, Target } from "lucide-react";
+import { Plus, Pencil, Trash2, FileText, FileDown, CheckCircle2, Clock, Archive, Bot, Target, Check, ChevronsUpDown } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -21,6 +23,71 @@ import { AutomationAssistant } from "@/components/AutomationAssistant";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
 import { getTodayDateString, toDateInputValue } from "@/lib/utils/formatters";
+
+function getWorkerLabel(worker: Worker): string {
+  return `${worker.name} - ${worker.position}`;
+}
+
+function WorkerPicker({
+  id,
+  workers,
+  value,
+  onChange,
+  placeholder,
+}: {
+  id: string;
+  workers: Worker[];
+  value: string;
+  onChange: (workerId: string) => void;
+  placeholder: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const selectedWorker = workers.find((worker) => worker.id === value);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          id={id}
+          type="button"
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-full justify-between font-normal"
+          data-testid={id}
+        >
+          <span className="truncate text-left">
+            {selectedWorker ? getWorkerLabel(selectedWorker) : placeholder}
+          </span>
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+        <Command>
+          <CommandInput placeholder="Buscar por nombre, cargo o identificación..." />
+          <CommandList>
+            <CommandEmpty>No se encontraron trabajadores.</CommandEmpty>
+            {workers.map((worker) => (
+              <CommandItem
+                key={worker.id}
+                value={`${worker.name} ${worker.position} ${worker.identificationNumber}`}
+                onSelect={() => {
+                  onChange(worker.id);
+                  setOpen(false);
+                }}
+              >
+                <Check className={`mr-2 h-4 w-4 ${worker.id === value ? "opacity-100" : "opacity-0"}`} />
+                <span className="min-w-0 truncate">
+                  {getWorkerLabel(worker)} ({worker.identificationNumber})
+                </span>
+              </CommandItem>
+            ))}
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 const normativaPoliticas = [
   {
@@ -219,6 +286,10 @@ export default function PoliticasSstPage() {
     );
     return workers.filter((w) => workerIdsConContrato.has(w.id));
   }, [workers, contracts]);
+
+  const representanteLegalWorkerId = useMemo(() => {
+    return workers?.find((worker) => getWorkerLabel(worker) === formData.representanteLegal)?.id || "";
+  }, [workers, formData.representanteLegal]);
 
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -1010,33 +1081,21 @@ export default function PoliticasSstPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="representanteLegal">Representante Legal *</Label>
-                      <Select
-                        value={formData.representanteLegal}
-                        onValueChange={(value) => {
-                          // Buscar el trabajador por ID para autocompletar la cédula
-                          const selectedWorker = workers?.find((w) => w.id === value);
-                          if (selectedWorker) {
-                            setFormData({ 
-                              ...formData, 
-                              representanteLegal: `${selectedWorker.name} - ${selectedWorker.position}`,
-                              cedulaRepresentante: selectedWorker.identificationNumber || ""
-                            });
-                          }
+                      <WorkerPicker
+                        id="select-representante-legal"
+                        workers={workers || []}
+                        value={representanteLegalWorkerId}
+                        placeholder="Seleccione representante legal"
+                        onChange={(value) => {
+                          const selectedWorker = workers?.find((worker) => worker.id === value);
+                          if (!selectedWorker) return;
+                          setFormData({
+                            ...formData,
+                            representanteLegal: getWorkerLabel(selectedWorker),
+                            cedulaRepresentante: selectedWorker.identificationNumber || "",
+                          });
                         }}
-                      >
-                        <SelectTrigger id="representanteLegal" data-testid="select-representante-legal">
-                          <SelectValue placeholder="Seleccione representante legal">
-                            {formData.representanteLegal || "Seleccione representante legal"}
-                          </SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                          {workers?.map((worker) => (
-                            <SelectItem key={worker.id} value={worker.id}>
-                              {worker.name} - {worker.position} ({worker.identificationNumber})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      />
                     </div>
                     <div>
                       <Label htmlFor="cedulaRepresentante">Cédula del Representante *</Label>
@@ -1088,40 +1147,24 @@ export default function PoliticasSstPage() {
 
                       <div>
                         <Label htmlFor="autorizadoPorId">Autorizado por</Label>
-                        <Select
+                        <WorkerPicker
+                          id="select-autorizado-por-worker"
+                          workers={workersConContrato}
                           value={formData.autorizadoPorId}
-                          onValueChange={(value) => setFormData({ ...formData, autorizadoPorId: value })}
-                        >
-                          <SelectTrigger id="autorizadoPorId" data-testid="select-autorizado-por-worker">
-                            <SelectValue placeholder="Seleccione trabajador con contrato" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {workersConContrato.map((worker) => (
-                              <SelectItem key={`autorizado-${worker.id}`} value={worker.id}>
-                                {worker.name} - {worker.position}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                          placeholder="Buscar trabajador con contrato"
+                          onChange={(value) => setFormData({ ...formData, autorizadoPorId: value })}
+                        />
                       </div>
 
                       <div>
                         <Label htmlFor="aprobadoPorId">Aprobado por</Label>
-                        <Select
+                        <WorkerPicker
+                          id="select-aprobado-por-worker"
+                          workers={workersConContrato}
                           value={formData.aprobadoPorId}
-                          onValueChange={(value) => setFormData({ ...formData, aprobadoPorId: value })}
-                        >
-                          <SelectTrigger id="aprobadoPorId" data-testid="select-aprobado-por-worker">
-                            <SelectValue placeholder="Seleccione trabajador con contrato" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {workersConContrato.map((worker) => (
-                              <SelectItem key={`aprobado-${worker.id}`} value={worker.id}>
-                                {worker.name} - {worker.position}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                          placeholder="Buscar trabajador con contrato"
+                          onChange={(value) => setFormData({ ...formData, aprobadoPorId: value })}
+                        />
                       </div>
                     </div>
                   </div>
