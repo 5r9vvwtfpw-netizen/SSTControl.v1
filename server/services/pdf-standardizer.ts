@@ -326,7 +326,8 @@ export function formatDate(date: Date | string | null | undefined): string {
 export function addSectionBar(
   doc: typeof PDFDocument.prototype,
   title: string,
-  y?: number
+  y?: number,
+  footerReserve: number = 150
 ): number {
   const margin = PDF_CONFIG.MARGIN;
   const pageWidth = doc.page.width;
@@ -334,7 +335,7 @@ export function addSectionBar(
   const currentY = y ?? doc.y;
 
   // Verificar espacio en página
-  const safeY = checkPageBreak(doc, barHeight + 20, currentY);
+  const safeY = checkPageBreak(doc, barHeight + 20, currentY, footerReserve);
 
   // Dibujar barra verde
   doc
@@ -846,13 +847,13 @@ export function addProviderContactFooter(
 export function checkPageBreak(
   doc: typeof PDFDocument.prototype,
   neededHeight: number,
-  currentY?: number
+  currentY?: number,
+  footerReserve: number = 150
 ): number {
   const y = currentY ?? doc.y;
   const pageHeight = doc.page.height;
   const margin = PDF_CONFIG.MARGIN;
-  const footerMargin = 150; // Espacio reservado para el footer (130px tabla firmas + 20px buffer)
-  const availableSpace = pageHeight - margin - footerMargin;
+  const availableSpace = pageHeight - margin - footerReserve;
 
   if (y + neededHeight > availableSpace) {
     doc.addPage();
@@ -966,6 +967,7 @@ export function addParagraph(
     bold?: boolean;
     indent?: number;
     y?: number;
+    footerReserve?: number;
   }
 ): number {
   const margin = PDF_CONFIG.MARGIN;
@@ -982,7 +984,7 @@ export function addParagraph(
   const estimatedHeight = estimatedLines * lineHeight;
   
   // Verificar espacio
-  currentY = checkPageBreak(doc, estimatedHeight, currentY);
+  currentY = checkPageBreak(doc, estimatedHeight, currentY, options?.footerReserve);
 
   doc
     .fontSize(fontSize)

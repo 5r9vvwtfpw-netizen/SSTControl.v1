@@ -26401,7 +26401,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Cuerpo estandarizado. La política se presenta una sola vez y todos los
       // saltos de página se delegan a los helpers compartidos.
-      let standardY = addSectionBar(doc, 'Información del documento', contentStartY);
+      const bodyFooterReserve = 20;
+      let standardY = addSectionBar(doc, 'Información del documento', contentStartY, bodyFooterReserve);
       standardY = addSimpleTable(doc, ['Estado', 'Fecha de emisión', 'Próxima revisión'], [[
         politica.estado.toUpperCase(),
         formatDate(politica.fechaEmision),
@@ -26416,17 +26417,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Reservar solo el encabezado y el inicio del contenido. El párrafo
         // puede continuar naturalmente en la página siguiente sin dejar una
         // página casi vacía cuando el texto es largo.
-        standardY = checkPageBreak(doc, 72, standardY + 2);
-        standardY = addSectionBar(doc, title, standardY);
-        standardY = addParagraph(doc, content, { y: standardY, fontSize: 8 });
+        standardY = checkPageBreak(doc, 72, standardY + 2, bodyFooterReserve);
+        standardY = addSectionBar(doc, title, standardY, bodyFooterReserve);
+        standardY = addParagraph(doc, content, { y: standardY, fontSize: 8, footerReserve: bodyFooterReserve });
       };
 
       const addNumberedSection = (title: string, items: string[]) => {
-        standardY = checkPageBreak(doc, 58, standardY + 2);
-        standardY = addSectionBar(doc, title, standardY);
+        standardY = checkPageBreak(doc, 58, standardY + 2, bodyFooterReserve);
+        standardY = addSectionBar(doc, title, standardY, bodyFooterReserve);
 
         if (items.length === 0) {
-          standardY = addParagraph(doc, 'No se registraron elementos.', { y: standardY, fontSize: 8 });
+          standardY = addParagraph(doc, 'No se registraron elementos.', {
+            y: standardY,
+            fontSize: 8,
+            footerReserve: bodyFooterReserve,
+          });
           return;
         }
 
@@ -26438,14 +26443,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             align: 'justify',
           }) + 5;
           const pageBeforeItem = doc.page;
-          standardY = checkPageBreak(doc, itemHeight, standardY);
+          standardY = checkPageBreak(doc, itemHeight, standardY, bodyFooterReserve);
           if (doc.page !== pageBeforeItem) {
-            standardY = addSectionBar(doc, `${title} (continuación)`, standardY);
+            standardY = addSectionBar(doc, `${title} (continuación)`, standardY, bodyFooterReserve);
           }
           standardY = addParagraph(doc, itemText, {
             y: standardY,
             fontSize: 8,
             indent: 8,
+            footerReserve: bodyFooterReserve,
           });
         });
       };
@@ -26454,19 +26460,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       addNumberedSection('Objetivos', objetivos);
       addTextSection('Alcance', alcanceConEmpresa);
 
-      standardY = checkPageBreak(doc, 72, standardY + 2);
-      standardY = addSectionBar(doc, 'Responsabilidades', standardY);
+      standardY = checkPageBreak(doc, 72, standardY + 2, bodyFooterReserve);
+      standardY = addSectionBar(doc, 'Responsabilidades', standardY, bodyFooterReserve);
       [
         ['Alta Dirección', responsabilidades.altaDireccion],
         ['Responsable del SG-SST', responsabilidades.responsableSst],
         ['Trabajadores', responsabilidades.trabajadores],
       ].forEach(([label, value]) => {
-        standardY = checkPageBreak(doc, 50, standardY);
-        standardY = addParagraph(doc, label, { y: standardY, fontSize: 8, bold: true });
+        standardY = checkPageBreak(doc, 50, standardY, bodyFooterReserve);
+        standardY = addParagraph(doc, label, {
+          y: standardY,
+          fontSize: 8,
+          bold: true,
+          footerReserve: bodyFooterReserve,
+        });
         standardY = addParagraph(doc, value || 'No aplica.', {
           y: standardY,
           fontSize: 8,
           indent: 8,
+          footerReserve: bodyFooterReserve,
         });
       });
 
