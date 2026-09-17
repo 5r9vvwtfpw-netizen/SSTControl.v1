@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { ArrowLeft, CalendarDays, CheckCircle2, Clock3, ExternalLink, LayoutList, Pencil, Plus, Trash2, Users } from "lucide-react";
+import { ArrowLeft, CalendarDays, CheckCircle2, Clock3, Download, ExternalLink, LayoutList, Pencil, Plus, Trash2, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 type TrainingForm = {
@@ -64,6 +64,10 @@ export default function CronogramaProgramaCapacitacion() {
   }, [trainings, today]);
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: [`/api/program-trainings/${id}`] });
+  const downloadPdf = () => {
+    if (!id) return;
+    window.open(`/api/training-programs/${id}/cronograma-pdf`, "_blank", "noopener,noreferrer");
+  };
   const saveMutation = useMutation({
     mutationFn: async (payload: Record<string, unknown>) => editing
       ? apiRequest("PATCH", `/api/program-trainings/${editing.id}`, payload)
@@ -105,7 +109,12 @@ export default function CronogramaProgramaCapacitacion() {
       <Link href="/programa-capacitacion-anual" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" />Programas de capacitación</Link>
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div><div className="flex items-center gap-2 text-xs uppercase tracking-widest text-primary font-semibold"><CalendarDays className="h-4 w-4" />Cronograma anual · {program.year}</div><h1 className="text-3xl font-bold mt-2">{program.title}</h1><p className="text-muted-foreground mt-1 max-w-2xl">Actividades planeadas, ejecución y evidencia del programa general.</p></div>
-        <Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" />Nueva actividad</Button>
+         <div className="flex flex-wrap gap-2">
+           <Button variant="outline" onClick={downloadPdf} disabled={!trainings.length}>
+             <Download className="h-4 w-4 mr-2" />PDF completo
+           </Button>
+           <Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" />Nueva actividad</Button>
+         </div>
       </header>
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         {([

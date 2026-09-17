@@ -25413,6 +25413,229 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Complete training schedule PDF, using the standardized SST document format.
+  app.get("/api/training-programs/:id/cronograma-pdf", requirePermission("trainings:view"), async (req, res) => {
+    try {
+      if (!getEffectiveCompanyId(req)) {
+        return res.status(403).send("Esta operación requiere pertenecer a una empresa");
+      }
+      const companyId = getEffectiveCompanyId(req);
+      const PDFDocument = (await import("pdfkit")).default;
+      const [program, trainings, company] = await Promise.all([
+        storage.getTrainingProgram(req.params.id, companyId),
+        storage.getProgramTrainings(req.params.id, companyId),
+        storage.getCompany(companyId),
+      ]);
+
+      if (!program) {
+        return res.status(404).send("Programa de capacitación no encontrado");
+      }
+
+      const logoBuffer = await loadCompanyLogo(company?.logoUrl || undefined);
+      const signers = await getSignersForCompany(companyId, true);
+      const subscription = await storage.getSubscriptionByCompany(companyId);
+      const trialStatus = getTrialStatus(
+        subscription?.status || "trial",
+        subscription?.trialEnd || null,
+        true,
+        true,
+      );
+      const doc = new PDFDocument({ margin: PDF_CONFIG.MARGIN, size: PDF_CONFIG.PAGE_SIZE });
+      setupTrialWatermarkOnAllPages(doc, trialStatus.requiresWatermark);
+
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader(
+        "Content-Disposition",
+        `inline; filename="cronograma-capacitaciones-${program.year}.pdf"`,
+      );
+      doc.pipe(res);
+
+      const companyData = {
+        id: company?.id || companyId,
+        name: company?.name || "Empresa",
+        nit: company?.nit || "N/A",
+        address: company?.address || null,
+        logoUrl: company?.logoUrl || null,
+      };
+      const margin = PDF_CONFIG.MARGIN;
+      const pageWidth = doc.page.width - margin * 2;
+      const footerReserve = 155;
+      const sortedTrainings = [...trainings].sort((a, b) =>
+        new Date(a.scheduledDate).getTime() - new Date(b.scheduledDate).getTime(),
+      );
+      const statusLabels: Record<string, string> = {
+        programada: "Programada",
+        en_curso: "En curso",
+        completada: "Completada",
+        cancelada: "Cancelada",
+        reprogramada: "Reprogramada",
+      };
+      const modalityLabels: Record<string, string> = {
+        presencial: "Presencial",
+        virtual: "Virtual",
+        mixta: "Mixta",
+      };
+      const formatTrainingDate = (value: Date | string | null | undefined) =>
+        value ? formatDate(value) : "Pendiente";
+      const textValue = (value: unknown, fallback = "No registrado") =>
+        value === null || value === undefined || String(value).trim() === ""
+          ? fallback
+          : String(value);
+      const addPageIfNeeded = (height: number) => {
+        if (doc.y + height > doc.page.height - footerReserve) {
+          doc.addPage();
+          doc.y = PDF_CONFIG.CONTENT_START_Y;
+        }
+      };
+      const addField = (label: string, value: unknown, x: number, y: number, width: number) => {
+        doc.font("Helvetica-Bold").fontSize(7).fillColor(PDF_COLORS.GREEN_DARK)
+          .text(`${label}:`, x, y, { width, continued: true });
+        doc.font("Helvetica").fillColor(PDF_COLORS.BLACK).text(` ${textValue(value)}`, { width });
+      };
+
+      await addStandardHeader({
+        doc,
+        company: companyData,
+        documentTitle: "CRONOGRAMA DETALLADO DE CAPACITACIONES SST",
+        documentCode: `SST-CRON-CAP-${program.id.substring(0, 8)}`,
+        version: "1.0",
+        date: new Date(),
+        logoBuffer,
+      });
+      doc.y += 10;
+
+      let y = addSectionBar(doc, "1. IDENTIFICACIÓN DEL PROGRAMA", doc.y, footerReserve);
+      doc.font("Helvetica").fontSize(8).fillColor(PDF_COLORS.BLACK);
+      doc.text(`Año: ${program.year}`, margin, y);
+      doc.text(`Título: ${textValue(program.title)}`, margin, y + 13, { width: pageWidth });
+      doc.text(`Responsable general: ${textValue(program.responsible)}`, margin, y + 26, { width: pageWidth });
+      doc.text(`Estado del programa: ${textValue(program.status)}`, margin, y + 39, { width: pageWidth });
+      y += 57;
+
+      y = addSectionBar(doc, "2. RESUMEN DEL CRONOGRAMA", y, footerReserve);
+      const completed = trainings.filter((training) => training.status === "completada").length;
+      const pending = trainings.filter((training) => !["completada", "cancelada"].includes(training.status)).length;
+      const cancelled = trainings.filter((training) => training.status === "cancelada").length;
+      const estimatedAttendees = trainings.reduce((sum, training) => sum + (training.estimatedAttendees || 0), 0);
+      const actualAttendees = trainings.reduce((sum, training) => sum + (training.actualAttendees || 0), 0);
+      const compliance = trainings.length ? Math.round((completed / trainings.length) * 100) : 0;
+      const summary = [
+        `Total de actividades: ${trainings.length}`,
+        `Completadas: ${completed}`,
+        `Pendientes/en curso: ${pending}`,
+        `Canceladas: ${cancelled}`,
+        `Cumplimiento: ${compliance}%`,
+        `Participantes estimados: ${estimatedAttendees}`,
+        `Participantes reales: ${actualAttendees}`,
+      ];
+      doc.font("Helvetica").fontSize(8).fillColor(PDF_COLORS.BLACK);
+      summary.forEach((line, index) => {
+        const x = margin + (index % 2) * (pageWidth / 2);
+        const rowY = y + Math.floor(index / 2) * 14;
+        doc.text(line, x, rowY, { width: pageWidth / 2 - 8 });
+      });
+      y += Math.ceil(summary.length / 2) * 14 + 10;
+
+      if (program.generalObjective || program.scope || program.targetPopulation) {
+        y = addSectionBar(doc, "3. OBJETIVO, ALCANCE Y POBLACIÓN", y, footerReserve);
+        if (program.generalObjective) {
+          doc.font("Helvetica-Bold").fontSize(8).fillColor(PDF_COLORS.GREEN_DARK)
+            .text("Objetivo general:", margin, y, { continued: true });
+          doc.font("Helvetica").fillColor(PDF_COLORS.BLACK).text(` ${program.generalObjective}`, { width: pageWidth });
+          y = doc.y + 5;
+        }
+        if (program.scope) {
+          doc.font("Helvetica-Bold").fontSize(8).fillColor(PDF_COLORS.GREEN_DARK)
+            .text("Alcance:", margin, y, { continued: true });
+          doc.font("Helvetica").fillColor(PDF_COLORS.BLACK).text(` ${program.scope}`, { width: pageWidth });
+          y = doc.y + 5;
+        }
+        if (program.targetPopulation) {
+          doc.font("Helvetica-Bold").fontSize(8).fillColor(PDF_COLORS.GREEN_DARK)
+            .text("Población objetivo general:", margin, y, { continued: true });
+          doc.font("Helvetica").fillColor(PDF_COLORS.BLACK).text(` ${program.targetPopulation}`, { width: pageWidth });
+          y = doc.y + 8;
+        }
+      }
+
+      y = addSectionBar(doc, "4. DETALLE COMPLETO DEL CRONOGRAMA", y, footerReserve);
+      if (sortedTrainings.length === 0) {
+        doc.font("Helvetica").fontSize(8).fillColor(PDF_COLORS.BLACK)
+          .text("No hay capacitaciones registradas en este cronograma.", margin, y);
+        y = doc.y + 10;
+      } else {
+        for (const [index, training] of sortedTrainings.entries()) {
+          addPageIfNeeded(180);
+          const cardY = doc.y;
+          const cardHeight = 158;
+          doc.roundedRect(margin, cardY, pageWidth, cardHeight, 4)
+            .fillAndStroke(index % 2 === 0 ? "#ffffff" : PDF_COLORS.GRAY_LIGHT, PDF_COLORS.GRAY_BORDER);
+          doc.font("Helvetica-Bold").fontSize(9).fillColor(PDF_COLORS.GREEN_DARK)
+            .text(`${index + 1}. ${textValue(training.topic, "Capacitación sin tema")}`, margin + 8, cardY + 8, { width: pageWidth - 16 });
+          doc.font("Helvetica-Bold").fontSize(8).fillColor(
+            training.status === "completada"
+              ? PDF_COLORS.GREEN_DARK
+              : training.status === "cancelada"
+                ? "#b91c1c"
+                : "#1d4ed8",
+          ).text(statusLabels[training.status] || textValue(training.status), margin + pageWidth - 105, cardY + 9, { width: 95, align: "right" });
+
+          const leftX = margin + 8;
+          const rightX = margin + pageWidth / 2 + 4;
+          const columnWidth = pageWidth / 2 - 16;
+          let leftY = cardY + 29;
+          let rightY = cardY + 29;
+          addField("Categoría", training.trainingCategory, leftX, leftY, columnWidth); leftY = doc.y + 3;
+          addField("Fecha programada", formatTrainingDate(training.scheduledDate), leftX, leftY, columnWidth); leftY = doc.y + 3;
+          addField("Hora programada", training.scheduledTime, leftX, leftY, columnWidth); leftY = doc.y + 3;
+          addField("Duración", training.duration ? `${training.duration} horas` : null, leftX, leftY, columnWidth);
+          addField("Instructor", training.instructor, rightX, rightY, columnWidth); rightY = doc.y + 3;
+          addField("Responsable", training.responsible, rightX, rightY, columnWidth); rightY = doc.y + 3;
+          addField("Modalidad", modalityLabels[training.modality] || training.modality, rightX, rightY, columnWidth); rightY = doc.y + 3;
+          addField("Lugar", training.location, rightX, rightY, columnWidth);
+
+          const lowerY = cardY + 91;
+          addField("Fecha real", formatTrainingDate(training.actualDate), leftX, lowerY, columnWidth);
+          addField("Participantes", `${training.actualAttendees ?? 0} reales / ${training.estimatedAttendees ?? 0} estimados`, rightX, lowerY, columnWidth);
+          addField("Población objetivo", training.targetAudience, leftX, cardY + 110, columnWidth);
+          addField("Evaluación", training.evaluationScore !== null && training.evaluationScore !== undefined ? `${training.evaluationScore}/100` : null, rightX, cardY + 110, columnWidth);
+          addField("Fundamento legal", training.legalBasis, leftX, cardY + 130, columnWidth);
+          addField("Frecuencia", training.frequency, rightX, cardY + 130, columnWidth);
+          doc.y = cardY + cardHeight + 10;
+
+          const supportingText = [
+            training.description && `Descripción: ${training.description}`,
+            training.materials && `Materiales: ${training.materials}`,
+            training.equipment && `Equipos: ${training.equipment}`,
+            training.observations && `Observaciones: ${training.observations}`,
+            training.attachmentUrl && `Material/evidencia: ${training.attachmentUrl}`,
+            training.evidenceUrl && `Evidencia: ${training.evidenceUrl}`,
+          ].filter(Boolean).join(" · ");
+          if (supportingText) {
+            addPageIfNeeded(40);
+            doc.font("Helvetica").fontSize(7).fillColor("#444444")
+              .text(supportingText, margin + 8, doc.y, { width: pageWidth - 16 });
+            doc.y += 8;
+          }
+        }
+      }
+
+      addPageIfNeeded(40);
+      doc.font("Helvetica").fontSize(7).fillColor("#666666")
+        .text(
+          "Documento generado desde la información registrada en el Programa de Capacitación Anual del SG-SST. " +
+          "La ejecución y las evidencias deben mantenerse actualizadas y disponibles para seguimiento y auditoría.",
+          margin,
+          doc.y,
+          { width: pageWidth, align: "center" },
+        );
+      await addSignatureFooter(doc, signers, true);
+      doc.end();
+    } catch (error: any) {
+      handlePdfError(error, res, "training-schedule-complete-pdf");
+    }
+  });
+
   // Training Program PDF Generation
   app.get("/api/training-programs/:id/pdf", requirePermission("trainings:view"), async (req, res) => {
     try {
