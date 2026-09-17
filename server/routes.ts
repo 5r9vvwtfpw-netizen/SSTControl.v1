@@ -26411,46 +26411,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
         columnWidths: [180, 181, 181],
       });
 
-      const paragraphHeight = (text: string, indent = 0, fontSize = 8) => {
-        doc.font('Helvetica').fontSize(fontSize);
-        return doc.heightOfString(text, {
-          width: doc.page.width - PDF_CONFIG.MARGIN * 2 - indent,
-          align: 'justify',
-        }) + 5;
-      };
-
       const addTextSection = (title: string, text: string) => {
         const content = text || 'No aplica.';
-        standardY = checkPageBreak(
-          doc,
-          30 + paragraphHeight(content),
-          standardY + 2,
-        );
+        // Reservar solo el encabezado y el inicio del contenido. El párrafo
+        // puede continuar naturalmente en la página siguiente sin dejar una
+        // página casi vacía cuando el texto es largo.
+        standardY = checkPageBreak(doc, 72, standardY + 2);
         standardY = addSectionBar(doc, title, standardY);
         standardY = addParagraph(doc, content, { y: standardY, fontSize: 8 });
       };
 
       const addNumberedSection = (title: string, items: string[]) => {
+        standardY = checkPageBreak(doc, 58, standardY + 2);
+        standardY = addSectionBar(doc, title, standardY);
+
         if (items.length === 0) {
-          standardY = checkPageBreak(
-            doc,
-            30 + paragraphHeight('No se registraron elementos.'),
-            standardY + 2,
-          );
-          standardY = addSectionBar(doc, title, standardY);
           standardY = addParagraph(doc, 'No se registraron elementos.', { y: standardY, fontSize: 8 });
           return;
         }
 
-        const numberedItems = items.map((item, index) => `${index + 1}. ${item}`);
-        const listHeight = numberedItems.reduce(
-          (height, item) => height + paragraphHeight(item, 8),
-          0,
-        );
-        standardY = checkPageBreak(doc, 30 + listHeight, standardY + 2);
-        standardY = addSectionBar(doc, title, standardY);
-        numberedItems.forEach((item) => {
-          standardY = addParagraph(doc, item, {
+        items.forEach((item, index) => {
+          const itemText = `${index + 1}. ${item}`;
+          doc.font('Helvetica').fontSize(8);
+          const itemHeight = doc.heightOfString(itemText, {
+            width: doc.page.width - PDF_CONFIG.MARGIN * 2 - 8,
+            align: 'justify',
+          }) + 5;
+          const pageBeforeItem = doc.page;
+          standardY = checkPageBreak(doc, itemHeight, standardY);
+          if (doc.page !== pageBeforeItem) {
+            standardY = addSectionBar(doc, `${title} (continuación)`, standardY);
+          }
+          standardY = addParagraph(doc, itemText, {
             y: standardY,
             fontSize: 8,
             indent: 8,
@@ -26462,12 +26454,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       addNumberedSection('Objetivos', objetivos);
       addTextSection('Alcance', alcanceConEmpresa);
 
-      standardY = addSectionBar(doc, 'Responsabilidades', standardY + 2);
+      standardY = checkPageBreak(doc, 72, standardY + 2);
+      standardY = addSectionBar(doc, 'Responsabilidades', standardY);
       [
         ['Alta Dirección', responsabilidades.altaDireccion],
         ['Responsable del SG-SST', responsabilidades.responsableSst],
         ['Trabajadores', responsabilidades.trabajadores],
       ].forEach(([label, value]) => {
+        standardY = checkPageBreak(doc, 50, standardY);
         standardY = addParagraph(doc, label, { y: standardY, fontSize: 8, bold: true });
         standardY = addParagraph(doc, value || 'No aplica.', {
           y: standardY,
@@ -26480,17 +26474,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       addTextSection('Recursos', recursosConEmpresa);
       addTextSection('Revisión y comunicación', revisionConEmpresa);
 
-      standardY = addSectionBar(doc, 'Aprobación de la política', standardY + 2);
-      standardY = addSimpleTable(doc, ['Elaborado por', 'Autorizado por', 'Aprobado por', 'Fecha de firma'], [[
-        policySigners.elaboro.name || '—',
-        policySigners.autorizo.name || '—',
-        policySigners.aprobo.name || '—',
-        formatDate(politica.fechaFirma),
-      ]], {
-        y: standardY,
-        columnWidths: [150, 150, 172, 70],
-      });
-
+      // La tabla de firmas estándar ya contiene los cargos, nombres y firmas.
+      // Se coloca directamente después del contenido para no duplicar la
+      // aprobación ni forzar una página adicional innecesaria.
       await addSignatureFooter(doc, policySigners, false, { startY: standardY + 5 });
       doc.end();
       return;
