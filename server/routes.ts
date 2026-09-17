@@ -48,6 +48,10 @@ import { registerAlianzaConsultoresRoutes } from "./routes/alianza-consultores";
 import { registerConfidencialidadAsistentesRoutes } from "./routes/confidencialidad-asistentes";
 import lsoDirectoryJwtRoutes from "./routes/lso-directory-jwt";
 import { legalDocsPdfService } from "./services/legal-docs-pdf";
+import {
+  buildReglamentoHigieneIndustrial,
+  REGLAMENTO_HIGIENE_CODIGO,
+} from "./services/reglamento-higiene-industrial";
 import { verifyQuote, getQuoteSummary, type NormalizedQuoteData } from "../plugins/landing-page-integration";
 import { registerInduccionVirtualRoutes } from "./induccion-virtual-routes";
 import { registerChatbotRoutes } from "./chatbot";
@@ -26232,6 +26236,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  app.post("/api/politicas-sst/reglamento-higiene/generar", requirePermission("sst_management:create"), async (req, res) => {
+    try {
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) {
+        return res.status(403).send("Usuario no asociado a una empresa");
+      }
+
+      const [company, configuredSigners, documentos] = await Promise.all([
+        storage.getCompany(companyId),
+        getSignersForCompany(companyId, true),
+        storage.getPoliticasSst(companyId),
+      ]);
+
+      if (!company) {
+        return res.status(404).send("Empresa no encontrada");
+      }
+
+      const lso = configuredSigners.lso;
+      const missingCompanyFields = [
+        !company.address && "dirección",
+        !company.city && "ciudad",
+        !company.ciiuCode && "código CIIU",
+        !company.legalRepName && "representante legal",
+        !company.legalRepId && "identificación del representante legal",
+      ].filter(Boolean);
+
+      if (!lso?.name) {
+        missingCompanyFields.push("LSO asignado");
+      }
+
+      if (missingCompanyFields.length > 0) {
+        return res.status(422).send(
+          `Complete primero en Empresas: ${missingCompanyFields.join(", ")}.`,
+        );
+      }
+
+      const fechaEmision = new Date();
+      const generated = buildReglamentoHigieneIndustrial(
+        company,
+        {
+          name: lso!.name,
+          licenseNumber: lso!.licenseNumber,
+        },
+        fechaEmision,
+      );
+      const validatedData = insertPoliticaSstSchema.parse(generated);
+      const existing = documentos.find((documento) => documento.codigo === REGLAMENTO_HIGIENE_CODIGO);
+      const reglamento = existing
+        ? await storage.updatePoliticaSst(existing.id, validatedData, companyId)
+        : await storage.createPoliticaSst(validatedData, companyId);
+
+      void triggerMatrizLegalAutoValidation(companyId);
+      res.status(existing ? 200 : 201).json(reglamento);
+    } catch (error: any) {
+      res.status(400).send(error.message);
+    }
+  });
+
   app.get("/api/politicas-sst/vigente", requireAuth, async (req, res) => {
     const companyId = getEffectiveCompanyId(req);
     if (!companyId) {
@@ -26263,6 +26325,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
       const validatedData = insertPoliticaSstSchema.parse(req.body);
+      if (validatedData.codigo === REGLAMENTO_HIGIENE_CODIGO) {
+        return res.status(409).send("El Reglamento de Higiene y Seguridad Industrial solo puede generarse automáticamente.");
+      }
       const politica = await storage.createPoliticaSst(validatedData, companyId);
       
       // Disparar validación automática de matriz legal en background
@@ -26279,6 +26344,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const companyId = getEffectiveCompanyId(req);
       if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
+      }
+      const existing = await storage.getPoliticaSst(req.params.id, companyId);
+      if (!existing) {
+        return res.status(404).send("Política o reglamento no encontrado");
+      }
+      if (existing.codigo === REGLAMENTO_HIGIENE_CODIGO) {
+        return res.status(409).send("El reglamento automático no admite edición manual. Actualice los datos de la empresa y vuelva a generarlo.");
       }
       const validatedData = insertPoliticaSstSchema.partial().parse(req.body);
       const politica = await storage.updatePoliticaSst(req.params.id, validatedData, companyId);
@@ -26322,6 +26394,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).send("Empresa no encontrada");
       }
 
+      const isReglamentoHigiene = politica.codigo === REGLAMENTO_HIGIENE_CODIGO;
       const doc = new PDFDocument({ size: 'LETTER', margin: PDF_CONFIG.MARGIN });
       
       // Add trial watermark if subscription is in trial period
@@ -26330,7 +26403,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       setupTrialWatermarkOnAllPages(doc, pdf20005_trialStatus.requiresWatermark);
       
       res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `inline; filename=Politica_SST_${politica.codigo}_v${politica.version}.pdf`);
+      res.setHeader(
+        'Content-Disposition',
+        `inline; filename=${isReglamentoHigiene ? 'Reglamento_Higiene_Seguridad_Industrial' : 'Politica_SST'}_${politica.codigo}_v${politica.version}.pdf`,
+      );
       doc.pipe(res);
 
       // Preload company logo and signers for standardized header
@@ -26361,7 +26437,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           logoUrl: company.logoUrl,
         },
         documentTitle: (politica.nombre?.trim() || 'POLÍTICA DE SEGURIDAD Y SALUD EN EL TRABAJO').toLocaleUpperCase('es-CO'),
-        documentCode: `SST-POL-${politica.codigo}`,
+        documentCode: isReglamentoHigiene ? politica.codigo : `SST-POL-${politica.codigo}`,
         version: politica.version,
         date: new Date(politica.fechaEmision),
         logoBuffer,
@@ -26510,8 +26586,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       };
 
-      addTextSection('Declaración de compromiso', declaracionConEmpresa);
-      addNumberedSection('Objetivos', objetivos);
+      addTextSection(
+        isReglamentoHigiene ? 'Identificación y disposiciones generales' : 'Declaración de compromiso',
+        declaracionConEmpresa,
+      );
+      addNumberedSection(
+        isReglamentoHigiene ? 'Normas generales de higiene y seguridad' : 'Objetivos',
+        objetivos,
+      );
       addTextSection('Alcance', alcanceConEmpresa);
 
       const firstResponsibilityHeight = paragraphHeight('Alta Dirección', 0, 8, true)
@@ -26564,11 +26646,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       });
 
-      addNumberedSection('Compromisos específicos', compromisos);
-      addTextSection('Recursos', recursosConEmpresa);
+      addNumberedSection(
+        isReglamentoHigiene ? 'Obligaciones y prohibiciones' : 'Compromisos específicos',
+        compromisos,
+      );
+      addTextSection(
+        isReglamentoHigiene ? 'Prevención y respuesta ante emergencias' : 'Recursos',
+        recursosConEmpresa,
+      );
       // El cierre debe viajar con las firmas; de lo contrario el pie queda
       // solo en una página nueva después de una sección casi vacía.
-      addTextSection('Revisión y comunicación', revisionConEmpresa, 150);
+      addTextSection(
+        isReglamentoHigiene ? 'Publicación, vigencia y actualización' : 'Revisión y comunicación',
+        revisionConEmpresa,
+        150,
+      );
 
       // La tabla de firmas estándar ya contiene los cargos, nombres y firmas.
       // Se coloca directamente después del contenido para no duplicar la

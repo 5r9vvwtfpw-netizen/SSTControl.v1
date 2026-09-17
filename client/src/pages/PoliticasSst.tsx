@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { type PoliticaSst } from "@shared/schema";
-import { Plus, Pencil, Trash2, FileText, FileDown, CheckCircle2, Clock, Archive, Bot, Target } from "lucide-react";
+import { Plus, Pencil, Trash2, FileText, FileDown, CheckCircle2, Clock, Archive, Bot, Target, ShieldCheck, RefreshCw } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -30,6 +30,30 @@ type ConfiguredPolicySigners = {
 };
 
 const normativaPoliticas = [
+  {
+    codigo: 'CST-349-350',
+    norma: 'Código Sustantivo del Trabajo',
+    articulo: 'Artículos 349 y 350',
+    descripcion: 'Reglamento especial de higiene y seguridad',
+    requisitos: [
+      'Elaboración para empleadores con diez o más trabajadores permanentes',
+      'Disposiciones especiales según las condiciones de higiene y seguridad',
+      'Prevención de riesgos propios de la actividad y los lugares de trabajo',
+      'Divulgación y disponibilidad para los trabajadores'
+    ],
+    obligatorio: true
+  },
+  {
+    codigo: 'LEY-962-55',
+    norma: 'Ley 962 de 2005',
+    articulo: 'Artículo 55',
+    descripcion: 'Supresión de la aprobación previa del reglamento por el Ministerio',
+    requisitos: [
+      'El empleador conserva la obligación de elaborar el reglamento cuando aplica',
+      'No requiere aprobación previa del Ministerio del Trabajo'
+    ],
+    obligatorio: true
+  },
   {
     codigo: 'DEC-1072-2.2.4.6.5',
     norma: 'Decreto 1072/2015',
@@ -114,6 +138,8 @@ La política será comunicada a todos los trabajadores a través de los siguient
 La política estará disponible para todas las partes interesadas que lo soliciten.`,
 };
 
+const REGLAMENTO_HIGIENE_CODIGO = "RHSI-AUTO-001";
+
 export default function PoliticasSstPage() {
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -157,6 +183,37 @@ export default function PoliticasSstPage() {
   const { data: configuredSigners } = useQuery<ConfiguredPolicySigners>({
     queryKey: ["/api/politicas-sst/signers"],
     enabled: dialogOpen,
+  });
+
+  const reglamentoHigiene = politicas.find(
+    (documento) => documento.codigo === REGLAMENTO_HIGIENE_CODIGO,
+  );
+
+  const generateReglamentoMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest(
+        "POST",
+        "/api/politicas-sst/reglamento-higiene/generar",
+        {},
+      );
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/politicas-sst"] });
+      toast({
+        title: reglamentoHigiene ? "Reglamento actualizado" : "Reglamento generado",
+        description: "El documento se creó automáticamente con la información vigente de la empresa.",
+        className: "bg-green-50 border-green-200",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "No se pudo generar el reglamento",
+        description: error.message,
+        variant: "destructive",
+        duration: 9000,
+      });
+    },
   });
 
   useEffect(() => {
@@ -656,10 +713,10 @@ export default function PoliticasSstPage() {
         </Link>
       </div>
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-4">
+        <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 space-y-0 pb-4">
           <div>
-            <CardTitle className="text-2xl font-bold text-primary">Políticas de SST</CardTitle>
-            <CardDescription>Gestión de políticas de Seguridad y Salud en el Trabajo según Resolución 0312/2019</CardDescription>
+            <CardTitle className="text-2xl font-bold text-primary">Políticas y Reglamentos SST</CardTitle>
+            <CardDescription>Gestión de políticas SST y generación automática del Reglamento de Higiene y Seguridad Industrial</CardDescription>
           </div>
           <AutomationAssistant
             titulo="Política de SST"
@@ -668,6 +725,19 @@ export default function PoliticasSstPage() {
             normativaAplicable={normativaPoliticas}
             compact={true}
           />
+          <Button
+            variant="outline"
+            onClick={() => generateReglamentoMutation.mutate()}
+            disabled={generateReglamentoMutation.isPending}
+            data-testid="button-generar-reglamento-higiene"
+          >
+            {generateReglamentoMutation.isPending ? (
+              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <ShieldCheck className="h-4 w-4 mr-2" />
+            )}
+            {reglamentoHigiene ? "Actualizar reglamento automático" : "Generar reglamento automático"}
+          </Button>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button data-testid="button-nueva-politica" onClick={() => handleOpenDialog()}>
@@ -1086,13 +1156,14 @@ export default function PoliticasSstPage() {
             <div className="text-center py-8 text-muted-foreground">Cargando políticas...</div>
           ) : politicas.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              No hay políticas registradas. Cree la primera política de SST.
+              No hay políticas ni reglamentos registrados. Cree una política o genere el reglamento automático.
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Código</TableHead>
+                  <TableHead>Documento</TableHead>
                   <TableHead>Versión</TableHead>
                   <TableHead>Estado</TableHead>
                   <TableHead>Fecha Emisión</TableHead>
@@ -1105,6 +1176,14 @@ export default function PoliticasSstPage() {
                 {politicas.map((politica) => (
                   <TableRow key={politica.id} data-testid={`row-politica-${politica.id}`}>
                     <TableCell className="font-medium" data-testid={`text-codigo-${politica.id}`}>{politica.codigo}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <span>{politica.nombre || "Política de SST"}</span>
+                        {politica.codigo === REGLAMENTO_HIGIENE_CODIGO && (
+                          <Badge variant="outline">Automático</Badge>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell data-testid={`text-version-${politica.id}`}>v{politica.version}</TableCell>
                     <TableCell>{getEstadoBadge(politica.estado)}</TableCell>
                     <TableCell data-testid={`text-fecha-emision-${politica.id}`}>
@@ -1124,14 +1203,16 @@ export default function PoliticasSstPage() {
                         >
                           <FileDown className="h-4 w-4" />
                         </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => handleOpenDialog(politica)}
-                          data-testid={`button-editar-${politica.id}`}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
+                        {politica.codigo !== REGLAMENTO_HIGIENE_CODIGO && (
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => handleOpenDialog(politica)}
+                            data-testid={`button-editar-${politica.id}`}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        )}
                         <Button
                           variant="outline"
                           size="icon"
