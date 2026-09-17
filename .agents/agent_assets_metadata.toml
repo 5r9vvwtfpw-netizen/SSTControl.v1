@@ -391,3 +391,45 @@ mtime_ms = 1789627291970
 storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/2ace6db7-d911-4e4d-acb9-7a7987362def/4ef312e2-91c0-4b52-ae33-b1604e8c7d94"
 storage_version_token = "1789627300396807"
 content_type = "application/pdf"
+
+[[outputs]]
+id = "fAywTWXlPB5AyHhGeVKkV"
+uri = "file://test-evidence/politica-sst-01-20260917-064423.pdf"
+type = "pdf"
+title = "Evidencia 1 — Prevención de riesgos laborales"
+description = "POL-SST-3PRUEBAS-01-20260917-064423 · Estado vigente · PDF de 2 páginas."
+logical_id = "c6ba3aa8-c856-4532-b4c2-042a298e709e"
+content_hash = "sha256:556c0737551ccbfd1ec4de7f3f2f2630dbf530983e5812060275b6413dd46e92"
+size = 181409
+mtime_ms = 1789627463651
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/c6ba3aa8-c856-4532-b4c2-042a298e709e/f795a5b0-559b-4eb8-9cdb-e6e22fbb7ad0"
+storage_version_token = "1789627500393796"
+content_type = "application/pdf"
+
+[[outputs]]
+id = "v_D3qOdtAhy9UalW0xEcV"
+uri = "file://test-evidence/politica-sst-02-20260917-064423.pdf"
+type = "pdf"
+title = "Evidencia 2 — Promoción de la salud laboral"
+description = "POL-SST-3PRUEBAS-02-20260917-064423 · Estado borrador · PDF de 2 páginas."
+logical_id = "f7284a97-0839-4fac-9a68-943e9070f173"
+content_hash = "sha256:e94b97bae59f10b9f026091fc9a21c77519d9b210e15c2aefa05610587a5865f"
+size = 181405
+mtime_ms = 1789627463839
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/f7284a97-0839-4fac-9a68-943e9070f173/3c82c581-7f1b-4234-880b-3dafb068c104"
+storage_version_token = "1789627501223000"
+content_type = "application/pdf"
+
+[[outputs]]
+id = "OWxpi-2nVKIaWm_hYeH8f"
+uri = "file://test-evidence/politica-sst-03-20260917-064423.pdf"
+type = "pdf"
+title = "Evidencia 3 — Mejora continua del SG-SST"
+description = "POL-SST-3PRUEBAS-03-20260917-064423 · Estado archivada · PDF de 2 páginas."
+logical_id = "155185ef-44d6-4179-b9bc-a1f0651bebdc"
+content_hash = "sha256:078150ba532492bfe51962ab31e0e39d3d2fffd7ef0ff8ec5e875b3497af409e"
+size = 181325
+mtime_ms = 1789627463991
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/155185ef-44d6-4179-b9bc-a1f0651bebdc/73abd9b9-ad44-41f8-aaed-26ee6c3ffecb"
+storage_version_token = "1789627501905985"
+content_type = "application/pdf"
