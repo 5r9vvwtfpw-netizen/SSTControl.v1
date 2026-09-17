@@ -343,7 +343,15 @@ export default function ProgramaCapacitacionAnual() {
                     )}
 
                     <div className="flex gap-2 pt-2">
-                      <Button
+                       <Link
+                         href={`/programa-capacitacion-anual/${program.id}/cronograma`}
+                         className="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 h-9 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
+                         data-testid={`button-cronograma-program-${program.id}`}
+                       >
+                         <CalendarDays className="w-3 h-3 mr-1" />
+                         Cronograma
+                       </Link>
+                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => handleDownloadPDF(program.id)}
