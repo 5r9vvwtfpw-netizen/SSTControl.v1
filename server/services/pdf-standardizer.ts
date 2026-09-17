@@ -327,7 +327,8 @@ export function addSectionBar(
   doc: typeof PDFDocument.prototype,
   title: string,
   y?: number,
-  footerReserve: number = 150
+  footerReserve: number = 150,
+  pageStartY: number = PDF_CONFIG.CONTENT_START_Y
 ): number {
   const margin = PDF_CONFIG.MARGIN;
   const pageWidth = doc.page.width;
@@ -335,7 +336,7 @@ export function addSectionBar(
   const currentY = y ?? doc.y;
 
   // Verificar espacio en página
-  const safeY = checkPageBreak(doc, barHeight + 20, currentY, footerReserve);
+  const safeY = checkPageBreak(doc, barHeight + 20, currentY, footerReserve, pageStartY);
 
   // Dibujar barra verde
   doc
@@ -848,7 +849,8 @@ export function checkPageBreak(
   doc: typeof PDFDocument.prototype,
   neededHeight: number,
   currentY?: number,
-  footerReserve: number = 150
+  footerReserve: number = 150,
+  pageStartY: number = PDF_CONFIG.CONTENT_START_Y
 ): number {
   const y = currentY ?? doc.y;
   const pageHeight = doc.page.height;
@@ -857,7 +859,7 @@ export function checkPageBreak(
 
   if (y + neededHeight > availableSpace) {
     doc.addPage();
-    return PDF_CONFIG.CONTENT_START_Y;
+    return pageStartY;
   }
 
   return y;
@@ -968,6 +970,7 @@ export function addParagraph(
     indent?: number;
     y?: number;
     footerReserve?: number;
+    pageStartY?: number;
   }
 ): number {
   const margin = PDF_CONFIG.MARGIN;
@@ -984,7 +987,13 @@ export function addParagraph(
   const estimatedHeight = estimatedLines * lineHeight;
   
   // Verificar espacio
-  currentY = checkPageBreak(doc, estimatedHeight, currentY, options?.footerReserve);
+  currentY = checkPageBreak(
+    doc,
+    estimatedHeight,
+    currentY,
+    options?.footerReserve,
+    options?.pageStartY,
+  );
 
   doc
     .fontSize(fontSize)

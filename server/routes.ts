@@ -26402,7 +26402,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Cuerpo estandarizado. La política se presenta una sola vez y todos los
       // saltos de página se delegan a los helpers compartidos.
       const bodyFooterReserve = 20;
-      let standardY = addSectionBar(doc, 'Información del documento', contentStartY, bodyFooterReserve);
+      const bodyPageStartY = PDF_CONFIG.MARGIN + 20;
+      let standardY = addSectionBar(
+        doc,
+        'Información del documento',
+        contentStartY,
+        bodyFooterReserve,
+        bodyPageStartY,
+      );
       standardY = addSimpleTable(doc, ['Estado', 'Fecha de emisión', 'Próxima revisión'], [[
         politica.estado.toUpperCase(),
         formatDate(politica.fechaEmision),
@@ -26412,25 +26419,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
         columnWidths: [180, 181, 181],
       });
 
-      const addTextSection = (title: string, text: string) => {
+      const paragraphHeight = (text: string, indent = 0, fontSize = 8, bold = false) => {
+        doc.font(bold ? 'Helvetica-Bold' : 'Helvetica').fontSize(fontSize);
+        return doc.heightOfString(text || 'No aplica.', {
+          width: doc.page.width - PDF_CONFIG.MARGIN * 2 - indent,
+          align: 'justify',
+        }) + 5;
+      };
+
+      const maxBodyHeight = doc.page.height - bodyPageStartY - PDF_CONFIG.MARGIN - bodyFooterReserve;
+
+      const addTextSection = (title: string, text: string, trailingReserve = 0) => {
         const content = text || 'No aplica.';
-        // Reservar solo el encabezado y el inicio del contenido. El párrafo
-        // puede continuar naturalmente en la página siguiente sin dejar una
-        // página casi vacía cuando el texto es largo.
-        standardY = checkPageBreak(doc, 72, standardY + 2, bodyFooterReserve);
-        standardY = addSectionBar(doc, title, standardY, bodyFooterReserve);
-        standardY = addParagraph(doc, content, { y: standardY, fontSize: 8, footerReserve: bodyFooterReserve });
+        // Para textos que caben completos, mover toda la sección evita dejar
+        // una barra al final de una página y el párrafo en la siguiente.
+        const sectionHeight = 30 + paragraphHeight(content) + trailingReserve;
+        const requiredHeight = sectionHeight <= maxBodyHeight ? sectionHeight : 72;
+        standardY = checkPageBreak(
+          doc,
+          requiredHeight,
+          standardY + 2,
+          bodyFooterReserve,
+          bodyPageStartY,
+        );
+        standardY = addSectionBar(doc, title, standardY, bodyFooterReserve, bodyPageStartY);
+        standardY = addParagraph(doc, content, {
+          y: standardY,
+          fontSize: 8,
+          footerReserve: bodyFooterReserve,
+          pageStartY: bodyPageStartY,
+        });
       };
 
       const addNumberedSection = (title: string, items: string[]) => {
-        standardY = checkPageBreak(doc, 58, standardY + 2, bodyFooterReserve);
-        standardY = addSectionBar(doc, title, standardY, bodyFooterReserve);
+        const firstItemHeight = items.length > 0
+          ? paragraphHeight(`1. ${items[0]}`, 8)
+          : paragraphHeight('No se registraron elementos.');
+        const sectionHeight = 30 + firstItemHeight;
+        const requiredHeight = sectionHeight <= maxBodyHeight ? sectionHeight : 58;
+        standardY = checkPageBreak(
+          doc,
+          requiredHeight,
+          standardY + 2,
+          bodyFooterReserve,
+          bodyPageStartY,
+        );
+        standardY = addSectionBar(doc, title, standardY, bodyFooterReserve, bodyPageStartY);
 
         if (items.length === 0) {
           standardY = addParagraph(doc, 'No se registraron elementos.', {
             y: standardY,
             fontSize: 8,
             footerReserve: bodyFooterReserve,
+            pageStartY: bodyPageStartY,
           });
           return;
         }
@@ -26443,15 +26484,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
             align: 'justify',
           }) + 5;
           const pageBeforeItem = doc.page;
-          standardY = checkPageBreak(doc, itemHeight, standardY, bodyFooterReserve);
+          standardY = checkPageBreak(
+            doc,
+            itemHeight,
+            standardY,
+            bodyFooterReserve,
+            bodyPageStartY,
+          );
           if (doc.page !== pageBeforeItem) {
-            standardY = addSectionBar(doc, `${title} (continuación)`, standardY, bodyFooterReserve);
+            standardY = addSectionBar(
+              doc,
+              `${title} (continuación)`,
+              standardY,
+              bodyFooterReserve,
+              bodyPageStartY,
+            );
           }
           standardY = addParagraph(doc, itemText, {
             y: standardY,
             fontSize: 8,
             indent: 8,
             footerReserve: bodyFooterReserve,
+            pageStartY: bodyPageStartY,
           });
         });
       };
@@ -26460,31 +26514,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
       addNumberedSection('Objetivos', objetivos);
       addTextSection('Alcance', alcanceConEmpresa);
 
-      standardY = checkPageBreak(doc, 72, standardY + 2, bodyFooterReserve);
-      standardY = addSectionBar(doc, 'Responsabilidades', standardY, bodyFooterReserve);
+      const firstResponsibilityHeight = paragraphHeight('Alta Dirección', 0, 8, true)
+        + paragraphHeight(responsabilidades.altaDireccion || 'No aplica.', 8);
+      const responsibilitySectionHeight = 30 + firstResponsibilityHeight;
+      const responsibilityStartHeight = responsibilitySectionHeight <= maxBodyHeight
+        ? responsibilitySectionHeight
+        : 72;
+      standardY = checkPageBreak(
+        doc,
+        responsibilityStartHeight,
+        standardY + 2,
+        bodyFooterReserve,
+        bodyPageStartY,
+      );
+      standardY = addSectionBar(
+        doc,
+        'Responsabilidades',
+        standardY,
+        bodyFooterReserve,
+        bodyPageStartY,
+      );
       [
         ['Alta Dirección', responsabilidades.altaDireccion],
         ['Responsable del SG-SST', responsabilidades.responsableSst],
         ['Trabajadores', responsabilidades.trabajadores],
       ].forEach(([label, value]) => {
-        standardY = checkPageBreak(doc, 50, standardY, bodyFooterReserve);
+        const responsibilityHeight = paragraphHeight(label, 0, 8, true)
+          + paragraphHeight(value || 'No aplica.', 8);
+        standardY = checkPageBreak(
+          doc,
+          responsibilityHeight,
+          standardY,
+          bodyFooterReserve,
+          bodyPageStartY,
+        );
         standardY = addParagraph(doc, label, {
           y: standardY,
           fontSize: 8,
           bold: true,
           footerReserve: bodyFooterReserve,
+          pageStartY: bodyPageStartY,
         });
         standardY = addParagraph(doc, value || 'No aplica.', {
           y: standardY,
           fontSize: 8,
           indent: 8,
           footerReserve: bodyFooterReserve,
+          pageStartY: bodyPageStartY,
         });
       });
 
       addNumberedSection('Compromisos específicos', compromisos);
       addTextSection('Recursos', recursosConEmpresa);
-      addTextSection('Revisión y comunicación', revisionConEmpresa);
+      // El cierre debe viajar con las firmas; de lo contrario el pie queda
+      // solo en una página nueva después de una sección casi vacía.
+      addTextSection('Revisión y comunicación', revisionConEmpresa, 150);
 
       // La tabla de firmas estándar ya contiene los cargos, nombres y firmas.
       // Se coloca directamente después del contenido para no duplicar la
