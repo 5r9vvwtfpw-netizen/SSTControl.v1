@@ -143,6 +143,7 @@ export default function MatrizRiesgosViales() {
   const [showIpercPanel, setShowIpercPanel] = useState(false);
   const [ipercSearch, setIpercSearch] = useState("");
   const [importedFromIperc, setImportedFromIperc] = useState(false);
+  const [importedIpercPeligro, setImportedIpercPeligro] = useState<PeligroIperc | null>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -213,15 +214,20 @@ export default function MatrizRiesgosViales() {
   }, [riesgos]);
 
   const createMutation = useMutation({
-    mutationFn: async (data: FormValues) => {
-      const res = await apiRequest("POST", "/api/riesgos-viales", data);
+    mutationFn: async ({ data, peligroIperc }: { data: FormValues; peligroIperc: PeligroIperc | null }) => {
+      const res = await apiRequest("POST", "/api/riesgos-viales", {
+        ...data,
+        ...(peligroIperc ? { peligroIpercId: peligroIperc.id } : {}),
+      });
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/riesgos-viales"] });
       queryClient.invalidateQueries({ queryKey: ["/api/riesgos-viales/estadisticas"] });
+      queryClient.invalidateQueries({ queryKey: ["riesgo-vinculacion"] });
       setDialogOpen(false);
       form.reset();
+      resetIpercPanel();
       toast({
         title: "Riesgo vial creado",
         description: "El riesgo vial se ha registrado exitosamente",
@@ -462,7 +468,7 @@ export default function MatrizRiesgosViales() {
     if (editingRiesgo) {
       updateMutation.mutate({ id: editingRiesgo.id, data: values });
     } else {
-      createMutation.mutate(values);
+      createMutation.mutate({ data: values, peligroIperc: importedIpercPeligro });
     }
   };
 
@@ -511,6 +517,7 @@ export default function MatrizRiesgosViales() {
     setShowIpercPanel(false);
     setIpercSearch("");
     setImportedFromIperc(false);
+    setImportedIpercPeligro(null);
   };
 
   const handleOpenNew = () => {
@@ -565,6 +572,7 @@ export default function MatrizRiesgosViales() {
     form.setValue("controlesExistentes", controles, { shouldValidate: true });
     // Paso PESV relacionado: P04 es el paso de Evaluación de Riesgos Viales
     form.setValue("pasoPesvRelacionado", "P04", { shouldValidate: true });
+    setImportedIpercPeligro(peligro);
     setShowIpercPanel(false);
     setIpercSearch("");
     setImportedFromIperc(true);
@@ -1361,6 +1369,12 @@ export default function MatrizRiesgosViales() {
                       </div>
                     )}
                   </div>
+
+                  <VinculacionRiesgosSstPesvBanner
+                    riesgoVialId={riesgo.id}
+                    modo="pesv"
+                    mostrarAcciones={false}
+                  />
 
                   <div className="flex gap-2 pt-2">
                     <Button 

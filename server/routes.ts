@@ -55558,7 +55558,30 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(403).json({ error: "Usuario no asociado a una empresa" });
       }
       
-      const validatedData = insertRiesgoVialSchema.parse(req.body);
+      // When a road risk is created from an IPERC danger, keep the source ID
+      // outside the road-risk schema and create the formal SST-PESV linkage
+      // atomically with the new risk.
+      const { peligroIpercId, ...riesgoBody } = req.body ?? {};
+      if (peligroIpercId !== undefined && (typeof peligroIpercId !== "string" || !peligroIpercId.trim())) {
+        return res.status(400).json({ error: "El ID del peligro IPERC no es válido" });
+      }
+
+      let peligroIperc: typeof schema.peligrosIperc.$inferSelect | undefined;
+      if (peligroIpercId) {
+        [peligroIperc] = await db
+          .select()
+          .from(schema.peligrosIperc)
+          .where(and(
+            eq(schema.peligrosIperc.id, peligroIpercId),
+            eq(schema.peligrosIperc.companyId, effectiveCompanyId)
+          ));
+
+        if (!peligroIperc) {
+          return res.status(404).json({ error: "El peligro IPERC no existe en la empresa activa" });
+        }
+      }
+
+      const validatedData = insertRiesgoVialSchema.parse(riesgoBody);
       
       // Calculate valorRiesgo and nivelRiesgo automatically
       const probabilidadValue = getProbabilidadValue(validatedData.probabilidad);
@@ -55576,16 +55599,35 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         nivelRiesgoResidual = calculateNivelRiesgo(valorRiesgoResidual);
       }
       
-      const [result] = await db.insert(riesgosViales)
-        .values({
-          ...validatedData,
-          companyId: effectiveCompanyId,
-          valorRiesgo,
-          nivelRiesgo: nivelRiesgo as any,
-          valorRiesgoResidual,
-          nivelRiesgoResidual: nivelRiesgoResidual as any,
-        })
-        .returning();
+      const result = await db.transaction(async (tx) => {
+        const [createdRisk] = await tx.insert(riesgosViales)
+          .values({
+            ...validatedData,
+            companyId: effectiveCompanyId,
+            valorRiesgo,
+            nivelRiesgo: nivelRiesgo as any,
+            valorRiesgoResidual,
+            nivelRiesgoResidual: nivelRiesgoResidual as any,
+          })
+          .returning();
+
+        if (peligroIperc) {
+          await tx.insert(schema.riesgosSstPesvVinculacion)
+            .values({
+              companyId: effectiveCompanyId,
+              riesgoVialId: createdRisk.id,
+              peligroIpercId: peligroIperc.id,
+              origen: "sst",
+              estadoSincronizacion: "sincronizado",
+              nivelRiesgoPesv: nivelRiesgo,
+              nivelRiesgoSst: peligroIperc.nivelRiesgo,
+              justificacionVinculacion: "Riesgo vial creado desde un peligro IPERC en el paso P04 de evaluación de riesgos viales.",
+              vinculadoPor: req.user?.id,
+            });
+        }
+
+        return createdRisk;
+      });
       
       res.status(201).json(result);
     } catch (error: any) {
