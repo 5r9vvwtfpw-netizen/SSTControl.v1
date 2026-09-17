@@ -203,6 +203,23 @@ export default function Iperc() {
     enabled: !isAdmin,
   });
 
+  const selectedFormCompanyId = form.watch("companyId");
+  const lsoCompanyId = isAdmin
+    ? selectedFormCompanyId || editingMatriz?.companyId || ""
+    : currentCompany?.id || "";
+  const lsoAssignmentQuery = lsoCompanyId
+    ? `/api/company/current/lso-assignment?companyId=${encodeURIComponent(lsoCompanyId)}`
+    : "/api/company/current/lso-assignment";
+  const { data: activeLso } = useQuery<{
+    name: string;
+    cargo: string;
+    licenseNumber: string | null;
+    isExternal: boolean;
+  } | null>({
+    queryKey: [lsoAssignmentQuery],
+    enabled: dialogOpen && Boolean(lsoCompanyId),
+  });
+
   // Auto-seleccionar empresa cuando se abre el diálogo
   useEffect(() => {
     if (dialogOpen && !editingMatriz) {
@@ -247,6 +264,13 @@ export default function Iperc() {
   }, [responsibleDesignations, workers]);
 
   // Auto-llenar responsable y cargo con el responsable SST activo cuando se abre el diálogo
+  useEffect(() => {
+    if (dialogOpen && activeLso) {
+      form.setValue("responsableEvaluacion", activeLso.name, { shouldDirty: false });
+      form.setValue("cargoResponsable", activeLso.cargo, { shouldDirty: false });
+    }
+  }, [dialogOpen, activeLso, form]);
+
   useEffect(() => {
     if (dialogOpen && !editingMatriz && activeResponsible) {
       // Solo auto-llenar si los campos están vacíos o tienen valores por defecto
@@ -754,7 +778,7 @@ export default function Iperc() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  {/* Responsable - Lista de trabajadores con contrato activo */}
+                  {/* Responsable - LSO activo asignado por la empresa */}
                   <FormField
                     control={form.control}
                     name="responsableEvaluacion"
@@ -762,6 +786,7 @@ export default function Iperc() {
                       <FormItem>
                         <FormLabel>Responsable *</FormLabel>
                         <Select 
+                          disabled={Boolean(activeLso)}
                           onValueChange={(value) => {
                             field.onChange(value);
                             // Auto-llenar cargo del trabajador seleccionado
@@ -778,15 +803,24 @@ export default function Iperc() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent className="max-h-[300px] max-w-[400px]">
-                            {workersConContrato.length > 0 ? (
+                            {activeLso ? (
+                              <SelectItem value={activeLso.name}>
+                                <div className="flex flex-col max-w-[350px]">
+                                  <span className="truncate">{activeLso.name}</span>
+                                  <span className="text-xs text-muted-foreground truncate">
+                                    {activeLso.cargo}{activeLso.licenseNumber ? ` · Lic. ${activeLso.licenseNumber}` : ""}
+                                  </span>
+                                </div>
+                              </SelectItem>
+                            ) : workersConContrato.length > 0 ? (
                               workersConContrato.map((worker) => (
-                                <SelectItem key={worker.id} value={worker.name}>
-                                  <div className="flex flex-col max-w-[350px]">
-                                    <span className="truncate">{worker.name}</span>
-                                    <span className="text-xs text-muted-foreground truncate">{worker.position}</span>
-                                  </div>
-                                </SelectItem>
-                              ))
+                                  <SelectItem key={worker.id} value={worker.name}>
+                                    <div className="flex flex-col max-w-[350px]">
+                                      <span className="truncate">{worker.name}</span>
+                                      <span className="text-xs text-muted-foreground truncate">{worker.position}</span>
+                                    </div>
+                                  </SelectItem>
+                                ))
                             ) : (
                               <SelectItem value={user?.fullName || user?.username || ''} disabled>
                                 No hay trabajadores con contrato activo
@@ -800,7 +834,11 @@ export default function Iperc() {
                             )}
                           </SelectContent>
                         </Select>
-                        <FormDescription className="text-xs">Solo trabajadores con contrato activo</FormDescription>
+                        <FormDescription className="text-xs">
+                          {activeLso
+                            ? "LSO activo asignado por la empresa"
+                            : "Solo trabajadores con contrato activo; no hay un LSO activo asignado"}
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -814,37 +852,48 @@ export default function Iperc() {
                       // Obtener el cargo del trabajador seleccionado
                       const responsableActual = form.watch("responsableEvaluacion");
                       const workerSeleccionado = workersConContrato.find(w => w.name === responsableActual);
-                      const cargoDelTrabajador = workerSeleccionado?.position;
+                      const cargoDelTrabajador = activeLso?.cargo || workerSeleccionado?.position;
                       // Verificar si el cargo está en la lista predefinida
                       const cargoEnLista = CARGOS_RESPONSABLES_SST.some(c => c.cargo === cargoDelTrabajador);
                       
                       return (
                         <FormItem>
                           <FormLabel>Cargo Responsable</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value || ''}>
+                          <Select disabled={Boolean(activeLso)} onValueChange={field.onChange} value={field.value || activeLso?.cargo || ''}>
                             <FormControl>
                               <SelectTrigger data-testid="select-cargo" className="truncate">
                                 <SelectValue placeholder="Seleccione cargo" className="truncate" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent className="max-h-[300px] max-w-[400px]">
-                              {/* Mostrar el cargo del trabajador primero si no está en la lista */}
-                              {cargoDelTrabajador && !cargoEnLista && (
-                                <SelectItem key="cargo-trabajador" value={cargoDelTrabajador}>
+                              {activeLso ? (
+                                <SelectItem value={activeLso.cargo}>
                                   <div className="flex flex-col max-w-[350px]">
-                                    <span className="truncate">{cargoDelTrabajador}</span>
-                                    <span className="text-xs text-muted-foreground truncate">Cargo del trabajador seleccionado</span>
+                                    <span className="truncate">{activeLso.cargo}</span>
+                                    <span className="text-xs text-muted-foreground truncate">Cargo del LSO asignado</span>
                                   </div>
                                 </SelectItem>
+                              ) : (
+                                <>
+                                  {/* Mostrar el cargo del trabajador primero si no está en la lista */}
+                                  {cargoDelTrabajador && !cargoEnLista && (
+                                    <SelectItem key="cargo-trabajador" value={cargoDelTrabajador}>
+                                      <div className="flex flex-col max-w-[350px]">
+                                        <span className="truncate">{cargoDelTrabajador}</span>
+                                        <span className="text-xs text-muted-foreground truncate">Cargo del trabajador seleccionado</span>
+                                      </div>
+                                    </SelectItem>
+                                  )}
+                                  {CARGOS_RESPONSABLES_SST.map((cargo, idx) => (
+                                    <SelectItem key={idx} value={cargo.cargo}>
+                                      <div className="flex flex-col max-w-[350px]">
+                                        <span className="truncate">{cargo.cargo}</span>
+                                        <span className="text-xs text-muted-foreground truncate">{cargo.normativa}</span>
+                                      </div>
+                                      </SelectItem>
+                                  ))}
+                                </>
                               )}
-                              {CARGOS_RESPONSABLES_SST.map((cargo, idx) => (
-                                <SelectItem key={idx} value={cargo.cargo}>
-                                  <div className="flex flex-col max-w-[350px]">
-                                    <span className="truncate">{cargo.cargo}</span>
-                                    <span className="text-xs text-muted-foreground truncate">{cargo.normativa}</span>
-                                  </div>
-                                </SelectItem>
-                              ))}
                             </SelectContent>
                           </Select>
                           <FormMessage />

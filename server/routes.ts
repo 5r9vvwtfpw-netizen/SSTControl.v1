@@ -1566,6 +1566,41 @@ function getEffectiveCompanyId(req: Request): string {
   return user.companyId || "";
 }
 
+async function getActiveLsoForCompany(companyId: string): Promise<{
+  name: string;
+  cargo: string;
+  licenseNumber: string | null;
+  isExternal: boolean;
+} | null> {
+  const [assignment] = await db.select()
+    .from(schema.licensedProfessionalAssignments)
+    .where(and(
+      eq(schema.licensedProfessionalAssignments.companyId, companyId),
+      eq(schema.licensedProfessionalAssignments.isActive, true),
+    ))
+    .orderBy(desc(schema.licensedProfessionalAssignments.assignedAt))
+    .limit(1);
+
+  if (!assignment) return null;
+
+  const assignedUser = assignment.userId
+    ? await storage.getUser(assignment.userId)
+    : undefined;
+  const name = assignment.externalLsoName
+    || assignedUser?.fullName
+    || assignedUser?.username
+    || "";
+
+  if (!name) return null;
+
+  return {
+    name,
+    cargo: "Licenciado en Salud Ocupacional (LSO)",
+    licenseNumber: assignment.externalLsoLicenseNumber || assignedUser?.sstLicenseNumber || null,
+    isExternal: Boolean(assignment.externalLsoName),
+  };
+}
+
 function normalizeCommitteeSignerName(value: unknown): string {
   return String(value || "")
     .normalize("NFD")
@@ -3698,6 +3733,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         subscriptionStatus: subscription?.status || null,
       });
     } catch (error: any) {
+      res.status(500).send(error.message);
+    }
+  });
+
+  // LSO activo asignado a la empresa para encabezados y responsables de documentos.
+  app.get("/api/company/current/lso-assignment", requirePermission("companies:view"), async (req, res) => {
+    try {
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) {
+        return res.status(403).send("Usuario no asociado a una empresa");
+      }
+
+      res.json(await getActiveLsoForCompany(companyId));
+    } catch (error: any) {
+      console.error("Error fetching active company LSO:", error);
       res.status(500).send(error.message);
     }
   });
@@ -40224,7 +40274,17 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       }
       
       const validatedData = insertMatrizIpercSchema.parse(req.body);
-      const matriz = await storage.createMatrizIperc(validatedData, companyId);
+      const activeLso = await getActiveLsoForCompany(companyId);
+      const matriz = await storage.createMatrizIperc(
+        activeLso
+          ? {
+              ...validatedData,
+              responsableEvaluacion: activeLso.name,
+              cargoResponsable: activeLso.cargo,
+            }
+          : validatedData,
+        companyId,
+      );
       
       res.status(201).json(matriz);
     } catch (error: any) {
@@ -40254,7 +40314,18 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         companyId = userCompanyId;
       }
       
-      const matriz = await storage.updateMatrizIperc(req.params.id, validatedData, companyId);
+      const activeLso = await getActiveLsoForCompany(companyId);
+      const matriz = await storage.updateMatrizIperc(
+        req.params.id,
+        activeLso
+          ? {
+              ...validatedData,
+              responsableEvaluacion: activeLso.name,
+              cargoResponsable: activeLso.cargo,
+            }
+          : validatedData,
+        companyId,
+      );
       
       if (!matriz) {
         return res.status(404).send('Matriz IPERC no encontrada');

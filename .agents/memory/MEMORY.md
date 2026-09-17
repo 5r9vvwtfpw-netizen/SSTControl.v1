@@ -53,3 +53,4 @@
 - [Catálogo de mediciones ambientales](environmental-measurement-catalog.md) — los resultados se seleccionan por tipo desde una fuente compartida; no aceptar valores libres ni límites universales ficticios.
 - [Seguimiento de auditorías internas](internal-audit-follow-up.md) — auditorías cerradas permiten seguimiento de eficacia; un hallazgo exige acciones al 100% y eficaces antes de cerrar.
 - [Firmantes de políticas SST](policy-pdf-signers.md) — formulario y PDF deben usar SST-Colombia, LSO asignado y representante legal configurados en Empresas.
+- [Responsable IPER es el LSO asignado](iperc-lso-responsible.md) — crear y editar matrices debe usar el LSO activo de la empresa, interno o externo.
