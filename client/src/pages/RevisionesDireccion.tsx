@@ -9,19 +9,19 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Plus, Search, ClipboardCheck, Calendar, Clock, CheckCircle2, Shield, PlayCircle, Building2, CalendarDays, Sparkles, Wand2, Eye, ChevronDown, ChevronRight, FileText, AlertCircle, Loader2, X, FileDown } from "lucide-react";
+import { Plus, Search, ClipboardCheck, Calendar, Clock, CheckCircle2, Shield, PlayCircle, Building2, CalendarDays, Sparkles, Wand2, Eye, ChevronDown, ChevronRight, FileText, AlertCircle, Loader2, X, FileDown, Users, ListChecks, ThumbsUp, Trash2 } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { RevisionDireccion, Company, DecisionRevision, AccionRevision, insertRevisionDireccionSchema, insertDecisionRevisionSchema, insertAccionRevisionSchema } from "@shared/schema";
+import { RevisionDireccion, Company, DecisionRevision, AccionRevision, ParticipanteRevision, TemaRevision, insertRevisionDireccionSchema, insertDecisionRevisionSchema, insertAccionRevisionSchema } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { format } from "date-fns";
-import { hasCompanyAdminAccess, hasGlobalAccess, canWrite } from "@shared/permissions";
+import { hasCompanyAdminAccess, hasGlobalAccess, canWrite, hasPermission } from "@shared/permissions";
 import { AutomationAssistant } from "@/components/AutomationAssistant";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
@@ -87,7 +87,7 @@ const estadoAccionLabels: Record<string, { label: string; className: string }> =
   vencida: { label: "Vencida", className: "bg-red-500/10 text-red-700 dark:text-red-400" },
 };
 
-function DecisionItem({ decision, revisionId }: { decision: DecisionRevision; revisionId: string }) {
+function DecisionItem({ decision, revisionId, canManage }: { decision: DecisionRevision; revisionId: string; canManage: boolean }) {
   const { toast } = useToast();
   const [isExpanded, setIsExpanded] = useState(false);
   const [showAccionForm, setShowAccionForm] = useState(false);
@@ -158,9 +158,11 @@ function DecisionItem({ decision, revisionId }: { decision: DecisionRevision; re
         <div className="border-t pt-3">
           <div className="flex items-center justify-between mb-2">
             <h5 className="text-sm font-semibold">Acciones</h5>
-            <Button size="sm" variant="outline" onClick={() => setShowAccionForm(!showAccionForm)} data-testid={`button-new-accion-${decision.id}`}>
-              <Plus className="h-3 w-3 mr-1" />Nueva Acción
-            </Button>
+            {canManage && (
+              <Button size="sm" variant="outline" onClick={() => setShowAccionForm(!showAccionForm)} data-testid={`button-new-accion-${decision.id}`}>
+                <Plus className="h-3 w-3 mr-1" />Nueva Acción
+              </Button>
+            )}
           </div>
 
           {showAccionForm && (
@@ -276,8 +278,10 @@ export default function RevisionesDireccion() {
   const [selectedRevision, setSelectedRevision] = useState<RevisionDireccion | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [showDecisionForm, setShowDecisionForm] = useState(false);
-  const isAdmin = user?.role ? canWrite(user.role, 'sst_management') : false;
+  const canManageRevision = user?.role ? canWrite(user.role, 'sst_management') : false;
+  const canApproveRevision = user?.role ? hasPermission(user.role, "management_review:approve") || canManageRevision : false;
   const isSuperadmin = user?.role ? hasGlobalAccess(user.role) : false;
+  const evaluationIdFromUrl = new URLSearchParams(window.location.search).get("evaluationId") || undefined;
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -288,6 +292,8 @@ export default function RevisionesDireccion() {
       periodicidad: "semestral",
       fechaRevision: new Date(),
       estado: "programada",
+      evaluacionSstId: evaluationIdFromUrl,
+      estandarReferencia: "6.1.3",
       lugar: "",
       duracion: undefined,
       antecedentes: "",
@@ -356,6 +362,83 @@ export default function RevisionesDireccion() {
       return res.json();
     },
     enabled: !!selectedRevision?.id && detailDialogOpen,
+  });
+
+  const { data: participantes = [], isLoading: participantesLoading } = useQuery<ParticipanteRevision[]>({
+    queryKey: ["/api/revisiones-direccion", selectedRevision?.id, "participantes"],
+    queryFn: async () => {
+      const res = await fetch(`/api/revisiones-direccion/${selectedRevision?.id}/participantes`, { credentials: "include" });
+      if (!res.ok) throw new Error("Error al cargar participantes");
+      return res.json();
+    },
+    enabled: !!selectedRevision?.id && detailDialogOpen,
+  });
+
+  const { data: temas = [], isLoading: temasLoading } = useQuery<TemaRevision[]>({
+    queryKey: ["/api/revisiones-direccion", selectedRevision?.id, "temas"],
+    queryFn: async () => {
+      const res = await fetch(`/api/revisiones-direccion/${selectedRevision?.id}/temas`, { credentials: "include" });
+      if (!res.ok) throw new Error("Error al cargar temas");
+      return res.json();
+    },
+    enabled: !!selectedRevision?.id && detailDialogOpen,
+  });
+
+  const [participantDraft, setParticipantDraft] = useState({ nombre: "", cargo: "", tipo: "alta_direccion", asistio: 1 });
+  const [topicDraft, setTopicDraft] = useState({ titulo: "", descripcion: "", tipo: "indicadores_sst", orden: 0 });
+
+  const invalidateReviewEvidence = () => {
+    queryClient.invalidateQueries({ queryKey: ["/api/revisiones-direccion", selectedRevision?.id, "participantes"] });
+    queryClient.invalidateQueries({ queryKey: ["/api/revisiones-direccion", selectedRevision?.id, "temas"] });
+  };
+
+  const createParticipantMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", `/api/revisiones-direccion/${selectedRevision?.id}/participantes`, participantDraft);
+      return res.json();
+    },
+    onSuccess: () => {
+      invalidateReviewEvidence();
+      setParticipantDraft({ nombre: "", cargo: "", tipo: "alta_direccion", asistio: 1 });
+      toast({ title: "Participante agregado" });
+    },
+    onError: (error: Error) => toast({ title: "Error", description: error.message, variant: "destructive" }),
+  });
+
+  const createTopicMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", `/api/revisiones-direccion/${selectedRevision?.id}/temas`, topicDraft);
+      return res.json();
+    },
+    onSuccess: () => {
+      invalidateReviewEvidence();
+      setTopicDraft({ titulo: "", descripcion: "", tipo: "indicadores_sst", orden: 0 });
+      toast({ title: "Entrada de revisión agregada" });
+    },
+    onError: (error: Error) => toast({ title: "Error", description: error.message, variant: "destructive" }),
+  });
+
+  const deleteParticipantMutation = useMutation({
+    mutationFn: (id: string) => apiRequest("DELETE", `/api/participantes-revision/${id}`),
+    onSuccess: invalidateReviewEvidence,
+  });
+
+  const deleteTopicMutation = useMutation({
+    mutationFn: (id: string) => apiRequest("DELETE", `/api/temas-revision/${id}`),
+    onSuccess: invalidateReviewEvidence,
+  });
+
+  const approveMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", `/api/revisiones-direccion/${selectedRevision?.id}/aprobar`);
+      return res.json() as Promise<RevisionDireccion>;
+    },
+    onSuccess: (approvedRevision) => {
+      setSelectedRevision(approvedRevision);
+      queryClient.invalidateQueries({ queryKey: ["/api/revisiones-direccion"] });
+      toast({ title: "Revisión aprobada", description: "La aprobación quedó registrada con usuario y fecha." });
+    },
+    onError: (error: Error) => toast({ title: "No se puede aprobar", description: error.message, variant: "destructive" }),
   });
 
   const decisionForm = useForm<z.infer<typeof decisionFormSchema>>({
@@ -561,19 +644,21 @@ export default function RevisionesDireccion() {
         </div>
         <AutomationAssistant
           titulo="Revisión por la Alta Dirección"
-          estandar="3.2.1"
-          descripcion="Revisiones gerenciales del SG-SST conforme a ISO 45001 y Decreto 1072"
+          estandar="6.1.3"
+          descripcion="Revisión gerencial del SG-SST: entradas, decisiones, compromisos y aprobación de la alta dirección"
           normativaAplicable={normativaRevisionesDireccion}
           compact={true}
         />
 
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button data-testid="button-create-revision" className="gap-2">
-              <Plus className="h-4 w-4" />
-              Nueva Revisión
-            </Button>
-          </DialogTrigger>
+          {canManageRevision && (
+            <DialogTrigger asChild>
+              <Button data-testid="button-create-revision" className="gap-2">
+                <Plus className="h-4 w-4" />
+                Nueva Revisión
+              </Button>
+            </DialogTrigger>
+          )}
           <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
@@ -671,6 +756,44 @@ export default function RevisionesDireccion() {
                             <SelectItem value="anual">Anual</SelectItem>
                           </SelectContent>
                         </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="evaluacionSstId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Evaluación SST vinculada (opcional)</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            value={field.value || ""}
+                            placeholder="ID de la evaluación SST"
+                            data-testid="input-evaluacion-sst"
+                          />
+                        </FormControl>
+                        <p className="text-xs text-muted-foreground">
+                          Se conserva el vínculo con la evaluación desde la que se abrió esta revisión.
+                        </p>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="estandarReferencia"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Estándar de referencia</FormLabel>
+                        <FormControl>
+                          <Input {...field} value={field.value || "6.1.3"} readOnly data-testid="input-estandar-referencia" />
+                        </FormControl>
+                        <p className="text-xs text-muted-foreground">La revisión gerencial se evidencia en el estándar 6.1.3.</p>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -1056,10 +1179,14 @@ export default function RevisionesDireccion() {
           </DialogHeader>
 
           <Tabs defaultValue="informacion" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="informacion" data-testid="tab-informacion">
                 <FileText className="h-4 w-4 mr-1" />
                 Información
+              </TabsTrigger>
+              <TabsTrigger value="evidencia" data-testid="tab-evidencia">
+                <Users className="h-4 w-4 mr-1" />
+                Evidencia
               </TabsTrigger>
               <TabsTrigger value="decisiones" data-testid="tab-decisiones">
                 <AlertCircle className="h-4 w-4 mr-1" />
@@ -1107,15 +1234,133 @@ export default function RevisionesDireccion() {
                   <p className="text-sm">{selectedRevision.conclusiones}</p>
                 </div>
               )}
+
+              <div className="rounded-md border bg-muted/30 p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <ListChecks className="h-4 w-4 text-primary" />
+                  <div>
+                    <p className="font-medium">Estándar 6.1.3 — Revisión por la dirección</p>
+                    <p className="text-xs text-muted-foreground">
+                      La revisión gerencial no reemplaza la auditoría interna: registra análisis, decisiones y seguimiento de la alta dirección.
+                    </p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                  <div><span className="text-muted-foreground">Estándar:</span> {selectedRevision?.estandarReferencia || "6.1.3"}</div>
+                  <div><span className="text-muted-foreground">Evaluación SST:</span> {selectedRevision?.evaluacionSstId || "No vinculada"}</div>
+                  <div><span className="text-muted-foreground">Aprobación:</span> {selectedRevision?.estado === "aprobada" ? "Registrada" : "Pendiente"}</div>
+                  <div><span className="text-muted-foreground">Fecha aprobación:</span> {selectedRevision?.fechaAprobacion ? format(new Date(selectedRevision.fechaAprobacion), "dd/MM/yyyy") : "—"}</div>
+                </div>
+                {canApproveRevision && selectedRevision?.estado !== "aprobada" && (
+                  <Button
+                    size="sm"
+                    onClick={() => approveMutation.mutate()}
+                    disabled={approveMutation.isPending}
+                    data-testid="button-approve-review"
+                  >
+                    {approveMutation.isPending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <ThumbsUp className="h-4 w-4 mr-1" />}
+                    Aprobar como Alta Dirección
+                  </Button>
+                )}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="evidencia" className="space-y-6 mt-4">
+              <section className="space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div>
+                    <h4 className="font-semibold">Participantes y asistencia</h4>
+                    <p className="text-sm text-muted-foreground">Identifica quién participó en la revisión y su cargo.</p>
+                  </div>
+                </div>
+                {canManageRevision && (
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-2 p-3 border rounded-md bg-muted/30">
+                    <Input value={participantDraft.nombre} onChange={(e) => setParticipantDraft({ ...participantDraft, nombre: e.target.value })} placeholder="Nombre" data-testid="input-participant-name" />
+                    <Input value={participantDraft.cargo} onChange={(e) => setParticipantDraft({ ...participantDraft, cargo: e.target.value })} placeholder="Cargo" data-testid="input-participant-role" />
+                    <Select value={participantDraft.tipo} onValueChange={(tipo) => setParticipantDraft({ ...participantDraft, tipo })}>
+                      <SelectTrigger data-testid="select-participant-type"><SelectValue placeholder="Tipo" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="alta_direccion">Alta Dirección</SelectItem>
+                        <SelectItem value="coordinador_sst">Coordinador SST</SelectItem>
+                        <SelectItem value="copasst">COPASST</SelectItem>
+                        <SelectItem value="rrhh">RRHH</SelectItem>
+                        <SelectItem value="operaciones">Operaciones</SelectItem>
+                        <SelectItem value="otro">Otro</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button onClick={() => createParticipantMutation.mutate()} disabled={!participantDraft.nombre.trim() || !participantDraft.cargo.trim() || createParticipantMutation.isPending} data-testid="button-add-participant">
+                      <Plus className="h-4 w-4 mr-1" />Agregar
+                    </Button>
+                  </div>
+                )}
+                {participantesLoading ? <p className="text-sm text-muted-foreground">Cargando participantes...</p> : participantes.length === 0 ? (
+                  <p className="text-sm text-muted-foreground border rounded-md p-3">Aún no hay participantes registrados.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {participantes.map((participante) => (
+                      <div key={participante.id} className="flex items-center justify-between gap-2 border rounded-md p-3 text-sm">
+                        <div><span className="font-medium">{participante.nombre}</span><span className="text-muted-foreground"> · {participante.cargo}</span><div className="text-xs text-muted-foreground capitalize">{participante.tipo.replace("_", " ")}</div></div>
+                        {canManageRevision && <Button variant="ghost" size="icon" onClick={() => deleteParticipantMutation.mutate(participante.id)} title="Eliminar participante"><Trash2 className="h-4 w-4" /></Button>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
+
+              <section className="space-y-3">
+                <div>
+                  <h4 className="font-semibold">Entradas y temas analizados</h4>
+                  <p className="text-sm text-muted-foreground">Documenta los resultados que la alta dirección revisó antes de decidir.</p>
+                </div>
+                {canManageRevision && (
+                  <div className="space-y-2 p-3 border rounded-md bg-muted/30">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      <Input value={topicDraft.titulo} onChange={(e) => setTopicDraft({ ...topicDraft, titulo: e.target.value })} placeholder="Título de la entrada" data-testid="input-topic-title" />
+                      <Select value={topicDraft.tipo} onValueChange={(tipo) => setTopicDraft({ ...topicDraft, tipo })}>
+                        <SelectTrigger data-testid="select-topic-type"><SelectValue placeholder="Tipo de entrada" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="indicadores_sst">Indicadores SST</SelectItem>
+                          <SelectItem value="objetivos_metas">Objetivos y metas</SelectItem>
+                          <SelectItem value="auditorias">Auditorías</SelectItem>
+                          <SelectItem value="accidentes_incidentes">Accidentes e incidentes</SelectItem>
+                          <SelectItem value="recursos">Recursos</SelectItem>
+                          <SelectItem value="cambios_normativos">Cambios normativos</SelectItem>
+                          <SelectItem value="no_conformidades">No conformidades</SelectItem>
+                          <SelectItem value="mejora_continua">Mejora continua</SelectItem>
+                          <SelectItem value="otro">Otro</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Textarea value={topicDraft.descripcion} onChange={(e) => setTopicDraft({ ...topicDraft, descripcion: e.target.value })} placeholder="Describe los datos, resultados o análisis presentado..." rows={3} data-testid="textarea-topic-description" />
+                    <Button onClick={() => createTopicMutation.mutate()} disabled={!topicDraft.titulo.trim() || !topicDraft.descripcion.trim() || createTopicMutation.isPending} data-testid="button-add-topic">
+                      <Plus className="h-4 w-4 mr-1" />Agregar entrada
+                    </Button>
+                  </div>
+                )}
+                {temasLoading ? <p className="text-sm text-muted-foreground">Cargando entradas...</p> : temas.length === 0 ? (
+                  <p className="text-sm text-muted-foreground border rounded-md p-3">Aún no hay entradas documentadas.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {temas.map((tema) => (
+                      <div key={tema.id} className="border rounded-md p-3 text-sm flex justify-between gap-2">
+                        <div><div className="font-medium">{tema.titulo}</div><div className="text-xs text-muted-foreground capitalize">{(tema.tipo || "otro").replace("_", " ")}</div><p className="mt-1">{tema.descripcion}</p></div>
+                        {canManageRevision && <Button variant="ghost" size="icon" onClick={() => deleteTopicMutation.mutate(tema.id)} title="Eliminar entrada"><Trash2 className="h-4 w-4" /></Button>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </section>
             </TabsContent>
 
             <TabsContent value="decisiones" className="space-y-4 mt-4">
               <div className="flex items-center justify-between">
                 <h4 className="font-semibold">Decisiones de la Revisión</h4>
-                <Button size="sm" onClick={() => setShowDecisionForm(!showDecisionForm)} data-testid="button-new-decision">
-                  <Plus className="h-4 w-4 mr-1" />
-                  Nueva Decisión
-                </Button>
+                {canManageRevision && (
+                  <Button size="sm" onClick={() => setShowDecisionForm(!showDecisionForm)} data-testid="button-new-decision">
+                    <Plus className="h-4 w-4 mr-1" />
+                    Nueva Decisión
+                  </Button>
+                )}
               </div>
 
               {showDecisionForm && (
@@ -1200,7 +1445,7 @@ export default function RevisionesDireccion() {
               ) : (
                 <div className="space-y-3">
                   {decisiones.map((decision) => (
-                    <DecisionItem key={decision.id} decision={decision} revisionId={selectedRevision?.id || ""} />
+                    <DecisionItem key={decision.id} decision={decision} revisionId={selectedRevision?.id || ""} canManage={canManageRevision} />
                   ))}
                 </div>
               )}

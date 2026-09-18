@@ -71,6 +71,7 @@ import { createEvsProgramCatalog } from './migrations/create-evs-program-catalog
 import { syncAuditoriasInternasPhva } from './migrations/sync-auditorias-internas-phva';
 import { syncAuditoriaChecklistEvidenceSource } from './migrations/sync-auditoria-checklist-evidence-source';
 import { syncPoliticasSstName } from './migrations/sync-politicas-sst-name';
+import { syncManagementReviewControls } from './migrations/sync-management-review-controls';
 
 /**
  * Ejecuta migraciones de base de datos automáticamente
@@ -155,6 +156,7 @@ export async function runMigrations() {
     await syncAuditoriasInternasPhva();
     await syncAuditoriaChecklistEvidenceSource();
     await syncPoliticasSstName();
+    await syncManagementReviewControls();
     console.log('✅ Migraciones completadas exitosamente');
   } catch (error: any) {
     console.error('⚠️ Error en migraciones:', error.message);

@@ -1045,6 +1045,9 @@ export default function GestionUsuarios() {
                               <span>{roleLabels.admin}</span>
                             </div>
                           </SelectItem>
+                          <SelectItem value="alta_direccion">
+                            {roleLabels.alta_direccion}
+                          </SelectItem>
                           
                           {/* Roles SST especializados */}
                           <SelectItem value="responsable_sst">

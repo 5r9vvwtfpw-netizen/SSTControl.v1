@@ -1494,6 +1494,7 @@ const roleCredentialLabels: Partial<Record<UserRole, string>> = {
   soporte: "Soporte Técnico",
   superusuario: "Super Usuario",
   admin: "Gerente General",
+  alta_direccion: "Alta Dirección / Representante Legal",
   responsable_sst: "Responsable SST",
   coordinador_salud: "Coordinador de Salud Ocupacional",
   lso: "Licenciado en Salud Ocupacional",
@@ -41820,7 +41821,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // REVISIÓN POR DIRECCIÓN - Management Review Routes (ISO 45001:2018 / Resolución 0312)
 
   // GET /api/revisiones-direccion - Obtener todas las revisiones por dirección
-  app.get('/api/revisiones-direccion', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
+  app.get('/api/revisiones-direccion', requireAuth, requireAnyPermission(['sst_management:view', 'management_review:view']), async (req, res) => {
     try {
       const isAdmin = hasGlobalAccess(req.user!.role);
       
@@ -41843,7 +41844,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   // GET /api/revisiones-direccion/:id - Obtener una revisión por dirección específica
-  app.get('/api/revisiones-direccion/:id', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
+  app.get('/api/revisiones-direccion/:id', requireAuth, requireAnyPermission(['sst_management:view', 'management_review:view']), async (req, res) => {
     try {
       const isAdmin = hasGlobalAccess(req.user!.role);
       
@@ -41963,7 +41964,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // ========== DECISIONES DE REVISIÓN POR DIRECCIÓN ==========
   
   // GET /api/revisiones-direccion/:revisionId/decisiones - Listar decisiones de una revisión
-  app.get('/api/revisiones-direccion/:revisionId/decisiones', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
+  app.get('/api/revisiones-direccion/:revisionId/decisiones', requireAuth, requireAnyPermission(['sst_management:view', 'management_review:view']), async (req, res) => {
     try {
       const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(403).json({ error: "Requiere pertenecer a una empresa" });
@@ -42023,7 +42024,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // ========== ACCIONES DE DECISIONES DE REVISIÓN ==========
   
   // GET /api/decisiones-revision/:decisionId/acciones - Listar acciones de una decisión
-  app.get('/api/decisiones-revision/:decisionId/acciones', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
+  app.get('/api/decisiones-revision/:decisionId/acciones', requireAuth, requireAnyPermission(['sst_management:view', 'management_review:view']), async (req, res) => {
     try {
       const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(403).json({ error: "Requiere pertenecer a una empresa" });
@@ -42077,6 +42078,113 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     } catch (error: any) {
       console.error('Error deleting acción:', error);
       res.status(500).json({ error: error.message });
+    }
+  });
+
+  // ========== PARTICIPANTES Y TEMAS DE LA REVISIÓN ==========
+
+  app.get('/api/revisiones-direccion/:revisionId/participantes', requireAuth, requireAnyPermission(['sst_management:view', 'management_review:view']), async (req, res) => {
+    try {
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(403).json({ error: "Requiere pertenecer a una empresa" });
+      res.json(await storage.getParticipantesRevision(req.params.revisionId, companyId));
+    } catch (error: any) {
+      console.error('Error fetching participantes de revisión:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post('/api/revisiones-direccion/:revisionId/participantes', requireAuth, requirePermission('sst_management:create'), async (req, res) => {
+    try {
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(403).json({ error: "Requiere pertenecer a una empresa" });
+      const data = insertParticipanteRevisionSchema.parse({ ...req.body, revisionId: req.params.revisionId });
+      res.status(201).json(await storage.createParticipanteRevision(data, companyId));
+    } catch (error: any) {
+      console.error('Error creating participante de revisión:', error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.delete('/api/participantes-revision/:id', requireAuth, requirePermission('sst_management:delete'), async (req, res) => {
+    try {
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(403).json({ error: "Requiere pertenecer a una empresa" });
+      await storage.deleteParticipanteRevision(req.params.id, companyId);
+      res.status(204).send();
+    } catch (error: any) {
+      console.error('Error deleting participante de revisión:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get('/api/revisiones-direccion/:revisionId/temas', requireAuth, requireAnyPermission(['sst_management:view', 'management_review:view']), async (req, res) => {
+    try {
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(403).json({ error: "Requiere pertenecer a una empresa" });
+      res.json(await storage.getTemasRevision(req.params.revisionId, companyId));
+    } catch (error: any) {
+      console.error('Error fetching temas de revisión:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post('/api/revisiones-direccion/:revisionId/temas', requireAuth, requirePermission('sst_management:create'), async (req, res) => {
+    try {
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(403).json({ error: "Requiere pertenecer a una empresa" });
+      const data = insertTemaRevisionSchema.parse({ ...req.body, revisionId: req.params.revisionId });
+      res.status(201).json(await storage.createTemaRevision(data, companyId));
+    } catch (error: any) {
+      console.error('Error creating tema de revisión:', error);
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.delete('/api/temas-revision/:id', requireAuth, requirePermission('sst_management:delete'), async (req, res) => {
+    try {
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(403).json({ error: "Requiere pertenecer a una empresa" });
+      await storage.deleteTemaRevision(req.params.id, companyId);
+      res.status(204).send();
+    } catch (error: any) {
+      console.error('Error deleting tema de revisión:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // La aprobación es una acción exclusiva de la alta dirección o de un gestor SST autorizado.
+  app.post('/api/revisiones-direccion/:id/aprobar', requireAuth, requireAnyPermission(['management_review:approve', 'sst_management:edit']), async (req, res) => {
+    try {
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(403).json({ error: "Requiere pertenecer a una empresa" });
+      const revision = await storage.getRevisionDireccion(req.params.id, companyId);
+      if (!revision) return res.status(404).json({ error: "Revisión por Dirección no encontrada" });
+      if (revision.estado === "aprobada") return res.json(revision);
+
+      const [participantes, temas, decisiones] = await Promise.all([
+        storage.getParticipantesRevision(revision.id, companyId),
+        storage.getTemasRevision(revision.id, companyId),
+        storage.getDecisionesRevision(revision.id, companyId),
+      ]);
+      if (participantes.length === 0) {
+        return res.status(409).json({ error: "La revisión debe tener al menos un participante antes de aprobarse" });
+      }
+      if (temas.length === 0) {
+        return res.status(409).json({ error: "La revisión debe tener al menos una entrada o tema documentado antes de aprobarse" });
+      }
+      if (decisiones.length === 0) {
+        return res.status(409).json({ error: "La revisión debe tener al menos una decisión documentada antes de aprobarse" });
+      }
+      const aprobada = await storage.updateRevisionDireccion(revision.id, {
+        estado: "aprobada",
+        aprobadoPor: req.user!.id,
+        fechaAprobacion: new Date(),
+      }, companyId);
+      res.json(aprobada);
+    } catch (error: any) {
+      console.error('Error approving revisión dirección:', error);
+      res.status(400).json({ error: error.message });
     }
   });
 

@@ -7,15 +7,19 @@ interface Estandar613VerificacionRevisionDireccionProps {
   evaluationId?: string;
 }
 
-const criteriosVerificacion = [
-  "Solicitar a la empresa los soportes que den cuenta del alcance de la auditoría, verificando el cumplimiento de los aspectos señalados en los numerales del artículo 2.2.4.6.30 del Decreto 1072 de 2015",
-  "Verificar que la auditoría abarca: cumplimiento de la política de SST, resultados de los indicadores de estructura, proceso y resultado",
-  "Comprobar que la auditoría evalúa la participación de los trabajadores",
-  "Verificar que se revisa el desarrollo de la responsabilidad y obligación de rendir cuentas",
-  "Confirmar que se audita el mecanismo de comunicación de los contenidos del SG-SST a los trabajadores",
-  "Verificar que se evalúa la planificación, desarrollo y aplicación del SG-SST",
-  "Comprobar que se revisa la gestión del cambio y la consideración de la SST en nuevos procesos",
-  "Verificar que se auditan los resultados de auditorías previas y las acciones correctivas implementadas",
+const criteriosRevisionDireccion = [
+  "La alta dirección participa o queda identificada como destinataria de la revisión",
+  "Se revisan, como mínimo, el cumplimiento de la política y objetivos, indicadores, resultados de auditorías, cumplimiento legal, incidentes, participación de trabajadores, recursos y oportunidades de mejora",
+  "Se registran participantes, entradas analizadas y la información documentada presentada",
+  "La revisión produce decisiones, conclusiones y compromisos con responsable y fecha",
+  "La aprobación de la alta dirección queda registrada con usuario y fecha, sin confundirse con el estado de completitud del acta",
+  "Se define el seguimiento de las decisiones y acciones de mejora",
+];
+
+const evidenciaAuditoriaInterna = [
+  "Informe o registro de auditoría interna con alcance, criterios, equipo auditor y resultados",
+  "Hallazgos, no conformidades y acciones correctivas derivados de la auditoría",
+  "Verificación de la eficacia de las acciones de auditoría",
 ];
 
 export function Estandar613VerificacionRevisionDireccion({ isVisible, evaluationId }: Estandar613VerificacionRevisionDireccionProps) {
@@ -40,20 +44,31 @@ export function Estandar613VerificacionRevisionDireccion({ isVisible, evaluation
             Modo Verificación - Estándar 6.1.3
           </p>
           <p className="text-sm text-amber-600 dark:text-amber-400 mt-1">
-            Revisión por la alta dirección. Verificar que el alcance de la auditoría 
-            cumple con todos los aspectos señalados en el artículo 2.2.4.6.30 del 
-            Decreto 1072 de 2015, incluyendo política, indicadores, participación, 
-            comunicación y gestión del cambio.
+            Este estándar verifica la revisión gerencial del SG-SST por la alta dirección.
+            La auditoría interna es un proceso separado; sus resultados son una entrada de
+            la revisión, no el alcance completo de esta.
           </p>
 
           <div className="mt-3 p-3 bg-emerald-100/50 dark:bg-emerald-900/30 rounded-md border border-emerald-200 dark:border-emerald-800">
             <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-300 mb-2">
               <CheckCircle2 className="h-3 w-3 inline mr-1" />
-              Criterios de verificación:
+              Criterios de revisión por la dirección:
             </p>
             <ul className="text-xs text-emerald-600 dark:text-emerald-400 space-y-1 list-disc list-inside">
-              {criteriosVerificacion.map((criterio, idx) => (
+              {criteriosRevisionDireccion.map((criterio, idx) => (
                 <li key={idx}>{criterio}</li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="mt-3 p-3 bg-sky-100/50 dark:bg-sky-900/30 rounded-md border border-sky-200 dark:border-sky-800">
+            <p className="text-xs font-semibold text-sky-700 dark:text-sky-300 mb-2">
+              <ClipboardList className="h-3 w-3 inline mr-1" />
+              Auditoría interna: evidencia relacionada, no sustituida:
+            </p>
+            <ul className="text-xs text-sky-600 dark:text-sky-400 space-y-1 list-disc list-inside">
+              {evidenciaAuditoriaInterna.map((evidencia, idx) => (
+                <li key={idx}>{evidencia}</li>
               ))}
             </ul>
           </div>
@@ -63,7 +78,7 @@ export function Estandar613VerificacionRevisionDireccion({ isVisible, evaluation
               Normativa aplicable:
             </p>
             <ul className="text-xs text-gray-700 dark:text-gray-300 space-y-1 list-disc list-inside">
-              <li><strong>Decreto 1072/2015 Art. 2.2.4.6.30</strong> - Alcance de la auditoría de cumplimiento del SG-SST</li>
+               <li><strong>Decreto 1072/2015 Art. 2.2.4.6.30</strong> - Auditoría del SG-SST; sus resultados alimentan la revisión</li>
               <li><strong>Decreto 1072/2015 Art. 2.2.4.6.31</strong> - Revisión por la alta dirección</li>
               <li><strong>Resolución 0312/2019 Art. 16</strong> - Estándar mínimo 6.1.3</li>
               <li><strong>ISO 45001:2018 Numeral 9.3</strong> - Revisión por la dirección</li>

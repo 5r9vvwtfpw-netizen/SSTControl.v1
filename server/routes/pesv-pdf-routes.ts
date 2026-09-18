@@ -9,7 +9,7 @@ import {
 } from '../services/pdf-standardizer';
 import { setupTrialWatermarkOnAllPages } from '../services/pdf-watermark';
 import { getTrialStatus } from '@shared/utils';
-import { requireAuth as authRequireAuth, requirePermission } from '../auth';
+import { requireAuth as authRequireAuth, requirePermission, requireAnyPermission } from '../auth';
 import { storage } from '../storage';
 import { withPdfSemaphore } from '../services/pdf-semaphore';
 
@@ -30,6 +30,7 @@ function getEffectiveCompanyId(req: Request): string | null {
 export function registerPesvPdfRoutes(app: Express) {
   const requireAuth = authRequireAuth;
   const viewPermission = requirePermission('sst_management:view');
+  const managementReviewViewPermission = requireAnyPermission(['sst_management:view', 'management_review:view']);
 
   // 1. GET /api/pesv/comite/actas/:id/pdf
   app.get('/api/pesv/comite/actas/:id/pdf', requireAuth, viewPermission, async (req: Request, res: Response) => {
@@ -2239,7 +2240,7 @@ export function registerPesvPdfRoutes(app: Express) {
   });
 
   // SST: GET /api/revisiones-direccion/:id/pdf
-  app.get('/api/revisiones-direccion/:id/pdf', requireAuth, viewPermission, async (req: Request, res: Response) => {
+  app.get('/api/revisiones-direccion/:id/pdf', requireAuth, managementReviewViewPermission, async (req: Request, res: Response) => {
     try {
       const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(403).send('Empresa no identificada');
@@ -2304,9 +2305,12 @@ export function registerPesvPdfRoutes(app: Express) {
       y = addLabeledField(doc, 'Fecha de Revisión', formatDate(revision.fechaRevision), { y });
       y = addLabeledField(doc, 'Periodicidad', periodicidadMap[revision.periodicidad] || revision.periodicidad, { y });
       y = addLabeledField(doc, 'Estado', estadoMap[revision.estado] || revision.estado, { y });
+      y = addLabeledField(doc, 'Estándar de referencia', revision.estandarReferencia || '6.1.3', { y });
+      if (revision.evaluacionSstId) y = addLabeledField(doc, 'Evaluación SST vinculada', revision.evaluacionSstId, { y });
       if (revision.lugar) y = addLabeledField(doc, 'Lugar', revision.lugar, { y });
       if (revision.duracion) y = addLabeledField(doc, 'Duración', `${revision.duracion} minutos`, { y });
       if (revision.fechaAprobacion) y = addLabeledField(doc, 'Fecha de Aprobación', formatDate(revision.fechaAprobacion), { y });
+      if (revision.aprobadoPor) y = addLabeledField(doc, 'Aprobada por usuario', revision.aprobadoPor, { y });
       if (revision.proximaRevision) y = addLabeledField(doc, 'Próxima Revisión', formatDate(revision.proximaRevision), { y });
 
       if (revision.antecedentes) {

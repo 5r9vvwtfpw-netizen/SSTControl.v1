@@ -28,6 +28,7 @@ export const userRoleEnum = pgEnum("user_role", [
   "soporte",            // Rol INTERNO - Equipo de soporte (solo gestión de tickets, sin acceso a datos de empresas)
   "superusuario",       // Rol CLIENTE - Acceso completo a SU empresa únicamente
   "admin",              // Gerente General - Acceso completo
+  "alta_direccion",     // Alta Dirección / Representante Legal - Revisión y aprobación gerencial
   "responsable_sst",    // Responsable SST - Dueño de suscripción, gestiona su empresa
   "coordinador_salud",  // Coordinador de Salud Ocupacional - Datos médicos sensibles (Ley 1581/2012)
   "lso",                // Licenciado en Salud Ocupacional - Revisa y firma documentos SST
@@ -5655,6 +5656,8 @@ export const revisionesDireccion = pgTable("revisiones_direccion", {
   fechaRevision: date("fecha_revision").notNull(),
   periodicidad: text("periodicidad").notNull(), // "mensual", "trimestral", "semestral", "anual"
   titulo: text("titulo").notNull(),
+  evaluacionSstId: varchar("evaluacion_sst_id").references(() => evaluacionesSst.id, { onDelete: "set null" }),
+  estandarReferencia: text("estandar_referencia").default("6.1.3"),
   
   // Contexto y estado
   estado: estadoRevisionDireccionEnum("estado").notNull().default("programada"),

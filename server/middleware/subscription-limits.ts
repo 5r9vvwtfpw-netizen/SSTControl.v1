@@ -360,6 +360,7 @@ const GLOBAL_ACCESS_ROLES = ['superadmin', 'admin', 'soporte'];
  */
 const ADMIN_ROLES_WITH_LIMIT = [
   'superusuario',
+  'alta_direccion',
   'responsable_sst',
   'coordinador_sst',
   'coordinador_rrhh',
@@ -470,6 +471,7 @@ export function checkUserLimit() {
         // Obtener nombre amigable del rol para el mensaje
         const roleNames: Record<string, string> = {
           'superusuario': 'Super Usuario',
+          'alta_direccion': 'Alta Dirección / Representante Legal',
           'responsable_sst': 'Responsable SST',
           'coordinador_sst': 'Coordinador SST',
           'coordinador_rrhh': 'Coordinador RRHH',

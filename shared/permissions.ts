@@ -152,6 +152,8 @@ export type Permission =
   | "sst_management:create"
   | "sst_management:edit"
   | "sst_management:delete"
+  | "management_review:view"
+  | "management_review:approve"
   | "auditorias_internas:view"
   | "auditorias_internas:create"
   | "auditorias_internas:edit"
@@ -671,6 +673,14 @@ export const rolePermissions: Record<UserRole, Permission[]> = {
     "consent_records:delete",
   ],
 
+  // Alta Dirección / Representante Legal - solo consulta y aprobación gerencial
+  alta_direccion: [
+    "management_review:view",
+    "management_review:approve",
+    "reports:view",
+    "dashboard:view",
+  ],
+
   // Responsable SST - Dueño de suscripción, gestiona su empresa y todo el SST
   // Similar a admin pero limitado a SU empresa (no puede crear otras empresas ni gestionar roles admin)
   // NOTA: No tiene acceso a datos médicos detallados - usar coordinador_salud para datos sensibles
@@ -1182,6 +1192,7 @@ export const roleLabels: Record<UserRole, string> = {
   soporte: "Soporte Técnico",
   superusuario: "Super Usuario",
   admin: "Gerente General",
+  alta_direccion: "Alta Dirección / Representante Legal",
   responsable_sst: "Responsable SST",
   coordinador_salud: "Coordinador de Salud Ocupacional",
   lso: "Licenciado en Salud Ocupacional",
@@ -1202,6 +1213,7 @@ export const roleDescriptions: Record<UserRole, string> = {
   soporte: "Personal de soporte técnico - Acceso limitado para resolver incidencias",
   superusuario: "Acceso completo a todos los módulos de su empresa, incluyendo suscripciones",
   admin: "Acceso completo al sistema, gestión de usuarios y configuración",
+  alta_direccion: "Consulta y aprobación de Revisiones por la Dirección, sin administración operativa",
   responsable_sst: "Gestión interna de SST y operaciones de la empresa (sin acceso a suscripciones)",
   coordinador_salud: "Gestión de datos médicos, exámenes ocupacionales y reportes a seguridad social",
   lso: "Revisa y firma documentos SST según normatividad colombiana (Res. 0312/2019)",
