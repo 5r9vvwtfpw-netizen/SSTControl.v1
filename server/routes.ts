@@ -28,6 +28,7 @@ import { getPortalPendingCount } from "./services/portal-pending-count";
 import { getAuditContext } from "./lib/audit-logger";
 import { logger } from "./lib/logger";
 import { validateDailyAlcoholSubmission } from "./lib/pesv-daily-alcohol-validation";
+import { validateManagementReviewApproval } from "./lib/management-review-approval";
 import { registerBillingRoutes } from "./routes/billing";
 import { registerStripeRoutes } from "./routes/stripe";
 import { registerWompiRoutes } from "./routes/wompi";
@@ -42167,14 +42168,13 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         storage.getTemasRevision(revision.id, companyId),
         storage.getDecisionesRevision(revision.id, companyId),
       ]);
-      if (participantes.length === 0) {
-        return res.status(409).json({ error: "La revisión debe tener al menos un participante antes de aprobarse" });
-      }
-      if (temas.length === 0) {
-        return res.status(409).json({ error: "La revisión debe tener al menos una entrada o tema documentado antes de aprobarse" });
-      }
-      if (decisiones.length === 0) {
-        return res.status(409).json({ error: "La revisión debe tener al menos una decisión documentada antes de aprobarse" });
+      const approvalValidation = validateManagementReviewApproval({
+        participants: participantes.length,
+        topics: temas.length,
+        decisions: decisiones.length,
+      });
+      if (!approvalValidation.valid) {
+        return res.status(409).json({ error: approvalValidation.error });
       }
       const aprobada = await storage.updateRevisionDireccion(revision.id, {
         estado: "aprobada",
