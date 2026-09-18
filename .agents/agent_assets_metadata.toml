@@ -269,7 +269,7 @@ content_type = "application/pdf"
 [[outputs]]
 id = "yJEx4SuCJSyTH4--onBQ9"
 uri = "file://documents/informe-pruebas-h04-h05-maquinaria-demo-prueba.html"
-type = "text"
+type = "html"
 title = "Informe PRUEBAS H04, H05 y preoperacional"
 description = "Resultados funcionales PRUEBA 1 a PRUEBA 4 en DEMO-PRUEBA, con IDs, rutas, hallazgo corregido y verificación de base de datos."
 logical_id = "93e268d4-c4ca-44f0-83a3-48cdc3e81fd4"
@@ -283,7 +283,7 @@ content_type = "text/html"
 [[outputs]]
 id = "yo_-jaRyrn5JHBI82O6DR"
 uri = "file://documents/informe-pruebas-de-lanzamiento-h04-h05-preoperacional.html"
-type = "text"
+type = "html"
 title = "Informe de pruebas de lanzamiento"
 description = "Segunda ronda funcional en DEMO-PRUEBA: H04, H05, Portal de Empleados y revisión administrativa, con IDs y verificaciones."
 logical_id = "82fa7a3c-b621-427b-8cc3-acdb9847a22d"
@@ -353,7 +353,7 @@ content_type = "application/pdf"
 [[outputs]]
 id = "hASndQvhaoNvLYuv-HVvS"
 uri = "file://documents/evidencia-prueba-auditoria-interna-e2e-2026-09-16.html"
-type = "text"
+type = "html"
 title = "Evidencia de prueba funcional E2E"
 description = "Resumen verificable de IDs, transiciones, estados finales y validaciones de protección del ciclo de Auditorías Internas SST."
 logical_id = "9f5a2f1d-406b-49e9-a9f9-082bc0114bea"
@@ -460,4 +460,18 @@ size = 480296
 mtime_ms = 1789629552646
 storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/71c9eb91-8354-4ed6-a842-7c920ffab49e/5e8cd977-7682-4602-98fe-f57f3b1c374a"
 storage_version_token = "1789629609146865"
+content_type = "application/pdf"
+
+[[outputs]]
+id = "0ecBUw5OcEkKMd8XhegNS"
+uri = "file://docs/evidence/revision-direccion-demo-prueba-rd-2026-e2e-613.pdf"
+type = "pdf"
+title = "Acta PDF — Revisión por la Dirección 6.1.3"
+description = "PDF generado desde la aplicación para la revisión aprobada RD-2026-E2E-613 de DEMO-PRUEBA."
+logical_id = "b607985d-b298-4765-97a2-3e677d47e7db"
+content_hash = "sha256:5c4f32d418a1d589bc5b301142d8bb378580339bb8d6128cbc075c71b7e97a23"
+size = 768017
+mtime_ms = 1789753721983
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/b607985d-b298-4765-97a2-3e677d47e7db/abe33cb6-192f-470a-84f2-5d88128cb603"
+storage_version_token = "1789754659156985"
 content_type = "application/pdf"
