@@ -14,7 +14,8 @@ La prueba funcional se ejecutó usando la API real de la aplicación y el regist
 - **Estándar de referencia:** `6.1.3`
 - **Fecha de aprobación:** `2026-09-18`
 - **Aprobación registrada por:** cuenta administrativa autenticada de DEMO-PRUEBA
-- **PDF generado:** `revision-direccion-demo-prueba-rd-2026-e2e-613.pdf`
+- **PDF generado y corregido:** `revision-direccion-demo-prueba-rd-2026-e2e-613.pdf`
+- **Regeneración del PDF corregido:** 2026-09-19
 
 ## Secuencia comprobada
 

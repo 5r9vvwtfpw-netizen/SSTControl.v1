@@ -2254,6 +2254,15 @@ export function registerPesvPdfRoutes(app: Express) {
         .where(and(eq(schema.revisionesDireccion.id, id), eq(schema.revisionesDireccion.companyId, companyId)));
       if (!revision) return res.status(404).send('Revisión no encontrada');
 
+      let aprobadorNombre = 'Alta Dirección';
+      if (revision.aprobadoPor) {
+        const [aprobador] = await db.select({
+          fullName: schema.users.fullName,
+          username: schema.users.username,
+        }).from(schema.users).where(eq(schema.users.id, revision.aprobadoPor)).limit(1);
+        aprobadorNombre = aprobador?.fullName || aprobador?.username || aprobadorNombre;
+      }
+
       const participantes = await db.select().from(schema.participantesRevision)
         .where(eq(schema.participantesRevision.revisionId, id));
 
@@ -2296,6 +2305,7 @@ export function registerPesvPdfRoutes(app: Express) {
         doc, company,
         documentTitle: 'REVISIÓN POR LA DIRECCIÓN - SG-SST',
         documentCode: `SST-RVD-${revision.codigo}`,
+        date: new Date(revision.fechaRevision),
         logoBuffer,
       });
 
@@ -2310,7 +2320,7 @@ export function registerPesvPdfRoutes(app: Express) {
       if (revision.lugar) y = addLabeledField(doc, 'Lugar', revision.lugar, { y });
       if (revision.duracion) y = addLabeledField(doc, 'Duración', `${revision.duracion} minutos`, { y });
       if (revision.fechaAprobacion) y = addLabeledField(doc, 'Fecha de Aprobación', formatDate(revision.fechaAprobacion), { y });
-      if (revision.aprobadoPor) y = addLabeledField(doc, 'Aprobada por usuario', revision.aprobadoPor, { y });
+      if (revision.aprobadoPor) y = addLabeledField(doc, 'Aprobada por', aprobadorNombre, { y });
       if (revision.proximaRevision) y = addLabeledField(doc, 'Próxima Revisión', formatDate(revision.proximaRevision), { y });
 
       if (revision.antecedentes) {
@@ -2332,7 +2342,7 @@ export function registerPesvPdfRoutes(app: Express) {
       if (temas.length > 0) {
         y = addSectionBar(doc, 'Temas Tratados', y);
         for (const tema of temas) {
-          y = checkPageBreak(doc, y, 60);
+          y = checkPageBreak(doc, 60, y);
           y = addLabeledField(doc, 'Tema', tema.titulo, { y });
           if (tema.descripcion) y = addParagraph(doc, tema.descripcion, { y, indent: 10 });
           if (tema.hallazgos) y = addLabeledField(doc, 'Hallazgos', tema.hallazgos, { y });
@@ -2343,16 +2353,19 @@ export function registerPesvPdfRoutes(app: Express) {
       }
 
       if (revision.resumenEjecutivo) {
+        y = checkPageBreak(doc, 70, y);
         y = addSectionBar(doc, 'Resumen Ejecutivo', y);
         y = addParagraph(doc, revision.resumenEjecutivo, { y });
       }
 
       if (revision.conclusiones) {
+        y = checkPageBreak(doc, 70, y);
         y = addSectionBar(doc, 'Conclusiones Generales', y);
         y = addParagraph(doc, revision.conclusiones, { y });
       }
 
       if (decisiones.length > 0) {
+        y = checkPageBreak(doc, 90, y);
         y = addSectionBar(doc, 'Decisiones Estratégicas', y);
         const decisionRows = decisiones.map((d, idx) => [
           String(idx + 1),
