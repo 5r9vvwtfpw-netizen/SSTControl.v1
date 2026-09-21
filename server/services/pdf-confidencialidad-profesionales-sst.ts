@@ -169,7 +169,7 @@ export async function generateConfidencialidadProfesionalSstPdf(
 
     clause("TERCERA", "Acceso autorizado y mínimo privilegio");
      paragraph("La autorización de uso será personal, nominal, no exclusiva, intransferible, limitada y revocable. EL PROFESIONAL solo podrá consultar o registrar información en empresas, módulos y procesos expresamente autorizados, durante el tiempo necesario para la finalidad permitida y sin intentar ampliar sus permisos. La autorización quedará condicionada a la aceptación íntegra de este acuerdo y podrá suspenderse preventivamente ante actividad sospechosa.");
-     subTitle("EL PROFESIONAL solo podrá:");
+     subtitle("EL PROFESIONAL solo podrá:");
      bullet("", "Usar la Plataforma para la finalidad expresamente autorizada y dentro de las empresas, módulos y registros habilitados.");
      bullet("", "Acceder desde dispositivos, ubicaciones y conexiones autorizados por EL PROVEEDOR.");
      bullet("", "Mantener bajo control exclusivo su Credencial y cerrar la sesión al terminar o ausentarse.");
@@ -186,7 +186,7 @@ export async function generateConfidencialidadProfesionalSstPdf(
 
     clause("SEXTA", "Finalidad y deber de reserva");
      paragraph("EL PROFESIONAL tratará la información únicamente para la finalidad autorizada y conforme a las instrucciones recibidas de EL PROVEEDOR. No podrá reutilizarla para elaborar bases de datos propias, captar oportunidades, contactar personas por fuera del proceso, alimentar modelos o herramientas, comparar empresas, crear perfiles, obtener ventajas, ni beneficiar a terceros. Estas prohibiciones continúan después de la terminación del acceso.");
-     subTitle("Toda copia, anotación, exportación o uso fuera de la finalidad autorizada se considera incumplimiento independiente.");
+     subtitle("Toda copia, anotación, exportación o uso fuera de la finalidad autorizada se considera incumplimiento independiente.");
 
     clause("SÉPTIMA", "Tratamiento de datos personales");
      paragraph("EL PROFESIONAL reconoce que el acceso a Datos Personales no implica cesión de propiedad ni autorización general. Deberá cumplir la Ley 1581 de 2012, el Decreto 1074 de 2015 y las instrucciones documentadas aplicables, tratar los datos bajo necesidad y proporcionalidad, respetar las finalidades informadas y aplicar especial cuidado a los Datos Sensibles. No podrá ceder, vender, transferir, consultar por curiosidad ni conservar datos más allá de lo estrictamente necesario.");
@@ -209,7 +209,7 @@ export async function generateConfidencialidadProfesionalSstPdf(
      paragraph("EL PROFESIONAL mantendrá una (1) Credencial bajo control exclusivo, utilizará dispositivos protegidos y cerrará la sesión al finalizar la actividad o al alejarse del dispositivo. No podrá permitir sesiones simultáneas, prestar el dispositivo, guardar contraseñas en medios inseguros ni usar ubicaciones no autorizadas. Acepta que EL PROVEEDOR registre IP, fecha, hora, dispositivo, duración, módulos consultados, cambios, descargas y eventos de seguridad para prevenir abusos, investigar incidentes y atender obligaciones legales.");
     bullet("", "No podrá eludir controles, probar vulnerabilidades sin autorización ni instalar extensiones que intercepten información.");
     bullet("", "Deberá atender las medidas de seguridad y cambios de acceso que comunique EL PROVEEDOR.");
-     subTitle("Los Registros de Acceso, logs, alertas, correos con marca de tiempo y demás evidencia digital podrán conservarse durante cinco (5) años y utilizarse para auditoría, investigación y defensa de derechos conforme a la Ley 527 de 1999.");
+     subtitle("Los Registros de Acceso, logs, alertas, correos con marca de tiempo y demás evidencia digital podrán conservarse durante cinco (5) años y utilizarse para auditoría, investigación y defensa de derechos conforme a la Ley 527 de 1999.");
 
     clause("DÉCIMA", "Reporte de incidentes");
      paragraph("EL PROFESIONAL reportará de inmediato y, en ningún caso, después de doce (12) horas de conocerlo, cualquier pérdida, robo, acceso sospechoso, credencial expuesta, envío equivocado, captura, descarga indebida o divulgación. El reporte se enviará a EL PROVEEDOR al correo admin@sst-colombia.com, con fecha, hora, información comprometida, personas involucradas y medidas adoptadas. La falta de reporte oportuno, la ocultación o la demora injustificada constituirán un incumplimiento adicional y agravarán la responsabilidad por las consecuencias del incidente.");
