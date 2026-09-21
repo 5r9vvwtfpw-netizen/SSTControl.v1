@@ -46,7 +46,7 @@ const query = async <T>(fn: () => Promise<T>, fallback: T, label: string, errors
   try { return await fn(); } catch (error: any) {
     errors.push(label);
     console.error(`[LSO management report] ${label} query failed`, error?.message || error);
-    throw new Error(`Report module unavailable: ${label}`);
+    return fallback;
   }
 };
 
@@ -133,8 +133,6 @@ export async function generateLsoManagementReport(companyId: string, year: numbe
   const sstActions = sstLatest ? await query(() => db.select().from(schema.accionesMejora).where(eq(schema.accionesMejora.evaluacionId, sstLatest.id)), [], "acciones SST", moduleErrors) : [];
   const pesvActions = pesvLatest ? await query(() => db.select().from(schema.accionesMejoraPesv).where(eq(schema.accionesMejoraPesv.evaluacionId, pesvLatest.id)), [], "acciones PESV", moduleErrors) : [];
   const requesterAudit = await query(() => db.select({ count: sql<number>`count(*)` }).from(schema.auditLogs).where(and(eq(schema.auditLogs.companyId, companyId), eq(schema.auditLogs.userId, userId), sql`${schema.auditLogs.timestamp} >= make_date(${year}, 1, 1)`, sql`${schema.auditLogs.timestamp} < make_date(${year + 1}, 1, 1)`)), [{ count: 0 }], "trazabilidad del LSO", moduleErrors);
-  const committees = await query(() => db.select().from(schema.pesvComiteIntegrantes).where(eq(schema.pesvComiteIntegrantes.companyId, companyId)), [], "comité PESV", moduleErrors);
-  const acts = await query(() => db.select().from(schema.pesvComiteActas).where(and(eq(schema.pesvComiteActas.companyId, companyId), sql`EXTRACT(YEAR FROM ${schema.pesvComiteActas.fechaReunion}) = ${year}`)), [], "actas PESV", moduleErrors);
   const [fatigue] = await query(() => db.select({ total: sql<number>`count(*)`, exceptions: sql<number>`count(*) filter (where ${schema.pesvFatigaRegistros.resultado} <> 'sin_novedad')` }).from(schema.pesvFatigaRegistros).where(and(eq(schema.pesvFatigaRegistros.companyId, companyId), sql`EXTRACT(YEAR FROM ${schema.pesvFatigaRegistros.fechaRegistro}) = ${year}`)), [{ total: 0, exceptions: 0 }], "fatiga PESV", moduleErrors);
   const [alcohol] = await query(() => db.select({ total: sql<number>`count(*)`, exceptions: sql<number>`count(*) filter (where ${schema.pesvAlcoholRegistros.resultado} <> 'negativo')` }).from(schema.pesvAlcoholRegistros).where(and(eq(schema.pesvAlcoholRegistros.companyId, companyId), sql`EXTRACT(YEAR FROM ${schema.pesvAlcoholRegistros.fechaRegistro}) = ${year}`)), [{ total: 0, exceptions: 0 }], "alcohol PESV", moduleErrors);
   const victims = await query(() => db.select().from(schema.pesvVictimasRegistros).where(and(eq(schema.pesvVictimasRegistros.companyId, companyId), sql`EXTRACT(YEAR FROM ${schema.pesvVictimasRegistros.fechaSiniestro}) = ${year}`)), [], "víctimas PESV", moduleErrors);
@@ -285,7 +283,7 @@ export async function generateLsoManagementReport(companyId: string, year: numbe
    if (!pesvLatest) y = writeBlock(doc, "ESTADO DE LA SEGURIDAD VIAL", ["No se encontró información registrada de una evaluación del Plan Estratégico de Seguridad Vial para la vigencia solicitada; los registros de la operación se informan independientemente."], y);
   if (shouldRenderPesvOperationalSections(!!pesvLatest)) {
      y = writeBlock(doc, "ORGANIZACIÓN Y SEGUIMIENTO DE LA SEGURIDAD VIAL", [
-       metric("integrantes comité ampliado", `Organización y seguimiento: ${(expandedMembers.length ? expandedMembers.filter((c: AnyRecord) => c.estado === "activo").length : committees.filter((c: AnyRecord) => c.activo === 1).length)} integrantes activos y ${(expandedActs.length || expandedMembers.length ? expandedActs.length : acts.length)} acta(s) en ${year}.`),
+       metric("integrantes comité ampliado", `Organización y seguimiento: ${expandedMembers.filter((c: AnyRecord) => c.estado === "activo").length} integrantes activos y ${expandedActs.length} acta(s) en ${year}.`),
       `${metric("fatiga PESV", `Fatiga: ${asNumber(fatigue.total)} controles (${asNumber(fatigue.exceptions)} excepciones)`) }; ${metric("alcohol PESV", `alcohol: ${asNumber(alcohol.total)} pruebas (${asNumber(alcohol.exceptions)} requieren atención)`) }; ${metric("encuestas de aptitud", `aptitud: ${asNumber(driverSurveys.total)} encuestas`)}`,
       `Objetivos e indicadores: ${objectives.length} objetivo(s) de ${year}, ${indicators.length} indicador(es); auditorías PESV programadas ${audits.length}, ejecutadas ${audits.filter((a: AnyRecord) => a.fechaEjecucion).length}.`,
       metric("revisión por dirección PESV", `Revisión por dirección: ${reviews.length} revisión(es) en ${year}; decisiones/compromisos ${reviewDecisions.length}, pendientes ${reviewDecisions.filter((d: AnyRecord) => d.estado !== "completada").length}.`),

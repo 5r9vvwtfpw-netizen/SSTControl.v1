@@ -9,11 +9,11 @@ Un informe de entrega LSO solo puede atribuir una actuación cuando coincide la 
 
 **How to apply:** Validar la asignación exacta en autorización y generación; exigir nombre y licencia coincidentes más una fecha de firma dentro de la vigencia, o identificadores estables cuando existan.
 
-Los informes oficiales deben abortar si un módulo necesario no puede consultarse, en vez de convertir el error en cero o “sin registros”. Los módulos operativos de alto volumen deben agregarse en SQL.
+Los informes oficiales deben abortar si un módulo central necesario no puede consultarse. Un módulo auxiliar incompatible puede omitirse únicamente si el PDF lo identifica como no disponible, sin convertir el error en cero o “sin registros”. Los módulos operativos de alto volumen deben agregarse en SQL.
 
-**Why:** Un fallback vacío publica conclusiones falsas, y cargar telemetría o eventos completos para contar registros puede agotar memoria y bloquear el servidor.
+**Why:** Un fallback vacío sin advertencia publica conclusiones falsas, pero exigir tablas auxiliares heredadas puede impedir todo el informe aunque las evaluaciones SST/PESV centrales estén disponibles. Cargar telemetría o eventos completos para contar registros también puede agotar memoria y bloquear el servidor.
 
-**How to apply:** Propagar errores de consulta al endpoint y calcular conteos/condicionales en PostgreSQL; cargar detalles solo cuando el documento realmente presenta una muestra acotada.
+**How to apply:** Propagar al endpoint los errores de empresa, asignación y evaluaciones centrales; registrar y rotular los fallos auxiliares. Calcular conteos/condicionales en PostgreSQL y cargar detalles solo para muestras acotadas.
 
 El cierre de una asignación debe archivar el PDF, registrar sus metadatos y desactivar la asignación dentro de una operación serializada por empresa. Cada intento de almacenamiento usa una ruta única; la limpieza diferida nunca reutiliza ni elimina la ruta de otro intento.
 
