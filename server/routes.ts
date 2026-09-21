@@ -47,6 +47,7 @@ import { registerPropuestaComercialRoutes } from "./routes/propuesta-comercial";
 import { registerCotizacionTransicionRoutes } from "./routes/cotizacion-transicion";
 import { registerAlianzaConsultoresRoutes } from "./routes/alianza-consultores";
 import { registerConfidencialidadAsistentesRoutes } from "./routes/confidencialidad-asistentes";
+import { registerConfidencialidadProfesionalesSstRoutes } from "./routes/confidencialidad-profesionales-sst";
 import lsoDirectoryJwtRoutes from "./routes/lso-directory-jwt";
 import { legalDocsPdfService } from "./services/legal-docs-pdf";
 import {
@@ -53349,6 +53350,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   registerCotizacionTransicionRoutes(app);
   registerAlianzaConsultoresRoutes(app);
   registerConfidencialidadAsistentesRoutes(app);
+  registerConfidencialidadProfesionalesSstRoutes(app);
 
 // DEPRECATED:   // LSO Directory External API routes
 // DEPRECATED:   registerLsoDirectoryExternalRoutes(app);

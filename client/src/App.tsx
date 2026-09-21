@@ -187,6 +187,7 @@ import ContratoSaaS from "@/pages/ContratoSaaS";
 import DocumentosLegalesPdf from "@/pages/DocumentosLegalesPdf";
 import AlianzaConsultoresSST from "@/pages/AlianzaConsultoresSST";
 import ConfidencialidadAsistentes from "@/pages/ConfidencialidadAsistentes";
+import ConfidencialidadProfesionalesSst from "@/pages/ConfidencialidadProfesionalesSst";
 import RegistroAccesosProveedor from "@/pages/RegistroAccesosProveedor";
 import CrearEmpresa from "@/pages/CrearEmpresa";
 import CrearEmpresaCiiuFirst from "@/pages/CrearEmpresaCiiuFirst";
@@ -463,6 +464,7 @@ function Router() {
       <Route path="/contrato-saas" component={ContratoSaaS} />
       <ProtectedRoute path="/alianza-consultores-sst" component={AlianzaConsultoresSST} />
       <ProtectedRoute path="/confidencialidad-asistentes" component={ConfidencialidadAsistentes} />
+      <ProtectedRoute path="/confidencialidad-profesionales-sst" component={ConfidencialidadProfesionalesSst} />
       <ProtectedRoute path="/documentos-legales" component={DocumentosLegalesPdf} />
       <Route path="/demo" component={DemoLanding} />
       <Route path="/demo/verify" component={DemoVerify} />

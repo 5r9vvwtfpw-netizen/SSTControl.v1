@@ -37,6 +37,7 @@ export const routePermissions: Record<string, Permission[]> = {
   "/cotizacion-transicion": ["billing:global_view"], // Solo superadmin (cotización de transición SST/PESV)
   "/alianza-consultores-sst": ["billing:global_view"], // Solo superadmin (generador de alianza consultores SST)
   "/confidencialidad-asistentes": ["billing:global_view"], // Solo superadmin (acuerdo de confidencialidad para asistentes)
+  "/confidencialidad-profesionales-sst": ["billing:global_view"], // Solo superadmin (acuerdo autónomo para profesionales SST)
   "/admin-promociones": ["billing:global_view"], // Solo superadmin (gestión de promociones)
   "/sedes": ["companies:view"], // Admin y superadmin (gestión de sedes)
   "/admin-videos-ayuda": ["billing:global_view"], // Solo superadmin (gestión de videos de ayuda)
