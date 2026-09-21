@@ -1790,6 +1790,7 @@ function CompanyVaultDetail({ vault, onBack, isSigning, signingId, onSign, onMes
     if (selectedDestinatario === 'custom' && customDestinatario.trim()) {
       params.set('customText', customDestinatario.trim());
     }
+    params.set('companyId', vault.companyId);
     window.open(`/api/evaluaciones-sst/${pendingEvalId}/pdf-ministerio?${params.toString()}`, '_blank');
     setDestinatarioOpen(false);
   };
@@ -1946,7 +1947,10 @@ function CompanyVaultDetail({ vault, onBack, isSigning, signingId, onSign, onMes
                           size="sm"
                           variant="outline"
                           data-testid={`button-view-pdf-des-${des.id}`}
-                          onClick={() => window.open(`/api/responsible-designations/${des.id}/acta-pdf`, '_blank')}
+                          onClick={() => {
+                            const params = new URLSearchParams({ companyId: vault.companyId });
+                            window.open(`/api/responsible-designations/${des.id}/acta-pdf?${params.toString()}`, '_blank');
+                          }}
                         >
                           <Eye className="h-4 w-4 mr-1" />
                           Ver PDF
@@ -2171,7 +2175,8 @@ function CompanyVaultDetail({ vault, onBack, isSigning, signingId, onSign, onMes
                           variant="outline"
                           data-testid={`button-view-pdf-eval-${ev.id}`}
                           onClick={() => {
-                            window.open(`/api/evaluaciones-sst/${ev.id}/pdf`, '_blank');
+                            const params = new URLSearchParams({ companyId: vault.companyId });
+                            window.open(`/api/evaluaciones-sst/${ev.id}/pdf?${params.toString()}`, '_blank');
                           }}
                         >
                           <Eye className="h-4 w-4 mr-1" />
@@ -2331,7 +2336,10 @@ function CompanyVaultDetail({ vault, onBack, isSigning, signingId, onSign, onMes
                           size="sm"
                           variant="outline"
                           data-testid={`button-view-pdf-plan-${plan.id}`}
-                          onClick={() => window.open(`/api/planes-trabajo-anual/${plan.id}/pdf`, '_blank')}
+                          onClick={() => {
+                            const params = new URLSearchParams({ companyId: vault.companyId });
+                            window.open(`/api/planes-trabajo-anual/${plan.id}/pdf?${params.toString()}`, '_blank');
+                          }}
                         >
                           <Eye className="h-4 w-4 mr-1" />
                           Ver PDF
@@ -2447,7 +2455,10 @@ function CompanyVaultDetail({ vault, onBack, isSigning, signingId, onSign, onMes
                           size="sm"
                           variant="outline"
                           data-testid={`button-view-pdf-mat-${mat.id}`}
-                          onClick={() => window.open(`/api/matrices-iperc/${mat.id}/pdf`, '_blank')}
+                          onClick={() => {
+                            const params = new URLSearchParams({ companyId: vault.companyId });
+                            window.open(`/api/matrices-iperc/${mat.id}/pdf?${params.toString()}`, '_blank');
+                          }}
                         >
                           <Eye className="h-4 w-4 mr-1" />
                           Ver PDF

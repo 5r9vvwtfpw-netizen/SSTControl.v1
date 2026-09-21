@@ -552,7 +552,11 @@ export default function DetalleEvaluacionSst() {
 
   const handleDownloadPDF = async () => {
     try {
-      const response = await fetch(`/api/evaluaciones-sst/${id}/pdf`, {
+      const pdfParams = new URLSearchParams();
+      if ((user?.role === 'lso' || user?.role === 'lso_externo') && evaluacion?.companyId) {
+        pdfParams.set('companyId', evaluacion.companyId);
+      }
+      const response = await fetch(`/api/evaluaciones-sst/${id}/pdf${pdfParams.toString() ? `?${pdfParams.toString()}` : ''}`, {
         credentials: 'include'
       });
       
@@ -593,7 +597,11 @@ export default function DetalleEvaluacionSst() {
 
   const handleDownloadIso45001Report = async () => {
     try {
-      const response = await fetch(`/api/evaluaciones-sst/${id}/pdf-iso45001`, {
+      const pdfParams = new URLSearchParams();
+      if ((user?.role === 'lso' || user?.role === 'lso_externo') && evaluacion?.companyId) {
+        pdfParams.set('companyId', evaluacion.companyId);
+      }
+      const response = await fetch(`/api/evaluaciones-sst/${id}/pdf-iso45001${pdfParams.toString() ? `?${pdfParams.toString()}` : ''}`, {
         credentials: 'include'
       });
       if (!response.ok) {
@@ -632,6 +640,9 @@ export default function DetalleEvaluacionSst() {
       const params = new URLSearchParams({ destinatario: selectedDestinatario });
       if (selectedDestinatario === 'custom' && customDestinatario.trim()) {
         params.set('customText', customDestinatario.trim());
+      }
+      if ((user?.role === 'lso' || user?.role === 'lso_externo') && evaluacion?.companyId) {
+        params.set('companyId', evaluacion.companyId);
       }
       const response = await fetch(`/api/evaluaciones-sst/${id}/pdf-ministerio?${params.toString()}`, {
         credentials: 'include'
@@ -2351,7 +2362,11 @@ export default function DetalleEvaluacionSst() {
                       variant="default"
                       className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
                       onClick={() => {
-                        window.open(`/api/evaluaciones-sst/${id}/informe-verificacion-sistema`, '_blank');
+                        const params = new URLSearchParams();
+                        if ((user?.role === 'lso' || user?.role === 'lso_externo') && evaluacion?.companyId) {
+                          params.set('companyId', evaluacion.companyId);
+                        }
+                        window.open(`/api/evaluaciones-sst/${id}/informe-verificacion-sistema${params.toString() ? `?${params.toString()}` : ''}`, '_blank');
                       }}
                       data-testid="button-generar-informe-verificacion"
                     >
