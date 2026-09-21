@@ -47,7 +47,7 @@ const CLAUSULAS = [
   ["DÉCIMA PRIMERA", "Deberes profesionales y de integridad", "Exige actuar dentro del alcance autorizado, conservar la reserva profesional, no alterar evidencias, no presentar información como propia, atender medidas de seguridad y colaborar con investigaciones de incidentes."],
   ["DÉCIMA SEGUNDA", "Devolución, eliminación y certificación", "Cuando termine o se revoque la autorización de uso, deben cesar los accesos, eliminar copias en 48 horas, desinstalar herramientas no autorizadas y entregar una declaración escrita firmada de cumplimiento."],
   ["DÉCIMA TERCERA", "Propiedad intelectual y no apropiación", "La plataforma, sus contenidos, metodologías, código y documentos permanecen bajo sus respectivos titulares. El acceso no autoriza copiar, descompilar, entrenar modelos, crear productos derivados ni reutilizar arquitectura o flujos."],
-  ["DÉCIMA CUARTA", "Cláusula penal por incumplimiento grave", "Fija una cláusula penal de $100.000.000 COP por cada incumplimiento grave comprobado. Las acciones que formen parte del mismo hecho se consideran un solo incumplimiento y no se cobran por separado."],
+  ["DÉCIMA CUARTA", "Cláusula Penal", "Fija una cláusula penal única de $100.000.000 COP como estimación anticipada y definitiva de los perjuicios derivados del incumplimiento de las obligaciones principales del acuerdo."],
   ["DÉCIMA QUINTA", "Vigencia, supervivencia y jurisdicción", "El acuerdo rige mientras exista autorización de uso o información conservada. Sobreviven indefinidamente las obligaciones sobre datos sensibles, salud, secretos, credenciales y no apropiación; la demás confidencialidad dura diez años."],
 ];
 
@@ -178,7 +178,7 @@ export default function ConfidencialidadProfesionalesSst() {
           <span className="font-semibold">Acuerdo independiente:</span> este documento es de confidencialidad y privacidad. La única autorización adicional es el uso limitado del software; no es una alianza comercial, contrato de prestación de servicios, contrato laboral ni relación de representación.
           <br />
           <br />
-          <span className="font-semibold">Cláusula penal:</span> $100.000.000 COP por cada incumplimiento grave comprobado; no se acumula por cada acción dentro del mismo hecho.
+          <span className="font-semibold">Cláusula penal:</span> $100.000.000 COP como estimación anticipada y definitiva de perjuicios, conforme a la estructura usada en los demás contratos.
         </div>
       </div>
 
