@@ -17,7 +17,6 @@ interface ProfesionalSstData {
   profesion: string;
   licenciaSst: string;
   correoProfesional: string;
-  tipoVinculacion: string;
   fechaAcuerdo: string;
 }
 
@@ -31,14 +30,13 @@ const DEFAULTS: ProfesionalSstData = {
   profesion: "Profesional en Seguridad y Salud en el Trabajo",
   licenciaSst: "",
   correoProfesional: "",
-  tipoVinculacion: "Prestación de servicios",
   fechaAcuerdo: today,
 };
 
 const CLAUSULAS = [
-  ["PRIMERA", "Objeto y partes", "Establece un acuerdo autónomo de confidencialidad entre SST-Colombia y el Profesional en SST. No es una alianza comercial ni modifica la relación laboral o civil que exista por separado."],
+  ["PRIMERA", "Objeto y partes", "Establece un acuerdo autónomo de confidencialidad entre SST-Colombia y el Profesional en SST. Su único alcance adicional es documentar una autorización limitada de uso del software; no es una alianza comercial ni crea una relación laboral, civil o de prestación de servicios."],
   ["SEGUNDA", "Definiciones reforzadas", "Define Plataforma, Información Confidencial, Datos Personales, Datos Sensibles, Información de Salud, Cliente, Incidente de Seguridad y Uso Autorizado."],
-  ["TERCERA", "Acceso autorizado y mínimo privilegio", "El acceso es personal, limitado, revocable y únicamente para las empresas, módulos y actividades asignados. No transfiere propiedad ni licencia independiente sobre la plataforma."],
+  ["TERCERA", "Autorización de uso y mínimo privilegio", "El Profesional recibe únicamente un derecho personal, limitado, no exclusivo, intransferible y revocable para usar el software en el alcance autorizado. No transfiere propiedad ni permite sublicenciar o explotar la plataforma."],
   ["CUARTA", "Información protegida", "Incluye datos de trabajadores, salud ocupacional, accidentes, incapacidades, matrices de peligros, evaluaciones, evidencias, usuarios, credenciales, metodologías, código, tarifas y cartera de clientes."],
   ["QUINTA", "Confidencialidad reforzada", "La reserva es indefinida para datos sensibles, información de salud, secretos empresariales y credenciales; para la demás información confidencial se mantiene durante cinco años después de terminar el acceso."],
   ["SEXTA", "Finalidad y deber de reserva", "Los datos solo pueden tratarse para la finalidad autorizada y bajo las instrucciones aplicables. Queda prohibido usar la información para beneficio propio o de terceros."],
@@ -47,7 +45,7 @@ const CLAUSULAS = [
   ["NOVENA", "Seguridad de credenciales y monitoreo", "Exige credencial nominal, dispositivos autorizados, cierre de sesión y aceptación del registro de IP, fecha, hora, dispositivo y actividad para fines de seguridad y auditoría."],
   ["DÉCIMA", "Reporte de incidentes", "Obliga a informar de inmediato y máximo dentro de 12 horas cualquier pérdida, acceso sospechoso, divulgación, envío equivocado o incidente que afecte información personal o confidencial."],
   ["DÉCIMA PRIMERA", "Deberes profesionales", "Exige actuar dentro del alcance autorizado, conservar la reserva profesional, verificar habilitaciones aplicables y no presentar información de la plataforma como propia ni alterar evidencias."],
-  ["DÉCIMA SEGUNDA", "Devolución, eliminación y revocatoria", "Al terminar el vínculo o cuando se solicite, deben cesar los accesos, devolver o eliminar copias en 48 horas y entregar confirmación escrita cuando sea requerida."],
+  ["DÉCIMA SEGUNDA", "Devolución, eliminación y revocatoria", "Cuando termine o se revoque la autorización de uso, deben cesar los accesos, devolver o eliminar copias en 48 horas y entregar confirmación escrita cuando sea requerida."],
   ["DÉCIMA TERCERA", "Propiedad intelectual y no apropiación", "La plataforma, sus contenidos, metodologías y documentos base permanecen bajo sus respectivos titulares. El acceso no autoriza copiar, descompilar, entrenar modelos ni crear productos derivados."],
   ["DÉCIMA CUARTA", "Responsabilidad y cláusula penal", "El incumplimiento activa la responsabilidad por daños y la cláusula penal pactada, sin limitar la suspensión del acceso ni las acciones legales procedentes."],
   ["DÉCIMA QUINTA", "Vigencia, supervivencia y jurisdicción", "El acuerdo rige mientras exista acceso y sobreviven las obligaciones de privacidad, secreto y devolución. Se aplica la ley colombiana y se fija un mecanismo de arreglo directo y jurisdicción."],
@@ -154,10 +152,6 @@ export default function ConfidencialidadProfesionalesSst() {
             <Input id="profesional-sst-correo" type="email" value={data.correoProfesional} onChange={handleChange("correoProfesional")} placeholder="profesional@ejemplo.com" />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="profesional-sst-vinculacion">Tipo de vinculación</Label>
-            <Input id="profesional-sst-vinculacion" value={data.tipoVinculacion} onChange={handleChange("tipoVinculacion")} placeholder="Laboral, prestación de servicios..." />
-          </div>
-          <div className="space-y-1.5">
             <Label htmlFor="profesional-sst-fecha">Fecha de suscripción</Label>
             <Input id="profesional-sst-fecha" value={data.fechaAcuerdo} onChange={handleChange("fechaAcuerdo")} />
           </div>
@@ -181,7 +175,7 @@ export default function ConfidencialidadProfesionalesSst() {
       <div className="flex gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
         <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
         <div>
-          <span className="font-semibold">Acuerdo independiente:</span> este documento es de confidencialidad y privacidad; no es una alianza comercial, contrato de prestación de servicios ni contrato laboral.
+          <span className="font-semibold">Acuerdo independiente:</span> este documento es de confidencialidad y privacidad. La única autorización adicional es el uso limitado del software; no es una alianza comercial, contrato de prestación de servicios, contrato laboral ni relación de representación.
           <br />
           <span className="font-semibold">Vigencia reforzada:</span> datos sensibles, información de salud, secretos empresariales y credenciales quedan protegidos sin límite de tiempo.
         </div>

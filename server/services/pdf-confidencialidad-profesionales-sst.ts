@@ -6,7 +6,6 @@ export interface ConfidencialidadProfesionalSstData {
   profesion?: string;
   licenciaSst?: string;
   correoProfesional?: string;
-  tipoVinculacion?: string;
   fechaAcuerdo?: string;
 }
 
@@ -30,7 +29,6 @@ export async function generateConfidencialidadProfesionalSstPdf(
   const profesion = data.profesion?.trim() || "Profesional en Seguridad y Salud en el Trabajo";
   const licencia = data.licenciaSst?.trim() || "No indicada";
   const correo = data.correoProfesional?.trim() || "___________________________";
-  const vinculacion = data.tipoVinculacion?.trim() || "No indicada";
   const fecha = data.fechaAcuerdo?.trim() || "___________________________";
 
   return new Promise((resolve, reject) => {
@@ -153,12 +151,12 @@ export async function generateConfidencialidadProfesionalSstPdf(
     // Contenido
     doc.addPage();
     header();
-    paragraph(`Consta por el presente documento el ACUERDO DE CONFIDENCIALIDAD Y PRIVACIDAD DE LA INFORMACIÓN, celebrado en Medellín, Antioquia, el ${fecha}, entre SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S., identificada con NIT 902.036.337-4 y representada legalmente por LUZ ADRIANA DIAZ CALLE, identificada con C.C. No. 52.223.631 (en adelante "EL PROVEEDOR"), y ${nombre}, identificado(a) con C.C. No. ${identificacion}, quien actúa como ${profesion}, con licencia SST ${licencia}, correo ${correo} y vinculación declarada como ${vinculacion} (en adelante "EL PROFESIONAL").`);
-    paragraph("Este acuerdo es autónomo y tiene exclusivamente finalidad de confidencialidad, privacidad, seguridad de la información y uso restringido. No constituye una alianza comercial, no crea por sí mismo una relación laboral o civil y no reemplaza el contrato o acto de vinculación que las partes suscriban por separado.");
-    paragraph("EL PROFESIONAL podrá acceder a la plataforma SST-Colombia únicamente en el alcance que EL PROVEEDOR autorice. La autorización no transfiere la propiedad de la plataforma, la información de las empresas ni los derechos sobre sus documentos.");
+     paragraph(`Consta por el presente documento el ACUERDO DE CONFIDENCIALIDAD Y PRIVACIDAD DE LA INFORMACIÓN, celebrado en Medellín, Antioquia, el ${fecha}, entre SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S., identificada con NIT 902.036.337-4 y representada legalmente por LUZ ADRIANA DIAZ CALLE, identificada con C.C. No. 52.223.631 (en adelante "EL PROVEEDOR"), y ${nombre}, identificado(a) con C.C. No. ${identificacion}, quien se identifica como ${profesion}, con licencia SST ${licencia} y correo ${correo} (en adelante "EL PROFESIONAL").`);
+     paragraph("Este acuerdo es autónomo y tiene exclusivamente finalidad de confidencialidad, privacidad, seguridad de la información y uso restringido. No constituye una alianza comercial, contrato de prestación de servicios, contrato laboral, sociedad, agencia, representación ni ninguna otra relación de trabajo o colaboración entre las partes.");
+     paragraph("EL PROFESIONAL recibe únicamente una autorización personal, limitada, no exclusiva, intransferible y revocable para usar la plataforma SST-Colombia en el alcance que EL PROVEEDOR autorice. Esta autorización no transfiere la propiedad de la plataforma, la información de las empresas ni los derechos sobre sus documentos.");
 
     clause("PRIMERA", "Objeto y partes");
-    paragraph("El objeto es proteger toda información a la que EL PROFESIONAL acceda por razón de su actividad, imponer reglas de privacidad y seguridad, y establecer obligaciones de reserva, uso limitado, reporte de incidentes, devolución y eliminación de información.");
+     paragraph("El objeto es proteger toda información a la que EL PROFESIONAL acceda al utilizar el software, regular la autorización limitada de uso, imponer reglas de privacidad y seguridad, y establecer obligaciones de reserva, uso restringido, reporte de incidentes, devolución y eliminación de información.");
 
     clause("SEGUNDA", "Definiciones reforzadas");
     bullet("La Plataforma:", "El sistema SST-Colombia, sus módulos, código, interfaces, bases de datos, documentación, flujos, reportes, actualizaciones y controles de seguridad.");
@@ -168,7 +166,7 @@ export async function generateConfidencialidadProfesionalSstPdf(
     bullet("Incidente:", "Pérdida, acceso no autorizado, divulgación, alteración, destrucción, envío equivocado o uso indebido de información.");
 
     clause("TERCERA", "Acceso autorizado y mínimo privilegio");
-    paragraph("El acceso será personal, nominal, intransferible, limitado y revocable. EL PROFESIONAL solo podrá consultar o registrar información en empresas, módulos y procesos expresamente autorizados, durante el tiempo necesario para la finalidad asignada y sin intentar ampliar sus permisos.");
+     paragraph("La autorización de uso será personal, nominal, no exclusiva, intransferible, limitada y revocable. EL PROFESIONAL solo podrá consultar o registrar información en empresas, módulos y procesos expresamente autorizados, durante el tiempo necesario para la finalidad permitida y sin intentar ampliar sus permisos.");
     bullet("", "No podrá compartir credenciales, permitir sesiones de terceros ni usar cuentas ajenas.");
     bullet("", "No podrá acceder a empresas, expedientes, reportes o módulos distintos de los autorizados.");
     bullet("", "No podrá usar la plataforma para una finalidad propia, distinta o incompatible con la instrucción recibida.");
@@ -208,16 +206,16 @@ export async function generateConfidencialidadProfesionalSstPdf(
     paragraph("EL PROFESIONAL actuará dentro de su competencia, habilitación y alcance autorizado, conservará la integridad de las evidencias y no presentará como propios los contenidos, metodologías, informes o datos de terceros. Este acuerdo no sustituye los requisitos profesionales, académicos, de licencia o de independencia que resulten aplicables.");
 
     clause("DÉCIMA SEGUNDA", "Devolución, eliminación y revocatoria");
-    paragraph("Cuando termine el vínculo, se revoque el acceso o EL PROVEEDOR lo solicite, EL PROFESIONAL deberá cesar el acceso, devolver o eliminar copias y archivos de la información dentro de cuarenta y ocho (48) horas, desinstalar herramientas no autorizadas y confirmar por escrito el cumplimiento cuando sea requerido. Las obligaciones de conservación legal prevalecen únicamente en lo estrictamente necesario y bajo reserva.");
+     paragraph("Cuando termine o se revoque la autorización de uso, o EL PROVEEDOR lo solicite, EL PROFESIONAL deberá cesar el acceso, devolver o eliminar copias y archivos de la información dentro de cuarenta y ocho (48) horas, desinstalar herramientas no autorizadas y confirmar por escrito el cumplimiento cuando sea requerido. Las obligaciones de conservación legal prevalecen únicamente en lo estrictamente necesario y bajo reserva.");
 
     clause("DÉCIMA TERCERA", "Propiedad intelectual y no apropiación");
     paragraph("La Plataforma, sus componentes, metodologías, documentación, diseños y contenidos base permanecen bajo la titularidad de sus respectivos propietarios. Queda prohibido copiar, descompilar, realizar ingeniería inversa, crear productos derivados, entrenar modelos con la información o reutilizar la arquitectura y los flujos fuera del alcance autorizado.");
 
     clause("DÉCIMA CUARTA", "Responsabilidad y cláusula penal");
-    paragraph("El incumplimiento de las obligaciones de confidencialidad, privacidad, seguridad, reporte o devolución hará responsable a EL PROFESIONAL por los daños directos e indirectos que legalmente procedan, sin perjuicio de la suspensión o revocatoria inmediata del acceso. Las partes podrán pactar en el contrato principal una cláusula penal específica, que deberá ser revisada y aceptada de forma expresa según la naturaleza de la vinculación.");
+     paragraph("El incumplimiento de las obligaciones de confidencialidad, privacidad, seguridad, reporte, devolución o de las condiciones de uso hará responsable a EL PROFESIONAL por los daños que legalmente procedan, sin perjuicio de la suspensión o revocatoria inmediata del acceso. Una cláusula penal solo será exigible si queda pactada expresamente y por escrito en este acuerdo.");
 
     clause("DÉCIMA QUINTA", "Vigencia, supervivencia y jurisdicción");
-    paragraph(`El acuerdo rige desde el ${fecha} mientras exista acceso a La Plataforma o información derivada de ella. Sobreviven las obligaciones de confidencialidad, privacidad, no apropiación, devolución y eliminación en los términos de este documento. Se aplican las leyes de Colombia, incluyendo la Ley 1581 de 2012, el Decreto 1074 de 2015, la Ley 527 de 1999 y las normas civiles, comerciales y penales que resulten pertinentes. Las partes procurarán arreglo directo y, de ser necesario, se someten a los jueces civiles del circuito de Medellín, Antioquia.`);
+     paragraph(`El acuerdo rige desde el ${fecha} mientras esté vigente la autorización de uso o EL PROFESIONAL conserve información derivada de ella. Sobreviven las obligaciones de confidencialidad, privacidad, no apropiación, devolución y eliminación en los términos de este documento. Se aplican las leyes de Colombia, incluyendo la Ley 1581 de 2012, el Decreto 1074 de 2015, la Ley 527 de 1999 y las normas civiles, comerciales y penales que resulten pertinentes. Las partes procurarán arreglo directo y, de ser necesario, se someten a los jueces civiles del circuito de Medellín, Antioquia.`);
 
     ensureSpace(180);
     doc.moveDown(1);
