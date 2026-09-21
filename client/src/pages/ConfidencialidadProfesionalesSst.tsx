@@ -35,20 +35,20 @@ const DEFAULTS: ProfesionalSstData = {
 
 const CLAUSULAS = [
   ["PRIMERA", "Objeto y partes", "Establece un acuerdo autónomo de confidencialidad entre SST-Colombia y el Profesional en SST. Su único alcance adicional es documentar una autorización limitada de uso del software; no es una alianza comercial ni crea una relación laboral, civil o de prestación de servicios."],
-  ["SEGUNDA", "Definiciones reforzadas", "Define Plataforma, Información Confidencial, Datos Personales, Datos Sensibles, Información de Salud, Cliente, Incidente de Seguridad y Uso Autorizado."],
-  ["TERCERA", "Autorización de uso y mínimo privilegio", "El Profesional recibe únicamente un derecho personal, limitado, no exclusivo, intransferible y revocable para usar el software en el alcance autorizado. No transfiere propiedad ni permite sublicenciar o explotar la plataforma."],
-  ["CUARTA", "Información protegida", "Incluye datos de trabajadores, salud ocupacional, accidentes, incapacidades, matrices de peligros, evaluaciones, evidencias, usuarios, credenciales, metodologías, código, tarifas y cartera de clientes."],
-  ["QUINTA", "Confidencialidad reforzada", "La reserva es indefinida para datos sensibles, información de salud, secretos empresariales y credenciales; para la demás información confidencial se mantiene durante cinco años después de terminar el acceso."],
-  ["SEXTA", "Finalidad y deber de reserva", "Los datos solo pueden tratarse para la finalidad autorizada y bajo las instrucciones aplicables. Queda prohibido usar la información para beneficio propio o de terceros."],
-  ["SÉPTIMA", "Tratamiento de datos personales", "Reconoce la aplicación de la Ley 1581 de 2012 y sus normas reglamentarias, incluyendo reglas reforzadas para datos sensibles y de salud, sin convertir el acuerdo en una cesión de datos."],
-  ["OCTAVA", "Prohibiciones de privacidad", "Prohíbe capturas, fotografías, descargas masivas, copias a correo personal, nubes no autorizadas, memorias USB, mensajería personal, herramientas de IA externas y cualquier extracción no autorizada."],
-  ["NOVENA", "Seguridad de credenciales y monitoreo", "Exige credencial nominal, dispositivos autorizados, cierre de sesión y aceptación del registro de IP, fecha, hora, dispositivo y actividad para fines de seguridad y auditoría."],
-  ["DÉCIMA", "Reporte de incidentes", "Obliga a informar de inmediato y máximo dentro de 12 horas cualquier pérdida, acceso sospechoso, divulgación, envío equivocado o incidente que afecte información personal o confidencial."],
-  ["DÉCIMA PRIMERA", "Deberes profesionales", "Exige actuar dentro del alcance autorizado, conservar la reserva profesional, verificar habilitaciones aplicables y no presentar información de la plataforma como propia ni alterar evidencias."],
-  ["DÉCIMA SEGUNDA", "Devolución, eliminación y revocatoria", "Cuando termine o se revoque la autorización de uso, deben cesar los accesos, devolver o eliminar copias en 48 horas y entregar confirmación escrita cuando sea requerida."],
-  ["DÉCIMA TERCERA", "Propiedad intelectual y no apropiación", "La plataforma, sus contenidos, metodologías y documentos base permanecen bajo sus respectivos titulares. El acceso no autoriza copiar, descompilar, entrenar modelos ni crear productos derivados."],
-  ["DÉCIMA CUARTA", "Responsabilidad y cláusula penal", "El incumplimiento activa la responsabilidad por daños y la cláusula penal pactada, sin limitar la suspensión del acceso ni las acciones legales procedentes."],
-  ["DÉCIMA QUINTA", "Vigencia, supervivencia y jurisdicción", "El acuerdo rige mientras exista acceso y sobreviven las obligaciones de privacidad, secreto y devolución. Se aplica la ley colombiana y se fija un mecanismo de arreglo directo y jurisdicción."],
+  ["SEGUNDA", "Definiciones reforzadas", "Define Plataforma, Información Confidencial, Datos Personales, Datos Sensibles, Información de Salud, Cliente, Incidente de Seguridad, Credencial, Registro de Acceso y Uso Autorizado."],
+  ["TERCERA", "Autorización de uso y mínimo privilegio", "El Profesional recibe únicamente un derecho personal, limitado, no exclusivo, intransferible y revocable para usar el software en el alcance autorizado. Una sola credencial, dispositivo y ubicación no autorizan accesos simultáneos ni fuera del alcance."],
+  ["CUARTA", "Información protegida", "Incluye datos de trabajadores, salud ocupacional, accidentes, incapacidades, matrices de peligros, evaluaciones, evidencias, usuarios, credenciales, metodologías, código, tarifas, clientes, arquitectura, lógica de negocio y cualquier información derivada."],
+  ["QUINTA", "Confidencialidad reforzada", "La reserva es indefinida para datos sensibles, información de salud, secretos empresariales y credenciales; para la demás información confidencial se mantiene durante diez años después de terminar el acceso, sin excepciones implícitas."],
+  ["SEXTA", "Finalidad, uso permitido y deber de reserva", "La información solo puede tratarse para el uso autorizado del software. Se prohíbe aprovecharla, reproducirla, compartirla, cruzarla o usarla para beneficio propio o de terceros, incluso después de terminar el acceso."],
+  ["SÉPTIMA", "Tratamiento de datos personales", "Reconoce la aplicación de la Ley 1581 de 2012 y sus normas reglamentarias, incluyendo reglas reforzadas para datos sensibles y de salud. El acceso no implica cesión, autorización general ni facultad para transferir datos."],
+  ["OCTAVA", "Prohibiciones expresas de privacidad y extracción", "Prohíbe capturas, fotografías, descargas masivas, scraping, copias a correo personal, nubes no autorizadas, memorias USB, mensajería personal, herramientas de IA externas, impresión no autorizada, ingeniería inversa y cualquier extracción."],
+  ["NOVENA", "Credenciales, dispositivos, monitoreo y evidencia digital", "Exige una credencial nominal, dispositivos autorizados, cierre de sesión, registro de IP, fecha, hora, dispositivo, duración y módulos consultados. Los logs y alertas podrán conservarse cinco años como evidencia de seguridad."],
+  ["DÉCIMA", "Reporte agravado de incidentes", "Obliga a informar de inmediato y máximo dentro de 12 horas cualquier pérdida, acceso sospechoso, divulgación, envío equivocado, captura, descarga, credencial expuesta o incidente que afecte información personal o confidencial. La demora agrava la responsabilidad."],
+  ["DÉCIMA PRIMERA", "Deberes profesionales y de integridad", "Exige actuar dentro del alcance autorizado, conservar la reserva profesional, no alterar evidencias, no presentar información como propia, atender medidas de seguridad y colaborar con investigaciones de incidentes."],
+  ["DÉCIMA SEGUNDA", "Devolución, eliminación y certificación", "Cuando termine o se revoque la autorización de uso, deben cesar los accesos, eliminar copias en 48 horas, desinstalar herramientas no autorizadas y entregar una declaración escrita firmada de cumplimiento."],
+  ["DÉCIMA TERCERA", "Propiedad intelectual y no apropiación", "La plataforma, sus contenidos, metodologías, código y documentos permanecen bajo sus respectivos titulares. El acceso no autoriza copiar, descompilar, entrenar modelos, crear productos derivados ni reutilizar arquitectura o flujos."],
+  ["DÉCIMA CUARTA", "Responsabilidad y cláusula penal", "Fija una cláusula penal de $100.000.000 COP por cada incidente o infracción comprobada, sin limitar la revocatoria inmediata, el cese de la conducta, la reparación de daños adicionales ni las acciones legales."],
+  ["DÉCIMA QUINTA", "Vigencia, supervivencia y jurisdicción", "El acuerdo rige mientras exista autorización de uso o información conservada. Sobreviven indefinidamente las obligaciones sobre datos sensibles, salud, secretos, credenciales y no apropiación; la demás confidencialidad dura diez años."],
 ];
 
 export default function ConfidencialidadProfesionalesSst() {
@@ -177,7 +177,8 @@ export default function ConfidencialidadProfesionalesSst() {
         <div>
           <span className="font-semibold">Acuerdo independiente:</span> este documento es de confidencialidad y privacidad. La única autorización adicional es el uso limitado del software; no es una alianza comercial, contrato de prestación de servicios, contrato laboral ni relación de representación.
           <br />
-          <span className="font-semibold">Vigencia reforzada:</span> datos sensibles, información de salud, secretos empresariales y credenciales quedan protegidos sin límite de tiempo.
+          <br />
+          <span className="font-semibold">Cláusula penal:</span> $100.000.000 COP por cada incidente o infracción comprobada, sin perjuicio de daños adicionales y acciones legales.
         </div>
       </div>
 
