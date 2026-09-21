@@ -72,6 +72,7 @@ import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import HelpVideoButton from "@/components/HelpVideoButton";
 import { useToast } from "@/hooks/use-toast";
+import { withCompanyContext } from "@/lib/company-context-url";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -1790,8 +1791,10 @@ function CompanyVaultDetail({ vault, onBack, isSigning, signingId, onSign, onMes
     if (selectedDestinatario === 'custom' && customDestinatario.trim()) {
       params.set('customText', customDestinatario.trim());
     }
-    params.set('companyId', vault.companyId);
-    window.open(`/api/evaluaciones-sst/${pendingEvalId}/pdf-ministerio?${params.toString()}`, '_blank');
+    window.open(
+      withCompanyContext(`/api/evaluaciones-sst/${pendingEvalId}/pdf-ministerio?${params.toString()}`, vault.companyId),
+      '_blank',
+    );
     setDestinatarioOpen(false);
   };
 
@@ -1948,8 +1951,10 @@ function CompanyVaultDetail({ vault, onBack, isSigning, signingId, onSign, onMes
                           variant="outline"
                           data-testid={`button-view-pdf-des-${des.id}`}
                           onClick={() => {
-                            const params = new URLSearchParams({ companyId: vault.companyId });
-                            window.open(`/api/responsible-designations/${des.id}/acta-pdf?${params.toString()}`, '_blank');
+                            window.open(
+                              withCompanyContext(`/api/responsible-designations/${des.id}/acta-pdf`, vault.companyId),
+                              '_blank',
+                            );
                           }}
                         >
                           <Eye className="h-4 w-4 mr-1" />
@@ -2175,8 +2180,10 @@ function CompanyVaultDetail({ vault, onBack, isSigning, signingId, onSign, onMes
                           variant="outline"
                           data-testid={`button-view-pdf-eval-${ev.id}`}
                           onClick={() => {
-                            const params = new URLSearchParams({ companyId: vault.companyId });
-                            window.open(`/api/evaluaciones-sst/${ev.id}/pdf?${params.toString()}`, '_blank');
+                            window.open(
+                              withCompanyContext(`/api/evaluaciones-sst/${ev.id}/pdf`, vault.companyId),
+                              '_blank',
+                            );
                           }}
                         >
                           <Eye className="h-4 w-4 mr-1" />
@@ -2337,8 +2344,10 @@ function CompanyVaultDetail({ vault, onBack, isSigning, signingId, onSign, onMes
                           variant="outline"
                           data-testid={`button-view-pdf-plan-${plan.id}`}
                           onClick={() => {
-                            const params = new URLSearchParams({ companyId: vault.companyId });
-                            window.open(`/api/planes-trabajo-anual/${plan.id}/pdf?${params.toString()}`, '_blank');
+                            window.open(
+                              withCompanyContext(`/api/planes-trabajo-anual/${plan.id}/pdf`, vault.companyId),
+                              '_blank',
+                            );
                           }}
                         >
                           <Eye className="h-4 w-4 mr-1" />
@@ -2456,8 +2465,10 @@ function CompanyVaultDetail({ vault, onBack, isSigning, signingId, onSign, onMes
                           variant="outline"
                           data-testid={`button-view-pdf-mat-${mat.id}`}
                           onClick={() => {
-                            const params = new URLSearchParams({ companyId: vault.companyId });
-                            window.open(`/api/matrices-iperc/${mat.id}/pdf?${params.toString()}`, '_blank');
+                                  window.open(
+                                    withCompanyContext(`/api/matrices-iperc/${mat.id}/pdf`, vault.companyId),
+                                    '_blank',
+                                  );
                           }}
                         >
                           <Eye className="h-4 w-4 mr-1" />

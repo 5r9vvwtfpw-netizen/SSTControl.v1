@@ -15,6 +15,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { EvaluacionSst, ComponenteSst, EstandarSst, RespuestaEstandar, insertRespuestaEstandarSchema, AccionMejora, insertAccionMejoraSchema } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { withCompanyContext } from "@/lib/company-context-url";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation, useParams } from "wouter";
@@ -552,11 +553,11 @@ export default function DetalleEvaluacionSst() {
 
   const handleDownloadPDF = async () => {
     try {
-      const pdfParams = new URLSearchParams();
-      if ((user?.role === 'lso' || user?.role === 'lso_externo') && evaluacion?.companyId) {
-        pdfParams.set('companyId', evaluacion.companyId);
-      }
-      const response = await fetch(`/api/evaluaciones-sst/${id}/pdf${pdfParams.toString() ? `?${pdfParams.toString()}` : ''}`, {
+      const basePdfUrl = `/api/evaluaciones-sst/${id}/pdf`;
+      const pdfUrl = (user?.role === 'lso' || user?.role === 'lso_externo') && evaluacion?.companyId
+        ? withCompanyContext(basePdfUrl, evaluacion.companyId)
+        : basePdfUrl;
+      const response = await fetch(pdfUrl, {
         credentials: 'include'
       });
       
@@ -597,11 +598,11 @@ export default function DetalleEvaluacionSst() {
 
   const handleDownloadIso45001Report = async () => {
     try {
-      const pdfParams = new URLSearchParams();
-      if ((user?.role === 'lso' || user?.role === 'lso_externo') && evaluacion?.companyId) {
-        pdfParams.set('companyId', evaluacion.companyId);
-      }
-      const response = await fetch(`/api/evaluaciones-sst/${id}/pdf-iso45001${pdfParams.toString() ? `?${pdfParams.toString()}` : ''}`, {
+      const basePdfUrl = `/api/evaluaciones-sst/${id}/pdf-iso45001`;
+      const pdfUrl = (user?.role === 'lso' || user?.role === 'lso_externo') && evaluacion?.companyId
+        ? withCompanyContext(basePdfUrl, evaluacion.companyId)
+        : basePdfUrl;
+      const response = await fetch(pdfUrl, {
         credentials: 'include'
       });
       if (!response.ok) {
@@ -641,10 +642,11 @@ export default function DetalleEvaluacionSst() {
       if (selectedDestinatario === 'custom' && customDestinatario.trim()) {
         params.set('customText', customDestinatario.trim());
       }
-      if ((user?.role === 'lso' || user?.role === 'lso_externo') && evaluacion?.companyId) {
-        params.set('companyId', evaluacion.companyId);
-      }
-      const response = await fetch(`/api/evaluaciones-sst/${id}/pdf-ministerio?${params.toString()}`, {
+      const basePdfUrl = `/api/evaluaciones-sst/${id}/pdf-ministerio?${params.toString()}`;
+      const pdfUrl = (user?.role === 'lso' || user?.role === 'lso_externo') && evaluacion?.companyId
+        ? withCompanyContext(basePdfUrl, evaluacion.companyId)
+        : basePdfUrl;
+      const response = await fetch(pdfUrl, {
         credentials: 'include'
       });
       
@@ -2362,11 +2364,11 @@ export default function DetalleEvaluacionSst() {
                       variant="default"
                       className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
                       onClick={() => {
-                        const params = new URLSearchParams();
-                        if ((user?.role === 'lso' || user?.role === 'lso_externo') && evaluacion?.companyId) {
-                          params.set('companyId', evaluacion.companyId);
-                        }
-                        window.open(`/api/evaluaciones-sst/${id}/informe-verificacion-sistema${params.toString() ? `?${params.toString()}` : ''}`, '_blank');
+                        const basePdfUrl = `/api/evaluaciones-sst/${id}/informe-verificacion-sistema`;
+                        const pdfUrl = (user?.role === 'lso' || user?.role === 'lso_externo') && evaluacion?.companyId
+                          ? withCompanyContext(basePdfUrl, evaluacion.companyId)
+                          : basePdfUrl;
+                        window.open(pdfUrl, '_blank');
                       }}
                       data-testid="button-generar-informe-verificacion"
                     >
