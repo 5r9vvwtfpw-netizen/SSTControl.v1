@@ -569,26 +569,24 @@ export const TRAZABILIDAD_PASOS_PESV: TrazabilidadPasoPesv[] = [
   {
     paso: 19,
     codigo: 'H11',
-    nombre: 'Gestión de contratistas y proveedores',
+    nombre: 'Atención a víctimas de siniestros viales',
     ciclo: 'hacer',
-    descripcion: 'Control de seguridad vial en contratistas y proveedores',
+    descripcion: 'Protocolo de atención y acompañamiento a víctimas de siniestros viales',
     normativaAplicable: {
-      resolucion40595: 'Artículo 5 - Paso 19',
-      decreto1072: 'Artículo 2.2.4.6.28 - Contratación',
-      iso39001: 'Cláusula 8.1 - Planificación y control operacional'
+      resolucion40595: 'Artículo 5 - Paso 19 / Artículo 23 - Atención a víctimas',
+      iso39001: 'Cláusula 8.2 - Preparación y respuesta ante emergencias'
     },
     requisitosEspecificos: [
-      'Criterios de selección de contratistas',
-      'Requisitos de seguridad vial para proveedores',
-      'Evaluación periódica',
-      'Cláusulas contractuales de seguridad vial'
+      'Protocolo de atención documentado',
+      'Líneas de emergencia establecidas',
+      'Programa de acompañamiento'
     ],
     evidenciasRequeridas: [
-      'Procedimiento de evaluación',
-      'Registros de evaluación',
-      'Contratos con cláusulas PESV'
+      'Protocolo de atención a víctimas',
+      'Directorio de emergencias',
+      'Convenios con IPS'
     ],
-    frecuenciaRevision: 'Anual'
+    frecuenciaRevision: 'Por evento'
   },
   {
     paso: 20,
