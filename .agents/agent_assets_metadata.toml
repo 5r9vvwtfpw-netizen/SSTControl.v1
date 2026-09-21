@@ -475,3 +475,17 @@ mtime_ms = 1789828382081
 storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/b607985d-b298-4765-97a2-3e677d47e7db/cb694594-5000-43cc-b233-3a2c4207fe38"
 storage_version_token = "1789828422757810"
 content_type = "application/pdf"
+
+[[outputs]]
+id = "tSzKe0fe-FNvCEqQV1YS3"
+uri = "file://screenshots/evidencia-h11-demo-prueba.png"
+type = "image"
+title = "Evidencia funcional H11 — DEMO-PRUEBA"
+description = "Captura autenticada de la evaluación PESV 2026 de DEMO-PRUEBA mostrando la trazabilidad corregida de H11 y el registro de prueba funcional en la tabla de atención a víctimas."
+logical_id = "ce1958c6-b0ac-49cf-89f3-aeb23a6e18ea"
+content_hash = "sha256:a06c61d607155c708349739c6c1283c378ad4c172355c69a5ffb74c763e8ffb5"
+size = 189555
+mtime_ms = 1789987011832
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/ce1958c6-b0ac-49cf-89f3-aeb23a6e18ea/90e5aa44-8def-480c-8b71-88509bc12dcd"
+storage_version_token = "1789987017484710"
+content_type = "image/png"
