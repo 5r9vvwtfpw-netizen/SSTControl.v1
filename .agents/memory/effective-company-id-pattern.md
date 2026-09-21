@@ -27,6 +27,12 @@ For global list endpoints, "global role" must not automatically mean "return all
 
 **How to apply:** Branch on both conditions: global role and absence of an effective company ID for the all-companies query. Partition frontend query caches by the same effective company ID.
 
+LSO and LSO externo are never global-list roles. Even if a route also serves superadmin, keep the LSO branch separate and always filter by the assignment-validated effective company ID; a missing query selector must never fall through to an unfiltered result.
+
+**Why:** Treating LSO as an admin for a PESV list caused omission of `companyId` to return every company's evaluations in production.
+
+**How to apply:** Only true platform-wide roles may enter an unfiltered list branch. Resolve LSO scope first, require a validated company, and apply it in the database predicate.
+
 Global-role navigation must also avoid company-only feature checks when no company is selected; otherwise a superadmin's missing `companyId` can hide a valid cross-company module before its global endpoint is reached.
 
 **Why:** The vehicle-management menu used `/api/company/current` to decide whether PESV existed, so the superadmin could not see vehicles registered by client companies even though the data and route permissions were valid.

@@ -53450,20 +53450,22 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     try {
       const userRole = req.user!.role;
       const isLso = userRole === 'lso' || userRole === 'lso_externo';
-      const isAdmin = hasGlobalAccess(userRole) || isLso;
       
       let companyId: string;
-      if (isAdmin) {
+      if (isLso) {
+        // Never expose the global PESV list to an LSO. The API middleware has
+        // already validated this context against an active assignment.
+        companyId = getEffectiveCompanyId(req) || "";
+        if (!companyId) {
+          return res.status(403).send("Seleccione una empresa asignada");
+        }
+      } else if (hasGlobalAccess(userRole)) {
         const requestedCompanyId = req.query.companyId as string;
         if (!requestedCompanyId) {
           const allEvaluaciones = await db.select().from(evaluacionesPesv).orderBy(desc(evaluacionesPesv.createdAt));
           return res.json(allEvaluaciones);
         }
         companyId = requestedCompanyId;
-        if (isLso) {
-          const lsoChk5 = await assertLsoAssignedToCompany(req.user!.id, companyId);
-          if (!lsoChk5) return res.status(403).send("No tienes acceso a esta empresa");
-        }
       } else {
         companyId = getEffectiveCompanyId(req) || "";
         if (!companyId) {
