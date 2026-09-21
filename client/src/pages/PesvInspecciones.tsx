@@ -20,6 +20,7 @@ import { hasCompanyAdminAccess, hasGlobalAccess, canWrite } from "@shared/permis
 import { BackToPesvEvaluationButton } from "@/components/BackToPesvEvaluationButton";
 import { Link } from "wouter";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
+import { MachineryPreoperationalInspectionsCard } from "@/components/pesv/MachineryPreoperationalInspectionsCard";
 
 const ITEMS_INSPECCION = [
   {
@@ -298,7 +299,7 @@ export default function PesvInspecciones() {
         </div>
       </div>
       
-      <TrazabilidadPesvBanner codigoPaso="H08" compacto />
+      <TrazabilidadPesvBanner codigoPaso="H06" compacto />
       
       <div className="flex flex-wrap items-center justify-between gap-4">
         <Dialog open={dialogOpen} onOpenChange={(open) => {
@@ -581,6 +582,8 @@ export default function PesvInspecciones() {
           </TableBody>
         </Table>
       </div>
+
+      <MachineryPreoperationalInspectionsCard />
 
       <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">

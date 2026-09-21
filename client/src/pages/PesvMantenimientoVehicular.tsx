@@ -6,7 +6,6 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Pencil, Trash2, ArrowLeft, Wrench, FileDown } from "lucide-react";
 import { useState } from "react";
@@ -66,16 +65,6 @@ export default function PesvMantenimientoVehicular() {
       return response.json();
     },
     enabled: !!effectiveCompanyId,
-  });
-
-  const { data: machineryInspections = [] } = useQuery<any[]>({
-    queryKey: ["/api/portal/admin/inspecciones-maquinaria", effectiveCompanyId || "sin-empresa"],
-    queryFn: async () => {
-      const response = await apiRequest("GET", "/api/portal/admin/inspecciones-maquinaria");
-      const body = await response.json();
-      return body.inspecciones || [];
-    },
-    enabled: isAdmin && !!effectiveCompanyId,
   });
 
   const createMaintenanceMutation = useMutation({
@@ -621,50 +610,6 @@ export default function PesvMantenimientoVehicular() {
         </Table>
       </div>
 
-      {isAdmin && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Inspecciones preoperacionales de maquinaria</CardTitle>
-            <CardDescription>Últimos registros enviados por trabajadores para la empresa seleccionada.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {machineryInspections.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No hay inspecciones preoperacionales registradas.</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Fecha</TableHead>
-                      <TableHead>Equipo</TableHead>
-                      <TableHead>Trabajador</TableHead>
-                      <TableHead>Turno</TableHead>
-                      <TableHead>Horómetro</TableHead>
-                      <TableHead>Resultado</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {machineryInspections.slice(0, 20).map((inspection) => (
-                      <TableRow key={inspection.id}>
-                        <TableCell>{String(inspection.inspection_date).slice(0, 10)}</TableCell>
-                        <TableCell>{inspection.plate || inspection.serial_number || "Sin identificación"}</TableCell>
-                        <TableCell>{inspection.worker_name}</TableCell>
-                        <TableCell>{inspection.shift}</TableCell>
-                        <TableCell>{inspection.engine_hours} h</TableCell>
-                        <TableCell>
-                          <Badge variant={inspection.result === "apta" ? "default" : "destructive"}>
-                            {inspection.result === "apta" ? "APTA" : "NO APTA"}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }

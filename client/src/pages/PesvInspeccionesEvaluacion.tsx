@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, ArrowLeft, Eye, ClipboardCheck, ClipboardList, Calendar, Car, User, CheckCircle2, XCircle, AlertCircle, FileDown, ExternalLink, CheckSquare, XSquare, AlertTriangle } from "lucide-react";
 import { EvaluacionPesvContextHeader } from "@/components/EvaluacionPesvContextHeader";
+import { MachineryPreoperationalInspectionsCard } from "@/components/pesv/MachineryPreoperationalInspectionsCard";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { EvaluacionPesv, VehicleInspection, Vehicle, Driver } from "@shared/schema";
@@ -555,6 +556,10 @@ export default function PesvInspeccionesEvaluacion() {
           )}
         </CardContent>
       </Card>
+
+      <div className="mt-4">
+        <MachineryPreoperationalInspectionsCard />
+      </div>
 
       <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">

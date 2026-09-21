@@ -45792,7 +45792,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   // Revisión administrativa: siempre limitada a la empresa de la sesión.
-  app.get("/api/portal/admin/inspecciones-maquinaria", requirePermission("vehicles:view"), async (req, res) => {
+  app.get("/api/portal/admin/inspecciones-maquinaria", requirePermission("vehicle_inspections:view"), async (req, res) => {
     try {
       const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(403).json({ error: "Seleccione una empresa" });
