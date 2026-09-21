@@ -5,6 +5,7 @@ import { Link } from "wouter";
 interface Estandar612VerificacionAuditoriaProps {
   isVisible: boolean;
   evaluationId?: string;
+  companyId?: string;
 }
 
 const criteriosVerificacion = [
@@ -16,17 +17,16 @@ const criteriosVerificacion = [
   "Verificar que se definieron acciones correctivas y de mejora a partir de los hallazgos",
 ];
 
-export function Estandar612VerificacionAuditoria({ isVisible, evaluationId }: Estandar612VerificacionAuditoriaProps) {
+export function Estandar612VerificacionAuditoria({ isVisible, evaluationId, companyId }: Estandar612VerificacionAuditoriaProps) {
   if (!isVisible) return null;
 
-  const baseParams = evaluationId 
-    ? `from=evaluation&evaluationId=${evaluationId}` 
-    : "from=evaluation";
-  
   const buildUrl = (path: string, tab?: string) => {
-    const params = tab ? `tab=${tab}&${baseParams}` : baseParams;
+    const params = new URLSearchParams({ from: "evaluation" });
+    if (evaluationId) params.set("evaluationId", evaluationId);
+    if (companyId) params.set("companyId", companyId);
+    if (tab) params.set("tab", tab);
     const separator = path.includes("?") ? "&" : "?";
-    return `${path}${separator}${params}`;
+    return `${path}${separator}${params.toString()}`;
   };
 
   return (

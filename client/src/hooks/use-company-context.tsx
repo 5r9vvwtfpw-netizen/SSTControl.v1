@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useMemo, ReactNode, useCallback, useRef } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { hasGlobalAccess } from "@shared/permissions";
 import { Company, ProviderAccessLog, InsertProviderAccessLog } from "@shared/schema";
@@ -44,6 +45,7 @@ const CompanyContext = createContext<CompanyContextType | null>(null);
 
 export function CompanyProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
+  const [location] = useLocation();
   const queryClient = useQueryClient();
   const [selectedCompanyId, setSelectedCompanyIdInternal] = useState<string | null>(null);
   const [currentAccessSession, setCurrentAccessSession] = useState<AccessSession | null>(null);
@@ -54,6 +56,27 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     return user?.role === 'superadmin' || user?.role === 'tecnico_mecanico';
   }, [user?.role]);
   const isMechanic = user?.role === "tecnico_mecanico";
+  const isLso = user?.role === "lso" || user?.role === "lso_externo";
+  const lsoContextCompanyId = useMemo(() => {
+    if (!isLso || typeof window === "undefined") return null;
+
+    const urlCompanyId = new URLSearchParams(location.split("?")[1] || "").get("companyId");
+    if (urlCompanyId) return urlCompanyId;
+
+    try {
+      const stored = localStorage.getItem("lso_company_context");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (typeof parsed.companyId === "string" && parsed.companyId) {
+          return parsed.companyId;
+        }
+      }
+    } catch {
+      // Ignore invalid legacy context and fall back to the user's company.
+    }
+
+    return user?.companyId || null;
+  }, [isLso, location, user?.companyId]);
 
   useEffect(() => {
     if (!canSelectCompany) {
@@ -104,8 +127,18 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
 
   // Query para obtener la empresa del usuario (para usuarios no-superadmin)
   const { data: userCompany, isLoading: isLoadingUserCompany } = useQuery<Company>({
-    queryKey: ["/api/company/current"],
-    enabled: !!user && !canSelectCompany && !!user.companyId,
+    queryKey: ["/api/company/current", isLso ? lsoContextCompanyId : user?.companyId],
+    queryFn: async () => {
+      const url = isLso && lsoContextCompanyId
+        ? `/api/company/current?companyId=${encodeURIComponent(lsoContextCompanyId)}`
+        : "/api/company/current";
+      const response = await fetch(url, { credentials: "include" });
+      if (!response.ok) {
+        throw new Error(await response.text() || "No se pudo cargar la empresa actual");
+      }
+      return response.json();
+    },
+    enabled: !!user && !canSelectCompany && (isLso ? !!lsoContextCompanyId : !!user.companyId),
     staleTime: 60000, // 1 minuto de cache
   });
 
@@ -314,8 +347,11 @@ export function CompanyProvider({ children }: { children: ReactNode }) {
     if (canSelectCompany) {
       return selectedCompanyId;
     }
+    if (isLso) {
+      return lsoContextCompanyId;
+    }
     return user?.companyId || null;
-  }, [canSelectCompany, selectedCompanyId, user?.companyId]);
+  }, [canSelectCompany, selectedCompanyId, isLso, lsoContextCompanyId, user?.companyId]);
 
   // Calcular el capítulo basándose en número de trabajadores y nivel de riesgo
   // según Resolución 0312/2019 - Esta es la ÚNICA lógica válida según la norma

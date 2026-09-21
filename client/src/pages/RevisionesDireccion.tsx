@@ -26,6 +26,7 @@ import { AutomationAssistant } from "@/components/AutomationAssistant";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 import { BackToPesvEvaluationButton } from "@/components/BackToPesvEvaluationButton";
+import { useCompanyContext } from "@/hooks/use-company-context";
 
 const normativaRevisionesDireccion = [
   {
@@ -89,14 +90,14 @@ const estadoAccionLabels: Record<string, { label: string; className: string }> =
 
 function DecisionItem({ decision, revisionId, canManage }: { decision: DecisionRevision; revisionId: string; canManage: boolean }) {
   const { toast } = useToast();
+  const { effectiveCompanyId } = useCompanyContext();
   const [isExpanded, setIsExpanded] = useState(false);
   const [showAccionForm, setShowAccionForm] = useState(false);
 
   const { data: acciones = [], isLoading: accionesLoading } = useQuery<AccionRevision[]>({
-    queryKey: ["/api/decisiones-revision", decision.id, "acciones"],
+    queryKey: ["/api/decisiones-revision", decision.id, "acciones", effectiveCompanyId],
     queryFn: async () => {
-      const res = await fetch(`/api/decisiones-revision/${decision.id}/acciones`, { credentials: "include" });
-      if (!res.ok) throw new Error("Error al cargar acciones");
+      const res = await apiRequest("GET", `/api/decisiones-revision/${decision.id}/acciones`);
       return res.json();
     },
     enabled: isExpanded,
@@ -271,6 +272,7 @@ function DecisionItem({ decision, revisionId, canManage }: { decision: DecisionR
 
 export default function RevisionesDireccion() {
   const { user } = useAuth();
+  const { effectiveCompanyId } = useCompanyContext();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -346,7 +348,8 @@ export default function RevisionesDireccion() {
   };
 
   const { data: revisiones = [], isLoading } = useQuery<RevisionDireccion[]>({
-    queryKey: ["/api/revisiones-direccion"],
+    queryKey: ["/api/revisiones-direccion", effectiveCompanyId],
+    queryFn: async () => (await apiRequest("GET", "/api/revisiones-direccion")).json(),
   });
 
   const { data: companies = [] } = useQuery<Company[]>({
@@ -355,30 +358,27 @@ export default function RevisionesDireccion() {
   });
 
   const { data: decisiones = [], isLoading: decisionesLoading } = useQuery<DecisionRevision[]>({
-    queryKey: ["/api/revisiones-direccion", selectedRevision?.id, "decisiones"],
+    queryKey: ["/api/revisiones-direccion", selectedRevision?.id, "decisiones", effectiveCompanyId],
     queryFn: async () => {
-      const res = await fetch(`/api/revisiones-direccion/${selectedRevision?.id}/decisiones`, { credentials: "include" });
-      if (!res.ok) throw new Error("Error al cargar decisiones");
+      const res = await apiRequest("GET", `/api/revisiones-direccion/${selectedRevision?.id}/decisiones`);
       return res.json();
     },
     enabled: !!selectedRevision?.id && detailDialogOpen,
   });
 
   const { data: participantes = [], isLoading: participantesLoading } = useQuery<ParticipanteRevision[]>({
-    queryKey: ["/api/revisiones-direccion", selectedRevision?.id, "participantes"],
+    queryKey: ["/api/revisiones-direccion", selectedRevision?.id, "participantes", effectiveCompanyId],
     queryFn: async () => {
-      const res = await fetch(`/api/revisiones-direccion/${selectedRevision?.id}/participantes`, { credentials: "include" });
-      if (!res.ok) throw new Error("Error al cargar participantes");
+      const res = await apiRequest("GET", `/api/revisiones-direccion/${selectedRevision?.id}/participantes`);
       return res.json();
     },
     enabled: !!selectedRevision?.id && detailDialogOpen,
   });
 
   const { data: temas = [], isLoading: temasLoading } = useQuery<TemaRevision[]>({
-    queryKey: ["/api/revisiones-direccion", selectedRevision?.id, "temas"],
+    queryKey: ["/api/revisiones-direccion", selectedRevision?.id, "temas", effectiveCompanyId],
     queryFn: async () => {
-      const res = await fetch(`/api/revisiones-direccion/${selectedRevision?.id}/temas`, { credentials: "include" });
-      if (!res.ok) throw new Error("Error al cargar temas");
+      const res = await apiRequest("GET", `/api/revisiones-direccion/${selectedRevision?.id}/temas`);
       return res.json();
     },
     enabled: !!selectedRevision?.id && detailDialogOpen,

@@ -17,6 +17,12 @@ For detail-page navigation, carry the company selector in the page URL and use i
 
 **How to apply:** When a global-role list opens a company-owned record, preserve `companyId` in the destination URL. The detail page must send it on its initial fetch, then persist the validated record context for subsequent submodule requests.
 
+Company classification and feature gates must use that same contextual company, not the LSO account's base company. Tenant query caches on destination modules must include the effective company ID.
+
+**Why:** SST standards 6.1.2/6.1.3 opened assigned-company modules, but the chapter gate showed the LSO base company's seven-standard classification; shared query keys could also display the previous assigned company's cached data.
+
+**How to apply:** Make the destination URL context authoritative for LSO navigation, keep mechanic/superadmin selections higher priority, calculate chapter from the contextual company, and partition tenant query keys by effective company ID.
+
 Some route modules duplicate their own resolver. They must never reinterpret raw headers, query parameters, or body fields for LSO after middleware validation; consume the validated context exclusively.
 
 **Why:** Trusting raw company selectors for LSO created a tenant-IDOR risk: a professional could request a company to which they had no active assignment, or validate one selector while a handler consumed another.

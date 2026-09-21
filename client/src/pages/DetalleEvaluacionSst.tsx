@@ -4643,6 +4643,7 @@ export default function DetalleEvaluacionSst() {
               <Estandar612VerificacionAuditoria 
                 isVisible={true}
                 evaluationId={id}
+                companyId={evaluacion?.companyId}
               />
             </div>
           )}
@@ -4653,6 +4654,7 @@ export default function DetalleEvaluacionSst() {
               <Estandar613VerificacionRevisionDireccion 
                 isVisible={true}
                 evaluationId={id}
+                companyId={evaluacion?.companyId}
               />
             </div>
           )}

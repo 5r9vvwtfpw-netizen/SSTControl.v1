@@ -25,6 +25,7 @@ import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
 import { useAuditSmartPrefill } from "@/hooks/useAuditSmartPrefill";
 import { AuditSmartPrefillBanner } from "@/components/auditorias/AuditSmartPrefillBanner";
+import { useCompanyContext } from "@/hooks/use-company-context";
 
 const normativaAuditorias = [
   {
@@ -73,6 +74,7 @@ const formSchema = insertAuditoriaInternaSchema.extend({
 export default function AuditoriasInternas() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { effectiveCompanyId } = useCompanyContext();
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const hasGlobalAccessUser = user?.role ? hasGlobalAccess(user.role) : false;
@@ -98,7 +100,8 @@ export default function AuditoriasInternas() {
   });
 
   const { data: auditorias = [], isLoading } = useQuery<AuditoriaInterna[]>({
-    queryKey: ["/api/auditorias-internas"],
+    queryKey: ["/api/auditorias-internas", effectiveCompanyId],
+    queryFn: async () => (await apiRequest("GET", "/api/auditorias-internas")).json(),
   });
 
   const { data: companies = [] } = useQuery<Company[]>({
@@ -107,11 +110,13 @@ export default function AuditoriasInternas() {
   });
 
   const { data: workers } = useQuery<Worker[]>({
-    queryKey: ["/api/workers"],
+    queryKey: ["/api/workers", effectiveCompanyId],
+    queryFn: async () => (await apiRequest("GET", "/api/workers")).json(),
   });
 
   const { data: copasstActas = [] } = useQuery<CopasstActa[]>({
-    queryKey: ["/api/copasst-actas"],
+    queryKey: ["/api/copasst-actas", effectiveCompanyId],
+    queryFn: async () => (await apiRequest("GET", "/api/copasst-actas")).json(),
   });
 
   const planificadaConCopasst = form.watch("planificadaConCopasst");

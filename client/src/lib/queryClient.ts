@@ -90,6 +90,17 @@ export function getSelectedCompanyId(): string | null {
   } catch {
     // Ignore storage errors
   }
+  // Evaluation links carry the LSO company explicitly. Keep established
+  // superadmin/mechanic selections authoritative, then prefer this URL context
+  // over the LSO's persisted fallback. The backend validates the assignment.
+  try {
+    if (typeof window !== "undefined") {
+      const urlCompanyId = new URLSearchParams(window.location.search).get("companyId");
+      if (urlCompanyId) return urlCompanyId;
+    }
+  } catch {
+    // Ignore malformed URL state and continue with persisted contexts.
+  }
   // Vault navigation context: set by DetalleEvaluacionSst/Pesv when superadmin views a company's
   // evaluation. Applied when: (1) navigating via sub-modules with ?from=evaluation in URL, or
   // (2) on any /pesv/evaluacion/* route (all 24 PESV steps share the same evaluation context).
