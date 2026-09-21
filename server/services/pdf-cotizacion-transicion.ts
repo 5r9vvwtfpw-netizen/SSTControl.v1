@@ -32,6 +32,8 @@ const C = {
   warningBorder: "#D8B34B",
 };
 
+const IVA_RATE = 0.19;
+
 const money = (amount: number) =>
   `$${amount.toLocaleString("es-CO", { maximumFractionDigits: 0 })}`;
 
@@ -81,7 +83,8 @@ export async function generateCotizacionTransicionPdf(
     ? `${formatDate(params.fechaInicio, new Date())}${params.fechaFin ? ` al ${formatDate(params.fechaFin, new Date())}` : ""}`
     : "A coordinar con la empresa";
   const subtotal = tarifaHora * horasMinimas;
-  const total = subtotal;
+  const iva = Math.round(subtotal * IVA_RATE);
+  const total = subtotal + iva;
   const mensajePrincipal = params.mensajePrincipal?.trim() ||
     `Capacitar y habilitar al equipo designado por ${empresa} para reemplazar al Profesional en SST y continuar directamente la gestión SST y PESV dentro de la infraestructura digital de SST Colombia, utilizando la suscripción que la empresa ya tiene activa.`;
   const cotizacionNo = `COT-${dateKey(fecha)}-01`;
@@ -190,25 +193,29 @@ export async function generateCotizacionTransicionPdf(
     .text(money(tarifaHora), amountX, tableY + 108, { width: amountW, align: "right" });
   doc.text("Subtotal", tableX + 275, tableY + 136, { width: 95, align: "right" })
     .text(money(subtotal), amountX, tableY + 136, { width: amountW, align: "right" });
-  doc.roundedRect(tableX + 270, tableY + 166, 217, 42, 6).fill(C.gold);
+  doc.text("IVA (19%)", tableX + 275, tableY + 158, { width: 95, align: "right" })
+    .text(money(iva), amountX, tableY + 158, { width: amountW, align: "right" });
+  doc.roundedRect(tableX + 270, tableY + 184, 217, 42, 6).fill(C.gold);
   doc.font("Helvetica-Bold").fontSize(12).fillColor(C.green)
-    .text("TOTAL", tableX + 284, tableY + 181)
-    .text(money(total), amountX, tableY + 181, { width: amountW, align: "right" });
+    .text("TOTAL", tableX + 284, tableY + 199)
+    .text(money(total), amountX, tableY + 199, { width: amountW, align: "right" });
+  doc.font("Helvetica").fontSize(8.5).fillColor(C.muted)
+    .text("Tratamiento aplicado: servicio de capacitación privada sujeto a la tarifa general del IVA.", tableX, tableY + 238, { width: tableW });
 
-  sectionTitle("Incluye", 458);
-  bullet(`Acceso habilitado únicamente para la operación de ${empresa}.`, 486);
-  bullet("No incluye una licencia nueva ni una mensualidad adicional para la consultora.", 510);
-  doc.roundedRect(54, 575, 487, 122, 8).fill(C.warning)
+  sectionTitle("Incluye", 474);
+  bullet(`Acceso habilitado únicamente para la operación de ${empresa}.`, 502);
+  bullet("No incluye una licencia nueva ni una mensualidad adicional para la consultora.", 526);
+  doc.roundedRect(54, 591, 487, 122, 8).fill(C.warning)
     .strokeColor(C.warningBorder).lineWidth(1).stroke();
-  doc.font("Helvetica-Bold").fontSize(11).fillColor(C.green).text("Precisión importante", 70, 593);
+  doc.font("Helvetica-Bold").fontSize(11).fillColor(C.green).text("Precisión importante", 70, 609);
   doc.font("Helvetica").fontSize(9.5).fillColor(C.text).text(
     `Esta capacitación se limita al uso de la plataforma y a la transferencia operativa del estado del programa de ${empresa}. No sustituye los requisitos profesionales, académicos, de experiencia o de licencia que puedan resultar exigibles para asumir formalmente funciones de SST o PESV. La empresa contratante debe verificar, antes de habilitarla, que el perfil de la nueva responsable sea adecuado y que cuente con las autorizaciones o licencias aplicables.`,
-    70, 617, { width: 455, lineGap: 3.5 },
+    70, 633, { width: 455, lineGap: 3.5 },
   );
-  doc.font("Helvetica-Bold").fontSize(10).fillColor(C.green).text("Aceptación de la propuesta", 54, 708);
+  doc.font("Helvetica-Bold").fontSize(10).fillColor(C.green).text("Aceptación de la propuesta", 54, 724);
   doc.font("Helvetica").fontSize(9.5).fillColor(C.text).text(
     `El pago se realiza por adelantado. Una vez confirmado el pago, se enviará la agenda con la distribución mínima de ${horasMinimas} horas: ${sesiones} sesiones virtuales de ${horasPorSesion} horas diarias para enseñar los tres portales y coordinar la habilitación del usuario.`,
-    54, 727, { width: 487 },
+    54, 743, { width: 487 },
   );
   footer();
   doc.end();

@@ -21,6 +21,7 @@ type FormData = {
 };
 
 const today = new Date().toISOString().slice(0, 10);
+const IVA_RATE = 0.19;
 
 const DEFAULTS: FormData = {
   empresa: "",
@@ -80,6 +81,8 @@ export default function CotizacionTransicion() {
 
   const reset = () => setData(DEFAULTS);
   const subtotal = (Number(data.tarifaHora) || 0) * (Number(data.horasMinimas) || 0);
+  const iva = Math.round(subtotal * IVA_RATE);
+  const total = subtotal + iva;
 
   return (
     <div className="container mx-auto max-w-4xl space-y-6 p-6">
@@ -128,7 +131,7 @@ export default function CotizacionTransicion() {
       <Card className="border-green-200 bg-green-50/30">
         <CardHeader>
           <CardTitle className="text-base text-green-800">Condiciones de capacitación</CardTitle>
-          <CardDescription>La propuesta calcula automáticamente subtotal y total, sin IVA. El contenido estándar queda fijo.</CardDescription>
+          <CardDescription>La propuesta calcula automáticamente subtotal, IVA del 19% y total. El contenido estándar queda fijo.</CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div className="space-y-1.5">
@@ -161,7 +164,8 @@ export default function CotizacionTransicion() {
           </div>
           <div className="rounded-md border bg-white p-3 text-sm sm:col-span-3">
             <strong>Resumen:</strong> {data.horasMinimas || 0} horas en {Math.ceil((Number(data.horasMinimas) || 0) / (Number(data.horasPorSesion) || 1))} sesiones.{" "}
-            <strong>Subtotal:</strong> ${subtotal.toLocaleString("es-CO")} · <strong>Total:</strong> ${subtotal.toLocaleString("es-CO")}
+            <strong>Subtotal:</strong> ${subtotal.toLocaleString("es-CO")} · <strong>IVA (19%):</strong> ${iva.toLocaleString("es-CO")} ·{" "}
+            <strong>Total:</strong> ${total.toLocaleString("es-CO")}
           </div>
         </CardContent>
       </Card>
