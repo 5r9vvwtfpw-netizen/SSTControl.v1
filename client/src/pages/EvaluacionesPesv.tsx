@@ -73,6 +73,16 @@ export default function EvaluacionesPesv() {
   const isAdmin = isSuperAdmin || isLso;
   const isVaultMode = isSuperAdmin || isLso;
   const formSchema = createFormSchema(isAdmin);
+
+  const getEvaluationDetailUrl = (evaluacion: Pick<EvaluacionPesv, "id" | "companyId">) => {
+    const companyId = isLso
+      ? evaluacion.companyId || lsoPreselectedCompanyId
+      : null;
+    const baseUrl = `/pesv/evaluacion/${evaluacion.id}`;
+    return companyId
+      ? `${baseUrl}?companyId=${encodeURIComponent(companyId)}`
+      : baseUrl;
+  };
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -180,7 +190,7 @@ export default function EvaluacionesPesv() {
         description: "La evaluación del Plan Estratégico de Seguridad Vial se ha creado exitosamente",
         className: "bg-yellow-50 border-yellow-200",
       });
-      setLocation(`/pesv/evaluacion/${newEvaluacion.id}`);
+      setLocation(getEvaluationDetailUrl(newEvaluacion));
     },
     onError: (error: Error) => {
       toast({
@@ -236,7 +246,7 @@ export default function EvaluacionesPesv() {
         description: data.mensaje || `Nueva evaluación creada exitosamente`,
         className: "bg-green-50 border-green-200",
       });
-      setLocation(`/pesv/evaluacion/${data.evaluacion.id}`);
+      setLocation(getEvaluationDetailUrl(data.evaluacion));
     },
     onError: (error: Error) => {
       toast({
@@ -790,7 +800,7 @@ export default function EvaluacionesPesv() {
                 <Card
                   key={evaluacion.id}
                   className="hover-elevate active-elevate-2 cursor-pointer"
-                  onClick={() => setLocation(`/pesv/evaluacion/${evaluacion.id}`)}
+                  onClick={() => setLocation(getEvaluationDetailUrl(evaluacion))}
                   data-testid={`card-evaluacion-${evaluacion.id}`}
                 >
                   <CardHeader>
@@ -833,7 +843,7 @@ export default function EvaluacionesPesv() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
-                      <Button size="sm" onClick={(e) => { e.stopPropagation(); setLocation(`/pesv/evaluacion/${evaluacion.id}`); }} data-testid={`button-abrir-${evaluacion.id}`}>
+                      <Button size="sm" onClick={(e) => { e.stopPropagation(); setLocation(getEvaluationDetailUrl(evaluacion)); }} data-testid={`button-abrir-${evaluacion.id}`}>
                         <ArrowRight className="h-4 w-4 mr-2" />
                         Abrir evaluación
                       </Button>

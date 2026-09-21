@@ -20,6 +20,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { EvaluacionPesv, PasoPesv, RespuestaPasoPesv, PesvCriterioVerificacion, PesvEvidenciaDocumento, insertRespuestaPasoPesvSchema } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { withCompanyContext } from "@/lib/company-context-url";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation, useParams } from "wouter";
@@ -885,6 +886,10 @@ function DetalleEvaluacionPesvInner() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const { companyChapter } = useCompanyContext();
+  const requestedCompanyId = useMemo(() => {
+    if (typeof window === "undefined") return null;
+    return new URLSearchParams(window.location.search).get("companyId");
+  }, []);
   const initialFase = (() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
@@ -906,8 +911,20 @@ function DetalleEvaluacionPesvInner() {
     }
   }, [id, selectedFase]);
 
-  const { data: evaluacion, isLoading: loadingEvaluacion } = useQuery<EvaluacionPesv>({
-    queryKey: ["/api/evaluaciones-pesv", id],
+  const { data: evaluacion, isLoading: loadingEvaluacion, isError: evaluacionError, error: evaluacionLoadError } = useQuery<EvaluacionPesv>({
+    queryKey: ["/api/evaluaciones-pesv", id, requestedCompanyId],
+    queryFn: async () => {
+      const baseUrl = `/api/evaluaciones-pesv/${id}`;
+      const url = requestedCompanyId
+        ? withCompanyContext(baseUrl, requestedCompanyId)
+        : baseUrl;
+      const res = await fetch(url, { credentials: "include" });
+      if (!res.ok) {
+        const message = await res.text();
+        throw new Error(message || "No se pudo cargar la evaluación PESV");
+      }
+      return res.json();
+    },
     enabled: !!id,
   });
 
@@ -924,8 +941,17 @@ function DetalleEvaluacionPesvInner() {
   }, [evaluacion?.companyId, user?.role]);
 
   const { data: respuestas = [] } = useQuery<RespuestaPasoPesv[]>({
-    queryKey: ["/api/evaluaciones-pesv", id, "respuestas"],
-    enabled: !!id,
+    queryKey: ["/api/evaluaciones-pesv", id, "respuestas", evaluacion?.companyId],
+    queryFn: async () => {
+      const baseUrl = `/api/evaluaciones-pesv/${id}/respuestas`;
+      const url = evaluacion?.companyId
+        ? withCompanyContext(baseUrl, evaluacion.companyId)
+        : baseUrl;
+      const res = await fetch(url, { credentials: "include" });
+      if (!res.ok) throw new Error(await res.text() || "No se pudieron cargar las respuestas PESV");
+      return res.json();
+    },
+    enabled: !!id && !!evaluacion,
   });
 
   const { data: pasosDb = [] } = useQuery<PasoPesv[]>({
@@ -1208,6 +1234,23 @@ function DetalleEvaluacionPesvInner() {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (evaluacionError) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 gap-4">
+        <AlertCircle className="h-12 w-12 text-destructive" />
+        <p className="text-destructive text-center">
+          {evaluacionLoadError instanceof Error
+            ? evaluacionLoadError.message
+            : "No se pudo cargar la evaluación PESV"}
+        </p>
+        <Button variant="outline" onClick={() => setLocation("/pesv/auditorias")} data-testid="button-volver-lista-error">
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Volver a Lista
+        </Button>
       </div>
     );
   }

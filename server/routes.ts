@@ -53449,7 +53449,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   app.get('/api/evaluaciones-pesv', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
     try {
       const userRole = req.user!.role;
-      const isAdmin = hasGlobalAccess(userRole) || userRole === 'lso';
+      const isLso = userRole === 'lso' || userRole === 'lso_externo';
+      const isAdmin = hasGlobalAccess(userRole) || isLso;
       
       let companyId: string;
       if (isAdmin) {
@@ -53459,7 +53460,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
           return res.json(allEvaluaciones);
         }
         companyId = requestedCompanyId;
-        if (userRole === 'lso' || userRole === 'lso_externo') {
+        if (isLso) {
           const lsoChk5 = await assertLsoAssignedToCompany(req.user!.id, companyId);
           if (!lsoChk5) return res.status(403).send("No tienes acceso a esta empresa");
         }
@@ -53486,7 +53487,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   app.get('/api/evaluaciones-pesv/:id', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
     try {
       const userRole = req.user!.role;
-      const isAdmin = hasGlobalAccess(userRole) || userRole === 'lso';
+      const isLso = userRole === 'lso' || userRole === 'lso_externo';
+      const isAdmin = hasGlobalAccess(userRole) || isLso;
       
       const [evaluacion] = await db.select()
         .from(evaluacionesPesv)
@@ -53501,7 +53503,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         if (getEffectiveCompanyId(req) !== evaluacion.companyId) {
           return res.status(403).send("No tienes acceso a esta evaluación");
         }
-      } else if (userRole === 'lso') {
+      } else if (isLso) {
         const lsoChk6 = await assertLsoAssignedToCompany(req.user!.id, evaluacion.companyId);
         if (!lsoChk6) return res.status(403).send("No tienes acceso a esta empresa");
       }

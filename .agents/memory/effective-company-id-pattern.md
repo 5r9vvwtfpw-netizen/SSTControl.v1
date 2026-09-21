@@ -11,6 +11,12 @@ Roles like `superadmin`, `lso`, and `lso_externo` don't belong to a single compa
 
 The frontend must send `X-Company-Id` header (or `?companyId=` query) when a global-role user is viewing a specific company. If both selectors are present, reject contradictory values rather than validating one and letting a downstream handler consume the other.
 
+For detail-page navigation, carry the company selector in the page URL and use it on the very first API request. Do not wait for the detail response to populate local storage: assignment middleware runs before that response exists, creating a circular failure on clean production sessions.
+
+**Why:** The PESV list loaded correctly with a company selector, but opening an evaluation dropped it; both the detail and responses requests arrived with an empty query and were rejected before the page could recover the evaluation's company.
+
+**How to apply:** When a global-role list opens a company-owned record, preserve `companyId` in the destination URL. The detail page must send it on its initial fetch, then persist the validated record context for subsequent submodule requests.
+
 Some route modules duplicate their own resolver. They must never reinterpret raw headers, query parameters, or body fields for LSO after middleware validation; consume the validated context exclusively.
 
 **Why:** Trusting raw company selectors for LSO created a tenant-IDOR risk: a professional could request a company to which they had no active assignment, or validate one selector while a handler consumed another.
