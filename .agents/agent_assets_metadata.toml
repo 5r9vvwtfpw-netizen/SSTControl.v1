@@ -489,3 +489,17 @@ mtime_ms = 1789987011832
 storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/ce1958c6-b0ac-49cf-89f3-aeb23a6e18ea/90e5aa44-8def-480c-8b71-88509bc12dcd"
 storage_version_token = "1789987017484710"
 content_type = "image/png"
+
+[[outputs]]
+id = "y3Ct2rzihKgGSV6cs0gUY"
+uri = "file://screenshots/evidencia-cotizacion-iva.png"
+type = "image"
+title = "Cotización con IVA del 19%"
+description = "Captura funcional del módulo de cotización mostrando subtotal de $400.000, IVA del 19% por $76.000 y total de $476.000."
+logical_id = "0a31ccb1-a42d-4410-9538-dc90a0fdb84b"
+content_hash = "sha256:5b004c8cea86e93f1ce8e28aa3b1e0c0bb86b1d283f851898dc594c1eeb21330"
+size = 186007
+mtime_ms = 1790003618191
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/0a31ccb1-a42d-4410-9538-dc90a0fdb84b/4ef8fe09-487d-4f82-b25a-b4791e0ce15a"
+storage_version_token = "1790003664651603"
+content_type = "image/png"
