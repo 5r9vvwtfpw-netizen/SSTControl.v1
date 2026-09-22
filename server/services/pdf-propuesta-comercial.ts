@@ -262,15 +262,6 @@ export async function generatePropuestaComercialPdf(params: PropuestaParams = {}
       qy += 96;
     }
 
-    // Prueba gratuita
-    if (diasPrueba > 0) {
-      doc.rect(Q.m, qy, Q.w - Q.m * 2, 38).fill('#f0f7f2');
-      doc.rect(Q.m, qy, Q.w - Q.m * 2, 3).fill(C.GREEN_ACCENT);
-      doc.fontSize(10).font('Helvetica-Bold').fillColor(C.GREEN_DARK)
-         .text(`✓  ${diasPrueba} días de prueba gratuita — sin tarjeta, sin compromiso, acceso completo`, Q.m + 16, qy + 13, { width: Q.w - Q.m * 2 - 32 });
-      qy += 50;
-    }
-
     // Footer página 1
     doc.rect(0, Q.h - 28, Q.w, 28).fill(C.GREEN_DARK);
     doc.rect(0, Q.h - 28, Q.w, 3).fill(C.GOLD);
