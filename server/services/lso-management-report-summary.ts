@@ -79,13 +79,17 @@ export type LsoReportFacts = {
     auditsScheduled: number | null;
     auditsExecuted: number | null;
     trainingSessions: number | null;
+    trainingAttendees?: number | null;
     confirmedAttendees: number | null;
     maintenanceRecords: number | null;
+    maintenanceDocuments?: number | null;
     vehicles: number | null;
     highRiskCount: number | null;
     untreatedHighRiskCount: number | null;
     victimRecords: number | null;
     openVictimFollowups: number | null;
+    speedAlerts?: number | null;
+    openSpeedAlerts?: number | null;
   };
   moduleErrors?: string[];
 };
@@ -279,7 +283,7 @@ export function buildLsoManagementReportSummary(facts: LsoReportFacts): LsoRepor
       return `Revisar cada ${quantity("siniestro vial", "siniestros viales")} y documentar investigación, atención y acciones de cierre.`;
     }
     if (sourceLabel === "Atención a víctimas") {
-      return `Documentar la atención y el seguimiento de las víctimas relacionadas con los siniestros registrados.`;
+      return `Completar y cerrar el seguimiento de las víctimas relacionadas con los siniestros registrados.`;
     }
     if (sourceLabel === "Evidencia documental PESV") {
       return "Completar y vincular la evidencia documental de los criterios verificados antes de afirmar cumplimiento.";
@@ -294,7 +298,10 @@ export function buildLsoManagementReportSummary(facts: LsoReportFacts): LsoRepor
       return "Relacionar los asistentes por conductor y conservar la evidencia de asistencia de cada formación.";
     }
     if (sourceLabel === "Mantenimientos de vehículos") {
-      return "Registrar los mantenimientos realizados y vincular sus soportes antes de operar la flota.";
+      return "Completar el registro y vincular los soportes faltantes de los mantenimientos realizados.";
+    }
+    if (sourceLabel === "Alertas de velocidad") {
+      return "Revisar las alertas de velocidad abiertas, documentar la actuación y registrar su cierre.";
     }
     if (sourceLabel === "Riesgos viales") {
       return "Definir y ejecutar el tratamiento de los riesgos viales altos o muy altos.";
@@ -500,7 +507,10 @@ export function buildLsoManagementReportSummary(facts: LsoReportFacts): LsoRepor
 
   const investigations = facts.investigations;
   if (investigations && known(investigations.total)) {
-    if (investigations.total > 0 && known(investigations.overdue) && investigations.overdue === 0) {
+    const hasOpenInvestigationWork =
+      (known(investigations.missingSignatures) && investigations.missingSignatures > 0) ||
+      (known(investigations.pendingActions) && investigations.pendingActions > 0);
+    if (investigations.total > 0 && known(investigations.overdue) && investigations.overdue === 0 && !hasOpenInvestigationWork) {
       strengths.push(item(
         "Investigaciones de accidentes",
         investigations.total,
@@ -651,6 +661,17 @@ export function buildLsoManagementReportSummary(facts: LsoReportFacts): LsoRepor
         30,
       );
     }
+    if (known(operational.openVictimFollowups) && operational.openVictimFollowups > 0 &&
+        ((known(incidents?.serious) && incidents.serious > 0) || (known(incidents?.fatalities) && incidents.fatalities > 0))) {
+      addAttention(
+        "Atención a víctimas",
+        operational.openVictimFollowups,
+        `Hay ${operational.openVictimFollowups} ${pluralizeSpanish(operational.openVictimFollowups, "seguimiento de víctima abierto", "seguimientos de víctimas abiertos")} asociado${operational.openVictimFollowups === 1 ? "" : "s"} a siniestros con consecuencias graves o mortales.`,
+        `Hay ${operational.openVictimFollowups} ${pluralizeSpanish(operational.openVictimFollowups, "seguimiento de víctima abierto", "seguimientos de víctimas abiertos")}; se debe verificar la actuación registrada y completar el cierre.`,
+        "urgente",
+        30,
+      );
+    }
     if (known(operational.highRiskCount) && operational.highRiskCount > 0 &&
         known(operational.untreatedHighRiskCount) && operational.untreatedHighRiskCount > 0) {
       addAttention(
@@ -682,12 +703,14 @@ export function buildLsoManagementReportSummary(facts: LsoReportFacts): LsoRepor
         60,
       );
     }
-    if (known(operational.trainingSessions) && operational.trainingSessions > 0 && known(operational.confirmedAttendees) && operational.confirmedAttendees === 0) {
+    if (known(operational.trainingSessions) && operational.trainingSessions > 0 &&
+        known(operational.trainingAttendees) && known(operational.confirmedAttendees) &&
+        operational.trainingAttendees > 0 && operational.confirmedAttendees < operational.trainingAttendees) {
       addAttention(
         "Formación vial",
-        operational.trainingSessions,
-        `Hay ${operational.trainingSessions} formación${operational.trainingSessions === 1 ? "" : "es"} y no hay asistencias confirmadas por conductor.`,
-        `Hay ${operational.trainingSessions} formación${operational.trainingSessions === 1 ? "" : "es"} vial${operational.trainingSessions === 1 ? "" : "es"} sin asistencia individual confirmada.`,
+        operational.trainingAttendees - operational.confirmedAttendees,
+        `Hay ${operational.trainingAttendees} relación${operational.trainingAttendees === 1 ? "" : "es"} conductor-formación y solo ${operational.confirmedAttendees} asistencia${operational.confirmedAttendees === 1 ? "" : "s"} confirmada${operational.confirmedAttendees === 1 ? "" : "s"}.`,
+        `La cobertura individual de formación vial está incompleta: ${operational.confirmedAttendees} de ${operational.trainingAttendees} asistencias confirmadas.`,
         "atencion",
         60,
       );
@@ -698,6 +721,28 @@ export function buildLsoManagementReportSummary(facts: LsoReportFacts): LsoRepor
         operational.vehicles,
         `Hay ${operational.vehicles} vehículo${operational.vehicles === 1 ? "" : "s"} y ningún mantenimiento registrado en la vigencia.`,
         `No hay mantenimientos registrados para los ${operational.vehicles} vehículo${operational.vehicles === 1 ? "" : "s"} de la empresa en la vigencia.`,
+        "atencion",
+        60,
+      );
+    }
+    if (known(operational.maintenanceRecords) && operational.maintenanceRecords > 0 &&
+        known(operational.maintenanceDocuments) && operational.maintenanceDocuments < operational.maintenanceRecords) {
+      const missingDocuments = operational.maintenanceRecords - operational.maintenanceDocuments;
+      addAttention(
+        "Mantenimientos de vehículos",
+        missingDocuments,
+        `Hay ${operational.maintenanceRecords} mantenimientos registrados y ${missingDocuments} ${pluralizeSpanish(missingDocuments, "no tiene", "no tienen")} soporte documental vinculado.`,
+        `Hay ${missingDocuments} ${pluralizeSpanish(missingDocuments, "mantenimiento sin soporte documental vinculado", "mantenimientos sin soporte documental vinculado")}.`,
+        "atencion",
+        60,
+      );
+    }
+    if (known(operational.openSpeedAlerts) && operational.openSpeedAlerts > 0) {
+      addAttention(
+        "Alertas de velocidad",
+        operational.openSpeedAlerts,
+        `Hay ${operational.openSpeedAlerts} ${pluralizeSpanish(operational.openSpeedAlerts, "alerta de velocidad abierta", "alertas de velocidad abiertas")} de ${known(operational.speedAlerts) ? operational.speedAlerts : "un total no registrado"}.`,
+        `Hay ${operational.openSpeedAlerts} ${pluralizeSpanish(operational.openSpeedAlerts, "alerta de velocidad abierta", "alertas de velocidad abiertas")} que requieren revisión y cierre.`,
         "atencion",
         60,
       );
@@ -726,9 +771,21 @@ export function buildLsoManagementReportSummary(facts: LsoReportFacts): LsoRepor
       : "Satisfactorio";
 
   const strongest = strengths[0];
+  const narrativeRank: Record<string, number> = {
+    "Atención a víctimas": 1,
+    "Siniestros viales": 2,
+    "Riesgos viales": 3,
+    "Evidencia documental PESV": 4,
+    "Alertas de velocidad": 5,
+    "Documentos de vehículos": 6,
+    "Inspecciones de vehículos": 7,
+  };
   const priorityCategories = [...new Set(
     [...attentionItems]
-      .sort((left, right) => (left.priority === "urgente" ? 0 : 1) - (right.priority === "urgente" ? 0 : 1))
+      .sort((left, right) =>
+        (left.priority === "urgente" ? 0 : 1) - (right.priority === "urgente" ? 0 : 1) ||
+        (narrativeRank[left.sourceLabel] ?? 50) - (narrativeRank[right.sourceLabel] ?? 50),
+      )
       .map((entry) => entry.sourceLabel.toLowerCase()),
   )].slice(0, 2);
   const strongestMessage = strongest?.text.replace(/[.]+$/, "") || "";

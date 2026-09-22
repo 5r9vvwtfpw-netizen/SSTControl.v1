@@ -1,0 +1,44 @@
+DEMO-PRUEBA
+NIT: 900000000-0
+SISTEMA DE GESTIÓN DE
+SEGURIDAD Y SALUD EN EL TRABAJO
+CÓDIGO:
+VERSIÓN:
+FECHA:
+LSO-GEST-01
+2.0
+22/09/2026
+INFORME GERENCIAL DE GESTIÓN SST Y SEGURIDAD VIAL — ENTREGA LSO
+CONTEXTO DE LA ENTREGA
+• Empresa: DEMO-PRUEBA | NIT: 900000000-0 | Medellín | Vigencia analizada: 2026.
+• Profesional asignado: LSO PRUEBA NUEVA | Licencia: LSO-125698 | Asignación desde: 26/06/2026.
+• Alcance: lectura gerencial de los registros disponibles en SST y PESV. Un registro inexistente, incompleto o sin soporte no se interpreta 
+automáticamente como incumplimiento legal.
+TABLERO EJECUTIVO
+RESULTADO SST
+100%
+en-progreso · resultado registrado; sin cierre verificado
+RESULTADO PESV
+100%
+en-progreso · 0 no conformes · 0/76 soportes con archivo
+PLAN ANUAL
+0.4%
+1/240 actividades · estado aprobado
+ASUNTOS PENDIENTES
+16
+6 urgentes · ver prioridades y acciones
+APRECIACIÓN GENERAL
+• Según los registros disponibles, hay 4 matrices registradas para identificar peligros y valorar riesgos. La empresa requiere atención por 16 asuntos registrados. Los 
+principales se relacionan con atención a víctimas y siniestros viales. Los siniestros con consecuencias graves o mortales deben revisarse individualmente y no tratarse 
+solo como un conteo. La ausencia de archivos vinculados impide confirmar documentalmente el cumplimiento PESV. Clasificación: Requiere atención prioritaria. Fecha del 
+informe: 22/09/2026.
+FORTALEZAS IDENTIFICADAS
+• Hay 4 matrices registradas para identificar peligros y valorar riesgos. Origen: Identificación de peligros y valoración de riesgos.
+ASUNTOS QUE REQUIEREN ATENCIÓN
+• Hay 3 seguimientos de víctimas abiertos; se debe verificar la actuación registrada y completar el cierre. Origen: Atención a víctimas.
+• Hay 4 siniestros viales registrados; 2 con heridos o consecuencias graves. Origen: Siniestros viales.
+• Hay 6 riesgos viales altos o muy altos sin tratamiento cerrado. Origen: Riesgos viales.
+• La verificación documental del PESV no está soportada: 74 criterios registrados y 0 archivos vinculados. Origen: Evidencia documental PESV.
+• Hay 1 vehículo con algún documento vencido; requieren revisión antes de operar. Origen: Documentos de vehículos.
+• 1 inspección de vehículos requiere revisión antes de operar. Origen: Inspecciones de vehículos.
+• Hay 10 asuntos adicionales, detallados al final del informe.

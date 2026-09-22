@@ -503,3 +503,17 @@ mtime_ms = 1790003618191
 storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/0a31ccb1-a42d-4410-9538-dc90a0fdb84b/4ef8fe09-487d-4f82-b25a-b4791e0ce15a"
 storage_version_token = "1790003664651603"
 content_type = "image/png"
+
+[[outputs]]
+id = "ocob0JtmvAyPaNpXDXuZu"
+uri = "file://attached_assets/informe-consolidado-sst-pesv-demo-prueba-2026-corregido.pdf"
+type = "pdf"
+title = "Informe gerencial SST/PESV corregido"
+description = "PDF corregido de DEMO-PRUEBA 2026 con resultados, alertas, decisiones y recomendaciones trazables."
+logical_id = "e7e932df-8aef-4c24-9a6d-ac1f4873b9ef"
+content_hash = "sha256:c70064bb61e17e9c1732abaac16e0469188c23783f673739c5d078f4c43d8d37"
+size = 779559
+mtime_ms = 1790100009929
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/e7e932df-8aef-4c24-9a6d-ac1f4873b9ef/7ad19908-a5d2-4b35-ac36-27f94b983df6"
+storage_version_token = "1790100063270407"
+content_type = "application/pdf"

@@ -354,3 +354,70 @@ test("full recommendation grouping preserves items beyond the executive limit", 
   assert.equal(complete[0].entries.length, 6);
   assert.deepEqual(complete[0].entries.map((entry) => entry.fact), entries.map((entry) => entry.fact));
 });
+
+test("open victim follow-ups are urgent when serious road incidents exist", () => {
+  const summary = buildLsoManagementReportSummary({
+    roadIncidents: { total: 4, serious: 2, fatalities: 0 },
+    operational: {
+      objectives: 0,
+      indicators: 0,
+      measurements: 0,
+      auditsScheduled: 0,
+      auditsExecuted: 0,
+      trainingSessions: 0,
+      confirmedAttendees: 0,
+      maintenanceRecords: 0,
+      vehicles: 1,
+      highRiskCount: 0,
+      untreatedHighRiskCount: 0,
+      victimRecords: 3,
+      openVictimFollowups: 3,
+    },
+  });
+  const victimAlert = summary.attentionItems.find((entry) => entry.sourceLabel === "Atención a víctimas");
+  assert.ok(victimAlert);
+  assert.equal(victimAlert?.priority, "urgente");
+  assert.match(victimAlert?.text || "", /3 seguimientos de víctimas abiertos/);
+});
+
+test("partial training coverage, missing maintenance supports, and open speed alerts are reported", () => {
+  const summary = buildLsoManagementReportSummary({
+    operational: {
+      objectives: 1,
+      indicators: 1,
+      measurements: 1,
+      auditsScheduled: 1,
+      auditsExecuted: 1,
+      trainingSessions: 20,
+      trainingAttendees: 3,
+      confirmedAttendees: 2,
+      maintenanceRecords: 6,
+      maintenanceDocuments: 1,
+      vehicles: 7,
+      highRiskCount: 0,
+      untreatedHighRiskCount: 0,
+      victimRecords: 0,
+      openVictimFollowups: 0,
+      speedAlerts: 3,
+      openSpeedAlerts: 3,
+    },
+  });
+  assert.ok(summary.attentionItems.some((entry) => entry.sourceLabel === "Formación vial" && entry.text.includes("2 de 3")));
+  assert.ok(summary.attentionItems.some((entry) => entry.sourceLabel === "Mantenimientos de vehículos" && entry.text.includes("5 mantenimientos")));
+  assert.ok(summary.attentionItems.some((entry) => entry.sourceLabel === "Alertas de velocidad" && entry.text.includes("3 alertas")));
+});
+
+test("investigations with open signatures or actions are not presented as strengths", () => {
+  const summary = buildLsoManagementReportSummary({
+    investigations: {
+      total: 2,
+      overdue: 0,
+      missingSignatures: 1,
+      pendingActions: 2,
+      totalActions: 3,
+    },
+  });
+  assert.equal(summary.strengths.some((entry) => entry.sourceLabel === "Investigaciones de accidentes"), false);
+  assert.ok(summary.attentionItems.some((entry) => entry.sourceLabel === "Firmas de investigaciones de accidentes"));
+  assert.ok(summary.attentionItems.some((entry) => entry.sourceLabel === "Acciones de investigaciones de accidentes"));
+});

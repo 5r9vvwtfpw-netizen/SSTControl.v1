@@ -1,8 +1,8 @@
 from pathlib import Path
 import fitz
 
-pdf_path = Path('attached_assets/informe-consolidado-sst-pesv-demo-prueba-2026_(4)_1790076816542.pdf')
-out_dir = Path('.agents/outputs/informe-consolidado-sst-pesv-demo-2026')
+pdf_path = Path('attached_assets/informe-consolidado-sst-pesv-demo-prueba-2026-corregido.pdf')
+out_dir = Path('.agents/outputs/informe-consolidado-sst-pesv-demo-2026-corregido')
 out_dir.mkdir(parents=True, exist_ok=True)
 
 doc = fitz.open(pdf_path)
