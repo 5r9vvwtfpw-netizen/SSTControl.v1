@@ -517,3 +517,17 @@ mtime_ms = 1790100009929
 storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/e7e932df-8aef-4c24-9a6d-ac1f4873b9ef/7ad19908-a5d2-4b35-ac36-27f94b983df6"
 storage_version_token = "1790100063270407"
 content_type = "application/pdf"
+
+[[outputs]]
+id = "O9eAR5Rd3ffrShD2yvPyy"
+uri = "file://attached_assets/SST-Colombia-Propuesta-Comercial-LOS-PICAS-sin-calculo.pdf"
+type = "pdf"
+title = "Propuesta comercial LOS PICAS — PDF aparte"
+description = "Copia independiente del PDF de referencia, sin modificar el módulo: muestra $8.000 por trabajador y $700.000 de mensualidad profesional, sin calcular el valor para 80 trabajadores."
+logical_id = "1e79d84f-1be8-42ed-8326-e23053ab310f"
+content_hash = "sha256:d0cd31fd015d2e5f65c861aea98d24ff04aa44fae686c6204abbe382bd8d727a"
+size = 3725
+mtime_ms = 1790106160497
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/1e79d84f-1be8-42ed-8326-e23053ab310f/573b5d35-f069-42d0-8e89-fb76096b4e23"
+storage_version_token = "1790106257780242"
+content_type = "application/pdf"
