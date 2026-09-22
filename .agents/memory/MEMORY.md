@@ -56,3 +56,4 @@
 - [Responsable IPER es el LSO asignado](iperc-lso-responsible.md) — crear y editar matrices debe usar el LSO activo de la empresa, interno o externo.
 - [Vinculación IPER-PESV en P04](iper-pesv-linking-gap.md) — el alta desde IPERC conserva el ID, crea el vínculo en transacción y muestra el banner en la matriz vial.
 - [Estándar 6.1.3 — acceso y evidencia](standard-613-access-and-evidence.md) — no hay rol autónomo de alta dirección; el módulo mezcla auditoría y revisión gerencial y no expone toda su evidencia estructurada.
+- [Profesionales SST y protección del software](profesional-sst-software-focus.md) — el acuerdo debe proteger primero el software, su propiedad intelectual y el conocimiento reservado; los datos sensibles son obligación complementaria.
