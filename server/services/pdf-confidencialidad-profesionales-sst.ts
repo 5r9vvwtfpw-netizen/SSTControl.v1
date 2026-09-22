@@ -39,7 +39,7 @@ export async function generateConfidencialidadProfesionalSstPdf(
       info: {
         Title: "Acuerdo de Confidencialidad para Profesionales en SST",
         Author: "SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S.",
-        Subject: "Confidencialidad reforzada, privacidad y uso restringido de información SST",
+         Subject: "Confidencialidad, propiedad intelectual y uso restringido del software SST-Colombia",
       },
     });
     doc.on("data", (chunk: Buffer) => chunks.push(chunk));
@@ -124,8 +124,8 @@ export async function generateConfidencialidadProfesionalSstPdf(
     pageNumber = 1;
     doc.rect(0, 0, doc.page.width, doc.page.height).fill(C.greenDark);
     doc.font("Helvetica-Bold").fontSize(21).fillColor(C.white)
-      .text("ACUERDO DE CONFIDENCIALIDAD", MARGIN, 185, { width: contentWidth(), align: "center" });
-    doc.text("Y PRIVACIDAD DE LA INFORMACIÓN", { width: contentWidth(), align: "center" });
+       .text("ACUERDO DE CONFIDENCIALIDAD", MARGIN, 185, { width: contentWidth(), align: "center" });
+     doc.text("PROPIEDAD INTELECTUAL Y USO RESTRINGIDO DEL SOFTWARE", { width: contentWidth(), align: "center" });
     doc.moveDown(0.8);
     doc.font("Helvetica").fontSize(12).fillColor(C.gold)
       .text("PROFESIONALES EN SEGURIDAD Y SALUD EN EL TRABAJO", { width: contentWidth(), align: "center" });
@@ -151,16 +151,17 @@ export async function generateConfidencialidadProfesionalSstPdf(
     // Contenido
     doc.addPage();
     header();
-     paragraph(`Consta por el presente documento el ACUERDO DE CONFIDENCIALIDAD Y PRIVACIDAD DE LA INFORMACIÓN, celebrado en Medellín, Antioquia, el ${fecha}, entre SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S., identificada con NIT 902.036.337-4 y representada legalmente por LUZ ADRIANA DIAZ CALLE, identificada con C.C. No. 52.223.631 (en adelante "EL PROVEEDOR"), y ${nombre}, identificado(a) con C.C. No. ${identificacion}, quien se identifica como ${profesion}, con licencia SST ${licencia} y correo ${correo} (en adelante "EL PROFESIONAL").`);
-     paragraph("Este acuerdo es autónomo y tiene exclusivamente finalidad de confidencialidad, privacidad, seguridad de la información y uso restringido. No constituye una alianza comercial, contrato de prestación de servicios, contrato laboral, sociedad, agencia, representación ni ninguna otra relación de trabajo o colaboración entre las partes.");
-     paragraph("EL PROFESIONAL recibe únicamente una autorización personal, limitada, no exclusiva, intransferible y revocable para usar la plataforma SST-Colombia en el alcance que EL PROVEEDOR autorice. Esta autorización no transfiere la propiedad de la plataforma, la información de las empresas ni los derechos sobre sus documentos.");
+      paragraph(`Consta por el presente documento el ACUERDO DE CONFIDENCIALIDAD, PROPIEDAD INTELECTUAL Y USO RESTRINGIDO DEL SOFTWARE, celebrado en Medellín, Antioquia, el ${fecha}, entre SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S., identificada con NIT 902.036.337-4 y representada legalmente por LUZ ADRIANA DIAZ CALLE, identificada con C.C. No. 52.223.631 (en adelante "EL PROVEEDOR"), y ${nombre}, identificado(a) con C.C. No. ${identificacion}, quien se identifica como ${profesion}, con licencia SST ${licencia} y correo ${correo} (en adelante "EL PROFESIONAL").`);
+      paragraph("Este acuerdo es autónomo y tiene como finalidad principal proteger el software SST-Colombia, su propiedad intelectual, su información técnica y comercial, sus secretos empresariales y el conocimiento reservado al que EL PROFESIONAL pueda acceder. También establece reglas complementarias de seguridad y protección de los datos que eventualmente se encuentren dentro de la Plataforma. No constituye una alianza comercial, contrato de prestación de servicios, contrato laboral, sociedad, agencia, representación ni ninguna otra relación de trabajo o colaboración entre las partes.");
+      paragraph("EL PROFESIONAL recibe únicamente una autorización personal, limitada, no exclusiva, intransferible y revocable para usar la Plataforma en el alcance que EL PROVEEDOR autorice. Esta autorización no transfiere la propiedad, licencia comercial, código, arquitectura, metodología, información técnica, información comercial ni derechos sobre la Plataforma.");
 
-    clause("PRIMERA", "Objeto y partes");
-     paragraph("El objeto es proteger toda información a la que EL PROFESIONAL acceda al utilizar el software, regular la autorización limitada de uso, imponer reglas de privacidad y seguridad, y establecer obligaciones de reserva, uso restringido, reporte de incidentes, devolución y eliminación de información.");
+     clause("PRIMERA", "Objeto y partes");
+      paragraph("El objeto principal es proteger la Plataforma SST-Colombia y toda la información confidencial relacionada con su creación, funcionamiento, operación, seguridad, comercialización y evolución. El acuerdo regula la autorización limitada de uso concedida a EL PROFESIONAL y establece obligaciones de reserva, no apropiación, no reproducción, seguridad, reporte de incidentes, devolución y eliminación de información.");
 
     clause("SEGUNDA", "Definiciones reforzadas");
     bullet("La Plataforma:", "El sistema SST-Colombia, sus módulos, código, interfaces, bases de datos, documentación, flujos, reportes, actualizaciones y controles de seguridad.");
-    bullet("Información Confidencial:", "Toda información técnica, comercial, financiera, operativa, estratégica o de clientes, aunque no tenga una marca de confidencialidad.");
+     bullet("Información Confidencial del Software:", "Código fuente u objeto, arquitectura, estructura de bases de datos, interfaces, diseños, módulos, flujos, formularios, automatizaciones, algoritmos, lógica de negocio, documentación, integraciones, controles, reportes, metodologías, precios, planes, estrategias, procesos internos y cualquier conocimiento técnico o comercial no público de SST-Colombia.");
+     bullet("Información Confidencial:", "La Información Confidencial del Software y cualquier información técnica, comercial, financiera, operativa, estratégica o de empresas a la que EL PROFESIONAL acceda por medio de la Plataforma, aunque no tenga una marca de confidencialidad.");
     bullet("Datos Personales:", "Cualquier información que permita identificar o hacer identificable a una persona natural.");
     bullet("Datos Sensibles:", "Datos de salud, historia de accidentes, incapacidades, condiciones médicas, biometría, vida privada y demás información protegida por la normativa colombiana.");
      bullet("Incidente:", "Pérdida, acceso no autorizado, divulgación, alteración, destrucción, envío equivocado, captura, descarga, extracción o uso indebido de información.");
@@ -177,58 +178,61 @@ export async function generateConfidencialidadProfesionalSstPdf(
     bullet("", "No podrá acceder a empresas, expedientes, reportes o módulos distintos de los autorizados.");
     bullet("", "No podrá usar la plataforma para una finalidad propia, distinta o incompatible con la instrucción recibida.");
 
-    clause("CUARTA", "Información protegida");
-    paragraph("La protección comprende, entre otros, datos de trabajadores, información de salud ocupacional, accidentes e incidentes, incapacidades, exámenes y restricciones médicas cuando estén disponibles; matrices de peligros, evaluaciones, evidencias, planes de trabajo, informes, usuarios, credenciales, tarifas, clientes, metodologías, diseños, arquitectura y lógica de negocio.");
+     clause("CUARTA", "Información protegida");
+     paragraph("La protección recae principalmente sobre la Información Confidencial del Software: código, arquitectura, estructura de datos, interfaces, diseño, módulos, flujos, automatizaciones, integraciones, lógica de negocio, documentación, metodologías, controles de seguridad, reportes, precios, planes y estrategias de SST-Colombia, así como cualquier mejora, desarrollo o conocimiento derivado de estos elementos.");
+     paragraph("De manera complementaria, también queda protegida la información de empresas, trabajadores, usuarios, matrices, evaluaciones, evidencias, informes y datos personales que EL PROFESIONAL pueda visualizar o manejar dentro de la Plataforma. Esta protección adicional no cambia el objeto principal del acuerdo ni convierte a EL PROFESIONAL en encargado, contratista o representante de EL PROVEEDOR.");
 
-    clause("QUINTA", "Confidencialidad reforzada");
-     paragraph("EL PROFESIONAL guardará reserva absoluta y no divulgará, venderá, transferirá, publicará, reproducirá ni permitirá el acceso a la Información Confidencial. La obligación será indefinida respecto de Datos Sensibles, Información de Salud, secretos empresariales, credenciales y cualquier información que por su naturaleza deba permanecer reservada. Para la demás Información Confidencial, permanecerá durante diez (10) años después de terminar el acceso.");
+     clause("QUINTA", "Confidencialidad reforzada");
+      paragraph("EL PROFESIONAL guardará reserva absoluta y no divulgará, venderá, transferirá, publicará, reproducirá ni permitirá el acceso a la Información Confidencial. La obligación será indefinida respecto de la Información Confidencial del Software, código, arquitectura, lógica de negocio, controles de seguridad, credenciales, secretos empresariales y cualquier información que por su naturaleza deba permanecer reservada. Para la demás Información Confidencial, permanecerá durante diez (10) años después de terminar el acceso.");
      paragraph("Solo quedan excluidas las informaciones que EL PROFESIONAL demuestre fehacientemente que eran públicas sin incumplir este acuerdo, fueron recibidas legítimamente de un tercero sin restricción o deban revelarse por obligación legal, caso en el cual deberá informar previamente cuando la ley lo permita. La carga de probar la excepción corresponde a EL PROFESIONAL.");
 
-    clause("SEXTA", "Finalidad y deber de reserva");
-     paragraph("EL PROFESIONAL tratará la información únicamente para la finalidad autorizada y conforme a las instrucciones recibidas de EL PROVEEDOR. No podrá reutilizarla para elaborar bases de datos propias, captar oportunidades, contactar personas por fuera del proceso, alimentar modelos o herramientas, comparar empresas, crear perfiles, obtener ventajas, ni beneficiar a terceros. Estas prohibiciones continúan después de la terminación del acceso.");
-     subtitle("Toda copia, anotación, exportación o uso fuera de la finalidad autorizada se considera incumplimiento independiente.");
+     clause("SEXTA", "Finalidad, uso permitido y protección frente a competencia");
+      paragraph("EL PROFESIONAL utilizará la Plataforma únicamente para la finalidad, empresas, módulos y procesos expresamente autorizados por EL PROVEEDOR. No podrá reutilizar, extraer, reconstruir, transformar, comparar, enseñar, divulgar ni aprovechar la Información Confidencial del Software para beneficio propio o de terceros.");
+      paragraph("EL PROFESIONAL no podrá utilizar la Información Confidencial del Software para desarrollar, encargar, asesorar, entrenar, mejorar, probar, comercializar o poner a disposición un software, plataforma, módulo o servicio que reproduzca, sustituya o compita con funcionalidades o procesos propios de SST-Colombia. Esta obligación se refiere exclusivamente al uso de información confidencial de EL PROVEEDOR y no impide que EL PROFESIONAL ejerza su profesión, preste servicios de SST ni utilice conocimientos generales que no sean reservados.");
+      subtitle("Estas obligaciones continúan después de la terminación o revocatoria del acceso.");
 
-    clause("SÉPTIMA", "Tratamiento de datos personales");
-     paragraph("EL PROFESIONAL reconoce que el acceso a Datos Personales no implica cesión de propiedad ni autorización general. Deberá cumplir la Ley 1581 de 2012, el Decreto 1074 de 2015 y las instrucciones documentadas aplicables, tratar los datos bajo necesidad y proporcionalidad, respetar las finalidades informadas y aplicar especial cuidado a los Datos Sensibles. No podrá ceder, vender, transferir, consultar por curiosidad ni conservar datos más allá de lo estrictamente necesario.");
+     clause("SÉPTIMA", "Protección complementaria de datos personales");
+      paragraph("Cuando EL PROFESIONAL acceda a Datos Personales dentro de la Plataforma, reconoce que dicho acceso no implica cesión de propiedad ni autorización general para usarlos. Deberá cumplir la Ley 1581 de 2012, el Decreto 1074 de 2015 y las instrucciones aplicables, tratar los datos únicamente dentro de la finalidad autorizada y aplicar especial cuidado a los Datos Sensibles. No podrá ceder, vender, transferir, consultar por curiosidad ni conservar datos más allá de lo estrictamente necesario.");
     bullet("", "No podrá consultar datos por curiosidad, conveniencia personal o interés de terceros.");
     bullet("", "No podrá alterar, ocultar o eliminar registros sin autorización y trazabilidad.");
     bullet("", "Deberá mantener reserva profesional sobre la información que conozca por su ejercicio.");
      paragraph("EL PROFESIONAL acepta que una infracción de esta cláusula puede generar investigaciones y sanciones administrativas de la Superintendencia de Industria y Comercio, responsabilidad civil y, cuando corresponda, responsabilidad penal por violación de datos personales.");
 
-    clause("OCTAVA", "Prohibiciones de privacidad y extracción");
-    bullet("a)", "Tomar capturas, fotografías, grabaciones o transcripciones de datos personales o reportes, salvo autorización documentada.");
-    bullet("b)", "Descargar o exportar masivamente información, listados, historias, reportes o evidencias.");
-    bullet("c)", "Enviar información a correos personales, mensajería, nubes, memorias USB o dispositivos no autorizados.");
-    bullet("d)", "Introducir información de la plataforma en herramientas de IA, traductores, asistentes, servicios de analítica o aplicaciones externas no aprobadas.");
-    bullet("e)", "Imprimir documentos con datos personales fuera de una necesidad autorizada y controlada.");
-     bullet("f)", "Realizar scraping, consultas automatizadas, extracción por API, ingeniería inversa, descompilación, pruebas de vulnerabilidad o elusión de controles sin autorización escrita.");
-     bullet("g)", "Usar información, credenciales, estructura, flujos o conocimiento de la Plataforma para desarrollar, entrenar o mejorar productos, modelos o servicios propios o de terceros.");
-     bullet("h)", "Conservar copias, fotografías, notas, transcripciones o archivos en cualquier medio una vez revocada o terminada la autorización de uso.");
+     clause("OCTAVA", "Protección del software y prohibiciones de extracción");
+     bullet("a)", "Copiar, fotografiar, grabar, transcribir o reproducir interfaces, pantallas, formularios, reportes, flujos, documentación, código o cualquier elemento de la Plataforma, salvo autorización escrita o necesidad operativa expresamente autorizada.");
+     bullet("b)", "Descargar, exportar o extraer masivamente información, listados, reportes, evidencias, estructuras, configuraciones o datos de la Plataforma.");
+     bullet("c)", "Enviar Información Confidencial a correos personales, mensajería, nubes, memorias USB, dispositivos o servicios no autorizados.");
+     bullet("d)", "Introducir código, información técnica, documentación, datos o contenidos de la Plataforma en herramientas de IA, traductores, asistentes, servicios de analítica o aplicaciones externas no aprobadas.");
+     bullet("e)", "Realizar scraping, consultas automatizadas, extracción por API, ingeniería inversa, descompilación, pruebas de vulnerabilidad, elusión de controles o inspección técnica sin autorización escrita.");
+     bullet("f)", "Usar la Información Confidencial del Software, credenciales, estructura, flujos, metodologías o conocimiento reservado para desarrollar, entrenar, mejorar, probar o comercializar productos o servicios propios o de terceros.");
+     bullet("g)", "Conservar copias, capturas, notas, transcripciones, archivos, documentación o cualquier reproducción de la Plataforma después de terminada o revocada la autorización de uso.");
+     bullet("h)", "Alterar, ocultar, eliminar o manipular registros, configuraciones, evidencias o contenidos de la Plataforma sin autorización y trazabilidad.");
 
-    clause("NOVENA", "Seguridad de credenciales y monitoreo");
-     paragraph("EL PROFESIONAL mantendrá una (1) Credencial bajo control exclusivo, utilizará dispositivos protegidos y cerrará la sesión al finalizar la actividad o al alejarse del dispositivo. No podrá permitir sesiones simultáneas, prestar el dispositivo, guardar contraseñas en medios inseguros ni usar ubicaciones no autorizadas. Acepta que EL PROVEEDOR registre IP, fecha, hora, dispositivo, duración, módulos consultados, cambios, descargas y eventos de seguridad para prevenir abusos, investigar incidentes y atender obligaciones legales.");
+     clause("NOVENA", "Seguridad de acceso, monitoreo y evidencia digital");
+      paragraph("EL PROFESIONAL mantendrá una (1) Credencial bajo control exclusivo, utilizará dispositivos protegidos y cerrará la sesión al finalizar la actividad o al alejarse del dispositivo. No podrá permitir sesiones simultáneas, prestar el dispositivo, guardar contraseñas en medios inseguros ni usar ubicaciones no autorizadas. Acepta que EL PROVEEDOR registre IP, fecha, hora, dispositivo, duración, módulos consultados, cambios, descargas y eventos de seguridad para proteger la Plataforma, prevenir abusos, investigar incidentes y atender obligaciones legales.");
     bullet("", "No podrá eludir controles, probar vulnerabilidades sin autorización ni instalar extensiones que intercepten información.");
     bullet("", "Deberá atender las medidas de seguridad y cambios de acceso que comunique EL PROVEEDOR.");
      subtitle("Los Registros de Acceso, logs, alertas, correos con marca de tiempo y demás evidencia digital podrán conservarse durante cinco (5) años y utilizarse para auditoría, investigación y defensa de derechos conforme a la Ley 527 de 1999.");
 
-    clause("DÉCIMA", "Reporte de incidentes");
-     paragraph("EL PROFESIONAL reportará de inmediato y, en ningún caso, después de doce (12) horas de conocerlo, cualquier pérdida, robo, acceso sospechoso, credencial expuesta, envío equivocado, captura, descarga indebida o divulgación. El reporte se enviará a EL PROVEEDOR al correo admin@sst-colombia.com, con fecha, hora, información comprometida, personas involucradas y medidas adoptadas. La falta de reporte oportuno, la ocultación o la demora injustificada constituirán un incumplimiento adicional y agravarán la responsabilidad por las consecuencias del incidente.");
+     clause("DÉCIMA", "Reporte de incidentes");
+      paragraph("EL PROFESIONAL reportará de inmediato y, en ningún caso, después de doce (12) horas de conocerlo, cualquier pérdida, robo, acceso sospechoso, credencial expuesta, extracción, copia, reproducción, envío equivocado, divulgación o exposición de la Plataforma o de su Información Confidencial. El reporte se enviará a EL PROVEEDOR al correo admin@sst-colombia.com, con fecha, hora, información comprometida, personas involucradas y medidas adoptadas. La falta de reporte oportuno, la ocultación o la demora injustificada constituirán un incumplimiento adicional y agravarán la responsabilidad por las consecuencias del incidente.");
 
-    clause("DÉCIMA PRIMERA", "Deberes profesionales");
-     paragraph("EL PROFESIONAL conservará la integridad de las evidencias, no presentará como propios los contenidos, metodologías, informes o datos de terceros, atenderá las solicitudes de auditoría relacionadas con su acceso y colaborará de buena fe en la investigación de incidentes. Este acuerdo no sustituye los requisitos profesionales, académicos, de licencia o de independencia que resulten aplicables ni crea una relación de trabajo o prestación de servicios.");
+     clause("DÉCIMA PRIMERA", "Deberes de uso e integridad");
+      paragraph("EL PROFESIONAL conservará la integridad de la Plataforma y sus evidencias, no presentará como propios sus contenidos, metodologías, diseños, informes, flujos o desarrollos, atenderá las solicitudes de auditoría relacionadas con su acceso y colaborará de buena fe en la investigación de incidentes. Este acuerdo no sustituye los requisitos profesionales, académicos, de licencia o de independencia que resulten aplicables ni crea una relación de trabajo o prestación de servicios.");
 
-    clause("DÉCIMA SEGUNDA", "Devolución, eliminación y revocatoria");
-     paragraph("Cuando termine o se revoque la autorización de uso, o EL PROVEEDOR lo solicite, EL PROFESIONAL deberá cesar inmediatamente el acceso, devolver o eliminar copias y archivos de la información dentro de cuarenta y ocho (48) horas, desinstalar herramientas no autorizadas y entregar una declaración escrita, firmada y verificable de cumplimiento. La obligación incluye dispositivos personales, nubes, correos, respaldos, notas, fotografías y medios extraíbles. Las obligaciones de conservación legal prevalecen únicamente en lo estrictamente necesario y bajo reserva.");
+     clause("DÉCIMA SEGUNDA", "Devolución, eliminación y revocatoria");
+      paragraph("Cuando termine o se revoque la autorización de uso, o EL PROVEEDOR lo solicite, EL PROFESIONAL deberá cesar inmediatamente el acceso, devolver o eliminar copias y archivos de la Plataforma y de su Información Confidencial dentro de cuarenta y ocho (48) horas, desinstalar herramientas no autorizadas y entregar una declaración escrita, firmada y verificable de cumplimiento. La obligación incluye dispositivos personales, nubes, correos, respaldos, notas, capturas, fotografías, documentación y medios extraíbles. Las obligaciones de conservación legal prevalecen únicamente en lo estrictamente necesario y bajo reserva.");
 
-    clause("DÉCIMA TERCERA", "Propiedad intelectual y no apropiación");
-    paragraph("La Plataforma, sus componentes, metodologías, documentación, diseños y contenidos base permanecen bajo la titularidad de sus respectivos propietarios. Queda prohibido copiar, descompilar, realizar ingeniería inversa, crear productos derivados, entrenar modelos con la información o reutilizar la arquitectura y los flujos fuera del alcance autorizado.");
+     clause("DÉCIMA TERCERA", "Propiedad intelectual y no apropiación");
+     paragraph("La Plataforma, su código, componentes, arquitectura, estructura de datos, interfaces, metodologías, documentación, diseños, contenidos base, flujos, automatizaciones, reportes, integraciones y desarrollos permanecen bajo la titularidad de EL PROVEEDOR o de sus legítimos titulares. La autorización de uso no concede licencia de explotación, reproducción, modificación, distribución ni creación de productos derivados.");
+     paragraph("Queda prohibido copiar, descompilar, realizar ingeniería inversa, reconstruir, entrenar modelos, reutilizar la arquitectura o los flujos, o utilizar la Información Confidencial del Software para crear, apoyar o mejorar productos o servicios que reproduzcan o compitan con la Plataforma.");
 
      clause("DÉCIMA CUARTA", "Cláusula Penal");
-     paragraph("Las partes acuerdan, conforme al artículo 1592 del Código Civil colombiano, una CLÁUSULA PENAL como estimación anticipada y definitiva de los perjuicios derivados del incumplimiento de las obligaciones de confidencialidad (Cláusula Quinta), finalidad y uso autorizado (Cláusula Sexta), tratamiento de datos personales (Cláusula Séptima), prohibiciones de privacidad y extracción (Cláusula Octava), seguridad y monitoreo (Cláusula Novena), reporte de incidentes (Cláusula Décima), devolución y eliminación de información (Cláusula Décima Segunda) o propiedad intelectual y no apropiación (Cláusula Décima Tercera), por un valor equivalente a CIEN MILLONES DE PESOS ($100.000.000) MONEDA CORRIENTE.");
+      paragraph("Las partes acuerdan, conforme al artículo 1592 del Código Civil colombiano, una CLÁUSULA PENAL como estimación anticipada y definitiva de los perjuicios derivados del incumplimiento de las obligaciones de confidencialidad (Cláusula Quinta), finalidad y uso autorizado (Cláusula Sexta), protección del software y prohibiciones de extracción (Cláusula Octava), seguridad y monitoreo (Cláusula Novena), reporte de incidentes (Cláusula Décima), devolución y eliminación de información (Cláusula Décima Segunda) o propiedad intelectual y no apropiación (Cláusula Décima Tercera), por un valor equivalente a CIEN MILLONES DE PESOS ($100.000.000) MONEDA CORRIENTE.");
      paragraph("El pago de esta cláusula penal no extingue la obligación de reparar el daño adicional que EL PROVEEDOR pueda demostrar, ni la revocatoria de la autorización de uso, ni el cese de las actividades que originaron el incumplimiento. EL PROVEEDOR podrá exigir el cumplimiento de la obligación o la cláusula penal, pero no ambas simultáneamente, salvo que la pena se haya estipulado por el simple retardo.");
 
     clause("DÉCIMA QUINTA", "Vigencia, supervivencia y jurisdicción");
-     paragraph(`El acuerdo rige desde el ${fecha} mientras esté vigente la autorización de uso o EL PROFESIONAL conserve información derivada de ella. Sobreviven indefinidamente las obligaciones sobre Datos Sensibles, Información de Salud, secretos empresariales, Credenciales y no apropiación; la demás Información Confidencial queda protegida durante diez (10) años. Se aplican las leyes de Colombia, incluyendo la Ley 1581 de 2012, el Decreto 1074 de 2015, la Ley 527 de 1999, el artículo 269F del Código Penal y las normas civiles, comerciales y penales que resulten pertinentes. Las partes intentarán arreglo directo durante quince (15) días hábiles y, si no hay acuerdo, conciliación ante un centro autorizado en Medellín durante treinta (30) días hábiles, sin perjuicio de acudir a los jueces civiles del circuito de Medellín, Antioquia.`);
+      paragraph(`El acuerdo rige desde el ${fecha} mientras esté vigente la autorización de uso o EL PROFESIONAL conserve información derivada de ella. Sobreviven indefinidamente las obligaciones sobre la Información Confidencial del Software, código, arquitectura, lógica de negocio, secretos empresariales, Credenciales, propiedad intelectual y no apropiación; la demás Información Confidencial queda protegida durante diez (10) años. La protección de Datos Personales continuará durante el tiempo que exija la normativa aplicable. Se aplican las leyes de Colombia, incluyendo la Ley 1581 de 2012, el Decreto 1074 de 2015, la Ley 527 de 1999, el artículo 269F del Código Penal y las normas civiles, comerciales y penales que resulten pertinentes. Las partes intentarán arreglo directo durante quince (15) días hábiles y, si no hay acuerdo, conciliación ante un centro autorizado en Medellín durante treinta (30) días hábiles, sin perjuicio de acudir a los jueces civiles del circuito de Medellín, Antioquia.`);
 
     ensureSpace(180);
     doc.moveDown(1);
