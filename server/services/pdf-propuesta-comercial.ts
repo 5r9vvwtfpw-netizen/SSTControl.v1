@@ -216,7 +216,7 @@ export async function generatePropuestaComercialPdf(params: PropuestaParams = {}
     // Estructura de pago
     if (licencia > 0 && totalProfesional > 0) {
       qy += 18;
-      const halfCW = (Q.w - Q.m * 2 - 12) / 2;
+      /*
       const phaseCards = [
         {
           title: `FASE 1 — ${fmt(licencia)} COP`,
@@ -234,6 +234,7 @@ export async function generatePropuestaComercialPdf(params: PropuestaParams = {}
           color: C.GREEN_MID,
         },
       ];
+      */
 
       doc.fontSize(10).font('Helvetica-Bold').fillColor(C.GREEN_DARK)
          .text('ESTRUCTURA DE PAGO', Q.m, qy);
@@ -241,25 +242,25 @@ export async function generatePropuestaComercialPdf(params: PropuestaParams = {}
          .strokeColor(C.GREEN_DARK).lineWidth(1).stroke();
       qy += 22;
 
-      for (let pi = 0; pi < phaseCards.length; pi++) {
-        const card  = phaseCards[pi];
-        const cardX = Q.m + pi * (halfCW + 12);
-        const cardH = 84;
-        doc.rect(cardX, qy, halfCW, cardH).fill('#f0f7f2');
-        doc.rect(cardX, qy, halfCW, 3).fill(card.color);
-        doc.fontSize(10).font('Helvetica-Bold').fillColor(card.color)
-           .text(card.title, cardX + 10, qy + 12, { width: halfCW - 20 });
-        doc.fontSize(8).font('Helvetica').fillColor(C.GRAY_SOFT)
-           .text(card.sub, cardX + 10, qy + 28, { width: halfCW - 20 });
-        let iy = qy + 44;
-        for (const item of card.items) {
-          doc.circle(cardX + 14, iy + 4, 2.5).fill(card.color);
-          doc.fontSize(8).font('Helvetica').fillColor(C.GRAY_TEXT)
-             .text(item, cardX + 22, iy, { width: halfCW - 30 });
-          iy += 14;
-        }
+      doc.fontSize(10).font('Helvetica-Bold').fillColor(C.GREEN_DARK)
+         .text('PAQUETE COMPLETO SST', Q.m, qy);
+      qy += 16;
+      doc.fontSize(9).font('Helvetica-Bold').fillColor(C.GRAY_TEXT)
+         .text('Forma de pago: Suscripción mensual por adelantado', Q.m, qy);
+      qy += 18;
+
+      const includedItems = [
+        `Licencia software: ${numTrabajadores} trabajadores`,
+        'Portal empleados incluido',
+        'Soporte técnico 24/7',
+        'Auditoría y Administración: paquete completo',
+      ];
+      doc.fontSize(8.5).font('Helvetica').fillColor(C.GRAY_TEXT);
+      for (const includedItem of includedItems) {
+        doc.circle(Q.m + 4, qy + 4, 2.2).fill(C.GREEN_MID);
+        doc.text(includedItem, Q.m + 12, qy, { width: Q.w - Q.m * 2 - 12 });
+        qy += 14;
       }
-      qy += 96;
     }
 
     // Footer página 1
