@@ -20,6 +20,7 @@ export type LsoReportFacts = {
   sstEvaluation?: {
     exists: boolean;
     percentage?: number | null;
+    status?: string | null;
     nonCompliantAnswers?: number | null;
     pendingActions?: number | null;
     totalActions?: number | null;
@@ -27,6 +28,7 @@ export type LsoReportFacts = {
   pesvEvaluation?: {
     exists: boolean;
     percentage?: number | null;
+    status?: string | null;
     nonCompliantAnswers?: number | null;
     pendingActions?: number | null;
     totalActions?: number | null;
@@ -64,6 +66,26 @@ export type LsoReportFacts = {
     total: number | null;
     serious: number | null;
     fatalities: number | null;
+  };
+  evidenceCoverage?: {
+    criteria: number | null;
+    files: number | null;
+    observations: number | null;
+  };
+  operational?: {
+    objectives: number | null;
+    indicators: number | null;
+    measurements: number | null;
+    auditsScheduled: number | null;
+    auditsExecuted: number | null;
+    trainingSessions: number | null;
+    confirmedAttendees: number | null;
+    maintenanceRecords: number | null;
+    vehicles: number | null;
+    highRiskCount: number | null;
+    untreatedHighRiskCount: number | null;
+    victimRecords: number | null;
+    openVictimFollowups: number | null;
   };
   moduleErrors?: string[];
 };
@@ -136,6 +158,14 @@ const readableValue = (value: unknown, empty = "sin información registrada") =>
   const words = String(value).replace(/_/g, " ").toLowerCase().trim().split(/\s+/);
   return words.map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
 };
+
+function registeredEvaluationResult(label: string, percentage: number, status?: string | null): string {
+  const normalizedStatus = String(status || "").trim().toLowerCase();
+  const statusNote = normalizedStatus && !["finalizada", "aprobada", "completada", "cerrada"].includes(normalizedStatus)
+    ? `; estado registrado: ${readableValue(status)} (no equivale a cierre verificado)`
+    : "";
+  return `${label} registra ${percentage}% de cumplimiento${statusNote}.`;
+}
 
 /** Converts stored deadline values into language suitable for the client PDF. */
 export function formatInvestigationDeadlineStatus(value: unknown): string {
@@ -246,7 +276,28 @@ export function buildLsoManagementReportSummary(facts: LsoReportFacts): LsoRepor
       return `Cerrar ${quantity("hallazgo abierto", "hallazgos abiertos")} de la auditoría.`;
     }
     if (sourceLabel === "Siniestros viales") {
-      return `Revisar los documentos y el seguimiento de ${quantity("siniestro vial", "siniestros viales")} registrado.`;
+      return `Revisar cada ${quantity("siniestro vial", "siniestros viales")} y documentar investigación, atención y acciones de cierre.`;
+    }
+    if (sourceLabel === "Atención a víctimas") {
+      return `Documentar la atención y el seguimiento de las víctimas relacionadas con los siniestros registrados.`;
+    }
+    if (sourceLabel === "Evidencia documental PESV") {
+      return "Completar y vincular la evidencia documental de los criterios verificados antes de afirmar cumplimiento.";
+    }
+    if (sourceLabel === "Objetivos e indicadores de seguridad vial") {
+      return "Definir objetivos y metas medibles, relacionarlos con los indicadores y registrar sus mediciones.";
+    }
+    if (sourceLabel === "Auditorías de seguridad vial") {
+      return "Programar y ejecutar la auditoría de seguridad vial de la vigencia, dejando informe y acciones.";
+    }
+    if (sourceLabel === "Formación vial") {
+      return "Relacionar los asistentes por conductor y conservar la evidencia de asistencia de cada formación.";
+    }
+    if (sourceLabel === "Mantenimientos de vehículos") {
+      return "Registrar los mantenimientos realizados y vincular sus soportes antes de operar la flota.";
+    }
+    if (sourceLabel === "Riesgos viales") {
+      return "Definir y ejecutar el tratamiento de los riesgos viales altos o muy altos.";
     }
     if (sourceLabel.startsWith("Evaluación de seguridad y salud") || sourceLabel.startsWith("Evaluación del Plan Estratégico")) {
       if (fact.startsWith("No se encontró información registrada")) {
@@ -292,19 +343,21 @@ export function buildLsoManagementReportSummary(facts: LsoReportFacts): LsoRepor
     );
   } else if (sst?.exists === true) {
     if (known(sst.percentage)) {
-      if (sst.percentage >= 85) {
+      const resultText = registeredEvaluationResult("La evaluación de seguridad y salud en el trabajo", sst.percentage, sst.status);
+      const statusAllowsStrength = !sst.status || ["finalizada", "aprobada", "completada", "cerrada"].includes(String(sst.status).toLowerCase());
+      if (sst.percentage >= 85 && statusAllowsStrength) {
         strengths.push(item(
           "Evaluación de seguridad y salud en el trabajo",
           sst.percentage,
-          `La evaluación de seguridad y salud en el trabajo registra ${sst.percentage}% de cumplimiento.`,
-          `La evaluación de seguridad y salud en el trabajo registra ${sst.percentage}% de cumplimiento.`,
+          resultText,
+          resultText,
         ));
       } else {
         addAttention(
           "Evaluación de seguridad y salud en el trabajo",
           sst.percentage,
-          `La evaluación de seguridad y salud en el trabajo registra ${sst.percentage}% de cumplimiento.`,
-          `La evaluación de seguridad y salud en el trabajo registra ${sst.percentage}% de cumplimiento; requiere seguimiento.`,
+          resultText,
+          `${resultText.replace(/[.]$/, "")}; requiere seguimiento.`,
           "atencion",
           60,
         );
@@ -351,19 +404,21 @@ export function buildLsoManagementReportSummary(facts: LsoReportFacts): LsoRepor
     );
   } else if (pesv?.exists === true) {
     if (known(pesv.percentage)) {
-      if (pesv.percentage >= 85) {
+      const resultText = registeredEvaluationResult("La evaluación del Plan Estratégico de Seguridad Vial", pesv.percentage, pesv.status);
+      const statusAllowsStrength = !pesv.status || ["finalizada", "aprobada", "completada", "cerrada"].includes(String(pesv.status).toLowerCase());
+      if (pesv.percentage >= 85 && statusAllowsStrength) {
         strengths.push(item(
           "Evaluación del Plan Estratégico de Seguridad Vial",
           pesv.percentage,
-          `La evaluación del Plan Estratégico de Seguridad Vial registra ${pesv.percentage}% de cumplimiento.`,
-          `La evaluación del Plan Estratégico de Seguridad Vial registra ${pesv.percentage}% de cumplimiento.`,
+          resultText,
+          resultText,
         ));
       } else {
         addAttention(
           "Evaluación del Plan Estratégico de Seguridad Vial",
           pesv.percentage,
-          `La evaluación del Plan Estratégico de Seguridad Vial registra ${pesv.percentage}% de cumplimiento.`,
-          `La evaluación del Plan Estratégico de Seguridad Vial registra ${pesv.percentage}% de cumplimiento; requiere seguimiento.`,
+          resultText,
+          `${resultText.replace(/[.]$/, "")}; requiere seguimiento.`,
           "atencion",
           60,
         );
@@ -548,14 +603,105 @@ export function buildLsoManagementReportSummary(facts: LsoReportFacts): LsoRepor
 
   const incidents = facts.roadIncidents;
   if (incidents && known(incidents.total) && incidents.total > 0) {
+    const severityText = [
+      known(incidents.serious) && incidents.serious > 0 ? `${incidents.serious} con heridos o consecuencias graves` : "",
+      known(incidents.fatalities) && incidents.fatalities > 0 ? `${incidents.fatalities} persona${incidents.fatalities === 1 ? "" : "s"} fallecida${incidents.fatalities === 1 ? "" : "s"}` : "",
+    ].filter(Boolean).join(" y ");
     addAttention(
       "Siniestros viales",
       incidents.total,
-      `Hay ${incidents.total} ${pluralizeSpanish(incidents.total, "siniestro vial registrado", "siniestros viales registrados")}.`,
-      `Hay ${incidents.total} ${pluralizeSpanish(incidents.total, "siniestro vial registrado", "siniestros viales registrados")}; revisar sus documentos de respaldo y seguimientos.`,
+      `Hay ${incidents.total} ${pluralizeSpanish(incidents.total, "siniestro vial registrado", "siniestros viales registrados")}${severityText ? `; ${severityText}` : ""}.`,
+      `Hay ${incidents.total} ${pluralizeSpanish(incidents.total, "siniestro vial registrado", "siniestros viales registrados")}${severityText ? `; ${severityText}` : ""}.`,
+      (known(incidents.fatalities) && incidents.fatalities > 0) || (known(incidents.serious) && incidents.serious > 0) ? "urgente" : "atencion",
+      30,
+    );
+  }
+
+  const evidence = facts.evidenceCoverage;
+  if (evidence && known(evidence.criteria) && evidence.criteria > 0 && known(evidence.files) && evidence.files === 0) {
+    addAttention(
+      "Evidencia documental PESV",
+      evidence.criteria,
+      `Hay ${evidence.criteria} criterios de verificación y no se encontró ningún archivo documental vinculado.`,
+      `La verificación documental del PESV no está soportada: ${evidence.criteria} criterios registrados y 0 archivos vinculados.`,
+      "urgente",
+      30,
+    );
+  } else if (evidence && known(evidence.criteria) && known(evidence.files) && evidence.files < evidence.criteria) {
+    addAttention(
+      "Evidencia documental PESV",
+      evidence.criteria - evidence.files,
+      `Hay ${evidence.criteria - evidence.files} criterios sin archivo documental vinculado de ${evidence.criteria}.`,
+      `Hay ${evidence.criteria - evidence.files} criterios del PESV sin archivo documental vinculado de ${evidence.criteria}.`,
       "atencion",
       60,
     );
+  }
+
+  const operational = facts.operational;
+  if (operational) {
+    if (known(operational.victimRecords) && operational.victimRecords === 0 &&
+        ((known(incidents?.serious) && incidents.serious > 0) || (known(incidents?.fatalities) && incidents.fatalities > 0))) {
+      addAttention(
+        "Atención a víctimas",
+        operational.victimRecords,
+        "No se encontraron registros de atención a víctimas pese a que existen siniestros con consecuencias graves o mortales.",
+        "No se encontraron registros de atención y seguimiento a víctimas para siniestros con consecuencias graves o mortales.",
+        "urgente",
+        30,
+      );
+    }
+    if (known(operational.highRiskCount) && operational.highRiskCount > 0 &&
+        known(operational.untreatedHighRiskCount) && operational.untreatedHighRiskCount > 0) {
+      addAttention(
+        "Riesgos viales",
+        operational.untreatedHighRiskCount,
+        `Hay ${operational.untreatedHighRiskCount} riesgo${operational.untreatedHighRiskCount === 1 ? "" : "s"} vial${operational.untreatedHighRiskCount === 1 ? "" : "es"} alto${operational.untreatedHighRiskCount === 1 ? "" : "s"} o muy alto${operational.untreatedHighRiskCount === 1 ? "" : "s"} sin tratamiento cerrado.`,
+        `Hay ${operational.untreatedHighRiskCount} riesgo${operational.untreatedHighRiskCount === 1 ? "" : "s"} vial${operational.untreatedHighRiskCount === 1 ? "" : "es"} alto${operational.untreatedHighRiskCount === 1 ? "" : "s"} o muy alto${operational.untreatedHighRiskCount === 1 ? "" : "s"} sin tratamiento cerrado.`,
+        "urgente",
+        30,
+      );
+    }
+    if (known(operational.objectives) && operational.objectives === 0 && known(operational.indicators) && operational.indicators > 0) {
+      addAttention(
+        "Objetivos e indicadores de seguridad vial",
+        operational.indicators,
+        `Hay ${operational.indicators} indicador${operational.indicators === 1 ? "" : "es"} registrado${operational.indicators === 1 ? "" : "s"} y ningún objetivo anual registrado.`,
+        `Hay ${operational.indicators} indicador${operational.indicators === 1 ? "" : "es"} sin objetivos anuales registrados para comparar sus resultados.`,
+        "atencion",
+        60,
+      );
+    }
+    if (known(operational.auditsScheduled) && operational.auditsScheduled === 0 && known(operational.auditsExecuted) && operational.auditsExecuted === 0) {
+      addAttention(
+        "Auditorías de seguridad vial",
+        0,
+        "No hay auditorías de seguridad vial programadas ni ejecutadas en la vigencia.",
+        "No hay auditorías de seguridad vial programadas ni ejecutadas en la vigencia; se requiere verificar la planificación.",
+        "atencion",
+        60,
+      );
+    }
+    if (known(operational.trainingSessions) && operational.trainingSessions > 0 && known(operational.confirmedAttendees) && operational.confirmedAttendees === 0) {
+      addAttention(
+        "Formación vial",
+        operational.trainingSessions,
+        `Hay ${operational.trainingSessions} formación${operational.trainingSessions === 1 ? "" : "es"} y no hay asistencias confirmadas por conductor.`,
+        `Hay ${operational.trainingSessions} formación${operational.trainingSessions === 1 ? "" : "es"} vial${operational.trainingSessions === 1 ? "" : "es"} sin asistencia individual confirmada.`,
+        "atencion",
+        60,
+      );
+    }
+    if (known(operational.vehicles) && operational.vehicles > 0 && known(operational.maintenanceRecords) && operational.maintenanceRecords === 0) {
+      addAttention(
+        "Mantenimientos de vehículos",
+        operational.vehicles,
+        `Hay ${operational.vehicles} vehículo${operational.vehicles === 1 ? "" : "s"} y ningún mantenimiento registrado en la vigencia.`,
+        `No hay mantenimientos registrados para los ${operational.vehicles} vehículo${operational.vehicles === 1 ? "" : "s"} de la empresa en la vigencia.`,
+        "atencion",
+        60,
+      );
+    }
   }
 
   // Keep the list useful on a client-facing first page without hiding facts.
@@ -592,7 +738,17 @@ export function buildLsoManagementReportSummary(facts: LsoReportFacts): LsoRepor
   const attentionNarrative = attentionItems.length > 0
     ? ` La empresa requiere atención por ${attentionItems.length} ${pluralizeSpanish(attentionItems.length, "asunto", "asuntos")} registrados. Los principales se relacionan con ${priorityCategories.join(" y ")}.`
     : " La empresa no registra asuntos pendientes.";
-  const overallNarrative = `${favorableNarrative}.${attentionNarrative}`;
+  const managementWarnings: string[] = [];
+  if (known(sst?.percentage) && sst.percentage < 60) {
+    managementWarnings.push("La evaluación SST se encuentra en un nivel crítico y requiere decisiones sobre ejecución, verificación y mejora.");
+  }
+  if (known(incidents?.serious) && incidents.serious > 0 || known(incidents?.fatalities) && incidents.fatalities > 0) {
+    managementWarnings.push("Los siniestros con consecuencias graves o mortales deben revisarse individualmente y no tratarse solo como un conteo.");
+  }
+  if (evidence && known(evidence.criteria) && evidence.criteria > 0 && known(evidence.files) && evidence.files === 0) {
+    managementWarnings.push("La ausencia de archivos vinculados impide confirmar documentalmente el cumplimiento PESV.");
+  }
+  const overallNarrative = `${favorableNarrative}.${attentionNarrative}${managementWarnings.length ? ` ${managementWarnings.join(" ")}` : ""}`;
 
   const handoverFact = attentionItems.length > 0
     ? `${attentionItems.length} ${pluralizeSpanish(attentionItems.length, "asunto requiere", "asuntos requieren")} seguimiento; ${strengths.length} ${pluralizeSpanish(strengths.length, "fortaleza fue identificada", "fortalezas fueron identificadas")} según los registros disponibles.`
