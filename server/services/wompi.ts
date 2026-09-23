@@ -15,6 +15,12 @@
 import crypto from "crypto";
 import logger from "../lib/logger";
 
+// Wompi se conserva para facilitar la migración histórica, pero no es un
+// proveedor activo. No usar una variable de entorno para reactivarlo por
+// accidente: la activación futura debe hacerse junto con la integración de
+// ePayco y sus pruebas de webhook.
+export const WOMPI_ENABLED = false;
+
 function getBaseUrl(): string {
   return process.env.WOMPI_SANDBOX === "false"
     ? "https://production.wompi.co/v1"
@@ -47,6 +53,7 @@ function getIntegritySecret(): string {
 
 export function isWompiConfigured(): boolean {
   return !!(
+    WOMPI_ENABLED &&
     process.env.WOMPI_PRIVATE_KEY &&
     process.env.WOMPI_PUBLIC_KEY &&
     process.env.WOMPI_EVENTS_SECRET &&

@@ -310,6 +310,13 @@ export function registerWompiRoutes(app: Express) {
   // POST /api/wompi/webhook — Receptor de eventos Wompi
   // ==========================================================================
   app.post("/api/wompi/webhook", webhookRateLimiter, async (req, res) => {
+    if (!isWompiConfigured()) {
+      return res.status(410).json({
+        error: "wompi_disabled",
+        message: "Wompi ya no es un proveedor de pagos activo.",
+      });
+    }
+
     // Responder 200 inmediatamente para confirmar recepción a Wompi
     res.status(200).json({ received: true });
 

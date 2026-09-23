@@ -29,11 +29,6 @@ interface CompanyData {
   quoteCouponCode: string | null;
 }
 
-interface WompiEstado {
-  configured: boolean;
-  sandbox: boolean;
-}
-
 const riskLevelLabels: Record<RiskLevel, string> = {
   I: "Clase I - Minimo",
   II: "Clase II - Bajo",
@@ -69,13 +64,8 @@ export default function Checkout() {
     enabled: !!user?.companyId,
   });
 
-  const { data: wompiEstado } = useQuery<WompiEstado>({
-    queryKey: ['/api/wompi/estado'],
-    enabled: !!user?.companyId && !success && !canceled,
-  });
-
   const isUpgradeFromFree = !currentSubscription || currentSubscription.status === 'trial' || currentSubscription.status === 'expired';
-  // PSE oculto hasta que Wompi apruebe la cuenta en producción
+  // PSE queda oculto mientras se completa la migración de Wompi a ePayco.
   const isPseAvailable = false;
 
   const createCheckoutV2Mutation = useMutation({
