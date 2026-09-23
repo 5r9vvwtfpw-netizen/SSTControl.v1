@@ -542,6 +542,8 @@ export const rolePermissions: Record<UserRole, Permission[]> = {
     "sst_documents:approve",
     "policies:sign",
     "policies:approve",
+    // Puede gestionar el LSO de su propia empresa desde el directorio.
+    "licensed_professionals:assign",
     // Solo superusuario puede ver/gestionar suscripciones de su empresa
     "subscriptions:view",
     "subscriptions:manage",
@@ -671,6 +673,8 @@ export const rolePermissions: Record<UserRole, Permission[]> = {
     "consent_records:create",
     "consent_records:edit",
     "consent_records:delete",
+    // Puede gestionar el LSO de su propia empresa desde el directorio.
+    "licensed_professionals:assign",
   ],
 
   // Alta Dirección / Representante Legal - solo consulta y aprobación gerencial
@@ -799,6 +803,8 @@ export const rolePermissions: Record<UserRole, Permission[]> = {
     "consent_records:create",
     "consent_records:edit",
     "consent_records:delete",
+    // Puede gestionar el LSO de su propia empresa desde el directorio.
+    "licensed_professionals:assign",
   ],
 
   // Coordinador de Salud Ocupacional - Acceso a datos médicos sensibles
