@@ -602,11 +602,6 @@ export async function generateLsoManagementReport(companyId: string, year: numbe
     y = writeBlock(doc, "PLAN COMPLETO DE RECOMENDACIONES", completeRecommendationLines, y);
   }
   y = writeBlock(doc, "ASUNTOS PRIORITARIOS", queue.length ? queue : ["No se encontró información registrada de asuntos prioritarios."], y);
-  if (y + doc.heightOfString("Documento analítico generado con datos registrados en el sistema; no sustituye la verificación documental.", { width: doc.page.width - PDF_CONFIG.MARGIN * 2 }) > doc.page.height - PDF_CONFIG.FOOTER_HEIGHT) {
-    doc.addPage();
-    y = PDF_CONFIG.MARGIN + 15;
-  }
-  doc.fontSize(7).fillColor("#666666").text("Documento analítico generado con datos registrados en el sistema; no sustituye la verificación documental.", PDF_CONFIG.MARGIN, y, { width: doc.page.width - PDF_CONFIG.MARGIN * 2, align: "center" });
   await addSignatureFooter(doc, signers, true);
   return new Promise((resolve, reject) => {
     doc.on("end", () => resolve(Buffer.concat(chunks)));
