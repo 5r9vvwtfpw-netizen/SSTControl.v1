@@ -37,7 +37,7 @@ const riskLevelLabels: Record<RiskLevel, string> = {
   V: "Clase V - Maximo",
 };
 
-type PaymentMethod = 'stripe' | 'pse';
+type PaymentMethod = 'pse';
 
 export default function Checkout() {
   const [, navigate] = useLocation();
@@ -52,7 +52,7 @@ export default function Checkout() {
   const [showContract, setShowContract] = useState(false);
   const [contractAccepted, setContractAccepted] = useState(false);
   const [contractAcceptanceData, setContractAcceptanceData] = useState<ContractAcceptanceData | null>(null);
-  const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('stripe');
+  const [selectedMethod] = useState<PaymentMethod>('pse');
 
   const { data: company, isLoading: loadingCompany } = useQuery<CompanyData>({
     queryKey: ['/api/company/current'],
@@ -65,8 +65,11 @@ export default function Checkout() {
   });
 
   const isUpgradeFromFree = !currentSubscription || currentSubscription.status === 'trial' || currentSubscription.status === 'expired';
-  // PSE queda oculto mientras se completa la migración de Wompi a ePayco.
-  const isPseAvailable = false;
+  const { data: epaycoStatus } = useQuery<{ configured: boolean; test: boolean; method: 'PSE' }>({
+    queryKey: ['/api/epayco/estado'],
+    enabled: !!user?.companyId,
+  });
+  const isPseAvailable = epaycoStatus?.configured === true;
 
   const createCheckoutV2Mutation = useMutation({
     mutationFn: async (acceptanceData?: ContractAcceptanceData) => {
@@ -125,18 +128,10 @@ export default function Checkout() {
   }, [success, sessionId]);
 
   const handleCheckout = () => {
-    if (selectedMethod === 'pse') {
-      navigate('/pago-pse');
-      return;
-    }
-
-    // Flujo Stripe
     if (isUpgradeFromFree && !contractAccepted) {
       setShowContract(true);
-    } else if (contractAcceptanceData) {
-      createCheckoutV2Mutation.mutate(contractAcceptanceData);
     } else {
-      createCheckoutV2Mutation.mutate(undefined);
+      navigate('/pago-pse');
     }
   };
 
@@ -148,7 +143,7 @@ export default function Checkout() {
       title: 'Contrato aceptado',
       description: 'Has aceptado los terminos del contrato de servicios.',
     });
-    createCheckoutV2Mutation.mutate(data);
+    navigate('/pago-pse');
   };
 
   const handleCancel = () => {
@@ -409,63 +404,28 @@ export default function Checkout() {
             <CardHeader>
               <CardTitle className="text-base">Método de pago</CardTitle>
               <CardDescription>
-                Seleccione cómo desea pagar su suscripción
+                El pago se realiza únicamente por transferencia bancaria PSE
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              {/* Opción: Tarjeta (Stripe) */}
-              <button
-                type="button"
-                onClick={() => setSelectedMethod('stripe')}
-                data-testid="button-select-stripe"
-                className={`w-full flex items-center gap-3 p-3 rounded-md border text-left transition-colors ${
-                  selectedMethod === 'stripe'
-                    ? 'border-primary bg-primary/5'
-                    : 'border-border hover-elevate'
-                }`}
-              >
-                <div className={`h-4 w-4 rounded-full border-2 flex-shrink-0 ${
-                  selectedMethod === 'stripe'
-                    ? 'border-primary bg-primary'
-                    : 'border-muted-foreground'
-                }`} />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <CreditCard className="h-4 w-4 text-muted-foreground shrink-0" />
-                    <span className="font-medium text-sm">Tarjeta de crédito / débito</span>
-                  </div>
+              <div className="flex items-center gap-3 rounded-md border border-primary bg-primary/5 p-3">
+                <Landmark className="h-5 w-5 text-primary" />
+                <div>
+                  <p className="font-medium text-sm">PSE — Transferencia bancaria</p>
+                  <p className="text-xs text-muted-foreground">
+                    Pago único, sin tarjetas ni cobros recurrentes
+                  </p>
                 </div>
-              </button>
-
-              {/* Opción: PSE */}
-              {isPseAvailable && (
-                <button
-                  type="button"
-                  onClick={() => setSelectedMethod('pse')}
-                  data-testid="button-select-pse"
-                  className={`w-full flex items-center gap-3 p-3 rounded-md border text-left transition-colors ${
-                    selectedMethod === 'pse'
-                      ? 'border-primary bg-primary/5'
-                      : 'border-border hover-elevate'
-                  }`}
-                >
-                  <div className={`h-4 w-4 rounded-full border-2 flex-shrink-0 ${
-                    selectedMethod === 'pse'
-                      ? 'border-primary bg-primary'
-                      : 'border-muted-foreground'
-                  }`} />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <Landmark className="h-4 w-4 text-muted-foreground shrink-0" />
-                      <span className="font-medium text-sm">PSE — Transferencia bancaria</span>
-                    </div>
-                  </div>
-                </button>
+              </div>
+              {!isPseAvailable && (
+                <p className="text-sm text-muted-foreground">
+                  El botón se habilitará cuando ePayco termine de configurarse.
+                </p>
               )}
             </CardContent>
           </Card>
 
-          {isUpgradeFromFree && selectedMethod === 'stripe' && (
+          {isUpgradeFromFree && (
             <Card className="border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/20" data-testid="card-contract-notice">
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-lg">
@@ -504,56 +464,27 @@ export default function Checkout() {
 
           <Card data-testid="card-payment">
             <CardContent className="pt-6 space-y-4">
-              {selectedMethod === 'stripe' ? (
-                <>
-                  <div className="bg-muted/50 rounded-lg p-4 space-y-3">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Shield className="h-4 w-4 text-green-600" />
-                      <span>Conexion encriptada SSL/TLS</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Check className="h-4 w-4 text-green-600" />
-                      <span>Proteccion contra fraude</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Check className="h-4 w-4 text-green-600" />
-                      <span>Cumplimiento PCI DSS</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Check className="h-4 w-4 text-green-600" />
-                      <span>7 dias de prueba gratis incluidos</span>
-                    </div>
-                  </div>
-
-                  <div className="bg-primary/5 rounded-lg p-4 text-center">
-                    <p className="text-sm text-muted-foreground">Se cobrara mensualmente</p>
-                    <p className="text-2xl font-bold text-primary" data-testid="text-checkout-total">
-                      {formatCurrency(quotePrice)}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Primer cobro despues de 7 dias de prueba
-                    </p>
-                  </div>
-                </>
-              ) : (
-                <div className="bg-blue-50/50 dark:bg-blue-950/20 rounded-lg p-4 space-y-2">
-                  <div className="flex items-center gap-2 text-sm">
-                    <Landmark className="h-4 w-4 text-blue-600" />
-                    <span className="font-medium">Pago PSE — Transferencia Bancaria</span>
-                  </div>
-                  <div className="bg-primary/5 rounded-md p-3 text-center mt-3">
-                    <p className="text-2xl font-bold text-primary">
-                      {formatCurrency(quotePrice)}
-                    </p>
-                  </div>
+              <div className="bg-blue-50/50 dark:bg-blue-950/20 rounded-lg p-4 space-y-3">
+                <div className="flex items-center gap-2 text-sm">
+                  <Landmark className="h-4 w-4 text-blue-600" />
+                  <span className="font-medium">Pago PSE — Transferencia Bancaria</span>
                 </div>
-              )}
+                <p className="text-sm text-muted-foreground">
+                  Al continuar elegirás tu banco y completarás una transferencia
+                  única en el portal seguro de ePayco.
+                </p>
+                <div className="bg-primary/5 rounded-md p-3 text-center">
+                  <p className="text-2xl font-bold text-primary">
+                    {formatCurrency(quotePrice)}
+                  </p>
+                </div>
+              </div>
 
               <Button
                 className="w-full"
                 size="lg"
                 onClick={handleCheckout}
-                disabled={createCheckoutV2Mutation.isPending}
+                disabled={!isPseAvailable || createCheckoutV2Mutation.isPending}
                 data-testid="button-checkout"
               >
                 {createCheckoutV2Mutation.isPending ? (
@@ -561,20 +492,15 @@ export default function Checkout() {
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     Procesando...
                   </>
-                ) : selectedMethod === 'pse' ? (
-                  <>
-                    <Landmark className="h-4 w-4 mr-2" />
-                    Continuar con PSE
-                  </>
                 ) : isUpgradeFromFree && !contractAccepted ? (
                   <>
                     <Scale className="h-4 w-4 mr-2" />
-                    Revisar Contrato y Pagar
+                    Revisar contrato y continuar con PSE
                   </>
                 ) : (
                   <>
-                    <CreditCard className="h-4 w-4 mr-2" />
-                    Proceder al Pago - {formatCurrency(quotePrice)}/mes
+                    <Landmark className="h-4 w-4 mr-2" />
+                    Pagar por transferencia bancaria
                   </>
                 )}
               </Button>

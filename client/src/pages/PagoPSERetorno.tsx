@@ -1,39 +1,47 @@
-/**
- * Página de Retorno PSE — Resultado del pago bancario
- *
- * El banco redirige aquí con ?id={transactionId}
- * Consultamos el estado y activamos la suscripción si fue aprobada.
- */
-
-import { useLocation } from 'wouter';
-import {
-  Card, CardContent, CardDescription, CardHeader, CardTitle,
-} from '@/components/ui/card';
+import { useLocation, useSearch } from 'wouter';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CreditCard, Landmark } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { CheckCircle2, Landmark, Loader2 } from 'lucide-react';
 
 export default function PagoPSERetorno() {
   const [, navigate] = useLocation();
-  return (
-    <div className="container mx-auto py-8 px-4 max-w-2xl">
-      <Alert>
-        <Landmark className="h-4 w-4" />
-        <AlertTitle>Resultado PSE no disponible</AlertTitle>
-        <AlertDescription>
-          Este retorno pertenece al flujo anterior de Wompi y ya no consulta
-          ni procesa transacciones. Para realizar un pago, use tarjeta.
-        </AlertDescription>
-      </Alert>
+  const search = new URLSearchParams(useSearch());
+  const response = search.get('x_response')?.toLowerCase();
+  const isRejected = response === 'rechazada' || response === 'fallida';
 
-      <Button
-        onClick={() => navigate('/checkout')}
-        className="mt-6"
-        data-testid="button-try-card"
-      >
-        <CreditCard className="h-4 w-4 mr-2" />
-        Pagar con tarjeta
-      </Button>
+  return (
+    <div className="container mx-auto max-w-2xl px-4 py-8">
+      <Card className="text-center">
+        <CardHeader>
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/20">
+            {isRejected ? (
+              <Landmark className="h-8 w-8 text-blue-600" />
+            ) : (
+              <CheckCircle2 className="h-8 w-8 text-blue-600" />
+            )}
+          </div>
+          <CardTitle className="text-2xl">
+            {isRejected ? 'El pago no fue aprobado' : 'Pago enviado a ePayco'}
+          </CardTitle>
+          <CardDescription>
+            {isRejected
+              ? 'Puedes iniciar nuevamente el pago por transferencia bancaria.'
+              : 'Estamos esperando la confirmación final de ePayco y del banco.'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {!isRejected && (
+            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              La suscripción se activa únicamente después de validar la confirmación del servidor.
+            </div>
+          )}
+          <Button onClick={() => navigate('/checkout')} data-testid="button-return-checkout">
+            <Landmark className="mr-2 h-4 w-4" />
+            Volver al pago por transferencia
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }

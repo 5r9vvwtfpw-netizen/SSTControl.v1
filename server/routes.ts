@@ -32,6 +32,7 @@ import { validateManagementReviewApproval } from "./lib/management-review-approv
 import { registerBillingRoutes } from "./routes/billing";
 import { registerStripeRoutes } from "./routes/stripe";
 import { registerWompiRoutes } from "./routes/wompi";
+import { registerEpaycoRoutes } from "./routes/epayco";
 import { registerDbDiagnosticRoutes } from "./routes/db-diagnostic";
 import { registerWebPushRoutes } from "./routes/web-push";
 import companyCreationDiagnosticRoutes from "./routes/company-creation-diagnostic";
@@ -53371,6 +53372,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
   // Wompi PSE routes (transferencia bancaria Colombia)
   registerWompiRoutes(app);
+
+  // ePayco PSE directo (único medio de pago habilitado para transferencias)
+  await registerEpaycoRoutes(app);
 
   // Chatbot AI routes
   registerChatbotRoutes(app, requireAuth);
