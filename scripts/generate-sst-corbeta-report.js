@@ -174,8 +174,8 @@ doc.font("Reg").fontSize(7.1).fillColor("#B8D8C3").text("01 / 06", W - 105, H - 
 addBodyPage(2, "Alcance funcional");
 titleBlock(
   "01  ·  LA PLATAFORMA",
-  "Una plataforma para gestionar SST",
-  "El software centraliza registros, actividades y seguimiento para apoyar la gestión del Sistema de Seguridad y Salud en el Trabajo.",
+  "Gestión y trazabilidad del SG-SST",
+  "SST Colombia facilita la planificación, el seguimiento y la mejora del sistema, integrando actividades, evidencias e indicadores en un entorno digital.",
 );
 box(L, 155, CW, 78, C.pale, C.pale, 10);
 label("Propósito", L + 16, 171, C.green, 7);
