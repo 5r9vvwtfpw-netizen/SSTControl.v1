@@ -531,3 +531,17 @@ mtime_ms = 1790106160497
 storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/1e79d84f-1be8-42ed-8326-e23053ab310f/691bca8b-721d-4134-bfcb-c740f12b54df"
 storage_version_token = "1790106313801681"
 content_type = "application/pdf"
+
+[[outputs]]
+id = "bME5j9gRGwfud3nZAlTVj"
+uri = "file://documents/informe-alcance-sst-colombia-los-picas-corbeta.pdf"
+type = "pdf"
+title = "Informe de alcance del software SST — Los Picas S.A.S."
+description = "PDF informativo de cinco páginas dirigido a Colombiana de Comercio S.A. (Corbeta), con alcance funcional, catálogo de informes, acompañamiento de Ely Johana Casarrubia Rojas y canales de comunicación SST."
+logical_id = "60c316b4-a5ae-403d-9957-d185bb4b14fb"
+content_hash = "sha256:9eb6c0de6f70353eeee9874aec2beb1bbbb9570186ef4b4bbf319331ddadf87a"
+size = 153375
+mtime_ms = 1790235448226
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/60c316b4-a5ae-403d-9957-d185bb4b14fb/92359000-4d3a-4a86-8419-2ae35947e8e9"
+storage_version_token = "1790235469734678"
+content_type = "application/pdf"
