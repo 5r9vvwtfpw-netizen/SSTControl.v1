@@ -545,3 +545,17 @@ mtime_ms = 1790243378486
 storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/60c316b4-a5ae-403d-9957-d185bb4b14fb/dfe8336f-cf14-48d4-960e-f33ca71e716a"
 storage_version_token = "1790243520516326"
 content_type = "application/pdf"
+
+[[outputs]]
+id = "D_m0sjoPi5yBoyidxzFmI"
+uri = "file://documents/descargar-informe-corbeta.html"
+type = "html"
+title = "Abrir descarga del informe PDF"
+description = "Abre esta página y pulsa el botón verde «Descargar PDF». Contiene el PDF original dentro de la propia página y no requiere navegar por Files ni usar «Guardar como»."
+logical_id = "e38895d4-68b5-48f2-8891-450c4338f781"
+content_hash = "sha256:fb5e355e82d8b640a46a2f71a5c5ad16b4e4e79747a6eeec87e23fe9c77a0c73"
+size = 432385
+mtime_ms = 1790244015977
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/e38895d4-68b5-48f2-8891-450c4338f781/807ddab7-00f6-4c91-b292-7211160c6940"
+storage_version_token = "1790244030909515"
+content_type = "text/html"

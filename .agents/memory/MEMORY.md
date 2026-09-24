@@ -32,6 +32,7 @@
 - [Blank form validation](blank-form-validation.md) — los campos de negocio empiezan vacíos y los obligatorios requieren validación explícita antes de mutar.
 - [Mechanic tenant context](mechanic-tenant-context.md) — el contexto externo exige caché por empresa y no debe validar selección persistida hasta que terminen de cargar las autorizaciones.
 - [Safari login autofill](safari-login-autofill.md) — Safari puede mostrar credenciales que React no recibió; el submit debe leer los valores reales del formulario.
+- [Entrega de PDF en Safari](safari-pdf-delivery.md) — Guardar como en una vista previa de Replit guarda HTML; el buscador de Files no expone el menú del árbol.
 - [Vite and app WebSockets](vite-app-websockets.md) — un WebSocket con path sobre el servidor compartido puede rechazar HMR; aislar upgrades por ruta con noServer.
 - [PDF report discovery before implementation](pdf-report-discovery.md) — auditar generadores, rutas indirectas y botones antes de crear informes; CRUD o adjuntos PDF no prueban que exista un reporte.
 - [Estadísticas en informes SG-SST](sst-report-presentation.md) — destacar indicadores de objetivos y ausentismo junto a informes reales, sin atribuir cifras a empresas aún no activas.
