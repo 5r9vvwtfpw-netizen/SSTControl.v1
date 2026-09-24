@@ -71,7 +71,6 @@ ACCOUNTING_INTEGRATION_ENABLED = "true"
 [userenv.development]
 AUTO_VERIFY_EMAIL = "true"
 TEST_MODE = "true"
-EPAYCO_DEMO_PSE_EGRESS_IP = "35.227.2.20"
 
 [userenv.production]
 NODE_ENV = "production"

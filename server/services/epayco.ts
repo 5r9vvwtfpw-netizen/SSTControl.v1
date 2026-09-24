@@ -124,31 +124,6 @@ export function getEpaycoClientIp(forwardedFor?: string, requestIp?: string): st
   throw new Error("No se pudo identificar una IP pública del pagador. Intente de nuevo más tarde.");
 }
 
-export function getEpaycoPseClientIp(
-  forwardedFor: string | undefined,
-  requestIp: string | undefined,
-  companyName: string,
-): { ip: string; usingServerIp: boolean } {
-  try {
-    return { ip: getEpaycoClientIp(forwardedFor, requestIp), usingServerIp: false };
-  } catch (error) {
-    // Replit Preview puede ocultar la IP del pagador. Solo la empresa interna
-    // puede usar la IP de salida configurada para probar el sandbox en desarrollo.
-    if (
-      process.env.NODE_ENV === "development" &&
-      isEpaycoTestMode() &&
-      companyName === "DEMO-PRUEBA" &&
-      process.env.EPAYCO_DEMO_PSE_EGRESS_IP
-    ) {
-      return {
-        ip: getEpaycoClientIp(undefined, process.env.EPAYCO_DEMO_PSE_EGRESS_IP),
-        usingServerIp: true,
-      };
-    }
-    throw error;
-  }
-}
-
 function getCipher(privateKey: string): crypto.Cipher {
   if (!/^[0-9a-f]+$/i.test(privateKey) || ![32, 48, 64].includes(privateKey.length)) {
     throw new Error("EPAYCO_PRIVATE_KEY no tiene el formato hexadecimal esperado");
