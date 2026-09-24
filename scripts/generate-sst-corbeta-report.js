@@ -119,10 +119,10 @@ doc.font("Bold").fontSize(7).fillColor("#E8F4EC").text("DIRIGIDO A CORBETA", W -
   align: "center",
   characterSpacing: 0.4,
 });
-label("Alcance de acompañamiento", 55, 177, "#8DD1A2", 8.2);
-text("Acompañamiento para el\nSG-SST de Los Picas", 52, 202, 493, 33, C.white, "Bold", 4);
+label("Alcance para Los Picas", 55, 177, "#8DD1A2", 8.2);
+text("Automatización del\nSG-SST y PESV", 52, 202, 493, 33, C.white, "Bold", 4);
 text(
-  "Alcance propuesto para organizar, ejecutar, verificar y mejorar la gestión de Seguridad y Salud en el Trabajo de Los Picas S.A.S.",
+  "Cómo SST Colombia sistematizaría la gestión del SG-SST y, cuando aplique, del PESV de Los Picas S.A.S., con acompañamiento profesional.",
   55,
   310,
   450,
@@ -143,7 +143,7 @@ text("24 de septiembre de 2026", 310, 503, 235, 9.2, C.white);
 box(54, 623, 487, 135, "#F2F7F3", "#DDEAE0", 12);
 label("Objeto y condición del informe", 74, 644, C.green, 7.2);
 text(
-  "Este documento presenta el acompañamiento propuesto para organizar, ejecutar, verificar y mejorar el SG-SST de Los Picas S.A.S. No constituye una certificación ni una auditoría de cumplimiento.",
+  "Este documento presenta la sistematización propuesta del SG-SST y, si aplica, del PESV de Los Picas, con acompañamiento profesional. No es una certificación de cumplimiento.",
   74,
   664,
   444,
@@ -165,7 +165,7 @@ text(
 doc.font("Reg").fontSize(7.1).fillColor("#B8D8C3").text("SST COLOMBIA  ·  SADGI S.A.S.", 55, H - 47, {
   characterSpacing: 0.4,
 });
-doc.font("Reg").fontSize(7.1).fillColor("#B8D8C3").text("01 / 06", W - 105, H - 47, {
+doc.font("Reg").fontSize(7.1).fillColor("#B8D8C3").text("01 / 07", W - 105, H - 47, {
   width: 50,
   align: "right",
 });
@@ -240,10 +240,89 @@ text(
   2.5,
 );
 
-// 4. Portal del trabajador
-addBodyPage(4, "Portal de Empleados");
+// 4. Automatización y sistematización de SST/PESV
+addBodyPage(4, "Automatización SST/PESV");
 titleBlock(
-  "03  ·  PARTICIPACIÓN DEL PERSONAL",
+  "03  ·  ALCANCE DE LA PLATAFORMA",
+  "Automatización SST y PESV",
+  "SST Colombia organiza los registros, calcula aplicabilidad e indicadores y da seguimiento al SG-SST y, cuando corresponda, al PESV a partir de la información de Los Picas.",
+);
+const automationY = 168;
+const automationHeight = 128;
+const automationGap = 12;
+const automationCardWidth = (CW - automationGap) / 2;
+card(
+  L,
+  automationY,
+  automationCardWidth,
+  automationHeight,
+  "CLASIFICACIÓN SST",
+  "Riesgo y estándares",
+  "Con CIIU válido, nivel de riesgo y número de trabajadores, determina el capítulo de estándares mínimos aplicable. Si no se indicó riesgo, lo deriva de la actividad CIIU para su revisión.",
+);
+card(
+  L + automationCardWidth + automationGap,
+  automationY,
+  automationCardWidth,
+  automationHeight,
+  "IPERC ASISTIDA",
+  "Peligros por actividad",
+  "Al crear una matriz nueva, genera peligros editables relacionados con los códigos CIIU registrados; la empresa y la profesional SST deben revisar y validar su pertinencia y controles.",
+);
+card(
+  L,
+  automationY + automationHeight + automationGap,
+  automationCardWidth,
+  automationHeight,
+  "EVALUACIÓN SG-SST",
+  "Cumplimiento calculado",
+  "Ordena la evaluación de estándares, respuestas y soportes; calcula el porcentaje de cumplimiento y permite reconocer brechas que requieren acciones de mejora.",
+);
+card(
+  L + automationCardWidth + automationGap,
+  automationY + automationHeight + automationGap,
+  automationCardWidth,
+  automationHeight,
+  "PESV, SI CORRESPONDE",
+  "Nivel y pasos aplicables",
+  "A partir de los vehículos registrados, calcula el nivel PESV, presenta los pasos que aplican y consolida el avance de la evaluación según las respuestas ingresadas.",
+);
+card(
+  L,
+  automationY + 2 * (automationHeight + automationGap),
+  automationCardWidth,
+  automationHeight,
+  "REGISTROS DE CAMPO",
+  "Participación digital",
+  "El Portal de Empleados reúne inducciones, confirmaciones y reportes; las inspecciones preoperacionales y los autorreportes de conductores alimentan la gestión PESV.",
+);
+card(
+  L + automationCardWidth + automationGap,
+  automationY + 2 * (automationHeight + automationGap),
+  automationCardWidth,
+  automationHeight,
+  "CONTROL PHVA",
+  "Alertas y documentos",
+  "El sistema calcula indicadores con los datos registrados, destaca acciones vencidas y permite generar PDF de evaluaciones e informes para seguimiento y rendición de cuentas.",
+  C.blue,
+);
+box(L, 606, CW, 112, C.pale, C.pale, 10);
+label("Valor de la sistematización", L + 15, 624, C.green, 7);
+text(
+  "La plataforma reduce el trabajo manual de clasificación, cálculo y consolidación, y conserva trazabilidad de los registros. Los Picas y la profesional SST verifican los datos y ejecutan las actividades; el componente PESV se utiliza si resulta aplicable.",
+  L + 15,
+  643,
+  CW - 30,
+  8.1,
+  C.deep,
+  "Reg",
+  2.7,
+);
+
+// 5. Portal del trabajador
+addBodyPage(5, "Portal de Empleados");
+titleBlock(
+  "04  ·  PARTICIPACIÓN DEL PERSONAL",
   "Portal de Empleados",
   "Canal para que los trabajadores participen en formación, inspecciones y reportes definidos para la operación de Los Picas.",
 );
@@ -319,10 +398,10 @@ text(
   2.8,
 );
 
-// 5. Alcance propuesto de la profesional SST
-addBodyPage(5, "Acompañamiento profesional");
+// 6. Alcance propuesto de la profesional SST
+addBodyPage(6, "Acompañamiento profesional");
 titleBlock(
-  "04  ·  ACTIVIDADES DE LA PROFESIONAL SST",
+  "05  ·  ACTIVIDADES DE LA PROFESIONAL SST",
   "Trabajo previsto para Los Picas",
   "Una vez formalizado el servicio, Ely Johana Casarrubia Rojas desarrollará estas actividades con los responsables de Los Picas, según sus riesgos y protocolos establecidos.",
 );
@@ -398,10 +477,10 @@ text(
   2.7,
 );
 
-// 6. Ruta de acompañamiento y condiciones
-addBodyPage(6, "Ruta de acompañamiento");
+// 7. Ruta de acompañamiento y condiciones
+addBodyPage(7, "Ruta de acompañamiento");
 titleBlock(
-  "05  ·  RUTA DE ACOMPAÑAMIENTO",
+  "06  ·  RUTA DE ACOMPAÑAMIENTO",
   "Inicio y desarrollo del servicio",
   "Las actividades propuestas comenzarán tras formalizar el servicio.",
 );
