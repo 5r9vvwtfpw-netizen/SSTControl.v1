@@ -106,10 +106,10 @@ export default function DocumentosLegalesPdf() {
     {
       id: "rut-empresa",
       title: "RUT - Registro Único Tributario",
-      description: "SADGI S.A.S. - NIT 902.036.337-4. Actualización emitida el 28/08/2026.",
+      description: "SADGI S.A.S. - NIT 902.036.337-4. Actualización emitida el 21/09/2026.",
       endpoint: "/api/legal-docs/rut/pdf",
       icon: <Landmark className="h-8 w-8" />,
-      filename: "RUT-SADGI-SAS-902036337-4.pdf"
+      filename: "RUT-SADGI-SAS-2026-09-21.pdf"
     }
   ];
 

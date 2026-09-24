@@ -51667,7 +51667,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // GET /api/legal-docs/rut/pdf - RUT document (SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S.)
   app.get("/api/legal-docs/rut/pdf", requireAuth, async (req, res) => {
     try {
-      const filePath = path.join(process.cwd(), "server", "assets", "RUT_SADGI_SAS_2026-08-28.pdf");
+      const filePath = path.join(process.cwd(), "server", "assets", "RUT_SADGI_SAS_2026-09-21.pdf");
       if (!fs.existsSync(filePath)) {
         return res.status(404).send("Documento RUT no encontrado");
       }
@@ -51675,7 +51675,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       res.setHeader('X-Robots-Tag', 'noindex, nofollow, noarchive');
       res.setHeader('Cache-Control', 'private, no-store, no-cache, must-revalidate');
       res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', 'attachment; filename="RUT-SADGI-SAS-902036337-4.pdf"');
+      res.setHeader('Content-Disposition', 'attachment; filename="RUT-SADGI-SAS-2026-09-21.pdf"');
       res.setHeader('Content-Length', pdfBuffer.length.toString());
       res.send(pdfBuffer);
     } catch (error: any) {
