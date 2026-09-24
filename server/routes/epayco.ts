@@ -37,8 +37,10 @@ type EpaycoPaymentRow = {
 };
 
 function getEffectiveCompanyId(req: any): string | null {
-  const globalRoles = ["superadmin", "lso", "lso_externo"];
-  if (globalRoles.includes(req.user?.role)) {
+  if (req.user?.role === "lso" || req.user?.role === "lso_externo") {
+    return req.validatedLsoCompanyId || null;
+  }
+  if (req.user?.role === "superadmin") {
     const headerCompanyId = req.headers["x-company-id"] as string | undefined;
     const queryCompanyId = req.query?.companyId as string | undefined;
     if (headerCompanyId) return headerCompanyId;
@@ -163,6 +165,34 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
     });
   });
 
+  app.get("/api/epayco/pse/transaccion", requireAuth, async (req: any, res) => {
+    const companyId = getEffectiveCompanyId(req);
+    if (!companyId) return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+
+    const invoice = typeof req.query.invoice === "string" ? req.query.invoice : null;
+    if (invoice !== null && (!invoice || invoice.length > 255)) {
+      return res.status(400).json({ error: "Referencia de pago inválida" });
+    }
+
+    const invoiceFilter = invoice ? sql`AND invoice = ${invoice}` : sql``;
+    const result = await db.execute(sql`
+      SELECT invoice, status, response_reason, updated_at
+      FROM epayco_pse_transactions
+      WHERE company_id = ${companyId} ${invoiceFilter}
+      ORDER BY created_at DESC
+      LIMIT 1
+    `);
+    const payment = result.rows[0];
+    if (!payment) return res.status(404).json({ error: "No se encontró el pago PSE" });
+
+    return res.json({
+      invoice: payment.invoice,
+      status: payment.status,
+      reason: payment.response_reason,
+      updatedAt: payment.updated_at,
+    });
+  });
+
   app.get("/api/epayco/pse/bancos", paymentOperationLimiter, requireAuth, async (_req, res) => {
     if (!isEpaycoConfigured()) {
       return res.status(503).json({
@@ -251,7 +281,7 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
         email: parsed.data.email,
         cellPhone: parsed.data.cellPhone,
         ip: req.ip || "127.0.0.1",
-        responseUrl: `${baseUrl}/pago-pse/retorno?provider=epayco`,
+        responseUrl: `${baseUrl}/pago-pse/retorno?provider=epayco&invoice=${encodeURIComponent(invoice)}`,
         confirmationUrl: `${baseUrl}/api/epayco/pse/confirmacion`,
       });
 

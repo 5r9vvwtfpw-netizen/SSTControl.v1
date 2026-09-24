@@ -61,3 +61,4 @@
 - [Límite de desactivación de proveedores de pago](payment-provider-deactivation-boundary.md) — bloquear creación, consulta, webhook y UI; ocultar el método del checkout no basta.
 - [Autenticación ePayco](epayco-auth-response.md) — HTTP 200 del login no prueba autenticación; comprobar el cuerpo antes de habilitar pagos.
 - [ePayco callback environments](epayco-callback-environments.md) — en desarrollo, priorizar el dominio dev para respuestas/webhooks; APP_URL compartida apunta a producción.
+- [Resultado PSE simulado vs ePayco](epayco-pse-simulator-result.md) — la aprobación de Banka/ACH en pruebas no garantiza aceptación comercial; manda la confirmación firmada de ePayco.

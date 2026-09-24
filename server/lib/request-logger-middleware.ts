@@ -42,7 +42,8 @@ export function requestLoggerMiddleware(req: Request, res: Response, next: NextF
       type: 'request',
       method: req.method,
       url: req.path,
-      query: req.query,
+      // ePayco envía documento, correo, celular y firma en la query del webhook.
+      query: req.path === '/api/epayco/pse/confirmacion' ? { redacted: true } : req.query,
       ip: req.ip,
       userAgent: req.get('user-agent'),
     }, 'Incoming API request');
