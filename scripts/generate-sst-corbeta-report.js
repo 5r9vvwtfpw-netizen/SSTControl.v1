@@ -403,7 +403,7 @@ addBodyPage(6, "Ruta de acompañamiento");
 titleBlock(
   "05  ·  RUTA DE ACOMPAÑAMIENTO",
   "Inicio y desarrollo del servicio",
-  "Las actividades propuestas comenzarán tras formalizar el servicio y conocer los procedimientos y protocolos de contingencia y emergencia de Los Picas.",
+  "Las actividades propuestas comenzarán tras formalizar el servicio.",
 );
 box(L, 161, CW, 140, C.pale, C.pale, 11);
 doc.roundedRect(L, 161, 5, 140, 2.5).fill(C.accent);
