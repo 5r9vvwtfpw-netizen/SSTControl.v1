@@ -7,6 +7,7 @@
  */
 
 import crypto from "crypto";
+import { isIP } from "net";
 import logger from "../lib/logger";
 
 const API_BASE_URL = "https://api.secure.payco.co";
@@ -102,9 +103,25 @@ export function isEpaycoTestMode(): boolean {
   return process.env.EPAYCO_TEST !== "false";
 }
 
-function getClientIp(ip: string): string {
-  const firstIp = ip.split(",")[0]?.trim() || "127.0.0.1";
-  return firstIp.replace(/^::ffff:/, "");
+export function getEpaycoClientIp(forwardedFor?: string, requestIp?: string): string {
+  const candidates = [...(forwardedFor?.split(",") || []), requestIp || ""];
+  for (const candidate of candidates) {
+    const ip = candidate.trim().replace(/^::ffff:/i, "");
+    if (isIP(ip) === 4) {
+      const [first, second] = ip.split(".").map(Number);
+      if (
+        first > 0 && first < 224 &&
+        first !== 10 && first !== 127 &&
+        !(first === 100 && second >= 64 && second <= 127) &&
+        !(first === 169 && second === 254) &&
+        !(first === 172 && second >= 16 && second <= 31) &&
+        !(first === 192 && second === 168)
+      ) return ip;
+    } else if (isIP(ip) === 6 && !/^(::|fc|fd|fe[89ab])/i.test(ip)) {
+      return ip;
+    }
+  }
+  throw new Error("No se pudo identificar una IP pública del pagador. Intente de nuevo más tarde.");
 }
 
 function getCipher(privateKey: string): crypto.Cipher {
@@ -243,7 +260,7 @@ export async function createEpaycoPseTransaction(
     email: params.email,
     country: "CO",
     cell_phone: params.cellPhone,
-    ip: getClientIp(params.ip),
+    ip: getEpaycoClientIp(undefined, params.ip),
     url_response: params.responseUrl,
     url_confirmation: params.confirmationUrl,
     metodoconfirmacion: "POST",

@@ -15,6 +15,7 @@ import logger from "../lib/logger";
 import { paymentOperationLimiter } from "../middleware/rate-limit";
 import {
   createEpaycoPseTransaction,
+  getEpaycoClientIp,
   getEpaycoPseBanks,
   isEpaycoConfigured,
   isEpaycoTestMode,
@@ -234,6 +235,18 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
       });
     }
 
+    const forwardedFor = req.headers["x-forwarded-for"];
+    let clientIp: string;
+    try {
+      clientIp = getEpaycoClientIp(
+        typeof forwardedFor === "string" ? forwardedFor : undefined,
+        req.ip
+      );
+    } catch (error: any) {
+      logger.warn("[ePayco] No se recibió una IP pública del pagador");
+      return res.status(503).json({ error: error.message });
+    }
+
     const companyId = getEffectiveCompanyId(req);
     if (!companyId) return res.status(403).json({ error: "Usuario no asociado a una empresa" });
 
@@ -280,7 +293,7 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
         lastName,
         email: parsed.data.email,
         cellPhone: parsed.data.cellPhone,
-        ip: req.ip || "127.0.0.1",
+        ip: clientIp,
         responseUrl: `${baseUrl}/pago-pse/retorno?provider=epayco&invoice=${encodeURIComponent(invoice)}`,
         confirmationUrl: `${baseUrl}/api/epayco/pse/confirmacion`,
       });
