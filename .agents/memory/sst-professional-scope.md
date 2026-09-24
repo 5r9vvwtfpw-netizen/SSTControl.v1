@@ -1,10 +1,10 @@
 ---
 name: Alcance de la profesional SST
-description: Límite de responsabilidades al describir el rol de la profesional SST frente al software.
+description: Separación entre compromisos de acompañamiento profesional y funciones del portal.
 ---
 
-No inferir las obligaciones operativas de la profesional a partir de las pantallas del Portal del Profesional SST. Distinguir el alcance de un servicio que haya sido acordado de las acciones que efectivamente permite el portal; una vista de planes, matrices, indicadores o capacitaciones no demuestra que desde allí la profesional los elabore o actualice. Su función general de acompañamiento y seguimiento no autoriza a prometer tareas concretas sin confirmación. No atribuirle tampoco la configuración técnica del sistema ni inventar al responsable de esa configuración.
+No inferir obligaciones operativas de la profesional a partir de las pantallas del Portal del Profesional SST. Distinguir el trabajo profesional acordado de las funciones que permite el software. El usuario confirmó que el alcance profesional propuesto incluye auditar el SG-SST, investigar los eventos que correspondan y capacitar al personal conforme a los protocolos de contingencia y emergencia establecidos. Son actividades futuras del servicio, no funciones que deban ejecutarse dentro del portal ni trabajos ya realizados. No atribuirle la configuración técnica del sistema ni inventar al responsable de esa configuración.
 
-**Why:** El usuario rechazó un informe que convirtió vistas de consulta y firma en promesas de diagnóstico, planificación y ejecución; también aclaró previamente que la configuración técnica no corresponde a la profesional.
+**Why:** Una versión infirió tareas profesionales desde las vistas del portal y otra, al corregirla, redujo indebidamente el alcance a consulta y firma. El usuario aclaró expresamente las actividades profesionales que sí deben describirse.
 
-**How to apply:** En informes externos, verificar las capacidades en el portal y sus permisos antes de redactar; separar los registros que realiza la empresa de las consultas, revisiones, firmas y comunicaciones permitidas a la profesional. Si se desconoce el alcance de su servicio, no completarlo con supuestos. Evitar mencionar la configuración técnica si no es relevante para el documento.
+**How to apply:** En informes externos, describir por separado el servicio profesional propuesto, la responsabilidad del empleador y las funciones verificadas del portal. No afirmar que una actividad se realizó antes de formalizar el servicio. Evitar mencionar la configuración técnica si no es relevante para el documento.

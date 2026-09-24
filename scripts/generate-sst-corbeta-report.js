@@ -175,12 +175,12 @@ addBodyPage(2, "Metodología SG-SST");
 titleBlock(
   "01  ·  METODOLOGÍA DE CUMPLIMIENTO",
   "Metodología para gestionar el SG-SST",
-  "El ciclo PHVA requiere actividades y evidencias de Los Picas; el portal profesional permite consultar el estado de lo que se registre, no reemplaza su ejecución.",
+  "Tras formalizar el servicio, el acompañamiento de Ely incluirá auditorías internas, investigación de eventos y capacitación, integradas al ciclo PHVA de Los Picas.",
 );
 box(L, 155, CW, 78, C.pale, C.pale, 10);
 label("Punto de partida", L + 16, 171, C.green, 7);
 text(
-  "Antes de definir actividades, Los Picas deberá aportar la información de su operación y los documentos existentes. Sin esos datos no es posible atribuir avances, evaluar brechas ni presentar resultados propios.",
+  "Los Picas aportará información de su operación, riesgos, documentos y protocolos de contingencia y emergencia establecidos. Con esa base se precisarán el alcance, los responsables y la programación, sin atribuir resultados previos.",
   L + 16,
   189,
   CW - 32,
@@ -192,14 +192,14 @@ text(
 const gap = 12;
 const half = (CW - gap) / 2;
 const moduleHeight = 168;
-card(L, 250, half, moduleHeight, "P  ·  PLANEAR", "Definir la base de gestión", "La empresa deberá evaluar sus estándares mínimos y establecer, según corresponda, objetivos, plan anual y matriz de peligros. Los documentos se consultarán en el portal profesional una vez registrados.");
-card(L + half + gap, 250, half, moduleHeight, "H  ·  HACER", "Ejecutar y documentar", "Los responsables de Los Picas ejecutarán las actividades definidas y registrarán capacitaciones, inspecciones, controles, reportes de incidentes y participación del personal cuando apliquen.");
-card(L, 430, half, moduleHeight, "V  ·  VERIFICAR", "Consultar resultados", "Con datos registrados, el panel PHVA muestra evaluación SG-SST, indicadores, auditorías, inspecciones, accidentes y avance del plan; Ely podrá revisar esos resultados y las alertas disponibles.");
-card(L + half + gap, 430, half, moduleHeight, "A  ·  ACTUAR", "Atender pendientes", "Los responsables de Los Picas deberán gestionar las acciones de mejora y sus soportes; Ely podrá consultar desde el portal las acciones pendientes, vencidas y la eficacia registrada.");
+card(L, 250, half, moduleHeight, "P  ·  PLANEAR", "Acordar las actividades", "Con la información aportada por Los Picas se acordarán el alcance de las auditorías, los temas de capacitación y las prioridades de prevención según sus riesgos y procedimientos.");
+card(L + half + gap, 250, half, moduleHeight, "H  ·  HACER", "Capacitar e investigar", "Ely capacitará al personal en SST y en los protocolos de contingencia y emergencia aplicables; investigará con los responsables los incidentes y accidentes que correspondan.");
+card(L, 430, half, moduleHeight, "V  ·  VERIFICAR", "Auditar el SG-SST", "Ely revisará evidencias, controles e indicadores mediante auditorías internas; documentará hallazgos y recomendaciones. Los Picas facilitará información y participación de sus responsables.");
+card(L + half + gap, 430, half, moduleHeight, "A  ·  ACTUAR", "Seguir las mejoras", "Los Picas definirá y ejecutará las medidas correctivas y preventivas; Ely dará seguimiento técnico a los hallazgos e investigaciones y revisará las evidencias de cierre cuando existan.");
 box(L, 615, CW, 106, C.pale2, C.pale2, 10);
-label("Funciones diferenciadas", L + 15, 633, C.blue, 7);
+label("Responsabilidades y soportes", L + 15, 633, C.blue, 7);
 text(
-  "Los Picas genera los registros y ejecuta las actividades. El Portal del Profesional SST permite a Ely consultar información, revisar documentos e investigaciones, realizar firmas habilitadas y comunicarse con el administrador.",
+  "Ely auditará, investigará y capacitará, documentando sus resultados. Los Picas aportará información, designará responsables y ejecutará las medidas; los registros del sistema servirán para sustentar y seguir lo efectivamente realizado.",
   L + 15,
   651,
   CW - 30,
@@ -214,7 +214,7 @@ addBodyPage(3, "Evidencias SG-SST");
 titleBlock(
   "02  ·  SOPORTES DE LA GESTIÓN",
   "Soportes previstos del SG-SST",
-  "Los responsables de Los Picas registrarán los soportes aplicables en los módulos de la empresa. Los reportes reflejarán únicamente los datos y actividades que se incorporen y validen.",
+  "Las auditorías, investigaciones y capacitaciones previstas deberán dejar soportes verificables. Los Picas conservará los registros del SG-SST; ningún resultado se presenta aquí como ya obtenido.",
 );
 const cardGap = 12;
 const cardWidth = (CW - cardGap) / 2;
@@ -319,12 +319,12 @@ text(
   2.8,
 );
 
-// 5. Funciones verificadas del Portal del Profesional SST
+// 5. Alcance propuesto de la profesional SST
 addBodyPage(5, "Acompañamiento profesional");
 titleBlock(
-  "04  ·  FUNCIONES VERIFICADAS EN EL PORTAL",
-  "Seguimiento profesional de Los Picas",
-  "Con acceso habilitado y datos registrados, Ely Johana Casarrubia Rojas podrá realizar estas acciones desde el Portal del Profesional SST.",
+  "04  ·  ACTIVIDADES DE LA PROFESIONAL SST",
+  "Trabajo previsto para Los Picas",
+  "Una vez formalizado el servicio, Ely Johana Casarrubia Rojas desarrollará estas actividades con los responsables de Los Picas, según sus riesgos y protocolos establecidos.",
 );
 const professionalY = 168;
 const professionalHeight = 128;
@@ -335,60 +335,60 @@ card(
   professionalY,
   professionalCardWidth,
   professionalHeight,
-  "SEGUIMIENTO PHVA",
-  "Indicadores y alertas",
-  "Por año consulta el resultado de evaluación SG-SST, avance del plan, inspecciones, peligros, objetivos, auditorías, accidentalidad y acciones pendientes, vencidas o eficaces.",
+  "AUDITORÍA",
+  "Revisión del SG-SST",
+  "Auditará el SG-SST frente a los requisitos aplicables y procedimientos de Los Picas; revisará evidencias, controles e indicadores y documentará hallazgos y recomendaciones.",
 );
 card(
   L + professionalCardWidth + professionalGap,
   professionalY,
   professionalCardWidth,
   professionalHeight,
-  "EVALUACIÓN SST",
-  "Estándares mínimos",
-  "Ve periodo, porcentaje y estado de las evaluaciones registradas; abre su PDF y puede generar una versión dirigida al Ministerio, ARL o uso interno. Firma la evaluación cuando corresponde y tiene firma habilitada.",
+  "SEGUIMIENTO",
+  "Acciones de mejora",
+  "Revisará con los responsables las acciones surgidas de auditorías e investigaciones, sus soportes y eficacia; comunicará los pendientes que requieran decisión de Los Picas.",
 );
 card(
   L,
   professionalY + professionalHeight + professionalGap,
   professionalCardWidth,
   professionalHeight,
-  "DOCUMENTOS SST",
-  "Planes, matrices y actas",
-  "Consulta los PDF y estados de planes anuales, matrices IPERC, actas de designación y programas de capacitación registrados. Puede atender las firmas profesionales pendientes si tiene licencia y firma habilitadas.",
+  "INVESTIGACIÓN",
+  "Incidentes y accidentes",
+  "Investigará los eventos que correspondan junto con los responsables de Los Picas; documentará hechos, causas y medidas correctivas y preventivas conforme al procedimiento establecido.",
 );
 card(
   L + professionalCardWidth + professionalGap,
   professionalY + professionalHeight + professionalGap,
   professionalCardWidth,
   professionalHeight,
-  "INVESTIGACIONES",
-  "Revisión de accidentes",
-  "Abre investigaciones que requieren intervención profesional; consulta evento, causas, medidas correctivas y preventivas, participantes y plazos. Puede firmarlas y enviar observaciones al administrador.",
+  "FORMACIÓN",
+  "Capacitación SST",
+  "Capacitará a trabajadores y responsables en los riesgos y medidas preventivas aplicables a su labor. Dejará registro de temas y asistencia para evidenciar la formación realizada.",
 );
 card(
   L,
   professionalY + 2 * (professionalHeight + professionalGap),
   professionalCardWidth,
   professionalHeight,
-  "PESV, CUANDO APLIQUE",
-  "Evaluaciones de seguridad vial",
-  "Si hay evaluaciones PESV registradas, consulta año, nivel, avance, puntajes por fase y respuestas por paso, incluidos cumplimiento, no aplica y observaciones.",
+  "CONTINGENCIAS Y EMERGENCIAS",
+  "Protocolos establecidos",
+  "Para capacitar e investigar, aplicará los protocolos de contingencia y emergencia establecidos por Los Picas y coordinará con los responsables designados en ellos.",
 );
 card(
   L + professionalCardWidth + professionalGap,
   professionalY + 2 * (professionalHeight + professionalGap),
   professionalCardWidth,
   professionalHeight,
-  "INFORME Y COMUNICACIÓN",
-  "Reporte y mensajes",
-  "Descarga el informe consolidado anual SST/PESV con los datos disponibles y puede enviar mensajes internos normales o urgentes al administrador de Los Picas.",
+  "RESULTADOS",
+  "Hallazgos y evidencias",
+  "Entregará a Los Picas los resultados de las auditorías, investigaciones y capacitaciones, con recomendaciones y soportes verificables para el seguimiento de las acciones.",
   C.blue,
 );
 box(L, 606, CW, 112, C.pale, C.pale, 10);
-label("Alcance real del portal", L + 15, 624, C.green, 7);
+label("Alcance de la profesional SST", L + 15, 624, C.green, 7);
 text(
-  "El portal muestra información ya registrada y permite consultar, revisar y firmar documentos habilitados. No crea por sí mismo el plan anual, la matriz IPERC ni las capacitaciones. Las cifras e informes dependen de los registros incorporados por Los Picas.",
+  "Ely auditará el SG-SST, investigará los incidentes y accidentes que correspondan y capacitará al personal conforme a los protocolos de contingencia y emergencia establecidos por Los Picas. Comunicará hallazgos y recomendaciones para que la empresa adopte y ejecute las medidas pertinentes.",
   L + 15,
   643,
   CW - 30,
@@ -398,19 +398,19 @@ text(
   2.7,
 );
 
-// 6. Ruta de inicio y condiciones
-addBodyPage(6, "Ruta de inicio");
+// 6. Ruta de acompañamiento y condiciones
+addBodyPage(6, "Ruta de acompañamiento");
 titleBlock(
-  "05  ·  CONDICIONES DE USO",
-  "Ruta de acceso y seguimiento",
-  "La intervención de Ely en el portal requiere servicio formalizado, acceso autorizado e información registrada de Los Picas.",
+  "05  ·  RUTA DE ACOMPAÑAMIENTO",
+  "Inicio y desarrollo del servicio",
+  "Las actividades propuestas comenzarán tras formalizar el servicio y conocer los procedimientos y protocolos de contingencia y emergencia de Los Picas.",
 );
 box(L, 161, CW, 140, C.pale, C.pale, 11);
 doc.roundedRect(L, 161, 5, 140, 2.5).fill(C.accent);
 label("Profesional SST propuesta", L + 19, 180, C.green, 7.1);
 text("Ely Johana Casarrubia Rojas", L + 19, 198, CW - 38, 16, C.deep, "Bold", 2);
 text(
-  "Desde su portal podrá consultar el panel PHVA y evaluaciones registradas, revisar documentos e investigaciones que requieran su intervención, atender firmas profesionales habilitadas y comunicarse con el administrador.",
+  "Ely auditará el SG-SST, investigará los eventos que correspondan y capacitará al personal de Los Picas. Articulará su trabajo con los responsables internos y los protocolos de contingencia y emergencia establecidos.",
   L + 19,
   228,
   CW - 38,
@@ -420,12 +420,12 @@ text(
   2.5,
 );
 
-label("Secuencia necesaria", L, 326, C.blue, 7.2);
+label("Secuencia propuesta", L, 326, C.blue, 7.2);
 const steps = [
-  ["01", "Formalizar el servicio y habilitar acceso", "Ely necesitará acceso profesional autorizado a la información de Los Picas."],
-  ["02", "Registrar información y documentos", "Los responsables de Los Picas incorporarán evaluaciones, planes, matrices, programas y demás registros aplicables."],
-  ["03", "Realizar la revisión profesional", "Ely consultará el panel, evaluaciones, documentos e investigaciones disponibles y atenderá firmas cuando proceda."],
-  ["04", "Comunicar y obtener informes", "Podrá enviar mensajes al administrador y descargar el informe SST/PESV según los datos registrados."],
+  ["01", "Formalizar y reunir la información", "Los Picas aportará registros del SG-SST, riesgos y protocolos vigentes; se acordará la programación."],
+  ["02", "Auditar el SG-SST", "Ely revisará evidencias y procedimientos, y dejará constancia de hallazgos y recomendaciones."],
+  ["03", "Investigar y capacitar", "Investigará los eventos que correspondan y capacitará al personal conforme a los protocolos establecidos."],
+  ["04", "Documentar y hacer seguimiento", "Comunicará resultados y revisará con Los Picas el avance de las medidas definidas por la empresa."],
 ];
 let stepY = 346;
 for (let i = 0; i < steps.length; i++) {
@@ -443,7 +443,7 @@ for (let i = 0; i < steps.length; i++) {
 box(L, 615, CW, 123, C.redPale, C.redPale, 10);
 label("Condición de este alcance", L + 15, 634, C.red, 7);
 text(
-  "Los Picas S.A.S. aún no está suscrita. No se presentan diagnósticos, porcentajes ni actividades realizadas. El portal reflejará solo información registrada y no acredita por sí mismo cumplimiento legal; esa responsabilidad permanece en el empleador.",
+  "Los Picas S.A.S. aún no está suscrita. Estas actividades son futuras: no se presentan auditorías, investigaciones, capacitaciones ni resultados ya realizados. Su ejecución dependerá del servicio formalizado y de la información disponible. La responsabilidad legal permanece en el empleador.",
   L + 15,
   653,
   CW - 30,
