@@ -209,10 +209,11 @@ text(
   2.7,
 );
 
-// 3. Informes y estadísticas verificables
-addBodyPage(3, "Informes SG-SST");
+// Las dos secciones se emiten en el orden: plataforma, luego informes.
+function addReportsPage() {
+addBodyPage(4, "Informes SG-SST");
 titleBlock(
-  "02  ·  INFORMES Y ESTADÍSTICAS",
+  "03  ·  INFORMES Y ESTADÍSTICAS",
   "Informes y estadísticas del SG-SST",
   "SST Colombia muestra indicadores y genera informes descargables a partir de registros reales. Estas salidas ayudarían a Los Picas a verificar avances y rendir cuentas después de iniciar su gestión.",
 );
@@ -239,11 +240,12 @@ text(
   "Reg",
   2.5,
 );
+}
 
-// 4. Automatización y sistematización de SST/PESV
-addBodyPage(4, "Automatización SST/PESV");
+function addAutomationPage() {
+addBodyPage(3, "Automatización SST/PESV");
 titleBlock(
-  "03  ·  ALCANCE DE LA PLATAFORMA",
+  "02  ·  ALCANCE DE LA PLATAFORMA",
   "Automatización SST y PESV",
   "SST Colombia organiza los registros, calcula aplicabilidad e indicadores y da seguimiento al SG-SST y, cuando corresponda, al PESV a partir de la información de Los Picas.",
 );
@@ -318,6 +320,10 @@ text(
   "Reg",
   2.7,
 );
+}
+
+addAutomationPage();
+addReportsPage();
 
 // 5. Portal del trabajador
 addBodyPage(5, "Portal de Empleados");
