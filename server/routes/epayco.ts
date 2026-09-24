@@ -157,6 +157,7 @@ async function activateSubscriptionAfterEpayco(
 
 export async function registerEpaycoRoutes(app: Express): Promise<void> {
   await ensureEpaycoTable();
+  let demoQaIpUsed = false;
 
   app.get("/api/epayco/estado", requireAuth, (_req, res) => {
     res.json({
@@ -235,18 +236,6 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
       });
     }
 
-    const forwardedFor = req.headers["x-forwarded-for"];
-    let clientIp: string;
-    try {
-      clientIp = getEpaycoClientIp(
-        typeof forwardedFor === "string" ? forwardedFor : undefined,
-        req.ip
-      );
-    } catch (error: any) {
-      logger.warn("[ePayco] No se recibió una IP pública del pagador");
-      return res.status(503).json({ error: error.message });
-    }
-
     const companyId = getEffectiveCompanyId(req);
     if (!companyId) return res.status(403).json({ error: "Usuario no asociado a una empresa" });
 
@@ -257,6 +246,38 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
 
     const company = await storage.getCompany(companyId);
     if (!company) return res.status(404).json({ error: "Empresa no encontrada" });
+
+    const forwardedFor = req.headers["x-forwarded-for"];
+    let clientIp: string;
+    try {
+      clientIp = getEpaycoClientIp(
+        typeof forwardedFor === "string" ? forwardedFor : undefined,
+        req.ip
+      );
+    } catch (error: any) {
+      const testEgressIp = process.env.EPAYCO_TEST_EGRESS_IP;
+      const testUntil = Number(process.env.EPAYCO_TEST_EGRESS_UNTIL);
+      if (
+        process.env.NODE_ENV !== "development" ||
+        !isEpaycoTestMode() ||
+        company.name !== "DEMO-PRUEBA" ||
+        !testEgressIp ||
+        !Number.isSafeInteger(testUntil) ||
+        Date.now() >= testUntil ||
+        demoQaIpUsed
+      ) {
+        logger.warn("[ePayco] No se recibió una IP pública del pagador");
+        return res.status(503).json({ error: error.message });
+      }
+      try {
+        clientIp = getEpaycoClientIp(undefined, testEgressIp);
+      } catch {
+        logger.warn("[ePayco] IP temporal de salida inválida");
+        return res.status(503).json({ error: "IP temporal de pruebas inválida" });
+      }
+      demoQaIpUsed = true;
+      logger.info({ companyId }, "[ePayco] Usando IP de salida una vez para prueba PSE en desarrollo");
+    }
 
     const companyAny = company as any;
     const quoteBase = Number(companyAny.quoteBaseMonthlyPrice || 0);
