@@ -45,6 +45,7 @@ import { registerNgoWebhookRoutes } from "./routes/ngo-webhook";
 import { registerCompanySedesRoutes } from "./routes/company-sedes";
 import { registerMissingSstReportsRoutes } from "./routes/missing-sst-reports";
 import { registerPropuestaComercialRoutes } from "./routes/propuesta-comercial";
+import { registerInformeEjecutivoRoutes } from "./routes/informe-ejecutivo";
 import { registerCotizacionTransicionRoutes } from "./routes/cotizacion-transicion";
 import { registerAlianzaConsultoresRoutes } from "./routes/alianza-consultores";
 import { registerConfidencialidadAsistentesRoutes } from "./routes/confidencialidad-asistentes";
@@ -53348,6 +53349,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   registerNgoWebhookRoutes(app);
   registerCompanySedesRoutes(app);
   registerPropuestaComercialRoutes(app);
+  registerInformeEjecutivoRoutes(app);
   registerCotizacionTransicionRoutes(app);
   registerAlianzaConsultoresRoutes(app);
   registerConfidencialidadAsistentesRoutes(app);
