@@ -119,12 +119,12 @@ doc.font("Bold").fontSize(7).fillColor("#E8F4EC").text("DIRIGIDO A CORBETA", W -
   align: "center",
   characterSpacing: 0.4,
 });
-label("Informe informativo", 55, 177, "#8DD1A2", 8.2);
-text("Alcance funcional\ndel software de\ngestión SG-SST", 52, 202, 493, 33, C.white, "Bold", 4);
+label("Alcance de acompañamiento", 55, 177, "#8DD1A2", 8.2);
+text("Acompañamiento para el\nSG-SST de Los Picas", 52, 202, 493, 33, C.white, "Bold", 4);
 text(
-  "Gestión SST, participación digital y herramientas operativas para Los Picas S.A.S.",
+  "Alcance propuesto para organizar, ejecutar, verificar y mejorar la gestión de Seguridad y Salud en el Trabajo de Los Picas S.A.S.",
   55,
-  333,
+  310,
   450,
   11.4,
   "#D5E8DB",
@@ -141,9 +141,9 @@ text("Medellín, Colombia", 55, 503, 230, 9.2, C.white);
 label("Fecha", 310, 486, "#8DD1A2", 7);
 text("24 de septiembre de 2026", 310, 503, 235, 9.2, C.white);
 box(54, 623, 487, 135, "#F2F7F3", "#DDEAE0", 12);
-label("Naturaleza del documento", 74, 644, C.green, 7.2);
+label("Objeto y condición del informe", 74, 644, C.green, 7.2);
 text(
-  "Este informe describe capacidades del software SST Colombia. No constituye una certificación ni una auditoría de cumplimiento de Los Picas S.A.S.",
+  "Este documento presenta el acompañamiento propuesto para organizar, ejecutar, verificar y mejorar el SG-SST de Los Picas S.A.S. No constituye una certificación ni una auditoría de cumplimiento.",
   74,
   664,
   444,
@@ -153,7 +153,7 @@ text(
   3.5,
 );
 text(
-  "Los Picas S.A.S. aún no está suscrita. Por tanto, aquí no se presentan registros ni resultados propios de su operación.",
+  "Los Picas S.A.S. aún no está suscrita. El diagnóstico, las actividades y los resultados se definirán tras revisar su operación; este informe no atribuye avances ni registros existentes.",
   74,
   715,
   444,
@@ -170,17 +170,17 @@ doc.font("Reg").fontSize(7.1).fillColor("#B8D8C3").text("01 / 06", W - 105, H - 
   align: "right",
 });
 
-// 2. Alcance funcional
-addBodyPage(2, "Alcance funcional");
+// 2. Metodología propuesta
+addBodyPage(2, "Metodología SG-SST");
 titleBlock(
-  "01  ·  LA PLATAFORMA",
-  "Gestión y trazabilidad del SG-SST",
-  "SST Colombia facilita la planificación, el seguimiento y la mejora del sistema, integrando actividades, evidencias e indicadores en un entorno digital.",
+  "01  ·  METODOLOGÍA DE CUMPLIMIENTO",
+  "Metodología para gestionar el SG-SST",
+  "El acompañamiento se organizará con el ciclo PHVA, a partir de un diagnóstico específico de Los Picas y de los requisitos aplicables a su operación.",
 );
 box(L, 155, CW, 78, C.pale, C.pale, 10);
-label("Propósito", L + 16, 171, C.green, 7);
+label("Punto de partida", L + 16, 171, C.green, 7);
 text(
-  "Apoyar la planificación, ejecución, verificación y mejora de las actividades de SST, y facilitar la consulta de evidencias e informes a partir de la información registrada.",
+  "Antes de fijar actividades y metas, Ely revisará la actividad, sedes, tareas, personal, peligros y documentos existentes para precisar obligaciones, necesidades y prioridades.",
   L + 16,
   189,
   CW - 32,
@@ -192,14 +192,14 @@ text(
 const gap = 12;
 const half = (CW - gap) / 2;
 const moduleHeight = 168;
-card(L, 250, half, moduleHeight, "P  ·  PLANEAR", "Identificar y planificar", "Evaluación del SG-SST y estándares mínimos; matriz de peligros y riesgos (IPER); objetivos, indicadores y plan anual de trabajo.");
-card(L + half + gap, 250, half, moduleHeight, "H  ·  HACER", "Ejecutar actividades", "Gestión de capacitaciones, cronogramas y asistencia; inspecciones; medidas preventivas; registros e investigaciones de accidentes; actividades de salud ocupacional.");
-card(L, 430, half, moduleHeight, "V  ·  VERIFICAR", "Revisar resultados", "Consulta de indicadores e informes; seguimiento de auditorías internas, inspecciones, evaluaciones del sistema y revisiones por la dirección.");
-card(L + half + gap, 430, half, moduleHeight, "A  ·  ACTUAR", "Dar seguimiento a mejoras", "Registro de hallazgos y acciones de mejora o preventivas, con seguimiento de compromisos y actividades pendientes.");
+card(L, 250, half, moduleHeight, "P  ·  PLANEAR", "Diagnosticar y priorizar", "Contrastar el SG-SST con los estándares mínimos y requisitos aplicables; identificar brechas; revisar peligros y formular objetivos, indicadores y plan anual con responsables y fechas.");
+card(L + half + gap, 250, half, moduleHeight, "H  ·  HACER", "Coordinar la ejecución", "Acompañar el plan de trabajo, las capacitaciones, inspecciones y medidas preventivas; orientar el registro de incidentes y la participación del personal junto con los responsables internos.");
+card(L, 430, half, moduleHeight, "V  ·  VERIFICAR", "Revisar avances y evidencias", "Evaluar periódicamente indicadores, objetivos, auditorías, inspecciones, accidentes y avance del plan; identificar desviaciones, actividades pendientes y acciones vencidas.");
+card(L + half + gap, 430, half, moduleHeight, "A  ·  ACTUAR", "Corregir y mejorar", "Acordar responsables y plazos para cerrar brechas; verificar evidencias y eficacia de las acciones; documentar ajustes para el siguiente ciclo de gestión.");
 box(L, 615, CW, 106, C.pale2, C.pale2, 10);
-label("Aplicabilidad", L + 15, 633, C.blue, 7);
+label("Responsabilidad del empleador", L + 15, 633, C.blue, 7);
 text(
-  "Los módulos y requisitos a utilizar se definen según la actividad de Los Picas S.A.S., sus trabajadores, peligros y obligaciones aplicables. Las herramientas del PESV se consideran cuando correspondan a la operación logística.",
+  "Ely asesora, coordina y hace seguimiento. Los Picas designa responsables, facilita recursos y ejecuta los controles. El alcance definitivo se ajustará al diagnóstico y a las obligaciones aplicables.",
   L + 15,
   651,
   CW - 30,
@@ -209,29 +209,30 @@ text(
   2.7,
 );
 
-// 3. Informes
-addBodyPage(3, "Informes disponibles");
+// 3. Evidencias e informes
+addBodyPage(3, "Evidencias SG-SST");
 titleBlock(
-  "02  ·  INFORMES Y SALIDAS",
-  "Informes y salidas del sistema",
-  "La plataforma ofrece informes consolidados y documentos generados desde módulos específicos. La disponibilidad depende de los módulos habilitados y de los datos registrados.",
+  "02  ·  SOPORTES DE LA GESTIÓN",
+  "Evidencias del cumplimiento del SG-SST",
+  "Se organizarán y revisarán los registros necesarios para sustentar cada etapa del SG-SST. Los reportes reflejarán únicamente las actividades y datos que Los Picas registre y valide.",
 );
 const cardGap = 12;
 const cardWidth = (CW - cardGap) / 2;
 const reportHeight = 145;
 const reportY = 174;
 const reportGap = 10;
-card(L, reportY, cardWidth, reportHeight, "GESTIÓN Y CUMPLIMIENTO", "Evaluación y rendición", "Evaluación de estándares mínimos y del SG-SST; rendición de cuentas; contratos y designaciones.");
-card(L + cardWidth + cardGap, reportY, cardWidth, reportHeight, "PLANEACIÓN Y FORMACIÓN", "Programas y ejecución", "Plan anual de trabajo, programa y cronograma de capacitación, informes de formación y listas de asistencia.");
-card(L, reportY + reportHeight + reportGap, cardWidth, reportHeight, "ACCIDENTALIDAD", "Formatos y análisis", "Indicadores de accidentalidad, formatos FURAT en PDF y Excel e informes de investigación de accidentes de trabajo.");
-card(L + cardWidth + cardGap, reportY + reportHeight + reportGap, cardWidth, reportHeight, "AUDITORÍA Y MEJORA", "Hallazgos y seguimiento", "Informes de auditorías internas, objetivos e indicadores, revisiones por la dirección y acciones de mejora.");
-card(L, reportY + 2 * (reportHeight + reportGap), cardWidth, reportHeight, "INSPECCIÓN Y SALUD", "Seguimiento especializado", "Informes de inspecciones, condiciones de salud, exámenes médicos, conservación auditiva y medidas preventivas.");
-card(L + cardWidth + cardGap, reportY + 2 * (reportHeight + reportGap), cardWidth, reportHeight, "LOGÍSTICA Y PESV", "Cuando sea aplicable", "Informes de rutas seguras, liderazgo, inspecciones y auditorías del Plan Estratégico de Seguridad Vial; además de matrices IPER.");
+card(L, reportY, cardWidth, reportHeight, "GESTIÓN Y CUMPLIMIENTO", "Evaluaciones y rendición", "Evaluación de estándares mínimos y del SG-SST; seguimiento de requisitos críticos; rendición de cuentas, designaciones y documentos del sistema.");
+card(L + cardWidth + cardGap, reportY, cardWidth, reportHeight, "PLAN ANUAL Y FORMACIÓN", "Planificación y capacitación", "Plan anual de trabajo, programa y cronograma de capacitación, evidencias de inducción y reinducción y listas de asistencia.");
+card(L, reportY + reportHeight + reportGap, cardWidth, reportHeight, "ACCIDENTALIDAD", "Incidentes y accidentes", "Indicadores, formatos FURAT en PDF y Excel, investigaciones y seguimiento a las acciones que se deriven de los eventos reportados.");
+card(L + cardWidth + cardGap, reportY + reportHeight + reportGap, cardWidth, reportHeight, "VERIFICACIÓN Y MEJORA", "Auditorías y acciones", "Informes de auditorías internas, seguimiento de objetivos e indicadores, revisiones por la dirección y acciones de mejora.");
+card(L, reportY + 2 * (reportHeight + reportGap), cardWidth, reportHeight, "INSPECCIÓN Y SALUD", "Registros de control", "Inspecciones, condiciones de salud, exámenes médicos, conservación auditiva y medidas preventivas, según corresponda.");
+card(L + cardWidth + cardGap, reportY + 2 * (reportHeight + reportGap), cardWidth, reportHeight, "PESV, SI APLICA", "Seguridad vial", "Si el diagnóstico confirma su aplicabilidad: evidencias de rutas, liderazgo, inspecciones, auditorías y matriz de peligros viales.");
 box(L, 650, CW, 70, C.pale2, C.pale2, 9);
+label("Criterio de uso", L + 14, 664, C.blue, 6.8);
 text(
-  "Los formatos varían según cada reporte. El FURAT cuenta con salidas PDF y Excel; los demás informes se generan en los formatos disponibles en su módulo.",
+  "Las evidencias deben corresponder a actividades realmente ejecutadas y contar con soportes verificables; los reportes no sustituyen la revisión profesional ni las responsabilidades del empleador.",
   L + 14,
-  668,
+  681,
   CW - 28,
   8.1,
   C.muted,
@@ -242,9 +243,9 @@ text(
 // 4. Portal del trabajador
 addBodyPage(4, "Portal de Empleados");
 titleBlock(
-  "03  ·  PARTICIPACIÓN, FORMACIÓN Y OPERACIÓN",
+  "03  ·  PARTICIPACIÓN DEL PERSONAL",
   "Portal de Empleados",
-  "Herramientas para que cada persona participe, se forme y registre información operativa desde su acceso de trabajador.",
+  "Canal para que los trabajadores participen en formación, inspecciones y reportes definidos para la operación de Los Picas.",
 );
 const portalY = 168;
 const portalHeight = 130;
@@ -318,12 +319,12 @@ text(
   2.8,
 );
 
-// 5. Portal del Profesional SST
-addBodyPage(5, "Portal del Profesional SST");
+// 5. Acompañamiento profesional para Los Picas
+addBodyPage(5, "Acompañamiento profesional");
 titleBlock(
-  "04  ·  ESPACIO DE TRABAJO PARA LA PROFESIONAL",
-  "Portal del Profesional SST",
-  "Un portal dedicado para supervisar empresas asignadas, revisar avances, gestionar documentos profesionales y coordinar el seguimiento.",
+  "04  ·  PLAN DE TRABAJO PROFESIONAL",
+  "Plan profesional para Los Picas",
+  "Ely Johana Casarrubia Rojas liderará el acompañamiento técnico en las etapas de planificación, ejecución, verificación y mejora del SG-SST.",
 );
 const professionalY = 168;
 const professionalHeight = 128;
@@ -334,60 +335,60 @@ card(
   professionalY,
   professionalCardWidth,
   professionalHeight,
-  "SEGUIMIENTO MULTIEMPRESA",
-  "Empresas asignadas",
-  "Vista por empresa de NIT, ciudad, nivel de riesgo, trabajadores, vehículos, avance SG-SST y última actividad; incluye historial de asignaciones.",
+  "P  ·  DIAGNÓSTICO",
+  "Evaluación inicial",
+  "Revisará actividad, sedes, tareas, trabajadores y documentos existentes; contrastará la situación con estándares mínimos y requisitos aplicables, identificará brechas y propondrá prioridades.",
 );
 card(
   L + professionalCardWidth + professionalGap,
   professionalY,
   professionalCardWidth,
   professionalHeight,
-  "PANEL PHVA",
-  "Avance y alertas SG-SST",
-  "Consulta cumplimiento, objetivos, indicadores, auditorías, inspecciones, peligros, accidentalidad, plan anual y acciones pendientes, vencidas o verificadas.",
+  "P  ·  PLANIFICACIÓN",
+  "Plan anual, metas e indicadores",
+  "Con Los Picas, organizará objetivos e indicadores y estructurará el plan anual con actividades, responsables internos, fechas y evidencias; revisará avances y elevará pendientes para decisión.",
 );
 card(
   L,
   professionalY + professionalHeight + professionalGap,
   professionalCardWidth,
   professionalHeight,
-  "SEGUIMIENTO PESV",
-  "Evaluaciones de seguridad vial",
-  "Revisa evaluaciones de empresas asignadas, porcentaje de avance, estado por requisito, periodo, vehículos y conductores; abre el detalle de respuestas.",
+  "P  ·  GESTIÓN DEL RIESGO",
+  "Matriz IPER y controles",
+  "Facilitará la revisión de tareas y peligros con responsables y trabajadores; apoyará la actualización de la matriz IPER, la documentación de controles y el seguimiento a su aplicación.",
 );
 card(
   L + professionalCardWidth + professionalGap,
   professionalY + professionalHeight + professionalGap,
   professionalCardWidth,
   professionalHeight,
-  "GESTIÓN DOCUMENTAL",
-  "Documentos y firma profesional",
-  "Consulta y descarga evaluaciones SG-SST, plan anual, matrices IPERC, designaciones y programas de capacitación; controla pendientes y documentos completados.",
+  "H  ·  EJECUCIÓN",
+  "Capacitación y participación",
+  "Coordinará el programa de capacitación, inducciones y reinducciones; verificará cronogramas y soportes de asistencia, y orientará inspecciones, reportes, elecciones y comunicaciones del personal.",
 );
 card(
   L,
   professionalY + 2 * (professionalHeight + professionalGap),
   professionalCardWidth,
   professionalHeight,
-  "ACCIDENTALIDAD",
-  "Investigaciones de accidentes",
-  "Acceso a accidentes e investigaciones para revisión profesional; el portal permite gestionar la intervención y firma requerida en los casos aplicables.",
+  "V  ·  SEGUIMIENTO",
+  "Indicadores y verificación",
+  "Revisará indicadores, objetivos, auditorías, inspecciones y avance del plan; identificará desviaciones, actividades pendientes y acciones vencidas, y presentará resultados a los responsables.",
 );
 card(
   L + professionalCardWidth + professionalGap,
   professionalY + 2 * (professionalHeight + professionalGap),
   professionalCardWidth,
   professionalHeight,
-  "INFORMES Y COORDINACIÓN",
-  "Salidas y mensajería",
-  "Descarga informe consolidado SST y PESV por empresa, consulta cierres archivados y envía mensajes normales o urgentes al administrador.",
+  "A  ·  INVESTIGACIÓN Y MEJORA",
+  "Eventos y cierre de acciones",
+  "Si ocurre un accidente, apoyará la investigación y el registro de acciones según severidad y requisitos. Dará seguimiento a compromisos, plazos, evidencias y eficacia de las medidas correctivas.",
   C.blue,
 );
 box(L, 606, CW, 112, C.pale, C.pale, 10);
-label("Supervisión profesional con alcance definido", L + 15, 624, C.green, 7);
+label("Responsabilidades y herramienta de seguimiento", L + 15, 624, C.green, 7);
 text(
-  "El portal facilita el análisis y seguimiento de la información registrada; no sustituye las responsabilidades del empleador ni implica que Ely configure técnicamente el sistema. Las firmas disponibles corresponden a documentos habilitados del SG-SST, no a este informe informativo.",
+  "Ely orienta, coordina, revisa y hace seguimiento con los responsables de Los Picas. La empresa facilita recursos y ejecuta los controles. El portal apoya la consulta y trazabilidad de la información; Ely no configura ni administra técnicamente el sistema.",
   L + 15,
   643,
   CW - 30,
@@ -397,19 +398,19 @@ text(
   2.7,
 );
 
-// 6. Acompañamiento y activación
-addBodyPage(6, "Acompañamiento profesional");
+// 6. Ruta de inicio y condiciones
+addBodyPage(6, "Ruta de inicio");
 titleBlock(
-  "05  ·  COORDINACIÓN Y SEGUIMIENTO",
-  "Acompañamiento para Los Picas",
-  "La participación de Ely Johana Casarrubia Rojas comenzaría una vez formalizado el servicio y asignados los accesos correspondientes.",
+  "05  ·  SECUENCIA DE IMPLEMENTACIÓN",
+  "Ruta de trabajo y condiciones",
+  "La secuencia comenzará después de formalizar el servicio; las prioridades y actividades definitivas se acordarán con base en el diagnóstico de Los Picas.",
 );
 box(L, 161, CW, 140, C.pale, C.pale, 11);
 doc.roundedRect(L, 161, 5, 140, 2.5).fill(C.accent);
 label("Profesional SST propuesta", L + 19, 180, C.green, 7.1);
 text("Ely Johana Casarrubia Rojas", L + 19, 198, CW - 38, 16, C.deep, "Bold", 2);
 text(
-  "Liderará el acompañamiento profesional del SG-SST: coordinación con responsables autorizados, revisión de indicadores y compromisos, apoyo en auditorías e investigaciones y orientación sobre el uso de los portales. La configuración técnica no hace parte de su rol.",
+  "Liderará la orientación, coordinación y seguimiento técnico del SG-SST junto con los responsables internos. No asumirá la configuración ni la administración técnica de la plataforma ni las obligaciones propias del empleador.",
   L + 19,
   228,
   CW - 38,
@@ -421,10 +422,10 @@ text(
 
 label("Secuencia de inicio propuesta", L, 326, C.blue, 7.2);
 const steps = [
-  ["01", "Conocer la operación", "Precisar actividad, trabajadores, sedes, peligros, vehículos, maquinaria y responsabilidades."],
-  ["02", "Definir alcance y roles", "Acordar qué módulos aplican y quiénes serán responsables de cada proceso dentro de Los Picas."],
-  ["03", "Uso del portal por los trabajadores", "Encuestas, inspecciones, elecciones, comunicaciones y formación virtual, según el alcance definido."],
-  ["04", "Acompañar el seguimiento", "Revisar registros y compromisos; consultar indicadores e informes con datos actualizados."],
+  ["01", "Levantar información de la operación", "Reunir actividad, sedes, tareas, personal, vehículos y equipos, documentos y responsables internos."],
+  ["02", "Diagnosticar y priorizar brechas", "Contrastar la situación con requisitos aplicables y definir prioridades; confirmar si corresponde incluir obligaciones PESV."],
+  ["03", "Acordar el plan de trabajo", "Definir actividades, responsables, fechas, indicadores y evidencias necesarias para el seguimiento."],
+  ["04", "Ejecutar, verificar y ajustar", "Acompañar formación e inspecciones, revisar resultados y acciones, documentar pendientes y proponer ajustes al plan."],
 ];
 let stepY = 346;
 for (let i = 0; i < steps.length; i++) {
@@ -440,9 +441,9 @@ for (let i = 0; i < steps.length; i++) {
   stepY += 61;
 }
 box(L, 615, CW, 123, C.redPale, C.redPale, 10);
-label("Alcance y condición", L + 15, 634, C.red, 7);
+label("Condición de este alcance", L + 15, 634, C.red, 7);
 text(
-  "Los Picas S.A.S. aún no está suscrita. Este documento describe capacidades del software, no una implementación ya realizada, resultados de la empresa ni una certificación de cumplimiento. La aplicación de las obligaciones legales corresponde al empleador.",
+  "Los Picas S.A.S. aún no está suscrita. Este informe plantea una metodología de trabajo; no acredita actividades realizadas ni resultados de cumplimiento. El diagnóstico definirá el alcance y las prioridades. La responsabilidad legal permanece en el empleador.",
   L + 15,
   653,
   CW - 30,
