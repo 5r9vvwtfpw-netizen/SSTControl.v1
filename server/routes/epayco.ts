@@ -194,6 +194,7 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
       idNumber: z.string().min(5, "Número de documento inválido").max(30),
       email: z.string().email("Email inválido"),
       fullName: z.string().min(3, "Nombre inválido").max(120),
+      cellPhone: z.string().trim().regex(/^[0-9]{10}$/, "Ingrese un celular colombiano de 10 dígitos"),
     });
     const parsed = bodySchema.safeParse(req.body);
     if (!parsed.success) {
@@ -248,6 +249,7 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
         firstName,
         lastName,
         email: parsed.data.email,
+        cellPhone: parsed.data.cellPhone,
         ip: req.ip || "127.0.0.1",
         responseUrl: `${baseUrl}/pago-pse/retorno?provider=epayco`,
         confirmationUrl: `${baseUrl}/api/epayco/pse/confirmacion`,

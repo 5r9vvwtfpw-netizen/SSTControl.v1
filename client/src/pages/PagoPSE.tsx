@@ -34,6 +34,7 @@ interface FormState {
   idNumber: string;
   email: string;
   fullName: string;
+  cellPhone: string;
 }
 
 const initialForm: FormState = {
@@ -43,6 +44,7 @@ const initialForm: FormState = {
   idNumber: '',
   email: '',
   fullName: '',
+  cellPhone: '',
 };
 
 export default function PagoPSE() {
@@ -232,6 +234,27 @@ export default function PagoPSE() {
                 required
                 disabled={startPayment.isPending}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="cellPhone">Celular del pagador</Label>
+              <Input
+                id="cellPhone"
+                type="tel"
+                inputMode="numeric"
+                autoComplete="tel-national"
+                pattern="[0-9]{10}"
+                maxLength={10}
+                title="Ingresa un celular colombiano de 10 dígitos"
+                placeholder="3001234567"
+                value={form.cellPhone}
+                onChange={(event) => updateField('cellPhone', event.target.value)}
+                required
+                disabled={startPayment.isPending}
+              />
+              <p className="text-xs text-muted-foreground">
+                Son 10 dígitos; este dato es independiente del número de documento.
+              </p>
             </div>
 
             <div className="rounded-lg bg-muted/50 p-4 text-sm text-muted-foreground">

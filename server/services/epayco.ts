@@ -63,6 +63,7 @@ export interface CreateEpaycoPseParams {
   firstName: string;
   lastName: string;
   email: string;
+  cellPhone: string;
   ip: string;
   responseUrl: string;
   confirmationUrl: string;
@@ -241,7 +242,7 @@ export async function createEpaycoPseTransaction(
     last_name: params.lastName,
     email: params.email,
     country: "CO",
-    cell_phone: "0",
+    cell_phone: params.cellPhone,
     ip: getClientIp(params.ip),
     url_response: params.responseUrl,
     url_confirmation: params.confirmationUrl,
@@ -262,9 +263,23 @@ export async function createEpaycoPseTransaction(
   });
   const payload = await response.json().catch(() => ({}));
 
-  if (!response.ok || payload?.error) {
-    logger.error({ status: response.status, payload }, "[ePayco] Error creando pago PSE");
-    throw new Error(payload?.message || payload?.error || "ePayco no pudo iniciar el pago PSE");
+  const providerErrors = Array.isArray(payload?.data?.errores) ? payload.data.errores : [];
+  if (!response.ok || payload?.success === false || payload?.error || providerErrors.length > 0) {
+    const detail = providerErrors
+      .map((entry: any) => [entry?.codError, entry?.errorMessage].filter(Boolean).join(": "))
+      .filter(Boolean)
+      .join("; ");
+    const message = detail ||
+      (typeof payload?.text_response === "string" ? payload.text_response : "") ||
+      (typeof payload?.message === "string" ? payload.message : "") ||
+      (typeof payload?.error === "string" ? payload.error : "") ||
+      "ePayco no pudo iniciar el pago PSE";
+    logger.error({
+      status: response.status,
+      providerCodes: providerErrors.map((entry: any) => entry?.codError).filter(Boolean),
+      providerMessage: message,
+    }, "[ePayco] Error creando pago PSE");
+    throw new Error(`ePayco: ${message}`);
   }
 
   const data = unwrapPayload(payload);
@@ -276,7 +291,7 @@ export async function createEpaycoPseTransaction(
     data?.data?.urlBanco;
 
   if (!bankRedirectUrl) {
-    logger.error({ payload }, "[ePayco] Pago PSE creado sin URL del banco");
+    logger.error({ status: response.status, success: payload?.success }, "[ePayco] Pago PSE sin URL del banco");
     throw new Error("ePayco no devolvió la URL del banco");
   }
 
