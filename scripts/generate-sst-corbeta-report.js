@@ -5,6 +5,7 @@ import path from "node:path";
 const PROVIDER_LEGAL_NAME = "SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S.";
 const PROVIDER_NIT = "902.036.337-4";
 const CONTROL_CHARACTERS = /[\u0000-\u001f\u007f-\u009f]/;
+const DEFAULT_COVER_TITLE = "Gestión del SG-SST de la empresa";
 
 function normalizeText(value, field, maxLength, required = false) {
   if (typeof value !== "string" || CONTROL_CHARACTERS.test(value)) {
@@ -32,6 +33,11 @@ const destinatarios = recipients.map((recipient, index) => ({
   nit: normalizeText(recipient.nit ?? "", `nitDestinataria${index + 1}`, 30),
 }));
 const professionalName = normalizeText(input.professionalName ?? "", "nombreProfesional", 100);
+const reportTitle = normalizeText(input.title ?? DEFAULT_COVER_TITLE, "tituloInforme", 100, true);
+const includePesv = input.includePesv ?? false;
+if (typeof includePesv !== "boolean") {
+  throw new Error("El campo incluirPesv debe ser verdadero o falso.");
+}
 if (
   destinatarios.length === 2 &&
   destinatarios[0].name.replace(/\s+/g, " ").toLocaleLowerCase("es") ===
@@ -161,9 +167,26 @@ doc.font("Bold").fontSize(7).fillColor("#E8F4EC").text("INFORME EJECUTIVO", W - 
   characterSpacing: 0.4,
 });
 label("Alcance para la empresa", 55, 177, "#8DD1A2", 8.2);
-text("Gestión del SG-SST\nde la empresa", 52, 202, 493, 33, C.white, "Bold", 4);
+const coverTitle = reportTitle === DEFAULT_COVER_TITLE
+  ? "Gestión del SG-SST\nde la empresa"
+  : reportTitle;
+let coverTitleSize = 33;
+doc.font("Bold").fontSize(coverTitleSize);
+while (
+  coverTitleSize > 20 &&
+  doc.heightOfString(coverTitle, { width: 493, lineGap: 4 }) > 94
+) {
+  coverTitleSize -= 1;
+  doc.fontSize(coverTitleSize);
+}
+if (doc.heightOfString(coverTitle, { width: 493, lineGap: 4 }) > 94) {
+  throw new Error("El título no cabe en el espacio disponible de la portada.");
+}
+text(coverTitle, 52, 202, 493, coverTitleSize, C.white, "Bold", 4);
 text(
-  "Cómo SST Colombia ayudaría a la empresa objeto del informe a gestionar su SG-SST de forma ágil y sistematizada, con acompañamiento profesional y PESV cuando corresponda.",
+  includePesv
+    ? "Cómo SST Colombia ayudaría a la empresa objeto del informe a gestionar su SG-SST de forma ágil y sistematizada, con acompañamiento profesional y PESV cuando corresponda."
+    : "Cómo SST Colombia ayudaría a la empresa objeto del informe a gestionar su SG-SST de forma ágil y sistematizada, con acompañamiento profesional.",
   55,
   310,
   450,
@@ -184,6 +207,9 @@ label(
   for (let index = 0; index < destinatarios.length; index++) {
     const recipient = destinatarios[index];
     const recipientX = L + index * (recipientWidth + recipientGap);
+    if (index === 1) {
+      text("Para presentación e informe a:", recipientX, 419, recipientWidth, 8, "#8DD1A2", "Bold", 1);
+    }
     let recipientSize = destinatarios.length === 1 ? 10 : 8.5;
     doc.font("Bold").fontSize(recipientSize);
     while (
@@ -223,7 +249,9 @@ label(
 box(54, 623, 487, 135, "#F2F7F3", "#DDEAE0", 12);
 label("Objeto y condición del informe", 74, 644, C.green, 7.2);
 text(
-  "Este documento presenta una ruta para gestionar el SG-SST de la empresa con el sistema y acompañamiento profesional; el PESV se incluiría si corresponde. No acredita cumplimiento.",
+  includePesv
+    ? "Este documento presenta una ruta para gestionar el SG-SST de la empresa con el sistema y acompañamiento profesional; el PESV se incluiría si corresponde. No acredita cumplimiento."
+    : "Este documento presenta una ruta para gestionar el SG-SST de la empresa con el sistema y acompañamiento profesional. No acredita cumplimiento.",
   74,
   664,
   444,
@@ -307,7 +335,17 @@ card(L + cardWidth + cardGap, reportY, cardWidth, reportHeight, "OBJETIVOS E IND
 card(L, reportY + reportHeight + reportGap, cardWidth, reportHeight, "AUSENTISMO LABORAL", "Tasa y días perdidos", "Según las ausencias registradas, muestra casos, días perdidos por causa, tasa de ausentismo y duración promedio; permite descargar estadísticas en PDF.");
 card(L + cardWidth + cardGap, reportY + reportHeight + reportGap, cardWidth, reportHeight, "RENDICIÓN MENSUAL", "Informe de gestión", "PDF mensual con trabajadores, capacitaciones, inspecciones y hallazgos, accidentes, condiciones de salud y exámenes médicos registrados.");
 card(L, reportY + 2 * (reportHeight + reportGap), cardWidth, reportHeight, "AUDITORÍAS Y ACCIONES", "Hallazgos y eficacia", "PDF consolidado de auditorías internas y panel de acciones completadas, pendientes y vencidas, con porcentajes de completitud y eficacia.");
-card(L + cardWidth + cardGap, reportY + 2 * (reportHeight + reportGap), cardWidth, reportHeight, "OTROS INFORMES", "Formación y SST/PESV", "PDF de capacitaciones y accidentes por período e informe anual consolidado SST/PESV para la profesional autorizada, con los datos disponibles.");
+card(
+  L + cardWidth + cardGap,
+  reportY + 2 * (reportHeight + reportGap),
+  cardWidth,
+  reportHeight,
+  "OTROS INFORMES",
+  includePesv ? "Formación y SST/PESV" : "Formación e informes SST",
+  includePesv
+    ? "PDF de capacitaciones y accidentes por período e informe anual consolidado SST/PESV para la profesional autorizada, con los datos disponibles."
+    : "PDF de capacitaciones y accidentes por período e informe anual consolidado de SST para la profesional autorizada, con los datos disponibles.",
+);
 box(L, 650, CW, 70, C.pale2, C.pale2, 9);
 label("Para qué sirven a la empresa", L + 14, 664, C.blue, 6.8);
 text(
@@ -394,70 +432,65 @@ titleBlock(
   "Canal para que los trabajadores participen en formación, inspecciones y reportes definidos para la operación de la empresa.",
 );
 const portalY = 168;
-const portalHeight = 130;
 const portalGap = 12;
+const portalHeight = includePesv ? 130 : 150;
 const portalCardWidth = (CW - portalGap) / 2;
-card(
-  L,
-  portalY,
-  portalCardWidth,
-  portalHeight,
-  "ANTES DE CONDUCIR",
-  "Encuesta diaria del conductor",
-  "El conductor registra su condición antes de iniciar la jornada. Los responsables pueden revisar las novedades que correspondan para apoyar la prevención de riesgos.",
-);
-card(
-  L + portalCardWidth + portalGap,
-  portalY,
-  portalCardWidth,
-  portalHeight,
-  "INSPECCIÓN PREOPERACIONAL",
-  "Vehículos",
-  "La inspección digital antes de la operación deja registro del estado del vehículo y de las novedades que requieren seguimiento por parte de la empresa.",
-);
-card(
-  L,
-  portalY + portalHeight + portalGap,
-  portalCardWidth,
-  portalHeight,
-  "INSPECCIÓN PREOPERACIONAL",
-  "Maquinaria amarilla y equipos",
-  "Permite documentar la revisión de maquinaria y equipos antes de su uso, registrar observaciones y dar seguimiento a las novedades detectadas.",
-);
-card(
-  L + portalCardWidth + portalGap,
-  portalY + portalHeight + portalGap,
-  portalCardWidth,
-  portalHeight,
-  "PARTICIPACIÓN DEMOCRÁTICA",
-  "Elecciones virtuales",
-  "Los trabajadores consultan convocatorias activas y votan desde el portal en procesos electorales del COPASST y del Comité de Convivencia Laboral.",
-);
-card(
-  L,
-  portalY + 2 * (portalHeight + portalGap),
-  portalCardWidth,
-  portalHeight,
-  "FORMACIÓN A LO LARGO DEL AÑO",
-  "Capacitación virtual continua",
-  "El trabajador puede consultar las inducciones y actividades de formación que la empresa le asigne, junto con sus actividades pendientes y completadas.",
-);
-card(
-  L + portalCardWidth + portalGap,
-  portalY + 2 * (portalHeight + portalGap),
-  portalCardWidth,
-  portalHeight,
-  "COMUNICACIÓN Y REPORTE",
-  "Canal directo con el trabajador",
-  "Consulta Comunicaciones SST y confirma lectura; reporta incidentes y revisa sus propios reportes. El portal también ofrece opciones de participación y salud ocupacional.",
-  C.blue,
-);
-box(L, 606, CW, 112, C.pale, C.pale, 10);
-label("Trazabilidad y seguimiento", L + 15, 624, C.green, 7);
+const portalFeatures = [
+  ...(includePesv ? [
+    {
+      kicker: "ANTES DE CONDUCIR",
+      title: "Encuesta diaria del conductor",
+      body: "El conductor registra su condición antes de iniciar la jornada. Los responsables pueden revisar las novedades que correspondan para apoyar la prevención de riesgos.",
+    },
+    {
+      kicker: "INSPECCIÓN PREOPERACIONAL",
+      title: "Vehículos",
+      body: "La inspección digital antes de la operación deja registro del estado del vehículo y de las novedades que requieren seguimiento por parte de la empresa.",
+    },
+  ] : []),
+  {
+    kicker: "INSPECCIÓN PREOPERACIONAL",
+    title: "Maquinaria amarilla y equipos",
+    body: "Permite documentar la revisión de maquinaria y equipos antes de su uso, registrar observaciones y dar seguimiento a las novedades detectadas.",
+  },
+  {
+    kicker: "PARTICIPACIÓN DEMOCRÁTICA",
+    title: "Elecciones virtuales",
+    body: "Los trabajadores consultan convocatorias activas y votan desde el portal en procesos electorales del COPASST y del Comité de Convivencia Laboral.",
+  },
+  {
+    kicker: "FORMACIÓN A LO LARGO DEL AÑO",
+    title: "Capacitación virtual continua",
+    body: "El trabajador puede consultar las inducciones y actividades de formación que la empresa le asigne, junto con sus actividades pendientes y completadas.",
+  },
+  {
+    kicker: "COMUNICACIÓN Y REPORTE",
+    title: "Canal directo con el trabajador",
+    body: "Consulta Comunicaciones SST y confirma lectura; reporta incidentes y revisa sus propios reportes. El portal también ofrece opciones de participación y salud ocupacional.",
+    accent: C.blue,
+  },
+];
+portalFeatures.forEach((feature, index) => {
+  const row = Math.floor(index / 2);
+  const column = index % 2;
+  card(
+    L + column * (portalCardWidth + portalGap),
+    portalY + row * (portalHeight + portalGap),
+    portalCardWidth,
+    portalHeight,
+    feature.kicker,
+    feature.title,
+    feature.body,
+    feature.accent ?? C.accent,
+  );
+});
+const portalSummaryY = includePesv ? 606 : 535;
+box(L, portalSummaryY, CW, 112, C.pale, C.pale, 10);
+label("Trazabilidad y seguimiento", L + 15, portalSummaryY + 18, C.green, 7);
 text(
   "Los registros de participación quedan disponibles para seguimiento por los responsables autorizados. El portal reúne actividades pendientes y confirmaciones para facilitar la gestión del personal.",
   L + 15,
-  643,
+  portalSummaryY + 37,
   CW - 30,
   8.2,
   C.deep,

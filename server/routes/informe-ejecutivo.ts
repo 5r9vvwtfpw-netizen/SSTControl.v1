@@ -3,6 +3,7 @@ import { requireAuth, requireSuperadmin } from "../auth";
 import { generateInformeEjecutivoPdfForRecipients } from "../services/pdf-informe-ejecutivo";
 
 const CONTROL_CHARACTERS = /[\u0000-\u001f\u007f-\u009f]/;
+const DEFAULT_REPORT_TITLE = "Gestión del SG-SST de la empresa";
 
 function readTextField(
   body: Record<string, unknown>,
@@ -25,6 +26,18 @@ function readTextField(
   return trimmed;
 }
 
+function readBooleanField(
+  body: Record<string, unknown>,
+  field: string,
+  defaultValue = false,
+): boolean {
+  if (!Object.prototype.hasOwnProperty.call(body, field)) return defaultValue;
+  if (typeof body[field] !== "boolean") {
+    throw new Error(`${field} debe ser verdadero o falso.`);
+  }
+  return body[field] as boolean;
+}
+
 export function registerInformeEjecutivoRoutes(app: Express) {
   app.post(
     "/api/informe-ejecutivo/pdf",
@@ -41,6 +54,8 @@ export function registerInformeEjecutivoRoutes(app: Express) {
       let nitFirst: string;
       let nitSecond: string;
       let professionalName: string;
+      let reportTitle: string;
+      let includePesv: boolean;
       try {
         const fields = body as Record<string, unknown>;
         if (
@@ -56,6 +71,10 @@ export function registerInformeEjecutivoRoutes(app: Express) {
         nitFirst = readTextField(fields, "nitDestinataria1", 30);
         nitSecond = readTextField(fields, "nitDestinataria2", 30);
         professionalName = readTextField(fields, "nombreProfesional", 100);
+        reportTitle = Object.prototype.hasOwnProperty.call(fields, "tituloInforme")
+          ? readTextField(fields, "tituloInforme", 100, true)
+          : DEFAULT_REPORT_TITLE;
+        includePesv = readBooleanField(fields, "incluirPesv");
       } catch (error) {
         return res.status(400).json({
           error: error instanceof Error ? error.message : "Los datos enviados no son válidos.",
@@ -82,6 +101,8 @@ export function registerInformeEjecutivoRoutes(app: Express) {
       const pdfInput = {
         recipients,
         professionalName,
+        title: reportTitle,
+        includePesv,
       };
       try {
         const pdfBuffer = await generateInformeEjecutivoPdfForRecipients(pdfInput);

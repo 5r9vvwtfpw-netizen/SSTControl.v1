@@ -8,6 +8,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Download, FileText, Loader2, RefreshCw } from "lucide-react";
 
 interface InformeData {
+  tituloInforme: string;
+  incluirPesv: boolean;
   empresaDestinataria1: string;
   nitDestinataria1: string;
   empresaDestinataria2: string;
@@ -15,7 +17,11 @@ interface InformeData {
   nombreProfesional: string;
 }
 
+type InformeTextField = keyof Omit<InformeData, "incluirPesv">;
+
 const DEFAULTS: InformeData = {
+  tituloInforme: "Gestión del SG-SST de la empresa",
+  incluirPesv: false,
   empresaDestinataria1: "",
   nitDestinataria1: "",
   empresaDestinataria2: "",
@@ -23,7 +29,8 @@ const DEFAULTS: InformeData = {
   nombreProfesional: "",
 };
 
-const FIELD_MAX_LENGTH: Record<keyof InformeData, number> = {
+const FIELD_MAX_LENGTH: Record<InformeTextField, number> = {
+  tituloInforme: 100,
   empresaDestinataria1: 120,
   nitDestinataria1: 30,
   empresaDestinataria2: 120,
@@ -44,7 +51,7 @@ export default function InformeEjecutivo() {
     return <div className="p-8 text-center text-muted-foreground">No tienes permisos para acceder a esta página.</div>;
   }
 
-  const setField = (field: keyof InformeData) => (
+  const setField = (field: InformeTextField) => (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const value = stripControls(event.target.value).slice(0, FIELD_MAX_LENGTH[field]);
@@ -65,10 +72,15 @@ export default function InformeEjecutivo() {
 
   const handleDownload = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const tituloInforme = data.tituloInforme.trim();
     const empresaDestinataria1 = data.empresaDestinataria1.trim();
     const empresaDestinataria2 = data.empresaDestinataria2.trim();
     const nombreProfesional = data.nombreProfesional.trim();
 
+    if (!tituloInforme) {
+      setFeedback({ type: "error", message: "Escribe el título que aparecerá en la portada." });
+      return;
+    }
     if (!empresaDestinataria1) {
       setFeedback({ type: "error", message: "Ingresa la razón social de la primera empresa." });
       return;
@@ -81,6 +93,7 @@ export default function InformeEjecutivo() {
       return;
     }
     if (
+      tituloInforme.length > FIELD_MAX_LENGTH.tituloInforme ||
       empresaDestinataria1.length > FIELD_MAX_LENGTH.empresaDestinataria1 ||
       empresaDestinataria2.length > FIELD_MAX_LENGTH.empresaDestinataria2 ||
       nombreProfesional.length > FIELD_MAX_LENGTH.nombreProfesional ||
@@ -99,6 +112,8 @@ export default function InformeEjecutivo() {
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({
+          tituloInforme,
+          incluirPesv: data.incluirPesv,
           empresaDestinataria1,
           nitDestinataria1: stripControls(data.nitDestinataria1).trim(),
           empresaDestinataria2,
@@ -165,6 +180,55 @@ export default function InformeEjecutivo() {
       </div>
 
       <form id="informe-ejecutivo-form" onSubmit={handleDownload} className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Título de portada</CardTitle>
+            <CardDescription>
+              Edita el título para ajustarlo al propósito de este informe. Se imprimirá en la portada del PDF.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="max-w-xl space-y-1.5">
+              <Label htmlFor="tituloInforme">Título del informe</Label>
+              <Input
+                id="tituloInforme"
+                value={data.tituloInforme}
+                onChange={setField("tituloInforme")}
+                placeholder="Título para la portada"
+                maxLength={FIELD_MAX_LENGTH.tituloInforme}
+                required
+                aria-describedby="tituloInforme-help"
+              />
+              <p id="tituloInforme-help" className="text-sm text-muted-foreground">
+                Puedes cambiarlo para cada cliente; el límite es de 100 caracteres.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Contenido de seguridad vial</CardTitle>
+            <CardDescription>
+              El informe se genera solo con contenido SG-SST. Activa esta casilla si el cliente también requiere información del PESV.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <label className="flex cursor-pointer items-start gap-3 text-sm">
+              <input
+                type="checkbox"
+                checked={data.incluirPesv}
+                onChange={(event) => {
+                  setData((current) => ({ ...current, incluirPesv: event.target.checked }));
+                  setFeedback(null);
+                }}
+                className="mt-0.5 h-4 w-4 rounded border-input accent-green-700"
+              />
+              <span>Incluir contenido del Plan Estratégico de Seguridad Vial (PESV)</span>
+            </label>
+          </CardContent>
+        </Card>
+
         <Card className="border-green-400 ring-1 ring-green-300">
           <CardHeader>
             <CardTitle className="text-base text-green-800">Empresas del informe</CardTitle>
