@@ -120,9 +120,9 @@ doc.font("Bold").fontSize(7).fillColor("#E8F4EC").text("DIRIGIDO A CORBETA", W -
   characterSpacing: 0.4,
 });
 label("Alcance para Los Picas", 55, 177, "#8DD1A2", 8.2);
-text("Automatización del\nSG-SST y PESV", 52, 202, 493, 33, C.white, "Bold", 4);
+text("Gestión del SG-SST\nde Los Picas", 52, 202, 493, 33, C.white, "Bold", 4);
 text(
-  "Cómo SST Colombia sistematizaría la gestión del SG-SST y, cuando aplique, del PESV de Los Picas S.A.S., con acompañamiento profesional.",
+  "Cómo SST Colombia ayudaría a Los Picas S.A.S. a gestionar su SG-SST de forma ágil y sistematizada, con acompañamiento profesional y PESV cuando corresponda.",
   55,
   310,
   450,
@@ -143,7 +143,7 @@ text("24 de septiembre de 2026", 310, 503, 235, 9.2, C.white);
 box(54, 623, 487, 135, "#F2F7F3", "#DDEAE0", 12);
 label("Objeto y condición del informe", 74, 644, C.green, 7.2);
 text(
-  "Este documento presenta la sistematización propuesta del SG-SST y, si aplica, del PESV de Los Picas, con acompañamiento profesional. No es una certificación de cumplimiento.",
+  "Este documento presenta cómo Los Picas gestionaría su SG-SST con el sistema y acompañamiento profesional; el PESV se incluiría si corresponde. No acredita cumplimiento.",
   74,
   664,
   444,
@@ -209,7 +209,7 @@ text(
   2.7,
 );
 
-// Las dos secciones se emiten en el orden: plataforma, luego informes.
+// Primero se explica cómo se gestionaría el SG-SST; después, sus informes.
 function addReportsPage() {
 addBodyPage(4, "Informes SG-SST");
 titleBlock(
@@ -242,12 +242,12 @@ text(
 );
 }
 
-function addAutomationPage() {
-addBodyPage(3, "Automatización SST/PESV");
+function addSstManagementPage() {
+addBodyPage(3, "Gestión del SG-SST");
 titleBlock(
-  "02  ·  AUTOMATIZACIÓN SST Y PESV",
-  "Procesos que automatiza el sistema",
-  "La plataforma no solo conserva registros: prepara planes y calendarios, conecta la gestión de riesgos y avisa sobre vencimientos para SST y, si corresponde, PESV.",
+  "02  ·  EL SG-SST DE LOS PICAS",
+  "Gestión ágil y ordenada del SG-SST",
+  "SST Colombia permitiría a Los Picas evaluar, planear, ejecutar y revisar su SG-SST en un mismo entorno, con actividades y evidencias disponibles para los responsables.",
 );
 const automationY = 168;
 const automationHeight = 128;
@@ -258,60 +258,60 @@ card(
   automationY,
   automationCardWidth,
   automationHeight,
-  "EVALUACIÓN SST → ACCIONES",
-  "Plan de mejora",
-  "Desde una evaluación registrada, el responsable puede generar acciones de mejora que quedan disponibles para revisión y seguimiento, sin volver a redactarlas una a una.",
+  "EVALUACIÓN INICIAL",
+  "Saber dónde empezar",
+  "Los Picas registraría su punto de partida y consultaría qué requisitos requieren atención, para definir prioridades antes de programar el trabajo.",
 );
 card(
   L + automationCardWidth + automationGap,
   automationY,
   automationCardWidth,
   automationHeight,
-  "PLAN ANUAL → AGENDA",
-  "Calendario de trabajo",
-  "El sistema genera actividades en el plan anual y su agenda para que Los Picas las programe, asigne y revise a lo largo del año.",
+  "PLAN ANUAL",
+  "Trabajo organizado",
+  "Actividades, fechas y responsables se reúnen en un plan de trabajo para ordenar la ejecución y revisar avances durante el año.",
 );
 card(
   L,
   automationY + automationHeight + automationGap,
   automationCardWidth,
   automationHeight,
-  "CAMBIOS → SEGUIMIENTO",
-  "Tareas relacionadas",
-  "Al aprobar un cambio registrado, puede incorporar tareas relacionadas en el plan de trabajo, la gestión de riesgos y la formación, según corresponda.",
+  "PELIGROS Y PREVENCIÓN",
+  "Riesgos bajo seguimiento",
+  "La matriz de peligros y las inspecciones permiten documentar riesgos, controles y hallazgos, para atenderlos según la operación de Los Picas.",
 );
 card(
   L + automationCardWidth + automationGap,
   automationY + automationHeight + automationGap,
   automationCardWidth,
   automationHeight,
-  "EVALUACIÓN PESV → ACCIONES",
-  "Mejora vial",
-  "Si aplica el PESV, el responsable puede generar acciones desde su evaluación para dar seguimiento a los asuntos que requieren mejora.",
+  "SALUD Y EVENTOS",
+  "Información para actuar",
+  "Ausentismo, exámenes ocupacionales, incidentes y accidentes se registran para apoyar la investigación, la prevención y el seguimiento de medidas.",
 );
 card(
   L,
   automationY + 2 * (automationHeight + automationGap),
   automationCardWidth,
   automationHeight,
-  "RIESGOS VIALES → SST",
-  "Gestión conectada",
-  "Al solicitar la vinculación de un riesgo vial, el sistema lo incorpora a la gestión de peligros SST para que los responsables puedan revisarlo en ambos frentes.",
+  "FORMACIÓN Y PARTICIPACIÓN",
+  "Actividades con soporte",
+  "Las capacitaciones se programan y documentan; las actividades de los comités quedan integradas al seguimiento del SG-SST.",
 );
 card(
   L + automationCardWidth + automationGap,
   automationY + 2 * (automationHeight + automationGap),
   automationCardWidth,
   automationHeight,
-  "VENCIMIENTOS → AVISOS",
-  "Documentos bajo control",
-  "El sistema avisa sobre documentación de vehículos y conductores vencida o próxima a vencer, para que los responsables gestionen su renovación.",
+  "OBJETIVOS Y MEJORA",
+  "Avances para decidir",
+  "Objetivos, auditorías y acciones se consultan con sus pendientes y evidencias para verificar el avance y decidir las correcciones necesarias.",
   C.blue,
 );
 box(L, 606, CW, 112, C.pale, C.pale, 10);
-label("Automatización con control humano", L + 15, 624, C.green, 7);
+label("Gestión ágil, con evidencia", L + 15, 624, C.green, 7);
 text(
-  "La generación de planes, calendarios y vínculos se solicita desde la aplicación; los avisos se emiten según los registros disponibles. Los Picas revisa, asigna y ejecuta las medidas. Nada de esto acredita cumplimiento antes de iniciar la gestión.",
+  "Los Picas podrá pasar de la evaluación al plan, de las actividades a sus soportes y de los hallazgos a la mejora dentro de un mismo entorno. Esto agiliza la consulta y el seguimiento sin reconstruir la gestión entre archivos dispersos. La empresa valida y ejecuta lo previsto.",
   L + 15,
   643,
   CW - 30,
@@ -322,7 +322,7 @@ text(
 );
 }
 
-addAutomationPage();
+addSstManagementPage();
 addReportsPage();
 
 // 5. Portal del trabajador

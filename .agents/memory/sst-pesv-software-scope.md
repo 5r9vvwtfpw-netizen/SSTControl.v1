@@ -1,13 +1,12 @@
 ---
-name: Alcance del software SST/PESV en informes externos
-description: Separar la automatización y sistematización de la plataforma de sus informes y del trabajo profesional.
+name: Alcance del sistema SG-SST en informes externos
+description: Explicar la gestión SST ágil y sistematizada sin convertirla en inventario técnico ni revelar reglas internas.
 ---
 
-Al explicar cómo una empresa gestionaría el SG-SST y, si aplica, el PESV, presentar la automatización y sistematización de SST Colombia como un alcance propio. No reducir el software a un repositorio de evidencias o a la generación de PDF, ni confundirlo con el servicio prestado por la profesional SST.
+Al explicar a un tercero cómo una empresa gestionaría su SG-SST, mostrar el recorrido SST que la plataforma facilita: evaluación, planificación, prevención, ejecución, seguimiento y mejora, con información centralizada y consulta ágil. La automatización es una cualidad de esta gestión, no el tema principal ni una lista de botones. El PESV se menciona solo cuando corresponda. No confundir el software con los informes que produce, el Portal de Empleados ni el trabajo de la profesional SST.
 
-En documentos para terceros, describir las capacidades y los resultados visibles, nunca la lógica interna que los produce: criterios de clasificación, variables de decisión, reglas de formularios o conexiones entre módulos.
-La confidencialidad no justifica una página vacía de contenido: cada automatización mencionada debe identificar un efecto concreto observable para el usuario y estar comprobada en la interfaz y en su operación. No repetir en esa sección los informes ni el Portal de Empleados que se describen en otras páginas.
+Describir funciones y beneficios de cara al usuario, nunca la lógica interna que los produce: criterios de clasificación, variables de decisión, reglas de formularios o conexiones entre módulos. La confidencialidad no justifica texto vacío; describir áreas reales del SG-SST respaldadas por la app.
 
-**Why:** El usuario señaló que dedicar una página a informes dejaba sin explicar el negocio principal: la automatización de procesos SST/PESV. Después corrigió un informe externo que exponía criterios internos; la versión demasiado genérica que lo reemplazó tampoco explicaba qué hacía la app y repetía otras páginas. Hay que mostrar resultados específicos sin publicar mecanismos.
+**Why:** El usuario corrigió tanto un informe que exponía reglas internas como uno que se volvió genérico. Aclaró que el destinatario quiere entender cómo se llevaría el SG-SST de manera rápida y sistematizada, no conocer un catálogo de automatizaciones del producto.
 
-**How to apply:** En documentos informativos, distinguir las capacidades de la plataforma, los informes derivados de datos reales y las tareas que ejecutan la empresa y la profesional. Para cada capacidad elegir un flujo real en formato acción visible → resultado, aclarando si requiere intervención de un usuario o es una alerta automática, sin desglosar reglas, umbrales ni procedimientos internos. Antes de compartir el PDF, revisar su texto completo en busca de detalles internos y redundancias; no atribuir datos a una empresa aún no activa.
+**How to apply:** Ordenar la página de alcance por frentes SST (punto de partida, plan anual, peligros, salud/eventos, formación, objetivos/mejora) y explicar cómo una plataforma única agiliza el seguimiento. Reservar cifras y PDFs para informes, participación individual para el portal y auditorías/investigaciones/capacitaciones profesionales para el alcance humano. Revisar el PDF completo para eliminar detalles internos y redundancias; no atribuir datos a una empresa aún no activa.
