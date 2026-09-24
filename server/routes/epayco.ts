@@ -17,11 +17,13 @@ import {
   createEpaycoPseTransaction,
   getEpaycoClientIp,
   getEpaycoPseBanks,
+  getEpaycoPseTransaction,
   isEpaycoConfigured,
   isEpaycoTestMode,
   normalizeEpaycoStatus,
   validateEpaycoConfirmationSignature,
 } from "../services/epayco";
+import type { EpaycoPseLookup } from "../services/epayco";
 
 type EpaycoPaymentRow = {
   id: string;
@@ -157,7 +159,7 @@ async function activateSubscriptionAfterEpayco(
 
 export async function registerEpaycoRoutes(app: Express): Promise<void> {
   await ensureEpaycoTable();
-  let demoQaIpUsed = false;
+  const providerLookupCache = new Map<string, { until: number; result: EpaycoPseLookup | null }>();
 
   app.get("/api/epayco/estado", requireAuth, (_req, res) => {
     res.json({
@@ -178,7 +180,8 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
 
     const invoiceFilter = invoice ? sql`AND invoice = ${invoice}` : sql``;
     const result = await db.execute(sql`
-      SELECT invoice, status, response_reason, updated_at
+      SELECT invoice, status, response_reason, updated_at, ticket_id,
+             transaction_id, ref_payco, amount, currency
       FROM epayco_pse_transactions
       WHERE company_id = ${companyId} ${invoiceFilter}
       ORDER BY created_at DESC
@@ -187,11 +190,45 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
     const payment = result.rows[0];
     if (!payment) return res.status(404).json({ error: "No se encontró el pago PSE" });
 
+    let providerStatus: EpaycoPseLookup["status"] | null = null;
+    let providerReason: string | null = null;
+    if (payment.status === "PENDING" && payment.ticket_id) {
+      const key = String(payment.invoice);
+      const cached = providerLookupCache.get(key);
+      let lookup = cached && cached.until > Date.now() ? cached.result : null;
+      if (!cached || cached.until <= Date.now()) {
+        try {
+          lookup = await getEpaycoPseTransaction(String(payment.ticket_id));
+          if (
+            lookup.invoice !== payment.invoice ||
+            lookup.refPayco !== String(payment.ref_payco) ||
+            lookup.transactionId !== String(payment.transaction_id) ||
+            !Number.isFinite(lookup.amount) ||
+            Math.round(lookup.amount) !== Number(payment.amount) ||
+            lookup.currency !== payment.currency ||
+            lookup.test !== isEpaycoTestMode()
+          ) {
+            logger.warn({ invoice: key }, "[ePayco] Consulta PSE no coincide con el pago local");
+            lookup = null;
+          }
+        } catch (error: any) {
+          logger.warn({ invoice: key, error: error.message }, "[ePayco] No se pudo consultar estado PSE");
+          lookup = null;
+        }
+        if (providerLookupCache.size >= 200) providerLookupCache.clear();
+        providerLookupCache.set(key, { until: Date.now() + 30_000, result: lookup });
+      }
+      providerStatus = lookup?.status ?? null;
+      providerReason = lookup?.reason ?? null;
+    }
+
     return res.json({
       invoice: payment.invoice,
       status: payment.status,
       reason: payment.response_reason,
       updatedAt: payment.updated_at,
+      providerStatus,
+      providerReason,
     });
   });
 
@@ -255,28 +292,8 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
         req.ip
       );
     } catch (error: any) {
-      const testEgressIp = process.env.EPAYCO_TEST_EGRESS_IP;
-      const testUntil = Number(process.env.EPAYCO_TEST_EGRESS_UNTIL);
-      if (
-        process.env.NODE_ENV !== "development" ||
-        !isEpaycoTestMode() ||
-        company.name !== "DEMO-PRUEBA" ||
-        !testEgressIp ||
-        !Number.isSafeInteger(testUntil) ||
-        Date.now() >= testUntil ||
-        demoQaIpUsed
-      ) {
-        logger.warn("[ePayco] No se recibió una IP pública del pagador");
-        return res.status(503).json({ error: error.message });
-      }
-      try {
-        clientIp = getEpaycoClientIp(undefined, testEgressIp);
-      } catch {
-        logger.warn("[ePayco] IP temporal de salida inválida");
-        return res.status(503).json({ error: "IP temporal de pruebas inválida" });
-      }
-      demoQaIpUsed = true;
-      logger.info({ companyId }, "[ePayco] Usando IP de salida una vez para prueba PSE en desarrollo");
+      logger.warn("[ePayco] No se recibió una IP pública del pagador");
+      return res.status(503).json({ error: error.message });
     }
 
     const companyAny = company as any;
@@ -379,6 +396,11 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
     if (!payment) {
       logger.warn({ invoice, transactionId }, "[ePayco] Confirmación sin pago local");
       return res.status(200).send("OK");
+    }
+
+    if (payment.ref_payco && payment.ref_payco !== refPayco) {
+      logger.warn({ invoice }, "[ePayco] La referencia firmada no coincide con el pago local");
+      return res.status(400).send("Invalid reference");
     }
 
     if (payment.status === "APPROVED") return res.status(200).send("OK");

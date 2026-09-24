@@ -10,6 +10,8 @@ type PaymentStatus = {
   status: 'PENDING' | 'APPROVED' | 'DECLINED' | 'ERROR';
   reason: string | null;
   updatedAt: string;
+  providerStatus: 'PENDING' | 'APPROVED' | 'DECLINED' | 'ERROR' | null;
+  providerReason: string | null;
 };
 
 export default function PagoPSERetorno() {
@@ -32,7 +34,10 @@ export default function PagoPSERetorno() {
   const approved = payment?.status === 'APPROVED';
   const declined = payment?.status === 'DECLINED';
   const failed = payment?.status === 'ERROR';
-  const pending = !isError && !approved && !declined && !failed;
+  const reportedDeclined = payment?.status === 'PENDING' &&
+    (payment.providerStatus === 'DECLINED' || payment.providerStatus === 'ERROR');
+  const reportedApproved = payment?.status === 'PENDING' && payment.providerStatus === 'APPROVED';
+  const pending = !isError && !approved && !declined && !failed && !reportedDeclined;
 
   return (
     <div className="container mx-auto max-w-2xl px-4 py-8">
@@ -40,12 +45,12 @@ export default function PagoPSERetorno() {
         <CardHeader>
           <div className={`mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full ${
             approved ? 'bg-green-100 dark:bg-green-900/20' :
-            declined || failed ? 'bg-red-100 dark:bg-red-900/20' :
+            declined || failed || reportedDeclined ? 'bg-red-100 dark:bg-red-900/20' :
             'bg-blue-100 dark:bg-blue-900/20'
           }`}>
             {approved ? (
               <CheckCircle2 className="h-8 w-8 text-green-600" />
-            ) : declined || failed ? (
+            ) : declined || failed || reportedDeclined ? (
               <XCircle className="h-8 w-8 text-red-600" />
             ) : isError ? (
               <AlertCircle className="h-8 w-8 text-blue-600" />
@@ -57,20 +62,24 @@ export default function PagoPSERetorno() {
             {approved ? 'Pago confirmado' :
               declined ? 'El pago no fue aprobado' :
               failed ? 'No se pudo iniciar el pago' :
+              reportedDeclined ? 'ePayco informa que el pago fue rechazado' :
               isError ? 'No pudimos consultar el estado del pago' :
+              reportedApproved ? 'ePayco informa aprobación; falta confirmación' :
               'Pago en verificación'}
           </CardTitle>
           <CardDescription>
             {approved ? 'ePayco confirmó el pago y la suscripción fue activada.' :
               declined ? 'ePayco comunicó que la transacción fue rechazada. Este intento no activó ni renovó la suscripción.' :
               failed ? 'La transacción no pudo iniciarse. Este intento no activó ni renovó la suscripción.' :
+              reportedDeclined ? 'La consulta directa a ePayco indica que este intento no fue aprobado. Aún no llegó la confirmación firmada; la suscripción no se ha activado por este intento.' :
               isError ? 'Vuelve a intentarlo más tarde o revisa el estado de tu suscripción antes de pagar de nuevo.' :
+              reportedApproved ? 'Estamos esperando la confirmación firmada de ePayco antes de activar o renovar la suscripción. No inicies otro pago.' :
               'Esperando la confirmación final de ePayco. No inicies otro pago mientras tanto.'}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {(declined || failed) && payment?.reason && (
-            <p className="text-sm text-muted-foreground">{payment.reason}</p>
+          {(declined || failed || reportedDeclined) && (payment?.reason || payment?.providerReason) && (
+            <p className="text-sm text-muted-foreground">{payment.reason || payment.providerReason}</p>
           )}
           {pending && (
             <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">

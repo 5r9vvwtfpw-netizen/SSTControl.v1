@@ -330,6 +330,47 @@ export async function createEpaycoPseTransaction(
   };
 }
 
+export interface EpaycoPseLookup {
+  invoice: string;
+  refPayco: string;
+  transactionId: string;
+  amount: number;
+  currency: string;
+  test: boolean;
+  status: "APPROVED" | "DECLINED" | "PENDING" | "ERROR";
+  reason: string | null;
+}
+
+export async function getEpaycoPseTransaction(ticketId: string): Promise<EpaycoPseLookup> {
+  const token = await getBearerToken();
+  const query = new URLSearchParams({
+    transactionID: ticketId,
+    public_key: getPublicKey(),
+  });
+  // ePayco's PSE SDK uses the ticket ID with this endpoint, not the
+  // checkout validation endpoint (which does not resolve these PSE references).
+  const response = await fetch(
+    `${SECURE_BASE_URL}/restpagos/pse/transactioninfomation.json?${query.toString()}`,
+    { headers: authHeaders(token), signal: AbortSignal.timeout(10_000) }
+  );
+  const payload = await response.json().catch(() => ({}));
+  const data = payload?.data;
+  if (!response.ok || payload?.success !== true || !data || typeof data !== "object") {
+    throw new Error("ePayco no devolvió el estado de la transacción PSE");
+  }
+
+  return {
+    invoice: String(data.factura ?? ""),
+    refPayco: String(data.ref_payco ?? ""),
+    transactionId: String(data.transactionID ?? ""),
+    amount: Number(data.valor),
+    currency: String(data.moneda ?? ""),
+    test: data.enpruebas === true || data.enpruebas === 1 || data.enpruebas === "1",
+    status: normalizeEpaycoStatus(String(data.estado ?? "")),
+    reason: typeof data.respuesta === "string" ? data.respuesta : null,
+  };
+}
+
 export function validateEpaycoConfirmationSignature(data: {
   refPayco: string;
   transactionId: string;
@@ -346,10 +387,9 @@ export function validateEpaycoConfirmationSignature(data: {
     .update(`${customerId}^${pKey}^${data.refPayco}^${data.transactionId}^${data.amount}^${data.currency}`)
     .digest("hex");
 
-  return crypto.timingSafeEqual(
-    Buffer.from(expected, "utf8"),
-    Buffer.from(data.signature, "utf8")
-  );
+  const received = Buffer.from(data.signature, "utf8");
+  return received.length === expected.length &&
+    crypto.timingSafeEqual(Buffer.from(expected, "utf8"), received);
 }
 
 export function normalizeEpaycoStatus(response: string): "APPROVED" | "DECLINED" | "PENDING" | "ERROR" {
