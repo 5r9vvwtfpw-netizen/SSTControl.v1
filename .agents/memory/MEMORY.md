@@ -59,3 +59,4 @@
 - [Profesionales SST y protección del software](profesional-sst-software-focus.md) — el acuerdo debe proteger primero el software, su propiedad intelectual y el conocimiento reservado; los datos sensibles son obligación complementaria.
 - [Informe gerencial y datos sintéticos](management-report-synthetic-data.md) — excluir acciones explícitamente marcadas como pruebas del diagnóstico y separar resultado registrado de cierre verificado.
 - [Límite de desactivación de proveedores de pago](payment-provider-deactivation-boundary.md) — bloquear creación, consulta, webhook y UI; ocultar el método del checkout no basta.
+- [Autenticación ePayco](epayco-auth-response.md) — HTTP 200 del login no prueba autenticación; comprobar el cuerpo antes de habilitar pagos.
