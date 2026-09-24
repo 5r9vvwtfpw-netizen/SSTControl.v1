@@ -74,6 +74,7 @@ TEST_MODE = "true"
 
 [userenv.production]
 NODE_ENV = "production"
+EPAYCO_TEST = "false"
 
 [objectStorage]
 defaultBucketID = "replit-objstore-1a32e428-68e0-4edd-a4f5-f7aa98c8512e"
