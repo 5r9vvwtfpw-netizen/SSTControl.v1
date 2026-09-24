@@ -246,8 +246,8 @@ function addSstManagementPage() {
 addBodyPage(3, "Gestión del SG-SST");
 titleBlock(
   "02  ·  LA GESTIÓN SST EN EL SISTEMA",
-  "El SG-SST, conectado de principio a fin",
-  "Para Los Picas, la app sería el espacio donde se organiza la información, se programa el trabajo, se registra lo que ocurre y se da continuidad a lo pendiente.",
+  "Gestión sistematizada del SG-SST",
+  "La plataforma permitiría a Los Picas organizar la información, programar actividades, documentar su ejecución y dar seguimiento a los asuntos pendientes del SG-SST.",
 );
 const stepY = 174;
 const stepHeight = 96;
