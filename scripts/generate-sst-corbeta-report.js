@@ -388,7 +388,7 @@ card(
 box(L, 606, CW, 112, C.pale, C.pale, 10);
 label("Responsabilidades y herramienta de seguimiento", L + 15, 624, C.green, 7);
 text(
-  "Ely orienta, coordina, revisa y hace seguimiento con los responsables de Los Picas. La empresa facilita recursos y ejecuta los controles. El portal apoya la consulta y trazabilidad de la información; Ely no configura ni administra técnicamente el sistema.",
+  "Ely orienta, coordina, revisa y hace seguimiento con los responsables de Los Picas. La empresa facilita recursos y ejecuta los controles. El portal apoya la consulta de información, la trazabilidad de las actividades y el control de pendientes.",
   L + 15,
   643,
   CW - 30,
@@ -410,7 +410,7 @@ doc.roundedRect(L, 161, 5, 140, 2.5).fill(C.accent);
 label("Profesional SST propuesta", L + 19, 180, C.green, 7.1);
 text("Ely Johana Casarrubia Rojas", L + 19, 198, CW - 38, 16, C.deep, "Bold", 2);
 text(
-  "Liderará la orientación, coordinación y seguimiento técnico del SG-SST junto con los responsables internos. No asumirá la configuración ni la administración técnica de la plataforma ni las obligaciones propias del empleador.",
+  "Liderará la orientación, coordinación y seguimiento técnico del SG-SST junto con los responsables internos. Acompañará la revisión de evidencias, indicadores, auditorías e investigaciones cuando corresponda.",
   L + 19,
   228,
   CW - 38,
