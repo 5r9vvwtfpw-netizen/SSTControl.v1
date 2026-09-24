@@ -165,7 +165,7 @@ text(
 doc.font("Reg").fontSize(7.1).fillColor("#B8D8C3").text("SST COLOMBIA  ·  SADGI S.A.S.", 55, H - 47, {
   characterSpacing: 0.4,
 });
-doc.font("Reg").fontSize(7.1).fillColor("#B8D8C3").text("01 / 05", W - 105, H - 47, {
+doc.font("Reg").fontSize(7.1).fillColor("#B8D8C3").text("01 / 06", W - 105, H - 47, {
   width: 50,
   align: "right",
 });
@@ -318,26 +318,105 @@ text(
   2.8,
 );
 
-// 5. Acompañamiento y activación
-addBodyPage(5, "Acompañamiento profesional");
+// 5. Portal del Profesional SST
+addBodyPage(5, "Portal del Profesional SST");
 titleBlock(
-  "04  ·  COORDINACIÓN Y SEGUIMIENTO",
-  "Profesional SST y hoja de ruta",
-  "El acompañamiento para Los Picas S.A.S. comenzaría una vez formalizado el servicio y asignados los accesos correspondientes.",
+  "04  ·  ESPACIO DE TRABAJO PARA LA PROFESIONAL",
+  "Portal del Profesional SST",
+  "Un portal dedicado para supervisar empresas asignadas, revisar avances, gestionar documentos profesionales y coordinar el seguimiento.",
+);
+const professionalY = 168;
+const professionalHeight = 128;
+const professionalGap = 12;
+const professionalCardWidth = (CW - professionalGap) / 2;
+card(
+  L,
+  professionalY,
+  professionalCardWidth,
+  professionalHeight,
+  "SEGUIMIENTO MULTIEMPRESA",
+  "Empresas asignadas",
+  "Vista por empresa de NIT, ciudad, nivel de riesgo, trabajadores, vehículos, avance SG-SST y última actividad; incluye historial de asignaciones.",
+);
+card(
+  L + professionalCardWidth + professionalGap,
+  professionalY,
+  professionalCardWidth,
+  professionalHeight,
+  "PANEL PHVA",
+  "Avance y alertas SG-SST",
+  "Consulta cumplimiento, objetivos, indicadores, auditorías, inspecciones, peligros, accidentalidad, plan anual y acciones pendientes, vencidas o verificadas.",
+);
+card(
+  L,
+  professionalY + professionalHeight + professionalGap,
+  professionalCardWidth,
+  professionalHeight,
+  "SEGUIMIENTO PESV",
+  "Evaluaciones de seguridad vial",
+  "Revisa evaluaciones de empresas asignadas, porcentaje de avance, estado por requisito, periodo, vehículos y conductores; abre el detalle de respuestas.",
+);
+card(
+  L + professionalCardWidth + professionalGap,
+  professionalY + professionalHeight + professionalGap,
+  professionalCardWidth,
+  professionalHeight,
+  "GESTIÓN DOCUMENTAL",
+  "Documentos y firma profesional",
+  "Consulta y descarga evaluaciones SG-SST, plan anual, matrices IPERC, designaciones y programas de capacitación; controla pendientes y documentos completados.",
+);
+card(
+  L,
+  professionalY + 2 * (professionalHeight + professionalGap),
+  professionalCardWidth,
+  professionalHeight,
+  "ACCIDENTALIDAD",
+  "Investigaciones de accidentes",
+  "Acceso a accidentes e investigaciones para revisión profesional; el portal permite gestionar la intervención y firma requerida en los casos aplicables.",
+);
+card(
+  L + professionalCardWidth + professionalGap,
+  professionalY + 2 * (professionalHeight + professionalGap),
+  professionalCardWidth,
+  professionalHeight,
+  "INFORMES Y COORDINACIÓN",
+  "Salidas y mensajería",
+  "Descarga informe consolidado SST y PESV por empresa, consulta cierres archivados y envía mensajes normales o urgentes al administrador.",
+  C.blue,
+);
+box(L, 606, CW, 112, C.pale, C.pale, 10);
+label("Supervisión profesional con alcance definido", L + 15, 624, C.green, 7);
+text(
+  "El portal facilita el análisis y seguimiento de la información registrada; no sustituye las responsabilidades del empleador ni implica que Ely configure técnicamente el sistema. Las firmas disponibles corresponden a documentos habilitados del SG-SST, no a este informe informativo.",
+  L + 15,
+  643,
+  CW - 30,
+  8.1,
+  C.deep,
+  "Reg",
+  2.7,
+);
+
+// 6. Acompañamiento y activación
+addBodyPage(6, "Acompañamiento profesional");
+titleBlock(
+  "05  ·  COORDINACIÓN Y SEGUIMIENTO",
+  "Acompañamiento para Los Picas",
+  "La participación de Ely Johana Casarrubia Rojas comenzaría una vez formalizado el servicio y asignados los accesos correspondientes.",
 );
 box(L, 161, CW, 140, C.pale, C.pale, 11);
 doc.roundedRect(L, 161, 5, 140, 2.5).fill(C.accent);
 label("Profesional SST propuesta", L + 19, 180, C.green, 7.1);
 text("Ely Johana Casarrubia Rojas", L + 19, 198, CW - 38, 16, C.deep, "Bold", 2);
 text(
-  "Liderará la coordinación profesional del SG-SST. Desde el Portal del Profesional SST consultará información, documentos e indicadores, y apoyará auditorías e investigaciones. La mensajería interna facilitará la coordinación con los responsables autorizados.",
+  "Liderará el acompañamiento profesional del SG-SST: coordinación con responsables autorizados, revisión de indicadores y compromisos, apoyo en auditorías e investigaciones y orientación sobre el uso de los portales. La configuración técnica no hace parte de su rol.",
   L + 19,
   228,
   CW - 38,
-  8.7,
+  8.5,
   C.ink,
   "Reg",
-  2.6,
+  2.5,
 );
 
 label("Secuencia de inicio propuesta", L, 326, C.blue, 7.2);
