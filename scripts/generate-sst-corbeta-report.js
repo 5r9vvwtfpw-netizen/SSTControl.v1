@@ -245,75 +245,56 @@ text(
 function addSstManagementPage() {
 addBodyPage(3, "Gestión del SG-SST");
 titleBlock(
-  "02  ·  EL SG-SST DE LOS PICAS",
-  "Gestión ágil y ordenada del SG-SST",
-  "SST Colombia permitiría a Los Picas evaluar, planear, ejecutar y revisar su SG-SST en un mismo entorno, con actividades y evidencias disponibles para los responsables.",
+  "02  ·  LA GESTIÓN SST EN EL SISTEMA",
+  "El SG-SST, conectado de principio a fin",
+  "Para Los Picas, la app sería el espacio donde se organiza la información, se programa el trabajo, se registra lo que ocurre y se da continuidad a lo pendiente.",
 );
-const automationY = 168;
-const automationHeight = 128;
-const automationGap = 12;
-const automationCardWidth = (CW - automationGap) / 2;
+const stepY = 174;
+const stepHeight = 96;
+const stepGap = 12;
 card(
   L,
-  automationY,
-  automationCardWidth,
-  automationHeight,
-  "EVALUACIÓN INICIAL",
-  "Saber dónde empezar",
-  "Los Picas registraría su punto de partida y consultaría qué requisitos requieren atención, para definir prioridades antes de programar el trabajo.",
-);
-card(
-  L + automationCardWidth + automationGap,
-  automationY,
-  automationCardWidth,
-  automationHeight,
-  "PLAN ANUAL",
-  "Trabajo organizado",
-  "Actividades, fechas y responsables se reúnen en un plan de trabajo para ordenar la ejecución y revisar avances durante el año.",
+  stepY,
+  CW,
+  stepHeight,
+  "01  ·  BASE DE LA EMPRESA",
+  "Partir de una base común",
+  "Trabajadores, cargos, actividades y evaluación SST quedan en un mismo entorno. Los responsables conocen el punto de partida y pueden continuar la gestión sin reunir archivos dispersos.",
 );
 card(
   L,
-  automationY + automationHeight + automationGap,
-  automationCardWidth,
-  automationHeight,
-  "PELIGROS Y PREVENCIÓN",
-  "Riesgos bajo seguimiento",
-  "La matriz de peligros y las inspecciones permiten documentar riesgos, controles y hallazgos, para atenderlos según la operación de Los Picas.",
-);
-card(
-  L + automationCardWidth + automationGap,
-  automationY + automationHeight + automationGap,
-  automationCardWidth,
-  automationHeight,
-  "SALUD Y EVENTOS",
-  "Información para actuar",
-  "Ausentismo, exámenes ocupacionales, incidentes y accidentes se registran para apoyar la investigación, la prevención y el seguimiento de medidas.",
+  stepY + stepHeight + stepGap,
+  CW,
+  stepHeight,
+  "02  ·  PLAN DE TRABAJO",
+  "Organizar el trabajo del año",
+  "El plan anual reúne actividades de prevención, salud, capacitación, inspecciones y emergencias con responsables, fechas y estado. Cada tarea tiene un lugar y un seguimiento.",
 );
 card(
   L,
-  automationY + 2 * (automationHeight + automationGap),
-  automationCardWidth,
-  automationHeight,
-  "FORMACIÓN Y PARTICIPACIÓN",
-  "Actividades con soporte",
-  "Las capacitaciones se programan y documentan; las actividades de los comités quedan integradas al seguimiento del SG-SST.",
+  stepY + 2 * (stepHeight + stepGap),
+  CW,
+  stepHeight,
+  "03  ·  PREVENCIÓN Y SALUD",
+  "Registrar y atender lo que ocurre",
+  "La matriz IPERC, las inspecciones y la entrega de EPP documentan la prevención. Exámenes ocupacionales, ausencias, incidentes y accidentes dejan registro para atender y seguir las medidas.",
 );
 card(
-  L + automationCardWidth + automationGap,
-  automationY + 2 * (automationHeight + automationGap),
-  automationCardWidth,
-  automationHeight,
-  "OBJETIVOS Y MEJORA",
-  "Avances para decidir",
-  "Objetivos, auditorías y acciones se consultan con sus pendientes y evidencias para verificar el avance y decidir las correcciones necesarias.",
+  L,
+  stepY + 3 * (stepHeight + stepGap),
+  CW,
+  stepHeight,
+  "04  ·  PARTICIPACIÓN Y MEJORA",
+  "Retomar pendientes y verificar",
+  "COPASST, Comité de Convivencia, brigadas y simulacros tienen actividades y soportes. Objetivos, auditorías y acciones de mejora permiten revisar avances y decidir qué sigue.",
   C.blue,
 );
-box(L, 606, CW, 112, C.pale, C.pale, 10);
-label("Gestión ágil, con evidencia", L + 15, 624, C.green, 7);
+box(L, 612, CW, 106, C.pale, C.pale, 10);
+label("La diferencia práctica", L + 15, 630, C.green, 7);
 text(
-  "Los Picas podrá pasar de la evaluación al plan, de las actividades a sus soportes y de los hallazgos a la mejora dentro de un mismo entorno. Esto agiliza la consulta y el seguimiento sin reconstruir la gestión entre archivos dispersos. La empresa valida y ejecuta lo previsto.",
+  "La app no sustituye a quienes gestionan el SG-SST: reduce la dispersión. Los Picas podría consultar con rapidez tareas, responsables, estados y evidencias, y continuar desde donde quedó sin reconstruir su gestión entre carpetas u hojas de cálculo. Todo depende de sus registros y ejecución reales.",
   L + 15,
-  643,
+  649,
   CW - 30,
   8.1,
   C.deep,
