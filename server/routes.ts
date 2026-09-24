@@ -48521,6 +48521,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const receiverIsSupportUser = receiver.role === 'soporte' || receiver.role === 'superadmin';
       const receiverIsLso = receiver.role === 'lso' || receiver.role === 'lso_externo';
       const senderIsLso = user.role === 'lso' || user.role === 'lso_externo';
+      if (senderIsLso && (receiver.role === 'admin' || receiver.role === 'superusuario')) {
+        return res.status(403).send("Los gerentes no son destinatarios de mensajes del LSO");
+      }
       if (!isSupportUser && !receiverIsSupportUser && receiver.companyId !== user.companyId) {
         // Allow if receiver is an LSO assigned to sender's company
         if (receiverIsLso && user.companyId) {

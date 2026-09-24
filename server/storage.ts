@@ -14895,8 +14895,6 @@ export class DbStorage implements IStorage {
           eq(schema.users.companyId, companyId),
           inArray(schema.users.role, [
             'responsable_sst',
-            'admin',
-            'superusuario',
             'coordinador_sst',
             'coordinador_salud',
             'coordinador_rrhh',
