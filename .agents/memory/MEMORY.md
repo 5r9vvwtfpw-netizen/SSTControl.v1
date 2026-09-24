@@ -62,4 +62,5 @@
 - [Autenticación ePayco](epayco-auth-response.md) — HTTP 200 del login no prueba autenticación; comprobar el cuerpo antes de habilitar pagos.
 - [ePayco callback environments](epayco-callback-environments.md) — en desarrollo, priorizar el dominio dev para respuestas/webhooks; APP_URL compartida apunta a producción.
 - [Resultado PSE simulado vs ePayco](epayco-pse-simulator-result.md) — la aprobación de Banka/ACH en pruebas no garantiza aceptación comercial; manda la confirmación firmada de ePayco.
+- [Catálogo y correo de prueba PSE](epayco-pse-sandbox-setup.md) — el catálogo necesita modo de pruebas; Banka aún puede exigir un código enviado a un correo accesible.
 - [IP de cliente en Preview para PSE](replit-preview-pse-ip.md) — en este entorno el Preview da IP local incluso en XFF y descarta la cabecera inyectada desde el navegador.

@@ -202,8 +202,13 @@ function unwrapPayload(payload: any): any {
 
 export async function getEpaycoPseBanks(): Promise<EpaycoBank[]> {
   const token = await getBearerToken();
+  const query = new URLSearchParams({
+    public_key: getPublicKey(),
+    lenguaje: "javascript",
+    enpruebas: isEpaycoTestMode() ? "TRUE" : "FALSE",
+  });
   const response = await fetch(
-    `${SECURE_BASE_URL}/restpagos/pse/bancos.json?public_key=${encodeURIComponent(getPublicKey())}`,
+    `${SECURE_BASE_URL}/restpagos/pse/bancos.json?${query.toString()}`,
     { headers: authHeaders(token) }
   );
   const payload = await response.json().catch(() => ({}));
@@ -237,7 +242,7 @@ export async function getEpaycoPseBanks(): Promise<EpaycoBank[]> {
       bank.financial_institution_name ??
       ""
     ),
-  })).filter((bank: EpaycoBank) => bank.code && bank.name);
+  })).filter((bank: EpaycoBank) => bank.code && bank.code !== "0" && bank.name);
 }
 
 export async function createEpaycoPseTransaction(
