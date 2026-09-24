@@ -48,6 +48,13 @@ function getEffectiveCompanyId(req: any): string | null {
 }
 
 function getBaseUrl(): string {
+  // En desarrollo, APP_URL puede apuntar al dominio publicado (está compartida
+  // con producción). Priorizar el dominio del preview evita enviar allí los
+  // retornos y confirmaciones de las transacciones de prueba.
+  if (process.env.NODE_ENV !== "production" && process.env.REPLIT_DEV_DOMAIN) {
+    return `https://${process.env.REPLIT_DEV_DOMAIN}`;
+  }
+
   return (
     process.env.APP_URL ||
     (process.env.REPLIT_DOMAINS
