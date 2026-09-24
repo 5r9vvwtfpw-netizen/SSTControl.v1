@@ -243,7 +243,7 @@ text(
 addBodyPage(4, "Portal de Empleados");
 titleBlock(
   "03  ·  PARTICIPACIÓN, FORMACIÓN Y OPERACIÓN",
-  "El Portal de Empleados, en acción",
+  "Portal de Empleados",
   "Herramientas para que cada persona participe, se forme y registre información operativa desde su acceso de trabajador.",
 );
 const portalY = 168;
