@@ -245,9 +245,9 @@ text(
 function addAutomationPage() {
 addBodyPage(3, "Automatización SST/PESV");
 titleBlock(
-  "02  ·  ALCANCE DE LA PLATAFORMA",
-  "Automatización SST y PESV",
-  "SST Colombia ayuda a organizar y seguir los procesos del SG-SST y, cuando corresponda, del PESV de Los Picas, con registros verificables.",
+  "02  ·  AUTOMATIZACIÓN SST Y PESV",
+  "Procesos que automatiza el sistema",
+  "La plataforma no solo conserva registros: prepara planes y calendarios, conecta la gestión de riesgos y avisa sobre vencimientos para SST y, si corresponde, PESV.",
 );
 const automationY = 168;
 const automationHeight = 128;
@@ -258,60 +258,60 @@ card(
   automationY,
   automationCardWidth,
   automationHeight,
-  "GESTIÓN SST",
-  "Requisitos aplicables",
-  "Organiza los requisitos de Seguridad y Salud en el Trabajo que deban gestionarse y facilita su seguimiento documental. Su pertinencia se verifica con Los Picas.",
+  "EVALUACIÓN SST → ACCIONES",
+  "Plan de mejora",
+  "Desde una evaluación registrada, el responsable puede generar acciones de mejora que quedan disponibles para revisión y seguimiento, sin volver a redactarlas una a una.",
 );
 card(
   L + automationCardWidth + automationGap,
   automationY,
   automationCardWidth,
   automationHeight,
-  "GESTIÓN DE RIESGOS",
-  "Matriz de peligros",
-  "Permite documentar peligros, valorar riesgos y hacer seguimiento a las medidas de control, de acuerdo con la operación y la revisión técnica de Los Picas.",
+  "PLAN ANUAL → AGENDA",
+  "Calendario de trabajo",
+  "El sistema genera actividades en el plan anual y su agenda para que Los Picas las programe, asigne y revise a lo largo del año.",
 );
 card(
   L,
   automationY + automationHeight + automationGap,
   automationCardWidth,
   automationHeight,
-  "EVALUACIÓN SG-SST",
-  "Avances y pendientes",
-  "Sistematiza la evaluación y sus soportes para visualizar avances y pendientes, y facilitar el seguimiento de las acciones de mejora.",
+  "CAMBIOS → SEGUIMIENTO",
+  "Tareas relacionadas",
+  "Al aprobar un cambio registrado, puede incorporar tareas relacionadas en el plan de trabajo, la gestión de riesgos y la formación, según corresponda.",
 );
 card(
   L + automationCardWidth + automationGap,
   automationY + automationHeight + automationGap,
   automationCardWidth,
   automationHeight,
-  "GESTIÓN PESV",
-  "Seguimiento vial",
-  "Si el PESV corresponde, ordena actividades, evidencias y seguimiento de seguridad vial en un mismo entorno para consultar el estado de su gestión.",
+  "EVALUACIÓN PESV → ACCIONES",
+  "Mejora vial",
+  "Si aplica el PESV, el responsable puede generar acciones desde su evaluación para dar seguimiento a los asuntos que requieren mejora.",
 );
 card(
   L,
   automationY + 2 * (automationHeight + automationGap),
   automationCardWidth,
   automationHeight,
-  "OPERACIÓN DIARIA",
-  "Registros digitales",
-  "Inducciones, comunicaciones, reportes e inspecciones pueden registrarse y consultarse digitalmente por los participantes autorizados.",
+  "RIESGOS VIALES → SST",
+  "Gestión conectada",
+  "Al solicitar la vinculación de un riesgo vial, el sistema lo incorpora a la gestión de peligros SST para que los responsables puedan revisarlo en ambos frentes.",
 );
 card(
   L + automationCardWidth + automationGap,
   automationY + 2 * (automationHeight + automationGap),
   automationCardWidth,
   automationHeight,
-  "CONTROL DE GESTIÓN",
-  "Pendientes e informes",
-  "Los responsables consultan avances y pendientes; los informes generados a partir de los registros apoyan la revisión y la rendición de cuentas.",
+  "VENCIMIENTOS → AVISOS",
+  "Documentos bajo control",
+  "El sistema avisa sobre documentación de vehículos y conductores vencida o próxima a vencer, para que los responsables gestionen su renovación.",
   C.blue,
 );
 box(L, 606, CW, 112, C.pale, C.pale, 10);
-label("Valor de la sistematización", L + 15, 624, C.green, 7);
+label("Automatización con control humano", L + 15, 624, C.green, 7);
 text(
-  "La plataforma reúne procesos, registros y evidencias para reducir trabajo manual y facilitar la trazabilidad. Los Picas y la profesional SST validarán la información y ejecutarán las actividades; el componente PESV se utilizará si aplica.",
+  "La generación de planes, calendarios y vínculos se solicita desde la aplicación; los avisos se emiten según los registros disponibles. Los Picas revisa, asigna y ejecuta las medidas. Nada de esto acredita cumplimiento antes de iniciar la gestión.",
   L + 15,
   643,
   CW - 30,
