@@ -247,7 +247,7 @@ addBodyPage(3, "Automatización SST/PESV");
 titleBlock(
   "02  ·  ALCANCE DE LA PLATAFORMA",
   "Automatización SST y PESV",
-  "SST Colombia organiza los registros, calcula aplicabilidad e indicadores y da seguimiento al SG-SST y, cuando corresponda, al PESV a partir de la información de Los Picas.",
+  "SST Colombia ayuda a organizar y seguir los procesos del SG-SST y, cuando corresponda, del PESV de Los Picas, con registros verificables.",
 );
 const automationY = 168;
 const automationHeight = 128;
@@ -258,18 +258,18 @@ card(
   automationY,
   automationCardWidth,
   automationHeight,
-  "CLASIFICACIÓN SST",
-  "Riesgo y estándares",
-  "Con CIIU válido, nivel de riesgo y número de trabajadores, determina el capítulo de estándares mínimos aplicable. Si no se indicó riesgo, lo deriva de la actividad CIIU para su revisión.",
+  "GESTIÓN SST",
+  "Requisitos aplicables",
+  "Organiza los requisitos de Seguridad y Salud en el Trabajo que deban gestionarse y facilita su seguimiento documental. Su pertinencia se verifica con Los Picas.",
 );
 card(
   L + automationCardWidth + automationGap,
   automationY,
   automationCardWidth,
   automationHeight,
-  "IPERC ASISTIDA",
-  "Peligros por actividad",
-  "Al crear una matriz nueva, genera peligros editables relacionados con los códigos CIIU registrados; la empresa y la profesional SST deben revisar y validar su pertinencia y controles.",
+  "GESTIÓN DE RIESGOS",
+  "Matriz de peligros",
+  "Permite documentar peligros, valorar riesgos y hacer seguimiento a las medidas de control, de acuerdo con la operación y la revisión técnica de Los Picas.",
 );
 card(
   L,
@@ -277,41 +277,41 @@ card(
   automationCardWidth,
   automationHeight,
   "EVALUACIÓN SG-SST",
-  "Cumplimiento calculado",
-  "Ordena la evaluación de estándares, respuestas y soportes; calcula el porcentaje de cumplimiento y permite reconocer brechas que requieren acciones de mejora.",
+  "Avances y pendientes",
+  "Sistematiza la evaluación y sus soportes para visualizar avances y pendientes, y facilitar el seguimiento de las acciones de mejora.",
 );
 card(
   L + automationCardWidth + automationGap,
   automationY + automationHeight + automationGap,
   automationCardWidth,
   automationHeight,
-  "PESV, SI CORRESPONDE",
-  "Nivel y pasos aplicables",
-  "A partir de los vehículos registrados, calcula el nivel PESV, presenta los pasos que aplican y consolida el avance de la evaluación según las respuestas ingresadas.",
+  "GESTIÓN PESV",
+  "Seguimiento vial",
+  "Si el PESV corresponde, ordena actividades, evidencias y seguimiento de seguridad vial en un mismo entorno para consultar el estado de su gestión.",
 );
 card(
   L,
   automationY + 2 * (automationHeight + automationGap),
   automationCardWidth,
   automationHeight,
-  "REGISTROS DE CAMPO",
-  "Participación digital",
-  "El Portal de Empleados reúne inducciones, confirmaciones y reportes; las inspecciones preoperacionales y los autorreportes de conductores alimentan la gestión PESV.",
+  "OPERACIÓN DIARIA",
+  "Registros digitales",
+  "Inducciones, comunicaciones, reportes e inspecciones pueden registrarse y consultarse digitalmente por los participantes autorizados.",
 );
 card(
   L + automationCardWidth + automationGap,
   automationY + 2 * (automationHeight + automationGap),
   automationCardWidth,
   automationHeight,
-  "CONTROL PHVA",
-  "Alertas y documentos",
-  "El sistema calcula indicadores con los datos registrados, destaca acciones vencidas y permite generar PDF de evaluaciones e informes para seguimiento y rendición de cuentas.",
+  "CONTROL DE GESTIÓN",
+  "Pendientes e informes",
+  "Los responsables consultan avances y pendientes; los informes generados a partir de los registros apoyan la revisión y la rendición de cuentas.",
   C.blue,
 );
 box(L, 606, CW, 112, C.pale, C.pale, 10);
 label("Valor de la sistematización", L + 15, 624, C.green, 7);
 text(
-  "La plataforma reduce el trabajo manual de clasificación, cálculo y consolidación, y conserva trazabilidad de los registros. Los Picas y la profesional SST verifican los datos y ejecutan las actividades; el componente PESV se utiliza si resulta aplicable.",
+  "La plataforma reúne procesos, registros y evidencias para reducir trabajo manual y facilitar la trazabilidad. Los Picas y la profesional SST validarán la información y ejecutarán las actividades; el componente PESV se utilizará si aplica.",
   L + 15,
   643,
   CW - 30,
@@ -343,7 +343,7 @@ card(
   portalHeight,
   "ANTES DE CONDUCIR",
   "Encuesta diaria del conductor",
-  "Autorreporte de sueño y estados físico y emocional antes de la jornada; registra consumo de alcohol y, si la empresa lo habilita, el resultado de alcoholimetría. Ayuda a identificar alertas de aptitud.",
+  "El conductor registra su condición antes de iniciar la jornada. Los responsables pueden revisar las novedades que correspondan para apoyar la prevención de riesgos.",
 );
 card(
   L + portalCardWidth + portalGap,
@@ -352,7 +352,7 @@ card(
   portalHeight,
   "INSPECCIÓN PREOPERACIONAL",
   "Vehículos",
-  "Lista digital de 16 chequeos en cuatro grupos: exterior, interior, mecánica y seguridad. Genera resultado Apto, Apto con observaciones o No apto y se refleja en el módulo H06 del PESV.",
+  "La inspección digital antes de la operación deja registro del estado del vehículo y de las novedades que requieren seguimiento por parte de la empresa.",
 );
 card(
   L,
@@ -361,7 +361,7 @@ card(
   portalHeight,
   "INSPECCIÓN PREOPERACIONAL",
   "Maquinaria amarilla y equipos",
-  "Checklist específico por equipo, con turno, horómetro y frente de trabajo; cubre hidráulica, fugas, tren de rodaje, implementos, luces y más. Una falla exige comentario y genera resultado No apta.",
+  "Permite documentar la revisión de maquinaria y equipos antes de su uso, registrar observaciones y dar seguimiento a las novedades detectadas.",
 );
 card(
   L + portalCardWidth + portalGap,
@@ -379,7 +379,7 @@ card(
   portalHeight,
   "FORMACIÓN A LO LARGO DEL AÑO",
   "Capacitación virtual continua",
-  "El trabajador accede a inducciones y reinducciones virtuales SST/PESV, y a capacitaciones PESV programadas. Consulta actividades pendientes, completadas e historial.",
+  "El trabajador puede consultar las inducciones y actividades de formación que la empresa le asigne, junto con sus actividades pendientes y completadas.",
 );
 card(
   L + portalCardWidth + portalGap,
@@ -394,7 +394,7 @@ card(
 box(L, 606, CW, 112, C.pale, C.pale, 10);
 label("Trazabilidad y seguimiento", L + 15, 624, C.green, 7);
 text(
-  "Los registros de encuestas e inspecciones quedan disponibles para consulta en los módulos administrativos relacionados. El portal reúne actividades pendientes, confirmaciones y antecedentes del trabajador para facilitar el seguimiento.",
+  "Los registros de participación quedan disponibles para seguimiento por los responsables autorizados. El portal reúne actividades pendientes y confirmaciones para facilitar la gestión del personal.",
   L + 15,
   643,
   CW - 30,
