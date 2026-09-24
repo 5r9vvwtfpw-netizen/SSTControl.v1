@@ -15,7 +15,7 @@ import logger from "../lib/logger";
 import { paymentOperationLimiter } from "../middleware/rate-limit";
 import {
   createEpaycoPseTransaction,
-  getEpaycoClientIp,
+  getEpaycoPseClientIp,
   getEpaycoPseBanks,
   getEpaycoPseTransaction,
   isEpaycoConfigured,
@@ -287,10 +287,15 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
     const forwardedFor = req.headers["x-forwarded-for"];
     let clientIp: string;
     try {
-      clientIp = getEpaycoClientIp(
+      const resolvedIp = getEpaycoPseClientIp(
         typeof forwardedFor === "string" ? forwardedFor : undefined,
-        req.ip
+        req.ip,
+        company.name,
       );
+      clientIp = resolvedIp.ip;
+      if (resolvedIp.usingServerIp) {
+        logger.warn({ companyId }, "[ePayco] Prueba PSE: se utiliza la IP de salida del servidor, no la IP del pagador");
+      }
     } catch (error: any) {
       logger.warn("[ePayco] No se recibió una IP pública del pagador");
       return res.status(503).json({ error: error.message });
