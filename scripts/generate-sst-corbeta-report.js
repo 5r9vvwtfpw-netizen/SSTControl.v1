@@ -175,7 +175,7 @@ addBodyPage(2, "Metodología SG-SST");
 titleBlock(
   "01  ·  METODOLOGÍA DE CUMPLIMIENTO",
   "Metodología para gestionar el SG-SST",
-  "Tras formalizar el servicio, el acompañamiento de Ely incluirá auditorías internas, investigación de eventos y capacitación, integradas al ciclo PHVA de Los Picas.",
+  "Tras formalizar el servicio, la profesional SST realizará auditorías internas, investigará eventos y capacitará al personal, en el marco del ciclo PHVA de Los Picas.",
 );
 box(L, 155, CW, 78, C.pale, C.pale, 10);
 label("Punto de partida", L + 16, 171, C.green, 7);
@@ -193,13 +193,13 @@ const gap = 12;
 const half = (CW - gap) / 2;
 const moduleHeight = 168;
 card(L, 250, half, moduleHeight, "P  ·  PLANEAR", "Acordar las actividades", "Con la información aportada por Los Picas se acordarán el alcance de las auditorías, los temas de capacitación y las prioridades de prevención según sus riesgos y procedimientos.");
-card(L + half + gap, 250, half, moduleHeight, "H  ·  HACER", "Capacitar e investigar", "Ely capacitará al personal en SST y en los protocolos de contingencia y emergencia aplicables; investigará con los responsables los incidentes y accidentes que correspondan.");
-card(L, 430, half, moduleHeight, "V  ·  VERIFICAR", "Auditar el SG-SST", "Ely revisará evidencias, controles e indicadores mediante auditorías internas; documentará hallazgos y recomendaciones. Los Picas facilitará información y participación de sus responsables.");
-card(L + half + gap, 430, half, moduleHeight, "A  ·  ACTUAR", "Seguir las mejoras", "Los Picas definirá y ejecutará las medidas correctivas y preventivas; Ely dará seguimiento técnico a los hallazgos e investigaciones y revisará las evidencias de cierre cuando existan.");
+card(L + half + gap, 250, half, moduleHeight, "H  ·  HACER", "Capacitar e investigar", "La profesional SST capacitará al personal en SST y en los protocolos de contingencia y emergencia aplicables; investigará con los responsables los incidentes y accidentes que correspondan.");
+card(L, 430, half, moduleHeight, "V  ·  VERIFICAR", "Auditar el SG-SST", "La profesional SST revisará evidencias, controles e indicadores mediante auditorías internas; documentará hallazgos y recomendaciones. Los Picas facilitará información y participación de sus responsables.");
+card(L + half + gap, 430, half, moduleHeight, "A  ·  ACTUAR", "Seguir las mejoras", "Los Picas definirá y ejecutará las medidas correctivas y preventivas; la profesional SST dará seguimiento técnico a los hallazgos e investigaciones y revisará las evidencias de cierre cuando existan.");
 box(L, 615, CW, 106, C.pale2, C.pale2, 10);
 label("Responsabilidades y soportes", L + 15, 633, C.blue, 7);
 text(
-  "Ely auditará, investigará y capacitará, documentando sus resultados. Los Picas aportará información, designará responsables y ejecutará las medidas; los registros del sistema servirán para sustentar y seguir lo efectivamente realizado.",
+  "La profesional SST auditará, investigará y capacitará, documentando sus resultados. Los Picas aportará información, designará responsables y ejecutará las medidas; los registros del sistema servirán para sustentar y seguir lo efectivamente realizado.",
   L + 15,
   651,
   CW - 30,
@@ -388,7 +388,7 @@ card(
 box(L, 606, CW, 112, C.pale, C.pale, 10);
 label("Alcance de la profesional SST", L + 15, 624, C.green, 7);
 text(
-  "Ely auditará el SG-SST, investigará los incidentes y accidentes que correspondan y capacitará al personal conforme a los protocolos de contingencia y emergencia establecidos por Los Picas. Comunicará hallazgos y recomendaciones para que la empresa adopte y ejecute las medidas pertinentes.",
+  "La profesional SST auditará el SG-SST, investigará los incidentes y accidentes que correspondan y capacitará al personal conforme a los protocolos de contingencia y emergencia establecidos por Los Picas. Comunicará hallazgos y recomendaciones para que la empresa adopte y ejecute las medidas pertinentes.",
   L + 15,
   643,
   CW - 30,
@@ -410,7 +410,7 @@ doc.roundedRect(L, 161, 5, 140, 2.5).fill(C.accent);
 label("Profesional SST propuesta", L + 19, 180, C.green, 7.1);
 text("Ely Johana Casarrubia Rojas", L + 19, 198, CW - 38, 16, C.deep, "Bold", 2);
 text(
-  "Ely auditará el SG-SST, investigará los eventos que correspondan y capacitará al personal de Los Picas. Articulará su trabajo con los responsables internos y los protocolos de contingencia y emergencia establecidos.",
+  "La profesional SST auditará el SG-SST, investigará los eventos que correspondan y capacitará al personal de Los Picas. Articulará su trabajo con los responsables internos y los protocolos de contingencia y emergencia establecidos.",
   L + 19,
   228,
   CW - 38,
@@ -423,7 +423,7 @@ text(
 label("Secuencia propuesta", L, 326, C.blue, 7.2);
 const steps = [
   ["01", "Formalizar y reunir la información", "Los Picas aportará registros del SG-SST, riesgos y protocolos vigentes; se acordará la programación."],
-  ["02", "Auditar el SG-SST", "Ely revisará evidencias y procedimientos, y dejará constancia de hallazgos y recomendaciones."],
+  ["02", "Auditar el SG-SST", "La profesional SST revisará evidencias y procedimientos, y dejará constancia de hallazgos y recomendaciones."],
   ["03", "Investigar y capacitar", "Investigará los eventos que correspondan y capacitará al personal conforme a los protocolos establecidos."],
   ["04", "Documentar y hacer seguimiento", "Comunicará resultados y revisará con Los Picas el avance de las medidas definidas por la empresa."],
 ];
