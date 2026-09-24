@@ -321,7 +321,7 @@ text(
 // 5. Acompañamiento y activación
 addBodyPage(5, "Acompañamiento profesional");
 titleBlock(
-  "04  ·  COORDINACIÓN E IMPLEMENTACIÓN",
+  "04  ·  COORDINACIÓN Y SEGUIMIENTO",
   "Profesional SST y hoja de ruta",
   "El acompañamiento para Los Picas S.A.S. comenzaría una vez formalizado el servicio y asignados los accesos correspondientes.",
 );
@@ -340,12 +340,12 @@ text(
   2.6,
 );
 
-label("Puesta en marcha propuesta", L, 326, C.blue, 7.2);
+label("Secuencia de inicio propuesta", L, 326, C.blue, 7.2);
 const steps = [
   ["01", "Conocer la operación", "Precisar actividad, trabajadores, sedes, peligros, vehículos, maquinaria y responsabilidades."],
-  ["02", "Configurar el sistema", "Organizar módulos aplicables, accesos, responsables, plan de trabajo y herramientas del portal."],
-  ["03", "Activar participación", "Orientar a trabajadores en encuestas, inspecciones, votaciones, comunicaciones y formación virtual."],
-  ["04", "Acompañar el seguimiento", "Revisar registros y compromisos; consultar indicadores y generar informes con datos vigentes."],
+  ["02", "Definir alcance y roles", "Acordar qué módulos aplican y quiénes serán responsables de cada proceso dentro de Los Picas."],
+  ["03", "Uso del portal por los trabajadores", "Encuestas, inspecciones, elecciones, comunicaciones y formación virtual, según el alcance definido."],
+  ["04", "Acompañar el seguimiento", "Revisar registros y compromisos; consultar indicadores e informes con datos actualizados."],
 ];
 let stepY = 346;
 for (let i = 0; i < steps.length; i++) {
