@@ -34,6 +34,7 @@
 - [Safari login autofill](safari-login-autofill.md) — Safari puede mostrar credenciales que React no recibió; el submit debe leer los valores reales del formulario.
 - [Vite and app WebSockets](vite-app-websockets.md) — un WebSocket con path sobre el servidor compartido puede rechazar HMR; aislar upgrades por ruta con noServer.
 - [PDF report discovery before implementation](pdf-report-discovery.md) — auditar generadores, rutas indirectas y botones antes de crear informes; CRUD o adjuntos PDF no prueban que exista un reporte.
+- [Estadísticas en informes SG-SST](sst-report-presentation.md) — destacar indicadores de objetivos y ausentismo junto a informes reales, sin atribuir cifras a empresas aún no activas.
 - [Application version source](application-version-source.md) — la versión visible y los metadatos web consumen una sola fuente; no escribir números de versión dentro de componentes.
 - [SST and PESV designation acts](sst-pesv-designation-acts.md) — son documentos distintos; el portal LSO debe mostrar y firmar ambos sin reutilizar títulos ni normativa.
 - [Training confirmation scope](training-confirmation-scope.md) — Confirmar en el Portal de Empleados solo confirma una capacitación programada; nunca depende de inducciones SST/PESV.

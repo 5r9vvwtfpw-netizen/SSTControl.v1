@@ -194,7 +194,7 @@ const half = (CW - gap) / 2;
 const moduleHeight = 168;
 card(L, 250, half, moduleHeight, "P  ·  PLANEAR", "Acordar las actividades", "Con la información aportada por Los Picas se acordarán el alcance de las auditorías, los temas de capacitación y las prioridades de prevención según sus riesgos y procedimientos.");
 card(L + half + gap, 250, half, moduleHeight, "H  ·  HACER", "Capacitar e investigar", "La profesional SST capacitará al personal en SST y en los protocolos de contingencia y emergencia aplicables; investigará con los responsables los incidentes y accidentes que correspondan.");
-card(L, 430, half, moduleHeight, "V  ·  VERIFICAR", "Auditar el SG-SST", "La profesional SST revisará evidencias, controles e indicadores mediante auditorías internas; documentará hallazgos y recomendaciones. Los Picas facilitará información y participación de sus responsables.");
+card(L, 430, half, moduleHeight, "V  ·  VERIFICAR", "Auditar el SG-SST", "La profesional SST auditará evidencias y controles y usará los indicadores e informes generados con datos de Los Picas para identificar avances, hallazgos y pendientes.");
 card(L + half + gap, 430, half, moduleHeight, "A  ·  ACTUAR", "Seguir las mejoras", "Los Picas definirá y ejecutará las medidas correctivas y preventivas; la profesional SST dará seguimiento técnico a los hallazgos e investigaciones y revisará las evidencias de cierre cuando existan.");
 box(L, 615, CW, 106, C.pale2, C.pale2, 10);
 label("Responsabilidades y soportes", L + 15, 633, C.blue, 7);
@@ -209,28 +209,28 @@ text(
   2.7,
 );
 
-// 3. Evidencias e informes
-addBodyPage(3, "Evidencias SG-SST");
+// 3. Informes y estadísticas verificables
+addBodyPage(3, "Informes SG-SST");
 titleBlock(
-  "02  ·  SOPORTES DE LA GESTIÓN",
-  "Soportes previstos del SG-SST",
-  "Las auditorías, investigaciones y capacitaciones previstas deberán dejar soportes verificables. Los Picas conservará los registros del SG-SST; ningún resultado se presenta aquí como ya obtenido.",
+  "02  ·  INFORMES Y ESTADÍSTICAS",
+  "Informes y estadísticas del SG-SST",
+  "SST Colombia muestra indicadores y genera informes descargables a partir de registros reales. Estas salidas ayudarían a Los Picas a verificar avances y rendir cuentas después de iniciar su gestión.",
 );
 const cardGap = 12;
 const cardWidth = (CW - cardGap) / 2;
 const reportHeight = 145;
 const reportY = 174;
 const reportGap = 10;
-card(L, reportY, cardWidth, reportHeight, "GESTIÓN Y CUMPLIMIENTO", "Evaluaciones y rendición", "Evaluación de estándares mínimos y del SG-SST; seguimiento de requisitos críticos; rendición de cuentas, designaciones y documentos del sistema.");
-card(L + cardWidth + cardGap, reportY, cardWidth, reportHeight, "PLAN ANUAL Y FORMACIÓN", "Planificación y capacitación", "Plan anual de trabajo, programa y cronograma de capacitación, evidencias de inducción y reinducción y listas de asistencia.");
-card(L, reportY + reportHeight + reportGap, cardWidth, reportHeight, "ACCIDENTALIDAD", "Incidentes y accidentes", "Indicadores, formatos FURAT en PDF y Excel, investigaciones y seguimiento a las acciones que se deriven de los eventos reportados.");
-card(L + cardWidth + cardGap, reportY + reportHeight + reportGap, cardWidth, reportHeight, "VERIFICACIÓN Y MEJORA", "Auditorías y acciones", "Informes de auditorías internas, seguimiento de objetivos e indicadores, revisiones por la dirección y acciones de mejora.");
-card(L, reportY + 2 * (reportHeight + reportGap), cardWidth, reportHeight, "INSPECCIÓN Y SALUD", "Registros de control", "Inspecciones, condiciones de salud, exámenes médicos, conservación auditiva y medidas preventivas, según corresponda.");
-card(L + cardWidth + cardGap, reportY + 2 * (reportHeight + reportGap), cardWidth, reportHeight, "PESV, SI APLICA", "Seguridad vial", "Si el diagnóstico confirma su aplicabilidad: evidencias de rutas, liderazgo, inspecciones, auditorías y matriz de peligros viales.");
+card(L, reportY, cardWidth, reportHeight, "PANEL PHVA", "Avance anual", "Muestra evaluación SG-SST, avance del plan, inspecciones, peligros, auditorías y accidentalidad por año a partir de los registros de la empresa.");
+card(L + cardWidth + cardGap, reportY, cardWidth, reportHeight, "OBJETIVOS E INDICADORES", "Metas medibles", "Muestra objetivos cumplidos, porcentaje de cumplimiento y avance promedio; genera un PDF consolidado de objetivos e indicadores para seguir las metas.");
+card(L, reportY + reportHeight + reportGap, cardWidth, reportHeight, "AUSENTISMO LABORAL", "Tasa y días perdidos", "Según las ausencias registradas, muestra casos, días perdidos por causa, tasa de ausentismo y duración promedio; permite descargar estadísticas en PDF.");
+card(L + cardWidth + cardGap, reportY + reportHeight + reportGap, cardWidth, reportHeight, "RENDICIÓN MENSUAL", "Informe de gestión", "PDF mensual con trabajadores, capacitaciones, inspecciones y hallazgos, accidentes, condiciones de salud y exámenes médicos registrados.");
+card(L, reportY + 2 * (reportHeight + reportGap), cardWidth, reportHeight, "AUDITORÍAS Y ACCIONES", "Hallazgos y eficacia", "PDF consolidado de auditorías internas y panel de acciones completadas, pendientes y vencidas, con porcentajes de completitud y eficacia.");
+card(L + cardWidth + cardGap, reportY + 2 * (reportHeight + reportGap), cardWidth, reportHeight, "OTROS INFORMES", "Formación y SST/PESV", "PDF de capacitaciones y accidentes por período e informe anual consolidado SST/PESV para la profesional autorizada, con los datos disponibles.");
 box(L, 650, CW, 70, C.pale2, C.pale2, 9);
-label("Criterio de uso", L + 14, 664, C.blue, 6.8);
+label("Para qué sirven a Los Picas", L + 14, 664, C.blue, 6.8);
 text(
-  "Las evidencias deben corresponder a actividades realmente ejecutadas y contar con soportes verificables; los reportes no sustituyen la revisión profesional ni las responsabilidades del empleador.",
+  "Los paneles permiten revisar avances y pendientes; los PDF dejan trazabilidad para auditoría y rendición de cuentas. Sin registros de Los Picas, no hay cifras ni resultados que presentar.",
   L + 14,
   681,
   CW - 28,
@@ -382,7 +382,7 @@ card(
   professionalHeight,
   "RESULTADOS",
   "Hallazgos y evidencias",
-  "Entregará a Los Picas los resultados de las auditorías, investigaciones y capacitaciones, con recomendaciones y soportes verificables para el seguimiento de las acciones.",
+  "Presentará resultados de auditorías, investigaciones y capacitaciones; usará los indicadores e informes disponibles para sustentar recomendaciones y dar seguimiento a las acciones.",
   C.blue,
 );
 box(L, 606, CW, 112, C.pale, C.pale, 10);
@@ -425,7 +425,7 @@ const steps = [
   ["01", "Formalizar y reunir la información", "Los Picas aportará registros del SG-SST, riesgos y protocolos vigentes; se acordará la programación."],
   ["02", "Auditar el SG-SST", "La profesional SST revisará evidencias y procedimientos, y dejará constancia de hallazgos y recomendaciones."],
   ["03", "Investigar y capacitar", "Investigará los eventos que correspondan y capacitará al personal conforme a los protocolos establecidos."],
-  ["04", "Documentar y hacer seguimiento", "Comunicará resultados y revisará con Los Picas el avance de las medidas definidas por la empresa."],
+  ["04", "Documentar y hacer seguimiento", "Usará informes y estadísticas disponibles para revisar con Los Picas el avance de las medidas definidas."],
 ];
 let stepY = 346;
 for (let i = 0; i < steps.length; i++) {
