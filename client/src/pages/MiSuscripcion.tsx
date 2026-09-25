@@ -481,7 +481,7 @@ export default function MiSuscripcion() {
       </Card>
 
       {/* Contract Section - Ley 527/1999 Comercio Electrónico */}
-      <Card className="mt-6">
+      <Card className="mt-6 hidden">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <ScrollText className="h-5 w-5" />
@@ -512,26 +512,26 @@ export default function MiSuscripcion() {
                   </div>
                 </div>
               </div>
-              
+
               {subscription.contractData && (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="flex items-center gap-2 p-3 border rounded-lg">
-                    <Check className={`h-4 w-4 ${subscription.contractData.acceptedTerms ? 'text-green-600' : 'text-muted-foreground'}`} />
+                    <Check className={`h-4 w-4 ${subscription.contractData.acceptedTerms ? "text-green-600" : "text-muted-foreground"}`} />
                     <span className="text-sm">Términos y condiciones</span>
                   </div>
                   <div className="flex items-center gap-2 p-3 border rounded-lg">
-                    <Check className={`h-4 w-4 ${subscription.contractData.acceptedDataTreatment ? 'text-green-600' : 'text-muted-foreground'}`} />
+                    <Check className={`h-4 w-4 ${subscription.contractData.acceptedDataTreatment ? "text-green-600" : "text-muted-foreground"}`} />
                     <span className="text-sm">Tratamiento de datos</span>
                   </div>
                   <div className="flex items-center gap-2 p-3 border rounded-lg">
-                    <Check className={`h-4 w-4 ${subscription.contractData.acceptedAutoRenewal ? 'text-green-600' : 'text-muted-foreground'}`} />
+                    <Check className={`h-4 w-4 ${subscription.contractData.acceptedAutoRenewal ? "text-green-600" : "text-muted-foreground"}`} />
                     <span className="text-sm">Renovación automática</span>
                   </div>
                 </div>
               )}
 
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => setContractDialogOpen(true)}
                 className="w-full sm:w-auto"
                 data-testid="button-view-contract"
@@ -561,52 +561,52 @@ export default function MiSuscripcion() {
               Contrato de Servicios SaaS
             </DialogTitle>
             <DialogDescription>
-              Contrato aceptado el {subscription.contractAcceptedAt ? formatDate(subscription.contractAcceptedAt) : 'N/A'}
+              Contrato aceptado el {subscription.contractAcceptedAt ? formatDate(subscription.contractAcceptedAt) : "N/A"}
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="prose dark:prose-invert max-w-none text-sm">
             <h3>CONTRATO DE PRESTACIÓN DE SERVICIOS DE SOFTWARE COMO SERVICIO (SaaS)</h3>
-            
+
             <p>
-              El presente contrato regula la prestación de servicios del Sistema de Gestión de Seguridad 
+              El presente contrato regula la prestación de servicios del Sistema de Gestión de Seguridad
               y Salud en el Trabajo (SG-SST) conforme a la normativa colombiana vigente.
             </p>
 
             <h4>CLÁUSULA PRIMERA - OBJETO</h4>
             <p>
-              EL PROVEEDOR se compromete a prestar al CLIENTE el servicio de acceso y uso de la 
-              plataforma tecnológica "SST Colombia" para la gestión del Sistema de Seguridad y Salud 
+              EL PROVEEDOR se compromete a prestar al CLIENTE el servicio de acceso y uso de la
+              plataforma tecnológica "SST Colombia" para la gestión del Sistema de Seguridad y Salud
               en el Trabajo, conforme a los requisitos de la Resolución 0312 de 2019 y demás normas aplicables.
             </p>
 
             <h4>CLÁUSULA SEGUNDA - DURACIÓN</h4>
             <p>
-              El contrato tiene duración según el período de facturación seleccionado, con renovación 
+              El contrato tiene duración según el período de facturación seleccionado, con renovación
               automática salvo notificación previa de 15 días antes del vencimiento.
             </p>
 
             <h4>CLÁUSULA TERCERA - PRECIO</h4>
             <p>
-              El precio se determina según la cotización personalizada de su empresa, 
+              El precio se determina según la cotización personalizada de su empresa,
               calculada desde la landing page según su perfil empresarial, más IVA (19%).
             </p>
 
             <h4>CLÁUSULA CUARTA - PROTECCIÓN DE DATOS (Ley 1581/2012)</h4>
             <p>
-              EL PROVEEDOR actúa como Encargado del tratamiento de datos personales, procesando 
+              EL PROVEEDOR actúa como Encargado del tratamiento de datos personales, procesando
               los datos exclusivamente según las instrucciones del CLIENTE y para los fines del contrato.
             </p>
 
             <h4>CLÁUSULA QUINTA - CONFIDENCIALIDAD</h4>
             <p>
-              Las partes se comprometen a mantener la confidencialidad de toda información sensible 
+              Las partes se comprometen a mantener la confidencialidad de toda información sensible
               intercambiada durante la vigencia del contrato.
             </p>
 
             <div className="mt-6 p-4 bg-muted rounded-lg">
               <p className="text-xs text-muted-foreground">
-                Este contrato fue aceptado electrónicamente conforme a la Ley 527/1999 de Comercio Electrónico 
+                Este contrato fue aceptado electrónicamente conforme a la Ley 527/1999 de Comercio Electrónico
                 y el Decreto 1074/2015. La aceptación electrónica tiene la misma validez legal que una firma manuscrita.
               </p>
             </div>
