@@ -104,15 +104,6 @@ export function SubscriptionBlockedModal({
             </div>
           )}
 
-          {subscriptionStatus === "past_due" && (
-            <div className="bg-background rounded-lg p-4 border">
-              <p className="text-sm text-muted-foreground">
-                Hemos intentado procesar su pago sin éxito. 
-                Por favor actualice su método de pago para restaurar el acceso.
-              </p>
-            </div>
-          )}
-
           {trialEndsAt && subscriptionStatus === "trial" && (
             <div className="bg-background rounded-lg p-4 border">
               <p className="text-sm text-muted-foreground">
