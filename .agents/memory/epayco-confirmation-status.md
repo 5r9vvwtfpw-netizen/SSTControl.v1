@@ -14,3 +14,9 @@ An ePayco PSE confirmation can carry an `x_transaction_id` different from the `t
 **Why:** The signed callback was rejected with HTTP 400 despite a direct provider lookup reporting APPROVED and matching every stored payment field. The signed reference ties the callback to the local payment; the callback ID is not the authoritative identifier for the PSE lookup.
 
 **How to apply:** Reconcile on both valid signed callbacks and authenticated status polling; the latter covers a dropped or rejected notification without treating browser-return parameters as proof of payment. Claim entitlements idempotently.
+
+El usuario confirmó el 25 de septiembre de 2026 que el pago PSE real por ePayco y el envío automático del comprobante al software contable funcionaron. Esta confirmación cubre la recepción contable, no la emisión o validación DIAN de una factura electrónica.
+
+**Why:** En pruebas con pagos reales es fácil confundir un flujo de cobro y sincronización exitoso con la facturación electrónica finalizada.
+
+**How to apply:** En pagos posteriores, comprobar por separado aprobación en ePayco, un solo comprobante local, recepción en contabilidad y, si corresponde, emisión/validación electrónica.
