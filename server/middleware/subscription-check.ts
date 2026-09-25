@@ -4,6 +4,7 @@ import { eq, and, or } from "drizzle-orm";
 import { pricingPluginSubscriptions } from "../../pricing_plugin/schema";
 import { users, subscriptions } from "@shared/schema";
 import logger from "../lib/logger";
+import { isInternalTestCompany } from "../lib/internal-test-company";
 
 // Días de gracia después de current_period_end antes de considerar una
 // suscripción "active" como vencida. Debe coincidir con el valor usado en
@@ -23,6 +24,18 @@ export interface SubscriptionStatus {
 }
 
 export async function getSubscriptionStatus(companyId: string): Promise<SubscriptionStatus> {
+  if (isInternalTestCompany(companyId)) {
+    return {
+      isActive: true,
+      isBlocked: false,
+      isTrial: false,
+      trialEndsAt: null,
+      subscriptionStatus: "internal_test",
+      blockedReason: null,
+      daysRemaining: null,
+    };
+  }
+
   let subscription: any;
   try {
     const [result] = await db

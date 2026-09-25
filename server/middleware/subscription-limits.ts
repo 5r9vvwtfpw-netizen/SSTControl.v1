@@ -12,6 +12,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { storage } from "../storage";
 import type { Worker } from "@shared/schema";
+import { isInternalTestCompany } from "../lib/internal-test-company";
 
 // Helper: resolve the effective company being viewed (superadmin/lso/lso_externo
 // can view/operate on any company via X-Company-Id header or ?companyId= query param).
@@ -245,31 +246,19 @@ export function checkWorkerLimit() {
         return next();
       }
 
-      // Determinar el companyId objetivo:
-      // 1. Para admins: usar companyId del payload (req.body.companyId)
-      // 2. Para otros usuarios: usar su propio companyId (req.user.companyId)
-      const userRole = req.user?.role;
-      const isAdmin = userRole === 'admin' || userRole === 'superadmin';
-      
-      let targetCompanyId: string;
-      
-      if (isAdmin) {
-        // Admin/Superadmin puede crear workers para cualquier empresa
-        const bodyCompanyId = req.body?.companyId || getEffectiveCompanyId(req);
-        if (typeof bodyCompanyId !== 'string' || bodyCompanyId === '') {
-          // Si admin no especificó empresa, continuar (será validado por la ruta)
-          return next();
-        }
-        targetCompanyId = bodyCompanyId;
-      } else {
-        // Usuario normal solo puede crear workers para su propia empresa
-        const userCompanyId = req.user?.companyId;
-        if (!userCompanyId) {
-          return res.status(401).json({ 
-            error: "Authentication required" 
-          });
-        }
-        targetCompanyId = userCompanyId;
+      // Para roles no globales, la ruta crea al trabajador en la empresa de
+      // la sesión, no en un companyId suministrado por el navegador.
+      const targetCompanyId = req.user?.companyId;
+      if (!targetCompanyId) {
+        return res.status(401).json({
+          error: "Authentication required"
+        });
+      }
+
+      // La empresa interna DEMO-PRUEBA conserva sus pruebas funcionales en
+      // producción sin requerir suscripción ni generar sobrecupos facturables.
+      if (isInternalTestCompany(targetCompanyId)) {
+        return next();
       }
 
       // Obtener suscripción activa de la empresa para verificar workersPurchased
