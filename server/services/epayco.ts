@@ -204,9 +204,12 @@ export async function getEpaycoPseBanks(): Promise<EpaycoBank[]> {
   const token = await getBearerToken();
   const query = new URLSearchParams({
     public_key: getPublicKey(),
-    lenguaje: "javascript",
-    enpruebas: isEpaycoTestMode() ? "TRUE" : "FALSE",
   });
+  // The bank-list endpoint returns sandbox banks for enpruebas=FALSE as well.
+  // Omit the flag entirely for the live catalog (as in ePayco's bank SDK).
+  if (isEpaycoTestMode()) {
+    query.set("enpruebas", "TRUE");
+  }
   const response = await fetch(
     `${SECURE_BASE_URL}/restpagos/pse/bancos.json?${query.toString()}`,
     { headers: authHeaders(token) }
