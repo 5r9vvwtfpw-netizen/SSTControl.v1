@@ -69,3 +69,4 @@
 - [Resultado PSE simulado vs ePayco](epayco-pse-simulator-result.md) — la aprobación de Banka/ACH en pruebas no garantiza aceptación comercial; manda la confirmación firmada de ePayco.
 - [Catálogo y correo de prueba PSE](epayco-pse-sandbox-setup.md) — el catálogo necesita modo de pruebas; Banka aún puede exigir un código enviado a un correo accesible.
 - [IP de cliente en Preview para PSE](replit-preview-pse-ip.md) — en este entorno el Preview da IP local incluso en XFF y descarta la cabecera inyectada desde el navegador.
+- [Evidencias PESV de Supertransporte](supertransporte-pesv-mapping.md) — tratar las capturas entregadas por la empresa como requisitos, no como evidencias ya existentes en la aplicación.
