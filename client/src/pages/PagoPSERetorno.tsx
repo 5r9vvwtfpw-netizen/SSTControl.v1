@@ -41,6 +41,7 @@ export default function PagoPSERetorno() {
     queryClient.invalidateQueries({ queryKey: ['/api/user'] });
     queryClient.invalidateQueries({ queryKey: ['/api/billing/subscription'] });
     queryClient.invalidateQueries({ queryKey: ['/api/billing/my-subscription'] });
+    queryClient.invalidateQueries({ queryKey: ['/api/billing/my-invoices'] });
     queryClient.invalidateQueries({ queryKey: ['/api/company/extra-seats'] });
   }, [approved]);
   const declined = payment?.status === 'DECLINED';

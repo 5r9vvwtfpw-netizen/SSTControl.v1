@@ -228,6 +228,64 @@ async function activateSubscriptionAfterEpayco(
       trialEnd: null,
     });
     await storage.ensurePricingPluginSync(subscription.companyId, "active", null);
+
+    // An approved PSE payment must also appear in the same billing history as
+    // other subscription payments. The locked payment row makes this idempotent
+    // across a callback and a simultaneous status poll.
+    const note = `Suscripción mensual pagada por PSE ePayco. Referencia: ${payment.invoice}`;
+    const existingInvoice = await tx.execute(sql`
+      SELECT id FROM invoices
+      WHERE company_id = ${payment.company_id} AND notes = ${note}
+      LIMIT 1
+    `);
+    if (!existingInvoice.rows.length) {
+      const companyResult = await tx.execute(sql`
+        SELECT name, nit, contact_email, address, ciiu_code,
+               number_of_workers, number_of_vehicles
+        FROM companies WHERE id = ${payment.company_id}
+      `);
+      const company = companyResult.rows[0] as {
+        name: string; nit: string | null; contact_email: string | null;
+        address: string | null; ciiu_code: string | null;
+        number_of_workers: number | null; number_of_vehicles: number | null;
+      } | undefined;
+      if (!company) throw new Error("Empresa no encontrada para el comprobante PSE");
+
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext('sst_invoice_number'))`);
+      const year = now.getUTCFullYear();
+      const prefix = `SST-${year}-`;
+      const last = await tx.execute(sql`
+        SELECT invoice_number FROM invoices
+        WHERE invoice_number LIKE ${prefix + "%"}
+        ORDER BY invoice_number DESC LIMIT 1
+      `);
+      const lastNumber = Number(String(last.rows[0]?.invoice_number || "").split("-").pop()) || 0;
+      const invoiceNumber = `${prefix}${String(lastNumber + 1).padStart(3, "0")}`;
+      const amount = Number(payment.amount);
+      const subtotal = Math.round(amount / 1.19);
+      const lineItems = JSON.stringify([{
+        description: "Suscripción Software SST Colombia - Mensual",
+        quantity: 1, unitPrice: amount, total: amount,
+      }]);
+
+      await tx.execute(sql`
+        INSERT INTO invoices (
+          company_id, subscription_id, invoice_number, status,
+          subtotal, tax_amount, total, currency,
+          period_start, period_end, issue_date, due_date, paid_date,
+          customer_name, customer_nit, customer_email, customer_address,
+          line_items, notes, snapshot_ciiu_code,
+          snapshot_number_of_workers, snapshot_number_of_vehicles
+        ) VALUES (
+          ${payment.company_id}, ${payment.subscription_id}, ${invoiceNumber}, 'paid',
+          ${subtotal}, ${amount - subtotal}, ${amount}, ${payment.currency},
+          ${now}, ${nextPeriodEnd}, ${now}, ${now}, ${now},
+          ${company.name}, ${company.nit || "N/A"}, ${company.contact_email || ""},
+          ${company.address || ""}, ${lineItems}, ${note}, ${company.ciiu_code},
+          ${company.number_of_workers}, ${company.number_of_vehicles}
+        )
+      `);
+    }
     await tx.execute(sql`
       UPDATE epayco_pse_transactions
       SET status = 'APPROVED',
