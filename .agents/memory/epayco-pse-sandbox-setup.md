@@ -14,3 +14,5 @@ description: Requisitos no obvios para llegar al simulador y terminar una prueba
 **Why:** ePayco explicó expresamente que la discordancia de modos provoca ese rechazo incluso si el banco de pruebas muestra una aprobación.
 
 **How to apply:** Comprobar el modo de la integración y pedir al operador que verifique el del Dashboard antes de crear otra transacción. No cambiar la configuración de producción por una prueba sin consentimiento informado.
+
+**Observación de producción:** Una cuenta puede devolver solamente BANKA y BANCO UNION COLOMBIANO incluso cuando la aplicación consulta el catálogo con modo de pruebas desactivado; la misma consulta con modo de pruebas activado devolvió idénticos bancos. La variable de modo de la aplicación, por sí sola, no prueba que ePayco haya habilitado PSE real para las credenciales y la cuenta. Confirmar con ePayco la habilitación de PSE en vivo y las credenciales adecuadas antes de permitir que clientes intenten pagos reales.
