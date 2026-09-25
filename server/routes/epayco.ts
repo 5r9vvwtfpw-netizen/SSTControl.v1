@@ -5,7 +5,10 @@
  * medios de pago. La API bancaria directa de ePayco limita la operación a PSE.
  */
 
+import crypto from "crypto";
+import { isIP } from "net";
 import type { Express, Request } from "express";
+import rateLimit from "express-rate-limit";
 import { sql } from "drizzle-orm";
 import { z } from "zod";
 import { requireAuth } from "../auth";
@@ -17,6 +20,7 @@ import { getSubscriptionStatus } from "../middleware/subscription-check";
 import { userRoleEnum } from "@shared/schema";
 import {
   createEpaycoPseTransaction,
+  EpaycoPseRejectedError,
   getEpaycoClientIp,
   getEpaycoPseBanks,
   getEpaycoPseTransaction,
@@ -26,6 +30,14 @@ import {
   validateEpaycoConfirmationSignature,
 } from "../services/epayco";
 import type { EpaycoPseLookup } from "../services/epayco";
+import { sendEpaycoPaymentLinkEmail } from "../services/payment-link-email";
+
+const paymentLinkReadLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 type EpaycoPaymentRow = {
   id: string;
@@ -74,6 +86,68 @@ function getBaseUrl(): string {
   );
 }
 
+function getPaymentLinkAppUrl(): string {
+  const configuredUrl = process.env.APP_URL?.trim();
+  if (!configuredUrl) throw new Error("APP_URL must be configured for payment links");
+  let url: URL;
+  try {
+    url = new URL(configuredUrl);
+  } catch {
+    throw new Error("APP_URL is invalid for payment links");
+  }
+  const hostname = url.hostname.toLowerCase();
+  const bareHostname = hostname.replace(/^\[|\]$/g, "");
+  const isPrivateIpv4 = (value: string) => {
+    const octets = value.split(".").map(Number);
+    const [first, second] = octets;
+    return first === 0 || first === 10 || first === 127 ||
+      (first === 100 && second >= 64 && second <= 127) ||
+      (first === 169 && second === 254) ||
+      (first === 172 && second >= 16 && second <= 31) ||
+      (first === 192 && second === 168) ||
+      first >= 224;
+  };
+  const ipVersion = isIP(bareHostname);
+  if (
+    url.protocol !== "https:" ||
+    url.username ||
+    url.password ||
+    url.search ||
+    url.hash ||
+    hostname === "localhost" ||
+    hostname.endsWith(".localhost") ||
+    hostname === "127.0.0.1" ||
+    hostname === "::1" ||
+    hostname === "[::1]" ||
+    (ipVersion === 4 && isPrivateIpv4(bareHostname)) ||
+    (ipVersion === 6 && /^(?:fc|fd|fe[89ab]|::ffff:)/i.test(bareHostname))
+  ) {
+    throw new Error("Production payment links require a public HTTPS APP_URL");
+  }
+  return url.toString().replace(/\/+$/, "");
+}
+
+function getPaymentLinkToken(req: Request): string | null {
+  const value = req.get("X-Payment-Link-Token");
+  return value && /^[A-Za-z0-9_-]{43}$/.test(value) ? value : null;
+}
+
+async function lockSubscriptionPseInitiation(tx: any, companyId: string): Promise<boolean> {
+  await tx.execute(sql`
+    SELECT pg_advisory_xact_lock(hashtext(${companyId}), hashtext('epayco_subscription_pse_init'))
+  `);
+  const pending = await tx.execute(sql`
+    SELECT invoice
+    FROM epayco_pse_transactions
+    WHERE company_id = ${companyId}
+      AND purchase_type = 'subscription'
+      AND status = 'PENDING'
+    LIMIT 1
+    FOR UPDATE
+  `);
+  return pending.rows.length === 0;
+}
+
 function getRequestValue(req: Request, key: string): string {
   const bodyValue = (req.body as Record<string, unknown> | undefined)?.[key];
   const queryValue = (req.query as Record<string, unknown> | undefined)?.[key];
@@ -115,6 +189,55 @@ async function ensureEpaycoTable(): Promise<void> {
     ADD COLUMN IF NOT EXISTS purchase_type varchar NOT NULL DEFAULT 'subscription',
     ADD COLUMN IF NOT EXISTS role varchar
   `);
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS epayco_pse_payment_links (
+      id varchar PRIMARY KEY DEFAULT gen_random_uuid(),
+      token_hash varchar NOT NULL UNIQUE,
+      company_id varchar NOT NULL,
+      subscription_id varchar NOT NULL,
+      amount integer NOT NULL,
+      currency varchar NOT NULL DEFAULT 'COP',
+      payment_invoice varchar UNIQUE,
+      created_at timestamp NOT NULL DEFAULT now(),
+      expires_at timestamp NOT NULL,
+      sent_at timestamp NOT NULL DEFAULT now(),
+      used_at timestamp,
+      revoked_at timestamp
+    )
+  `);
+  await db.execute(sql`
+    ALTER TABLE epayco_pse_payment_links
+    ADD COLUMN IF NOT EXISTS payment_invoice varchar
+  `);
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS epayco_pse_payment_links_company_created_idx
+    ON epayco_pse_payment_links (company_id, created_at DESC)
+  `);
+  await db.execute(sql`
+    CREATE UNIQUE INDEX IF NOT EXISTS epayco_pse_payment_links_invoice_idx
+    ON epayco_pse_payment_links (payment_invoice)
+    WHERE payment_invoice IS NOT NULL
+  `);
+}
+
+function hashPaymentLinkToken(token: string): string {
+  return crypto.createHash("sha256").update(token).digest("hex");
+}
+
+function maskEmail(email: string): string {
+  const [local = "", domain = ""] = email.split("@");
+  if (!domain) return "***";
+  return `${local.slice(0, 1)}***@${domain}`;
+}
+
+function getSubscriptionPaymentAmount(company: any): number | null {
+  const base = Number(company.quoteBaseMonthlyPrice || 0);
+  const current = Number(company.quoteCurrentPeriodPrice || 0);
+  if (base > 0 && company.quoteCurrentPeriodPrice === 0) return null;
+  const amount = current > 0 && current < base ? current : base;
+  return Number.isFinite(amount) && amount > 0 && Number.isSafeInteger(Math.round(amount))
+    ? Math.round(amount)
+    : null;
 }
 
 async function getPaymentByReference(reference: string): Promise<EpaycoPaymentRow | null> {
@@ -375,6 +498,16 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
           logger.error({ invoice: key, error: error.message }, "[ePayco] No se pudo aplicar el pago PSE verificado");
           return res.status(503).json({ error: "El pago fue aprobado, pero aún no se pudo activar. Reintente consultar su estado." });
         }
+      } else if (lookup?.status === "DECLINED" || lookup?.status === "ERROR") {
+        await db.execute(sql`
+          UPDATE epayco_pse_transactions
+          SET status = ${lookup.status},
+              response = ${lookup.reason || lookup.status},
+              response_reason = ${lookup.reason},
+              updated_at = now()
+          WHERE id = ${payment.id} AND status <> 'APPROVED'
+        `);
+        payment.status = lookup.status;
       }
     }
 
@@ -403,6 +536,418 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
       logger.error({ error: error.message }, "[ePayco] Error obteniendo bancos PSE");
       res.status(502).json({ error: "No se pudo obtener la lista de bancos PSE" });
     }
+  });
+
+  app.post("/api/epayco/pse/enlace/enviar", paymentOperationLimiter, requireAuth, async (req: any, res) => {
+    if (process.env.NODE_ENV !== "production") {
+      return res.status(503).json({ error: "El envío de enlaces de pago no está disponible en este entorno." });
+    }
+    if (!isEpaycoConfigured()) {
+      return res.status(503).json({ error: "El pago por transferencia bancaria aún no está configurado." });
+    }
+    let appUrl: string;
+    try {
+      appUrl = getPaymentLinkAppUrl();
+    } catch (error: any) {
+      logger.error({ error: error.message }, "[ePayco] APP_URL inválida para enlaces PSE");
+      return res.status(503).json({ error: "El envío de enlaces de pago no está configurado." });
+    }
+    const companyId = getEffectiveCompanyId(req);
+    if (!companyId) return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+    if (["lso", "lso_externo", "trabajador"].includes(req.user?.role)) {
+      return res.status(403).json({ error: "Este portal no requiere pagos de suscripción" });
+    }
+
+    const subscription = await storage.getSubscriptionByCompany(companyId);
+    if (!subscription) return res.status(404).json({ error: "No tiene una suscripción. Contacte a soporte." });
+    if (!subscription.contractAcceptedAt) {
+      return res.status(403).json({
+        error: "Debe aceptar el contrato antes de continuar con el pago.",
+        redirectTo: "/checkout",
+      });
+    }
+    const liveStatus = await getSubscriptionStatus(companyId);
+    if (subscription.status === "active" && liveStatus.isActive) {
+      return res.status(409).json({ error: "La suscripción ya está activa. Verifique el estado antes de iniciar otro pago." });
+    }
+
+    const pendingPayment = await db.execute(sql`
+      SELECT invoice FROM epayco_pse_transactions
+      WHERE company_id = ${companyId}
+        AND purchase_type = 'subscription'
+        AND status = 'PENDING'
+      LIMIT 1
+    `);
+    if (pendingPayment.rows.length) {
+      return res.status(409).json({ error: "Hay un pago PSE pendiente de confirmación. Revise su estado antes de iniciar otro." });
+    }
+
+    const company = await storage.getCompany(companyId);
+    if (!company) return res.status(404).json({ error: "Empresa no encontrada" });
+    const recipient = String(company.contactEmail || "").trim();
+    if (!recipient || !z.string().email().safeParse(recipient).success) {
+      return res.status(409).json({ error: "La empresa no tiene un correo de contacto válido registrado." });
+    }
+    const amount = getSubscriptionPaymentAmount(company);
+    if (!amount) {
+      return res.status(409).json({
+        error: "Su empresa no tiene una cotización de precio válida para pagar.",
+      });
+    }
+
+    const token = crypto.randomBytes(32).toString("base64url");
+    const tokenHash = hashPaymentLinkToken(token);
+    const issuedLink = await db.transaction(async (tx) => {
+      await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${companyId}), hashtext('epayco_pse_payment_link'))`);
+      const recent = await tx.execute(sql`
+        SELECT id FROM epayco_pse_payment_links
+        WHERE company_id = ${companyId} AND sent_at > now() - interval '60 seconds'
+        LIMIT 1
+      `);
+      if (recent.rows.length) return false;
+
+      await tx.execute(sql`
+        INSERT INTO epayco_pse_payment_links (
+          token_hash, company_id, subscription_id, amount, currency, expires_at
+        ) VALUES (
+          ${tokenHash}, ${companyId}, ${subscription.id}, ${amount}, 'COP', now() + interval '24 hours'
+        )
+      `);
+      return true;
+    });
+    if (!issuedLink) {
+      return res.status(429).json({ error: "Espere un minuto antes de solicitar otro enlace de pago." });
+    }
+
+    const paymentUrl = `${appUrl}/pago-pse/enlace#${encodeURIComponent(token)}`;
+    try {
+      await sendEpaycoPaymentLinkEmail({
+        recipient,
+        companyName: company.name,
+        amount,
+        currency: "COP",
+        paymentUrl,
+      });
+    } catch (error: any) {
+      await db.execute(sql`
+        UPDATE epayco_pse_payment_links SET revoked_at = now()
+        WHERE token_hash = ${tokenHash}
+      `);
+      logger.error({ companyId, error: error.message }, "[ePayco] No se pudo enviar enlace PSE");
+      return res.status(502).json({ error: "No se pudo enviar el enlace de pago. Intente de nuevo más tarde." });
+    }
+    await db.execute(sql`
+      UPDATE epayco_pse_payment_links
+      SET revoked_at = now()
+      WHERE company_id = ${companyId}
+        AND token_hash <> ${tokenHash}
+        AND revoked_at IS NULL
+    `);
+
+    return res.json({
+      message: "Enlace de pago enviado al correo de contacto registrado.",
+      recipientMasked: maskEmail(recipient),
+    });
+  });
+
+  app.get("/api/epayco/pse/enlace/detalle", paymentLinkReadLimiter, async (req, res) => {
+    const token = getPaymentLinkToken(req);
+    if (!token) return res.status(404).json({ error: "Enlace de pago no válido o vencido." });
+    const tokenHash = hashPaymentLinkToken(token);
+    const result = await db.execute(sql`
+      SELECT l.company_id, l.subscription_id, l.amount, l.currency, l.expires_at,
+             l.used_at, l.revoked_at, c.name AS company_name
+      FROM epayco_pse_payment_links l
+      JOIN companies c ON c.id = l.company_id
+      WHERE l.token_hash = ${tokenHash}
+      LIMIT 1
+    `);
+    const link = result.rows[0] as {
+      company_id: string; subscription_id: string; amount: number; currency: string;
+      expires_at: Date; used_at: Date | null; revoked_at: Date | null; company_name: string;
+    } | undefined;
+    if (!link || (link.revoked_at && !link.used_at) ||
+      (!link.used_at && new Date(link.expires_at).getTime() <= Date.now())) {
+      return res.status(404).json({ error: "Enlace de pago no válido o vencido." });
+    }
+
+    let banks: Awaited<ReturnType<typeof getEpaycoPseBanks>> = [];
+    if (!link.used_at && process.env.NODE_ENV !== "test") {
+      if (!isEpaycoConfigured()) {
+        return res.status(503).json({ error: "El pago por transferencia bancaria aún no está configurado." });
+      }
+      try {
+        banks = await getEpaycoPseBanks();
+      } catch (error: any) {
+        logger.error({ error: error.message }, "[ePayco] Error obteniendo bancos para enlace PSE");
+        return res.status(502).json({ error: "No se pudo obtener la lista de bancos PSE" });
+      }
+    }
+
+    let status = link.used_at ? "USED" : "READY";
+    if (link.used_at) {
+      const payment = await db.execute(sql`
+        SELECT status FROM epayco_pse_transactions WHERE invoice = (
+          SELECT payment_invoice FROM epayco_pse_payment_links WHERE token_hash = ${tokenHash}
+        ) LIMIT 1
+      `);
+      if (payment.rows[0]?.status) status = String(payment.rows[0].status);
+    }
+    return res.json({
+      companyName: link.company_name,
+      amount: Number(link.amount),
+      currency: link.currency,
+      banks,
+      status,
+    });
+  });
+
+  app.post("/api/epayco/pse/enlace/iniciar", paymentOperationLimiter, async (req, res) => {
+    const bodySchema = z.object({
+      bankCode: z.string().min(1, "Seleccione un banco"),
+      userType: z.enum(["0", "1"]),
+      idType: z.enum(["CC", "CE", "NIT", "PP", "TI"]),
+      idNumber: z.string().min(5, "Número de documento inválido").max(30),
+      email: z.string().email("Email inválido"),
+      fullName: z.string().min(3, "Nombre inválido").max(120),
+      cellPhone: z.string().trim().regex(/^[0-9]{10}$/, "Ingrese un celular colombiano de 10 dígitos"),
+    });
+    const parsed = bodySchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({
+        error: "Datos inválidos",
+        details: parsed.error.errors.map((error) => error.message),
+      });
+    }
+    if (process.env.NODE_ENV === "test") {
+      return res.status(503).json({ error: "El inicio de pagos está deshabilitado en pruebas." });
+    }
+    if (!isEpaycoConfigured()) {
+      return res.status(503).json({ error: "El pago por transferencia bancaria aún no está configurado." });
+    }
+    let appUrl: string;
+    try {
+      appUrl = getPaymentLinkAppUrl();
+    } catch (error: any) {
+      logger.error({ error: error.message }, "[ePayco] APP_URL inválida para iniciar enlace PSE");
+      return res.status(503).json({ error: "El inicio de pagos no está configurado." });
+    }
+
+    const token = getPaymentLinkToken(req);
+    if (!token) return res.status(404).json({ error: "Enlace de pago no válido o vencido." });
+    const tokenHash = hashPaymentLinkToken(token);
+    const linkResult = await db.execute(sql`
+      SELECT company_id, subscription_id, amount, currency, expires_at, used_at, revoked_at
+      FROM epayco_pse_payment_links
+      WHERE token_hash = ${tokenHash}
+      LIMIT 1
+    `);
+    const link = linkResult.rows[0] as {
+      company_id: string; subscription_id: string; amount: number; currency: string;
+      expires_at: Date; used_at: Date | null; revoked_at: Date | null;
+    } | undefined;
+    if (!link || link.revoked_at || link.used_at || new Date(link.expires_at).getTime() <= Date.now()) {
+      return res.status(410).json({ error: "Este enlace ya fue utilizado o venció." });
+    }
+
+    const subscription = await storage.getSubscription(link.subscription_id);
+    if (!subscription || subscription.companyId !== link.company_id) {
+      return res.status(404).json({ error: "No se encontró la suscripción asociada al enlace." });
+    }
+    if (!subscription.contractAcceptedAt) {
+      return res.status(403).json({ error: "Debe aceptar el contrato antes de continuar con el pago.", redirectTo: "/checkout" });
+    }
+    const liveStatus = await getSubscriptionStatus(link.company_id);
+    if (subscription.status === "active" && liveStatus.isActive) {
+      return res.status(409).json({ error: "La suscripción ya está activa. Verifique el estado antes de iniciar otro pago." });
+    }
+    const company = await storage.getCompany(link.company_id);
+    if (!company) return res.status(404).json({ error: "Empresa no encontrada" });
+    const currentAmount = getSubscriptionPaymentAmount(company);
+    if (currentAmount !== Number(link.amount)) {
+      return res.status(409).json({ error: "El precio de la suscripción cambió. Solicite un nuevo enlace de pago." });
+    }
+
+    const forwardedFor = req.headers["x-forwarded-for"];
+    let clientIp: string;
+    try {
+      clientIp = getEpaycoClientIp(
+        typeof forwardedFor === "string" ? forwardedFor : undefined,
+        req.ip,
+      );
+    } catch (error: any) {
+      return res.status(503).json({ error: error.message });
+    }
+
+    const start = await db.transaction(async (tx) => {
+      if (!(await lockSubscriptionPseInitiation(tx, link.company_id))) {
+        return { kind: "pending" as const };
+      }
+      const claimed = await tx.execute(sql`
+        UPDATE epayco_pse_payment_links
+        SET used_at = now()
+        WHERE token_hash = ${tokenHash}
+          AND used_at IS NULL AND revoked_at IS NULL AND expires_at > now()
+        RETURNING company_id, subscription_id, amount, currency
+      `);
+      const claimedLink = claimed.rows[0] as {
+        company_id: string; subscription_id: string; amount: number; currency: string;
+      } | undefined;
+      if (!claimedLink) return { kind: "unavailable" as const };
+
+      const invoice = `sst-pse-${claimedLink.subscription_id}-${Date.now()}`;
+      await tx.execute(sql`
+        INSERT INTO epayco_pse_transactions (
+          company_id, subscription_id, invoice, amount, currency, status, purchase_type
+        ) VALUES (
+          ${claimedLink.company_id}, ${claimedLink.subscription_id}, ${invoice},
+          ${Number(claimedLink.amount)}, ${claimedLink.currency}, 'PENDING', 'subscription'
+        )
+      `);
+      await tx.execute(sql`
+        UPDATE epayco_pse_payment_links
+        SET payment_invoice = ${invoice}
+        WHERE token_hash = ${tokenHash} AND used_at IS NOT NULL
+      `);
+      return { kind: "claimed" as const, claimedLink, invoice };
+    });
+    if (start.kind === "pending") {
+      return res.status(409).json({ error: "Hay un pago PSE pendiente de confirmación. Revise su estado antes de iniciar otro." });
+    }
+    if (start.kind === "unavailable") return res.status(410).json({ error: "Este enlace ya fue utilizado o venció." });
+    const { claimedLink, invoice } = start;
+    const { firstName, lastName } = splitFullName(parsed.data.fullName);
+    try {
+      const latestCompany = await storage.getCompany(claimedLink.company_id);
+      if (!latestCompany || getSubscriptionPaymentAmount(latestCompany) !== Number(claimedLink.amount)) {
+        await db.execute(sql`
+          UPDATE epayco_pse_transactions
+          SET status = 'ERROR', response = 'Subscription quote changed before payment initiation',
+              response_reason = 'Subscription quote changed before payment initiation', updated_at = now()
+          WHERE invoice = ${invoice}
+        `);
+        return res.status(409).json({ error: "El precio de la suscripción cambió. Solicite un nuevo enlace de pago." });
+      }
+      const result = await createEpaycoPseTransaction({
+        bankCode: parsed.data.bankCode,
+        invoice,
+        description: `Suscripción mensual SST Colombia — ${latestCompany.name}`,
+        amount: Number(claimedLink.amount),
+        documentType: parsed.data.idType,
+        documentNumber: parsed.data.idNumber,
+        personType: parsed.data.userType,
+        firstName,
+        lastName,
+        email: parsed.data.email,
+        cellPhone: parsed.data.cellPhone,
+        ip: clientIp,
+        responseUrl: `${appUrl}/pago-pse/enlace/retorno?invoice=${encodeURIComponent(invoice)}`,
+        confirmationUrl: `${appUrl}/api/epayco/pse/confirmacion`,
+      });
+      await db.execute(sql`
+        UPDATE epayco_pse_transactions
+        SET ticket_id = ${result.ticketId},
+            transaction_id = ${result.transactionId},
+            ref_payco = ${result.refPayco},
+            updated_at = now()
+        WHERE invoice = ${invoice}
+      `);
+      return res.json({ bankRedirectUrl: result.bankRedirectUrl, invoice });
+    } catch (error: any) {
+      // A network timeout can occur after ePayco has accepted the request.
+      // Keep this attempt pending until it can be reconciled; marking it ERROR
+      // would let the company start a second charge for the same subscription.
+      const definitelyRejected = error instanceof EpaycoPseRejectedError;
+      await db.execute(sql`
+        UPDATE epayco_pse_transactions
+        SET status = ${definitelyRejected ? "ERROR" : "PENDING"},
+            response = ${error.message}, updated_at = now()
+        WHERE invoice = ${invoice}
+      `);
+      logger.error({ error: error.message, companyId: claimedLink.company_id, invoice }, "[ePayco] Error iniciando PSE desde enlace");
+      return res.status(502).json({ error: definitelyRejected
+        ? "No se pudo iniciar el pago PSE. Solicite un nuevo enlace."
+        : "No se pudo confirmar el inicio del pago. No intente otro cobro hasta que soporte verifique esta transacción." });
+    }
+  });
+
+  app.get("/api/epayco/pse/enlace/estado", paymentLinkReadLimiter, async (req, res) => {
+    const token = getPaymentLinkToken(req);
+    if (!token) return res.status(404).json({ error: "Enlace de pago no válido o vencido." });
+    const result = await db.execute(sql`
+      SELECT l.company_id, l.subscription_id, l.expires_at, l.used_at, l.revoked_at, l.payment_invoice,
+             p.id, p.company_id AS payment_company_id, p.subscription_id AS payment_subscription_id,
+             p.invoice, p.ticket_id, p.transaction_id, p.ref_payco, p.amount, p.currency,
+             p.status, p.response, p.purchase_type, p.role
+      FROM epayco_pse_payment_links l
+      LEFT JOIN epayco_pse_transactions p ON p.invoice = l.payment_invoice
+      WHERE l.token_hash = ${hashPaymentLinkToken(token)}
+      LIMIT 1
+    `);
+    const row = result.rows[0] as ({
+      company_id: string; subscription_id: string; expires_at: Date; used_at: Date | null; revoked_at: Date | null;
+      payment_invoice: string | null;
+      id: string | null; payment_company_id: string | null; payment_subscription_id: string | null;
+      invoice: string | null; ticket_id: string | null; transaction_id: string | null; ref_payco: string | null;
+      amount: number | null; currency: string | null; status: string | null; response: string | null;
+      purchase_type: string | null; role: string | null;
+    }) | undefined;
+    if (!row || (row.revoked_at && !row.used_at)) return res.status(404).json({ error: "Enlace de pago no válido." });
+    if (new Date(row.expires_at).getTime() <= Date.now() && !row.used_at) {
+      return res.json({ status: "EXPIRED", providerStatus: null });
+    }
+
+    const payment = row.id && row.invoice && row.amount !== null && row.currency
+      ? ({
+          id: row.id,
+          company_id: row.payment_company_id || row.company_id,
+          subscription_id: row.payment_subscription_id || row.subscription_id,
+          invoice: row.invoice,
+          ticket_id: row.ticket_id,
+          transaction_id: row.transaction_id,
+          ref_payco: row.ref_payco,
+          amount: Number(row.amount),
+          currency: row.currency,
+          status: row.status || "PENDING",
+          response: row.response,
+          purchase_type: row.purchase_type || "subscription",
+          role: row.role,
+        } satisfies EpaycoPaymentRow)
+      : null;
+    if (!payment) {
+      return res.json({ status: row.used_at ? "PENDING" : "READY", providerStatus: null });
+    }
+
+    let providerStatus: EpaycoPseLookup["status"] | null = null;
+    if (payment.status !== "APPROVED" && payment.ticket_id && process.env.NODE_ENV !== "test") {
+      try {
+        const verified = await getEpaycoPseTransaction(payment.ticket_id);
+        if (matchesVerifiedPayment(payment, verified)) {
+          providerStatus = verified.status;
+          if (verified.status === "APPROVED") {
+            await activateSubscriptionAfterEpayco(payment, verified.transactionId);
+            payment.status = "APPROVED";
+          } else if (verified.status === "DECLINED" || verified.status === "ERROR") {
+            await db.execute(sql`
+              UPDATE epayco_pse_transactions
+              SET status = ${verified.status}, response = ${verified.reason || verified.status},
+                  response_reason = ${verified.reason}, updated_at = now()
+              WHERE id = ${payment.id} AND status <> 'APPROVED'
+            `);
+            payment.status = verified.status;
+          }
+        } else {
+          logger.warn({ invoice: payment.invoice }, "[ePayco] Consulta por enlace PSE no coincide con el pago local");
+        }
+      } catch (error: any) {
+        logger.warn({ invoice: payment.invoice, error: error.message }, "[ePayco] No se pudo consultar estado PSE del enlace");
+        return res.status(503).json({ error: "No se pudo verificar el estado del pago. Intente de nuevo." });
+      }
+    } else if (payment.status === "APPROVED") {
+      providerStatus = "APPROVED";
+    }
+
+    return res.json({ status: payment.status, providerStatus });
   });
 
   app.post("/api/epayco/pse/iniciar", paymentOperationLimiter, requireAuth, async (req: any, res) => {
@@ -478,19 +1023,21 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
         return res.status(409).json({ error: "La suscripción ya está activa. Verifique el estado antes de iniciar otro pago." });
       }
     }
-    const pendingPayment = await db.execute(sql`
-      SELECT invoice FROM epayco_pse_transactions
-      WHERE company_id = ${companyId}
-        AND purchase_type = ${parsed.data.purchaseType}
-        AND status = 'PENDING'
-        AND ticket_id IS NOT NULL
-        AND created_at > now() - interval '30 minutes'
-      LIMIT 1
-    `);
-    if (pendingPayment.rows.length > 0) {
-      return res.status(409).json({
-        error: "Hay un pago PSE pendiente de confirmación. Revise su estado antes de iniciar otro.",
-      });
+    if (parsed.data.purchaseType === "extra_seat") {
+      const pendingPayment = await db.execute(sql`
+        SELECT invoice FROM epayco_pse_transactions
+        WHERE company_id = ${companyId}
+          AND purchase_type = 'extra_seat'
+          AND status = 'PENDING'
+          AND ticket_id IS NOT NULL
+          AND created_at > now() - interval '30 minutes'
+        LIMIT 1
+      `);
+      if (pendingPayment.rows.length > 0) {
+        return res.status(409).json({
+          error: "Hay un pago PSE pendiente de confirmación. Revise su estado antes de iniciar otro.",
+        });
+      }
     }
 
     const company = await storage.getCompany(companyId);
@@ -526,14 +1073,28 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
     }
 
     const invoice = `sst-pse-${subscription.id}-${Date.now()}`;
-    await db.execute(sql`
-      INSERT INTO epayco_pse_transactions (
-        company_id, subscription_id, invoice, amount, currency, status, purchase_type, role
-      ) VALUES (
-        ${companyId}, ${subscription.id}, ${invoice}, ${Math.round(amount)}, 'COP', 'PENDING',
-        ${parsed.data.purchaseType}, ${extraSeatRole}
-      )
-    `);
+    const inserted = await db.transaction(async (tx) => {
+      if (
+        parsed.data.purchaseType === "subscription" &&
+        !(await lockSubscriptionPseInitiation(tx, companyId))
+      ) {
+        return false;
+      }
+      await tx.execute(sql`
+        INSERT INTO epayco_pse_transactions (
+          company_id, subscription_id, invoice, amount, currency, status, purchase_type, role
+        ) VALUES (
+          ${companyId}, ${subscription.id}, ${invoice}, ${Math.round(amount)}, 'COP', 'PENDING',
+          ${parsed.data.purchaseType}, ${extraSeatRole}
+        )
+      `);
+      return true;
+    });
+    if (!inserted) {
+      return res.status(409).json({
+        error: "Hay un pago PSE pendiente de confirmación. Revise su estado antes de iniciar otro.",
+      });
+    }
 
     const { firstName, lastName } = splitFullName(parsed.data.fullName);
     const baseUrl = getBaseUrl();
@@ -577,13 +1138,17 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
         status: "PENDING",
       });
     } catch (error: any) {
+      const definitelyRejected = error instanceof EpaycoPseRejectedError;
       await db.execute(sql`
         UPDATE epayco_pse_transactions
-        SET status = 'ERROR', response = ${error.message}, updated_at = now()
+        SET status = ${definitelyRejected ? "ERROR" : "PENDING"},
+            response = ${error.message}, updated_at = now()
         WHERE invoice = ${invoice}
       `);
       logger.error({ error: error.message, companyId, invoice }, "[ePayco] Error iniciando PSE");
-      return res.status(502).json({ error: error.message || "No se pudo iniciar el pago PSE" });
+      return res.status(502).json({ error: definitelyRejected
+        ? "No se pudo iniciar el pago PSE. Intente de nuevo más tarde."
+        : "No se pudo confirmar el inicio del pago. No intente otro cobro hasta que soporte verifique esta transacción." });
     }
   });
 

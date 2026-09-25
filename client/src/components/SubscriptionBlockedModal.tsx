@@ -1,6 +1,8 @@
 import { AlertTriangle, CreditCard, Clock, XCircle, GraduationCap, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { useMutation } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 
 const TRAINING_APPROVAL_EMAIL = "admin@sst-colombia.com";
 
@@ -17,7 +19,38 @@ export function SubscriptionBlockedModal({
   trialEndsAt,
   onActivateSubscription,
 }: SubscriptionBlockedModalProps) {
+  const { toast } = useToast();
   const isPendingTrainingApproval = blockedReason?.includes(TRAINING_APPROVAL_EMAIL);
+  const canSendPaymentLink = !isPendingTrainingApproval &&
+    ["trial_expired", "past_due", "cancelled", "no_subscription", "blocked"].includes(subscriptionStatus);
+  const sendPaymentLink = useMutation({
+    mutationFn: async () => {
+      const response = await fetch("/api/epayco/pse/enlace/enviar", {
+        method: "POST",
+        credentials: "include",
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(result.error || result.message || "No se pudo enviar el enlace de pago");
+      }
+      return result as { message?: string; recipientMasked?: string };
+    },
+    onSuccess: (result) => {
+      toast({
+        title: "Enlace de pago enviado",
+        description: result.recipientMasked
+          ? `Se envió al correo de contacto registrado ${result.recipientMasked}.`
+          : result.message || "El enlace se envió al correo de contacto registrado.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "No se pudo enviar el enlace",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   const getStatusIcon = () => {
     if (isPendingTrainingApproval) {
@@ -154,11 +187,34 @@ export function SubscriptionBlockedModal({
               </Button>
             )
           )}
+
+          {canSendPaymentLink && (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                size="lg"
+                onClick={() => sendPaymentLink.mutate()}
+                disabled={sendPaymentLink.isPending}
+              >
+                {sendPaymentLink.isPending ? (
+                  <span className="mr-2 h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                ) : (
+                  <Mail className="mr-2 h-5 w-5" />
+                )}
+                {sendPaymentLink.isPending ? "Enviando enlace..." : "Enviar enlace de pago"}
+              </Button>
+              <p className="text-xs text-muted-foreground text-center">
+                El enlace se enviará únicamente al correo de contacto registrado en su empresa.
+              </p>
+            </>
+          )}
           
           <p className="text-xs text-muted-foreground text-center mt-2">
             {isPendingTrainingApproval
               ? `¿Ya solicitó la capacitación? Escríbanos a ${TRAINING_APPROVAL_EMAIL}`
-              : "¿Necesita ayuda? Escríbanos a soporte@sst-colombia.com"}
+              : "El enlace se envía únicamente al correo de contacto registrado en su empresa. ¿Necesita ayuda? Escríbanos a soporte@sst-colombia.com"}
           </p>
         </CardFooter>
       </Card>

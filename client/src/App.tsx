@@ -172,6 +172,7 @@ import PlanesSuscripcion from "@/pages/PlanesSuscripcion";
 import Checkout from "@/pages/Checkout";
 import PagoPSE from "@/pages/PagoPSE";
 import PagoPSERetorno from "@/pages/PagoPSERetorno";
+import PagoPSEEnlace from "@/pages/PagoPSEEnlace";
 import DashboardFacturacion from "@/pages/DashboardFacturacion";
 import MiCuenta from "@/pages/MiCuenta";
 import MiSuscripcion from "@/pages/MiSuscripcion";
@@ -403,6 +404,8 @@ function Router() {
       <ProtectedRoute path="/mensajes-internos" component={MensajesInternos} />
       <ProtectedRoute path="/planes-suscripcion" component={PlanesSuscripcion} />
       <ProtectedRoute path="/checkout" component={Checkout} />
+      <Route path="/pago-pse/enlace/retorno" component={PagoPSEEnlace} />
+      <Route path="/pago-pse/enlace" component={PagoPSEEnlace} />
       <ProtectedRoute path="/pago-pse" component={PagoPSE} />
       <ProtectedRoute path="/pago-pse/retorno" component={PagoPSERetorno} />
       <ProtectedRoute path="/dashboard-facturacion" component={DashboardFacturacion} />
@@ -621,6 +624,12 @@ function AuthenticatedLayout() {
         </div>
       </div>
     );
+  }
+
+  // The payer may already be signed in to a different company. A payment
+  // link must remain available without that account's subscription gate.
+  if (location === "/pago-pse/enlace" || location === "/pago-pse/enlace/retorno") {
+    return <Router />;
   }
 
   if (!user) {

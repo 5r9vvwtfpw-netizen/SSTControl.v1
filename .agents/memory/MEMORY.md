@@ -66,6 +66,7 @@
 - [Límite de desactivación de proveedores de pago](payment-provider-deactivation-boundary.md) — bloquear creación, consulta, webhook y UI; ocultar el método del checkout no basta.
 - [Stripe to PSE transition](stripe-to-pse-transition.md) — bloquear compras nuevas no cancela renovaciones externas; conservar confirmaciones firmadas de pagos anteriores.
 - [ePayco confirmation status](epayco-confirmation-status.md) — la firma no autentica el texto de estado; consultar el resultado al proveedor antes de habilitar servicios.
+- [Inicio incierto de cobros PSE](epayco-pse-uncertain-initiation.md) — un error 5xx o de red no prueba rechazo; conservar el intento pendiente para evitar otro cobro.
 - [Autenticación ePayco](epayco-auth-response.md) — HTTP 200 del login no prueba autenticación; comprobar el cuerpo antes de habilitar pagos.
 - [ePayco callback environments](epayco-callback-environments.md) — en desarrollo, priorizar el dominio dev para respuestas/webhooks; APP_URL compartida apunta a producción.
 - [Resultado PSE simulado vs ePayco](epayco-pse-simulator-result.md) — la aprobación de Banka/ACH en pruebas no garantiza aceptación comercial; manda la confirmación firmada de ePayco.

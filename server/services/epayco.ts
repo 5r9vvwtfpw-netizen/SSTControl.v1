@@ -248,6 +248,8 @@ export async function getEpaycoPseBanks(): Promise<EpaycoBank[]> {
   })).filter((bank: EpaycoBank) => bank.code && bank.code !== "0" && bank.name);
 }
 
+export class EpaycoPseRejectedError extends Error {}
+
 export async function createEpaycoPseTransaction(
   params: CreateEpaycoPseParams
 ): Promise<EpaycoPseResult> {
@@ -304,6 +306,12 @@ export async function createEpaycoPseTransaction(
       providerCodes: providerErrors.map((entry: any) => entry?.codError).filter(Boolean),
       providerMessage: message,
     }, "[ePayco] Error creando pago PSE");
+    // Only an explicit business validation error establishes that no bank
+    // transaction was created. An HTTP 5xx or ambiguous response must remain
+    // pending: retrying it could charge the same subscription twice.
+    if (response.status < 500 && providerErrors.length > 0) {
+      throw new EpaycoPseRejectedError(`ePayco: ${message}`);
+    }
     throw new Error(`ePayco: ${message}`);
   }
 

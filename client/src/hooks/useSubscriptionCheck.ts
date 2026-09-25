@@ -40,6 +40,10 @@ export function useSubscriptionCheck() {
   const { data: user, isLoading } = useQuery<UserWithSubscription>({
     queryKey: ["/api/user"],
     retry: false,
+    refetchInterval: (query) =>
+      (query.state.data as UserWithSubscription | undefined)?.subscriptionStatus?.isBlocked
+        ? 15_000
+        : false,
   });
 
   const isExcludedPath = EXCLUDED_PATHS.some((path) =>
