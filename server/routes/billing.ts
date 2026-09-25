@@ -38,6 +38,38 @@ function getEffectiveCompanyId(req: any): string | null {
  * Integración con pasarela Stripe para pagos
  */
 export function registerBillingRoutes(app: Express) {
+  // El contrato se registra antes de iniciar PSE; la confirmación firmada es
+  // la única que puede activar la suscripción tras un cobro.
+  app.post("/api/billing/contract/accept", subscriptionMutationLimiter, requireAuth, async (req, res) => {
+    try {
+      const parsed = z.object({
+        acceptedTerms: z.literal(true),
+        acceptedDataTreatment: z.literal(true),
+        acceptedAutoRenewal: z.literal(true),
+      }).safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ error: "Debe aceptar el contrato de servicios" });
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId || ['lso', 'lso_externo', 'trabajador'].includes(req.user!.role)) {
+        return res.status(403).json({ error: "No tiene permisos para aceptar este contrato" });
+      }
+      const subscription = await storage.getSubscriptionByCompany(companyId);
+      if (!subscription) return res.status(404).json({ error: "Suscripción no encontrada" });
+      if (subscription.contractAcceptedAt) return res.json({ accepted: true });
+      const company = await storage.getCompany(companyId);
+      await storage.updateSubscription(subscription.id, {
+        contractAcceptedAt: new Date(),
+        contractTermsVersion: '1.0',
+        contractData: {
+          ...parsed.data,
+          planName: `SST Colombia - ${company?.name || ''}`,
+        },
+      });
+      return res.json({ accepted: true });
+    } catch (error) {
+      console.error('[Billing] Error accepting contract:', error);
+      return res.status(500).json({ error: "No se pudo registrar la aceptación del contrato" });
+    }
+  });
   
   // ============================================================================
   // BILLING SYSTEM HEALTH CHECK - Verificación de salud del sistema
@@ -486,7 +518,7 @@ export function registerBillingRoutes(app: Express) {
   /**
    * POST /api/billing/subscription/:id/activate
    * Permite a un usuario en período de prueba (o activo) pagar inmediatamente
-   * Crea una sesión de Stripe Checkout para el primer mes del plan actual
+   * Envía al checkout PSE de ePayco para el primer mes del plan actual
    * Permisos: admin (todas), otros (solo su empresa)
    */
   app.post("/api/billing/subscription/:id/activate", subscriptionMutationLimiter, requireAuth, async (req, res) => {
@@ -499,6 +531,11 @@ export function registerBillingRoutes(app: Express) {
       if (!subscription) {
         console.log('[Billing] Subscription not found:', subscriptionId);
         return res.status(404).json({ error: "Suscripción no encontrada" });
+      }
+      const isAdmin = req.user!.role === 'admin';
+      const isOwner = getEffectiveCompanyId(req) === subscription.companyId;
+      if (!isAdmin && !isOwner) {
+        return res.status(403).json({ error: "No tiene permisos para activar esta suscripción" });
       }
       console.log('[Billing] Found subscription:', subscription.id, 'planId:', subscription.planId, 'status:', subscription.status);
 
@@ -519,80 +556,11 @@ export function registerBillingRoutes(app: Express) {
         });
       }
 
-      // GUARD: Check if there's already a recent successful Stripe session for this company
-      // This prevents duplicate payments when the user clicks "Pagar" again before the webhook updates the subscription
-      try {
-        const stripe = await getUncachableStripeClient();
-        const recentSessions = await stripe.checkout.sessions.list({
-          limit: 5,
-          created: {
-            gte: Math.floor((Date.now() - 30 * 60 * 1000) / 1000), // Last 30 minutes
-          },
-        });
-        
-        const duplicateSession = recentSessions.data.find(s => 
-          s.metadata?.companyId === subscription.companyId &&
-          s.metadata?.type === 'subscription_activation' &&
-          (s.payment_status === 'paid' || s.status === 'complete')
-        );
-        
-        if (duplicateSession) {
-          console.log('[Billing] Recent paid session found, preventing duplicate:', duplicateSession.id);
-          
-          // Force-update subscription to active since payment was confirmed
-          const now = new Date();
-          const nextBillingDate = new Date(now);
-          nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
-          
-          await storage.updateSubscription(subscription.id, {
-            status: 'active',
-            currentPeriodStart: now,
-            currentPeriodEnd: nextBillingDate,
-            trialEnd: null,
-            lastPaymentDate: now,
-            nextPaymentDate: nextBillingDate,
-          });
-          
-          return res.status(200).json({
-            success: true,
-            alreadyActive: true,
-            message: 'Tu pago ya fue procesado exitosamente. Tu suscripción está activa.',
-          });
-        }
-        
-        // Expire any open/unpaid sessions for this company so a fresh one is created
-        // with the latest price (user may have changed employees/vehicles/CIIU)
-        const pendingSessions = recentSessions.data.filter(s =>
-          s.metadata?.companyId === subscription.companyId &&
-          s.metadata?.type === 'subscription_activation' &&
-          s.status === 'open' &&
-          s.payment_status === 'unpaid'
-        );
-        
-        for (const oldSession of pendingSessions) {
-          try {
-            await stripe.checkout.sessions.expire(oldSession.id);
-            console.log('[Billing] Expired stale checkout session:', oldSession.id);
-          } catch (expireErr: any) {
-            console.warn('[Billing] Could not expire session', oldSession.id, expireErr.message);
-          }
-        }
-      } catch (checkError: any) {
-        console.warn('[Billing] Error checking recent sessions (continuing):', checkError.message);
-      }
-
       // Trial users CAN activate (convert trial → paid). Do NOT block them.
       // The TrialAlert button "Activar suscripción" appears for trial users
       // wanting to convert to paid before their trial expires.
       if (subscription.status === 'trial') {
         console.log('[Billing] Trial subscription - proceeding with activation (trial → paid conversion):', subscription.id);
-      }
-
-      const isAdmin = req.user!.role === 'admin';
-      const isOwner = getEffectiveCompanyId(req) === subscription.companyId;
-
-      if (!isAdmin && !isOwner) {
-        return res.status(403).json({ error: "No tiene permisos para activar esta suscripción" });
       }
 
       const plan = await storage.getSubscriptionPlan(subscription.planId);
@@ -604,16 +572,6 @@ export function registerBillingRoutes(app: Express) {
 
       const company = await storage.getCompany(subscription.companyId);
       console.log('[Billing] Company:', company?.name);
-      
-      console.log('[Billing] Getting Stripe client...');
-      const stripeClient = await getUncachableStripeClient();
-      console.log('[Billing] Stripe client obtained');
-      
-      const baseUrl = process.env.APP_URL || (process.env.REPLIT_DEV_DOMAIN 
-        ? `https://${process.env.REPLIT_DEV_DOMAIN}`
-        : process.env.REPLIT_DOMAINS 
-          ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}`
-          : 'http://localhost:5000');
       
       let amountInCOP: number;
       let productDescription = `Suscripción mensual`;
@@ -768,13 +726,6 @@ export function registerBillingRoutes(app: Express) {
         });
       }
 
-      const STRIPE_MIN_COP = 2000;
-      
-      if (!isFullDiscount && amountInCOP > 0 && amountInCOP < STRIPE_MIN_COP) {
-        console.warn('[Billing] Price below Stripe minimum, converting to 30-day trial. Amount:', amountInCOP, 'COP');
-        isFullDiscount = true;
-      }
-      
       if (isFullDiscount) {
         console.log('[Billing] 100% discount detected - activating as 30-day trial');
         const trialEnd = new Date();
@@ -809,58 +760,14 @@ export function registerBillingRoutes(app: Express) {
         });
       }
       
-      const COP_STRIPE_MULTIPLIER = 100;
-      const stripeUnitAmount = Math.round(amountInCOP * COP_STRIPE_MULTIPLIER);
-      console.log('[Billing] Creating Stripe session. Source:', quoteSource, 'Amount:', amountInCOP, 'COP, stripeUnit:', stripeUnitAmount, '(x100 for Stripe), baseUrl:', baseUrl);
-      
-      try {
-        const session = await stripeClient.checkout.sessions.create({
-          mode: 'payment',
-          payment_method_types: ['card'],
-          line_items: [
-            {
-              price_data: {
-                currency: 'cop',
-                product_data: {
-                  name: `Suscripción mensual`,
-                  description: productDescription,
-                  images: ['https://sst.sagisas.co/sst-colombia-logo.png'],
-                },
-                unit_amount: stripeUnitAmount,
-              },
-              quantity: 1,
-            },
-          ],
-          metadata: {
-            type: 'subscription_activation',
-            subscriptionId: subscriptionId,
-            planId: plan.id,
-            companyId: subscription.companyId,
-            companyName: company?.name || 'Unknown',
-            userId: req.user!.id,
-            amountChargedCOP: amountInCOP.toString(),
-            priceSource: quoteSource,
-          },
-          success_url: `${baseUrl}/mi-cuenta?activation=success&session_id={CHECKOUT_SESSION_ID}`,
-          cancel_url: `${baseUrl}/mi-cuenta?activation=cancelled`,
-          customer_email: req.user!.email || undefined,
-        });
-        
-        console.log('[Billing] Stripe session created successfully:', session.id, 'URL:', session.url, 'Amount:', amountInCOP, 'COP');
-        
-        return res.status(200).json({
-          success: true,
-          paymentUrl: session.url,
-          sessionId: session.id,
-          amount: amountInCOP,
-          currency: 'COP',
-          planName: plan.displayName || plan.name,
-          message: 'Redirigiendo a pasarela de pago...',
-        });
-      } catch (stripeError: any) {
-        console.error('[Billing] Stripe session creation failed:', stripeError.message, stripeError.type, stripeError.code);
-        return res.status(500).json({ error: `Error de Stripe: ${stripeError.message}` });
-      }
+      return res.status(200).json({
+        success: true,
+        paymentUrl: '/checkout',
+        amount: amountInCOP,
+        currency: 'COP',
+        planName: plan.displayName || plan.name,
+        message: 'Continúe al pago PSE de ePayco',
+      });
     } catch (error: any) {
       console.error('[Billing] Error activating subscription:', error.message, error.stack);
       res.status(500).json({ error: error.message || "Error al activar suscripción" });

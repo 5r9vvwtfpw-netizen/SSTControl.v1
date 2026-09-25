@@ -259,7 +259,7 @@ export default function MiCuenta() {
       } else if (data.paymentUrl) {
         toast({
           title: "Redirigiendo al pago",
-          description: data.amount ? `Monto a pagar: ${formatPrice(data.amount)}` : 'Redirigiendo a Stripe...',
+          description: data.amount ? `Monto a pagar por PSE: ${formatPrice(data.amount)}` : 'Continúa al pago PSE de ePayco...',
         });
         
         setTimeout(() => {

@@ -7,6 +7,7 @@ import { apiRequest } from '@/lib/queryClient';
 
 type PaymentStatus = {
   invoice: string;
+  purchaseType: 'subscription' | 'extra_seat';
   status: 'PENDING' | 'APPROVED' | 'DECLINED' | 'ERROR';
   reason: string | null;
   updatedAt: string;
@@ -32,6 +33,7 @@ export default function PagoPSERetorno() {
   });
 
   const approved = payment?.status === 'APPROVED';
+  const extraSeat = payment?.purchaseType === 'extra_seat';
   const declined = payment?.status === 'DECLINED';
   const failed = payment?.status === 'ERROR';
   const reportedDeclined = payment?.status === 'PENDING' &&
@@ -68,10 +70,10 @@ export default function PagoPSERetorno() {
               'Pago en verificación'}
           </CardTitle>
           <CardDescription>
-            {approved ? 'ePayco confirmó el pago y la suscripción fue activada.' :
-              declined ? 'ePayco comunicó que la transacción fue rechazada. Este intento no activó ni renovó la suscripción.' :
-              failed ? 'La transacción no pudo iniciarse. Este intento no activó ni renovó la suscripción.' :
-              reportedDeclined ? 'La consulta directa a ePayco indica que este intento no fue aprobado. Aún no llegó la confirmación firmada; la suscripción no se ha activado por este intento.' :
+            {approved ? (extraSeat ? 'ePayco confirmó el pago y el usuario adicional está disponible.' : 'ePayco confirmó el pago y la suscripción fue activada.') :
+              declined ? 'ePayco comunicó que la transacción fue rechazada. Este intento no otorgó el servicio.' :
+              failed ? 'La transacción no pudo iniciarse. Este intento no otorgó el servicio.' :
+              reportedDeclined ? 'La consulta directa a ePayco indica que este intento no fue aprobado. Aún no llegó la confirmación firmada; no se otorgó el servicio.' :
               isError ? 'Vuelve a intentarlo más tarde o revisa el estado de tu suscripción antes de pagar de nuevo.' :
               reportedApproved ? 'Estamos esperando la confirmación firmada de ePayco antes de activar o renovar la suscripción. No inicies otro pago.' :
               'Esperando la confirmación final de ePayco. No inicies otro pago mientras tanto.'}
@@ -84,12 +86,12 @@ export default function PagoPSERetorno() {
           {pending && (
             <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
-              La suscripción solo se activa después de validar la confirmación del servidor.
+              El servicio solo se habilita después de validar la confirmación del servidor.
             </div>
           )}
-          <Button onClick={() => navigate('/checkout')} data-testid="button-return-checkout">
+          <Button onClick={() => navigate(extraSeat ? '/usuarios' : '/checkout')} data-testid="button-return-checkout">
             <Landmark className="mr-2 h-4 w-4" />
-            Volver al checkout
+            {extraSeat ? 'Volver a usuarios' : 'Volver al checkout'}
           </Button>
         </CardContent>
       </Card>

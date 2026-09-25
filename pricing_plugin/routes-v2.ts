@@ -20,7 +20,9 @@ import logger from "../server/lib/logger";
 
 const router = Router();
 
-router.post("/create-checkout-v2", async (req: Request, res: Response) => {
+router.post("/create-checkout-v2", (_req: Request, res: Response) => {
+  res.status(410).json({ error: "Los nuevos pagos se realizan únicamente por PSE de ePayco." });
+}, async (req: Request, res: Response) => {
   try {
     const schema = z.object({
       companyId: z.string().min(1),

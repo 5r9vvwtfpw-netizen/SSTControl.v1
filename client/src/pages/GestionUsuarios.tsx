@@ -47,6 +47,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Plus, Pencil, Trash2, Shield, Info, Building2, Award, Search, X, ChevronRight, ArrowLeft, Users } from "lucide-react";
 import { z } from "zod";
 import type { Company } from "@shared/schema";
+import { useLocation } from "wouter";
 
 // Áreas/Departamentos típicos de empresas colombianas
 const AREAS_EMPRESA = [
@@ -316,11 +317,11 @@ interface ExtraSeatPurchaseInfo {
 export default function GestionUsuarios() {
   const { toast } = useToast();
   const { user: currentUser } = useAuth();
+  const [, navigate] = useLocation();
   const [open, setOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserWithoutPassword | null>(null);
   const [showExtraSeatModal, setShowExtraSeatModal] = useState(false);
   const [extraSeatPurchaseInfo, setExtraSeatPurchaseInfo] = useState<ExtraSeatPurchaseInfo | null>(null);
-  const [isPurchaseLoading, setIsPurchaseLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedVaultCompanyId, setSelectedVaultCompanyId] = useState<string | null>(null);
   
@@ -1624,38 +1625,14 @@ export default function GestionUsuarios() {
               Cancelar
             </Button>
             <Button
-              onClick={async () => {
+              onClick={() => {
                 if (!extraSeatPurchaseInfo || !currentUser?.companyId) return;
-                setIsPurchaseLoading(true);
-                try {
-                  const response = await fetch("/api/stripe/create-extra-seat-checkout", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      role: extraSeatPurchaseInfo.role,
-                      companyId: currentUser.companyId
-                    }),
-                    credentials: "include"
-                  });
-                  const data = await response.json();
-                  if (data.url) {
-                    window.location.href = data.url;
-                  } else {
-                    throw new Error(data.error || data.message || "No se pudo obtener la URL de pago");
-                  }
-                } catch (err: any) {
-                  toast({
-                    title: "Error",
-                    description: err.message || "Error al iniciar el proceso de pago",
-                    variant: "destructive"
-                  });
-                  setIsPurchaseLoading(false);
-                }
+                setShowExtraSeatModal(false);
+                navigate(`/pago-pse?purchaseType=extra_seat&role=${encodeURIComponent(extraSeatPurchaseInfo.role)}`);
               }}
-              disabled={isPurchaseLoading}
               data-testid="button-go-to-checkout"
             >
-              {isPurchaseLoading ? "Redirigiendo..." : "Ir a Pagar"}
+              Ir a Pagar por PSE
             </Button>
           </DialogFooter>
         </DialogContent>

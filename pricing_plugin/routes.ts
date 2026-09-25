@@ -354,7 +354,9 @@ router.get("/stripe/publishable-key", async (_req: Request, res: Response) => {
   }
 });
 
-router.post("/checkout", async (req: Request, res: Response) => {
+router.post("/checkout", (_req: Request, res: Response) => {
+  res.status(410).json({ error: "Los nuevos pagos se realizan únicamente por PSE de ePayco." });
+}, async (req: Request, res: Response) => {
   try {
     const user = req.user as any;
     if (!user) {
@@ -406,7 +408,9 @@ router.post("/checkout", async (req: Request, res: Response) => {
   }
 });
 
-router.post("/billing-portal", async (req: Request, res: Response) => {
+router.post("/billing-portal", (_req: Request, res: Response) => {
+  res.status(410).json({ error: "El portal de pagos Stripe ya no está disponible; utilice PSE de ePayco." });
+}, async (req: Request, res: Response) => {
   try {
     const user = req.user as any;
     if (!user?.companyId) {
@@ -422,14 +426,8 @@ router.post("/billing-portal", async (req: Request, res: Response) => {
   }
 });
 
-router.post("/webhook", async (req: Request, res: Response) => {
-  try {
-    await handlePricingWebhook(req.body);
-    return res.json({ received: true });
-  } catch (error: any) {
-    console.error("Pricing plugin webhook error:", error);
-    return res.status(400).json({ error: error.message });
-  }
+router.post("/webhook", (_req: Request, res: Response) => {
+  return res.status(400).json({ error: "La confirmación debe verificarse antes de procesarse." });
 });
 
 router.get("/my-subscription", async (req: Request, res: Response) => {

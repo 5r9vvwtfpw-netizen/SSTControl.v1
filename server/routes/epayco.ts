@@ -13,6 +13,8 @@ import { storage } from "../storage";
 import { db } from "../db";
 import logger from "../lib/logger";
 import { paymentOperationLimiter } from "../middleware/rate-limit";
+import { getSubscriptionStatus } from "../middleware/subscription-check";
+import { userRoleEnum } from "@shared/schema";
 import {
   createEpaycoPseTransaction,
   getEpaycoClientIp,
@@ -37,6 +39,8 @@ type EpaycoPaymentRow = {
   currency: string;
   status: string;
   response: string | null;
+  purchase_type: string;
+  role: string | null;
 };
 
 function getEffectiveCompanyId(req: any): string | null {
@@ -106,13 +110,18 @@ async function ensureEpaycoTable(): Promise<void> {
       paid_at timestamp
     )
   `);
+  await db.execute(sql`
+    ALTER TABLE epayco_pse_transactions
+    ADD COLUMN IF NOT EXISTS purchase_type varchar NOT NULL DEFAULT 'subscription',
+    ADD COLUMN IF NOT EXISTS role varchar
+  `);
 }
 
 async function getPaymentByReference(reference: string): Promise<EpaycoPaymentRow | null> {
   if (!reference) return null;
   const result = await db.execute(sql`
     SELECT id, company_id, subscription_id, invoice, ticket_id, transaction_id,
-           ref_payco, amount, currency, status, response
+           ref_payco, amount, currency, status, response, purchase_type, role
     FROM epayco_pse_transactions
     WHERE invoice = ${reference}
        OR transaction_id = ${reference}
@@ -122,39 +131,99 @@ async function getPaymentByReference(reference: string): Promise<EpaycoPaymentRo
   return (result.rows[0] as EpaycoPaymentRow | undefined) || null;
 }
 
+async function grantExtraSeatAfterEpayco(
+  payment: EpaycoPaymentRow,
+  transactionId: string,
+  refPayco: string,
+  response: string,
+  reason: string,
+): Promise<boolean> {
+  if (!payment.role) throw new Error("El pago no tiene un rol de asiento adicional");
+
+  return db.transaction(async (tx) => {
+    // Atomically claim the approved invoice before granting its seat. Concurrent
+    // confirmations for the same invoice can only pass this update once.
+    const claimed = await tx.execute(sql`
+      UPDATE epayco_pse_transactions
+      SET status = 'APPROVED',
+          response = ${response},
+          response_reason = ${reason},
+          transaction_id = ${transactionId},
+          ref_payco = ${refPayco},
+          paid_at = now(),
+          updated_at = now()
+      WHERE id = ${payment.id} AND status <> 'APPROVED'
+      RETURNING company_id, role
+    `);
+    const row = claimed.rows[0] as { company_id: string; role: string } | undefined;
+    if (!row) return false;
+
+    // Serialize purchases for one company/role as company_extra_seats does not
+    // have a unique company+role constraint in existing installations.
+    await tx.execute(sql`
+      SELECT pg_advisory_xact_lock(hashtext(${row.company_id}), hashtext(${row.role}))
+    `);
+    const existing = await tx.execute(sql`
+      SELECT id, extra_seats
+      FROM company_extra_seats
+      WHERE company_id = ${row.company_id} AND role = ${row.role} AND status = 'active'
+      ORDER BY created_at
+      LIMIT 1
+      FOR UPDATE
+    `);
+    const seat = existing.rows[0] as { id: string; extra_seats: number } | undefined;
+    if (seat) {
+      await tx.execute(sql`
+        UPDATE company_extra_seats
+        SET extra_seats = extra_seats + 1, updated_at = now()
+        WHERE id = ${seat.id}
+      `);
+    } else {
+      await tx.execute(sql`
+        INSERT INTO company_extra_seats (
+          company_id, role, extra_seats, price_per_seat_cop, status
+        ) VALUES (${row.company_id}, ${row.role}, 1, 10000, 'active')
+      `);
+    }
+    return true;
+  });
+}
+
 async function activateSubscriptionAfterEpayco(
   payment: EpaycoPaymentRow,
   transactionId: string
 ): Promise<void> {
-  const subscription = await storage.getSubscription(payment.subscription_id);
-  if (!subscription) {
-    throw new Error("Suscripción no encontrada para el pago ePayco");
-  }
-
-  const now = new Date();
-  const nextPeriodEnd = new Date(now);
-  nextPeriodEnd.setMonth(nextPeriodEnd.getMonth() + 1);
-
-  await storage.updateSubscription(payment.subscription_id, {
-    status: "active" as any,
-    currentPeriodStart: now,
-    currentPeriodEnd: nextPeriodEnd,
-    lastPaymentDate: now,
-    nextPaymentDate: nextPeriodEnd,
-    trialEnd: null,
+  await db.transaction(async (tx) => {
+    const locked = await tx.execute(sql`
+      SELECT status FROM epayco_pse_transactions WHERE id = ${payment.id} FOR UPDATE
+    `);
+    if (locked.rows[0]?.status === 'APPROVED') return;
+    const subscription = await storage.getSubscription(payment.subscription_id);
+    if (!subscription || subscription.companyId !== payment.company_id) {
+      throw new Error("Suscripción no encontrada para el pago ePayco");
+    }
+    const now = new Date();
+    const nextPeriodEnd = new Date(now);
+    nextPeriodEnd.setMonth(nextPeriodEnd.getMonth() + 1);
+    await storage.updateSubscription(payment.subscription_id, {
+      status: "active" as any,
+      currentPeriodStart: now,
+      currentPeriodEnd: nextPeriodEnd,
+      lastPaymentDate: now,
+      nextPaymentDate: nextPeriodEnd,
+      trialEnd: null,
+    });
+    await storage.ensurePricingPluginSync(subscription.companyId, "active", null);
+    await tx.execute(sql`
+      UPDATE epayco_pse_transactions
+      SET status = 'APPROVED',
+          response = 'Aceptada',
+          transaction_id = ${transactionId},
+          paid_at = now(),
+          updated_at = now()
+      WHERE id = ${payment.id}
+    `);
   });
-
-  await storage.ensurePricingPluginSync(subscription.companyId, "active", null);
-
-  await db.execute(sql`
-    UPDATE epayco_pse_transactions
-    SET status = 'APPROVED',
-        response = 'Aceptada',
-        transaction_id = COALESCE(${transactionId || null}, transaction_id),
-        paid_at = now(),
-        updated_at = now()
-    WHERE id = ${payment.id}
-  `);
 }
 
 export async function registerEpaycoRoutes(app: Express): Promise<void> {
@@ -180,7 +249,7 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
 
     const invoiceFilter = invoice ? sql`AND invoice = ${invoice}` : sql``;
     const result = await db.execute(sql`
-      SELECT invoice, status, response_reason, updated_at, ticket_id,
+      SELECT invoice, status, purchase_type, response_reason, updated_at, ticket_id,
              transaction_id, ref_payco, amount, currency
       FROM epayco_pse_transactions
       WHERE company_id = ${companyId} ${invoiceFilter}
@@ -225,6 +294,7 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
     return res.json({
       invoice: payment.invoice,
       status: payment.status,
+      purchaseType: payment.purchase_type,
       reason: payment.response_reason,
       updatedAt: payment.updated_at,
       providerStatus,
@@ -257,6 +327,8 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
     }
 
     const bodySchema = z.object({
+      purchaseType: z.enum(["subscription", "extra_seat"]).optional().default("subscription"),
+      role: z.string().optional(),
       bankCode: z.string().min(1, "Seleccione un banco"),
       userType: z.enum(["0", "1"]),
       idType: z.enum(["CC", "CE", "NIT", "PP", "TI"]),
@@ -275,10 +347,63 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
 
     const companyId = getEffectiveCompanyId(req);
     if (!companyId) return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+    if (["lso", "lso_externo", "trabajador"].includes(req.user?.role)) {
+      return res.status(403).json({ error: "Este portal no requiere pagos de suscripción" });
+    }
+
+    let extraSeatRole: string | null = null;
+    if (parsed.data.purchaseType === "extra_seat") {
+      const user = req.user;
+      if (!user?.companyId || user.companyId !== companyId) {
+        return res.status(403).json({ error: "La compra debe asociarse a la empresa de su cuenta" });
+      }
+      if (user.role !== "admin" && user.role !== "superusuario") {
+        return res.status(403).json({ error: "No tiene permisos para comprar usuarios adicionales" });
+      }
+      const role = parsed.data.role;
+      const excludedRoles = new Set(["superadmin", "soporte", "lso_externo"]);
+      if (!role || !userRoleEnum.enumValues.includes(role as (typeof userRoleEnum.enumValues)[number]) || excludedRoles.has(role)) {
+        return res.status(400).json({ error: "Rol de usuario adicional inválido" });
+      }
+      extraSeatRole = role;
+    }
 
     const subscription = await storage.getSubscriptionByCompany(companyId);
     if (!subscription) {
       return res.status(404).json({ error: "No tiene una suscripción. Contacte a soporte." });
+    }
+
+    if (parsed.data.purchaseType === "extra_seat" && !["active", "trial"].includes(subscription.status)) {
+      return res.status(403).json({
+        error: "Se requiere suscripción activa",
+        message: "Debes tener una suscripción activa para agregar usuarios adicionales.",
+      });
+    }
+    if (parsed.data.purchaseType === "subscription" && !subscription.contractAcceptedAt) {
+      return res.status(403).json({
+        error: "Debe aceptar el contrato antes de continuar con el pago.",
+        redirectTo: "/checkout",
+      });
+    }
+    if (parsed.data.purchaseType === "subscription") {
+      const liveStatus = await getSubscriptionStatus(companyId);
+      if (subscription.status === "active" && liveStatus.isActive) {
+        return res.status(409).json({ error: "La suscripción ya está activa. Verifique el estado antes de iniciar otro pago." });
+      }
+    }
+    const pendingPayment = await db.execute(sql`
+      SELECT invoice FROM epayco_pse_transactions
+      WHERE company_id = ${companyId}
+        AND purchase_type = ${parsed.data.purchaseType}
+        AND status = 'PENDING'
+        AND ticket_id IS NOT NULL
+        AND created_at > now() - interval '30 minutes'
+      LIMIT 1
+    `);
+    if (pendingPayment.rows.length > 0) {
+      return res.status(409).json({
+        error: "Hay un pago PSE pendiente de confirmación. Revise su estado antes de iniciar otro.",
+      });
     }
 
     const company = await storage.getCompany(companyId);
@@ -299,8 +424,15 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
     const companyAny = company as any;
     const quoteBase = Number(companyAny.quoteBaseMonthlyPrice || 0);
     const quoteCurrent = Number(companyAny.quoteCurrentPeriodPrice || 0);
-    const amount = quoteCurrent > 0 ? quoteCurrent : quoteBase;
-    if (!amount || amount <= 0) {
+    if (parsed.data.purchaseType === "subscription" && quoteBase > 0 && companyAny.quoteCurrentPeriodPrice === 0) {
+      return res.status(409).json({
+        error: "Esta cotización tiene descuento total. Active su prueba gratuita desde Mi suscripción.",
+      });
+    }
+    const amount = parsed.data.purchaseType === "extra_seat"
+      ? 10000
+      : quoteCurrent > 0 && quoteCurrent < quoteBase ? quoteCurrent : quoteBase;
+    if (!Number.isFinite(amount) || amount <= 0 || !Number.isSafeInteger(Math.round(amount))) {
       return res.status(400).json({
         error: "Su empresa no tiene una cotización de precio válida para pagar.",
       });
@@ -309,9 +441,10 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
     const invoice = `sst-pse-${subscription.id}-${Date.now()}`;
     await db.execute(sql`
       INSERT INTO epayco_pse_transactions (
-        company_id, subscription_id, invoice, amount, currency, status
+        company_id, subscription_id, invoice, amount, currency, status, purchase_type, role
       ) VALUES (
-        ${companyId}, ${subscription.id}, ${invoice}, ${Math.round(amount)}, 'COP', 'PENDING'
+        ${companyId}, ${subscription.id}, ${invoice}, ${Math.round(amount)}, 'COP', 'PENDING',
+        ${parsed.data.purchaseType}, ${extraSeatRole}
       )
     `);
 
@@ -322,7 +455,9 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
       const result = await createEpaycoPseTransaction({
         bankCode: parsed.data.bankCode,
         invoice,
-        description: `Suscripción mensual SST Colombia — ${company.name}`,
+        description: parsed.data.purchaseType === "extra_seat"
+          ? `Usuario adicional (${extraSeatRole}) — ${company.name}`
+          : `Suscripción mensual SST Colombia — ${company.name}`,
         amount: Math.round(amount),
         documentType: parsed.data.idType,
         documentNumber: parsed.data.idNumber,
@@ -402,6 +537,10 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
       logger.warn({ invoice }, "[ePayco] La referencia firmada no coincide con el pago local");
       return res.status(400).send("Invalid reference");
     }
+    if (payment.transaction_id && payment.transaction_id !== transactionId) {
+      logger.warn({ invoice }, "[ePayco] El identificador de transacción no coincide con el pago local");
+      return res.status(400).send("Invalid transaction");
+    }
 
     if (payment.status === "APPROVED") return res.status(200).send("OK");
 
@@ -417,10 +556,38 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
 
     const normalizedStatus = normalizeEpaycoStatus(response);
     if (normalizedStatus === "APPROVED") {
+      if (!payment.ticket_id) {
+        logger.warn({ invoice }, "[ePayco] Pago sin identificador consultable en el proveedor");
+        return res.status(503).send("Retry");
+      }
+      let verified: EpaycoPseLookup;
       try {
-        await activateSubscriptionAfterEpayco(payment, transactionId);
+        verified = await getEpaycoPseTransaction(payment.ticket_id);
       } catch (error: any) {
-        logger.error({ error: error.message, invoice }, "[ePayco] Error activando suscripción");
+        logger.warn({ invoice, error: error.message }, "[ePayco] No se pudo verificar la aprobación con el proveedor");
+        return res.status(503).send("Retry");
+      }
+      if (
+        verified.status !== "APPROVED" ||
+        verified.invoice !== payment.invoice ||
+        verified.refPayco !== refPayco ||
+        verified.transactionId !== transactionId ||
+        !Number.isFinite(verified.amount) ||
+        Math.round(verified.amount) !== expectedAmount ||
+        verified.currency !== payment.currency ||
+        verified.test !== isEpaycoTestMode()
+      ) {
+        logger.warn({ invoice }, "[ePayco] La aprobación no coincide con la consulta directa al proveedor");
+        return res.status(503).send("Retry");
+      }
+      try {
+        if (payment.purchase_type === "extra_seat") {
+          await grantExtraSeatAfterEpayco(payment, transactionId, refPayco, response, reason);
+        } else {
+          await activateSubscriptionAfterEpayco(payment, transactionId);
+        }
+      } catch (error: any) {
+        logger.error({ error: error.message, invoice }, "[ePayco] Error procesando pago aprobado");
         return res.status(500).send("Retry");
       }
     } else {
@@ -432,7 +599,7 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
             transaction_id = ${transactionId},
             ref_payco = ${refPayco},
             updated_at = now()
-        WHERE id = ${payment.id}
+        WHERE id = ${payment.id} AND status <> 'APPROVED'
       `);
     }
 

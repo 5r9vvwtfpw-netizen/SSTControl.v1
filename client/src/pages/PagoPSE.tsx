@@ -13,7 +13,6 @@ import {
   LockKeyhole,
   ShieldCheck,
 } from 'lucide-react';
-import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 
 interface EpaycoBank {
@@ -51,6 +50,10 @@ export default function PagoPSE() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const [form, setForm] = useState<FormState>(initialForm);
+  const searchParams = new URLSearchParams(window.location.search);
+  const isExtraSeatPurchase = searchParams.get('purchaseType') === 'extra_seat';
+  const extraSeatRole = isExtraSeatPurchase ? searchParams.get('role') : null;
+  const returnPath = isExtraSeatPurchase ? '/usuarios' : '/checkout';
 
   const { data: status, isLoading: loadingStatus } = useQuery<EpaycoStatus>({
     queryKey: ['/api/epayco/estado'],
@@ -63,13 +66,30 @@ export default function PagoPSE() {
 
   const startPayment = useMutation({
     mutationFn: async (data: FormState) => {
-      const response = await apiRequest('POST', '/api/epayco/pse/iniciar', data);
-      return response.json() as Promise<{ bankRedirectUrl: string }>;
+      const response = await fetch('/api/epayco/pse/iniciar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          ...data,
+          ...(isExtraSeatPurchase ? { purchaseType: 'extra_seat', role: extraSeatRole } : {}),
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        if (result.redirectTo) {
+          navigate(result.redirectTo);
+          throw new Error('');
+        }
+        throw new Error(result.error || result.message || 'No se pudo iniciar el pago PSE');
+      }
+      return result as { bankRedirectUrl: string };
     },
     onSuccess: (data) => {
       window.location.assign(data.bankRedirectUrl);
     },
     onError: (error: Error) => {
+      if (!error.message) return;
       toast({
         title: 'No se pudo iniciar el pago',
         description: error.message,
@@ -106,9 +126,9 @@ export default function PagoPSE() {
             transacción.
           </AlertDescription>
         </Alert>
-        <Button variant="outline" onClick={() => navigate('/checkout')} className="mt-6">
+        <Button variant="outline" onClick={() => navigate(returnPath)} className="mt-6">
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Volver al checkout
+          {isExtraSeatPurchase ? 'Volver a usuarios' : 'Volver al checkout'}
         </Button>
       </div>
     );
@@ -118,19 +138,22 @@ export default function PagoPSE() {
 
   return (
     <div className="container mx-auto max-w-2xl px-4 py-8">
-      <Button variant="ghost" onClick={() => navigate('/checkout')} className="mb-6">
+      <Button variant="ghost" onClick={() => navigate(returnPath)} className="mb-6">
         <ArrowLeft className="mr-2 h-4 w-4" />
-        Volver al checkout
+        {isExtraSeatPurchase ? 'Volver a usuarios' : 'Volver al checkout'}
       </Button>
 
       <div className="mb-6">
         <div className="mb-2 flex items-center gap-3">
           <Landmark className="h-7 w-7 text-primary" />
-          <h1 className="text-3xl font-bold">Pagar por transferencia bancaria</h1>
+          <h1 className="text-3xl font-bold">
+            {isExtraSeatPurchase ? 'Comprar usuario adicional por PSE' : 'Pagar por transferencia bancaria'}
+          </h1>
         </div>
         <p className="text-muted-foreground">
-          Selecciona tu banco y continúa en el portal seguro de ePayco. Este botón
-          procesa únicamente pagos PSE.
+          {isExtraSeatPurchase
+            ? `Asiento adicional para el rol ${extraSeatRole} por $10.000 COP/mes. Selecciona tu banco para continuar en el portal seguro de ePayco.`
+            : 'Selecciona tu banco y continúa en el portal seguro de ePayco. Este botón procesa únicamente pagos PSE.'}
         </p>
       </div>
 

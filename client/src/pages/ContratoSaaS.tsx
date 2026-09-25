@@ -204,7 +204,7 @@ export default function ContratoSaaS() {
                   <div className="space-y-2 text-muted-foreground">
                     <p><strong>10.1 Precio:</strong> El precio del servicio se determina según el plan contratado por el Cliente, de acuerdo con la tabla de planes y precios vigente en la plataforma.</p>
                     <p><strong>10.2 Modalidad de Pago:</strong> Los pagos pueden realizarse de forma mensual o anual, con descuentos aplicables a planes anuales.</p>
-                    <p><strong>10.3 Procesamiento de Pagos:</strong> Los pagos se procesan a través de <strong>Stripe</strong>, plataforma certificada PCI DSS Nivel 1 para procesamiento seguro de pagos.</p>
+                    <p><strong>10.3 Procesamiento de Pagos:</strong> Los pagos nuevos se procesan mediante transferencia bancaria PSE a través de ePayco.</p>
                     <p><strong>10.4 Facturación:</strong> Se emitirá factura electrónica conforme a la normatividad tributaria colombiana vigente.</p>
                     <p><strong>10.5 Mora:</strong> El retraso en el pago generará intereses de mora a la tasa máxima legal vigente en Colombia.</p>
                   </div>

@@ -164,7 +164,7 @@ export function ContratoServiciosSaas({
                 </p>
                 <p>
                   El pago se realizará de forma anticipada mediante los medios de pago habilitados en la 
-                  plataforma (tarjeta de crédito, tarjeta débito, PSE). EL PROVEEDOR emitirá factura 
+                  plataforma (transferencia bancaria PSE a través de ePayco). EL PROVEEDOR emitirá factura
                   electrónica conforme a la normativa tributaria colombiana.
                 </p>
                 <p>

@@ -316,7 +316,9 @@ router.get("/referrals/credits/:referrerId", async (req: Request, res: Response)
  * POST /api/plugins/promotions/checkout
  * Create promotional checkout session from JWT
  */
-router.post("/checkout", async (req: Request, res: Response) => {
+router.post("/checkout", (_req: Request, res: Response) => {
+  res.status(410).json({ error: "Los nuevos pagos se realizan únicamente por PSE de ePayco." });
+}, async (req: Request, res: Response) => {
   try {
     const { token, companyId, successUrl, cancelUrl } = req.body;
     

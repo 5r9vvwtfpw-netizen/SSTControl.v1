@@ -25,6 +25,7 @@ import { seedAdminUser } from "./seed-admin";
 import { seedSubscriptionPlans } from "./seed-subscription-plans";
 import logger from "./lib/logger";
 import { db } from "./db";
+import { sql } from "drizzle-orm";
 import { requestLoggerMiddleware } from "./lib/request-logger-middleware";
 import { startTrialConversionJob } from "./jobs/trial-conversion";
 import { startTrialExpiryWarningJob } from "./jobs/trial-expiry-warning";
@@ -41,6 +42,7 @@ import { startManualSubscriptionExpiryJob } from "./cron/manual-subscription-exp
 import { startLsoArchiveCleanupReconciler } from "./services/lso-archive-cleanup";
 import { checkSessionTimeouts, registerSessionMonitorCron } from "./cron/session-monitor";
 import { getUncachableStripeClient, getStripeSecretKey } from "./stripeClient";
+import { handlePricingWebhook } from "../pricing_plugin/stripe-integration";
 import { storage } from "./storage";
 import { initializeLicense, requireValidLicense } from "./middleware/license";
 import { featureGateMiddleware } from "./middleware/feature-gate";
@@ -72,6 +74,10 @@ app.post(
     if (!signature) {
       return res.status(400).json({ error: 'Missing stripe-signature' });
     }
+    if (!endpointSecret) {
+      logger.error('Stripe webhook: missing verification secret; refusing unverified historical payment');
+      return res.status(503).json({ error: 'Webhook verification unavailable' });
+    }
 
     try {
       const stripe = await getUncachableStripeClient();
@@ -94,13 +100,8 @@ app.post(
         return res.status(500).json({ error: 'Webhook processing error' });
       }
 
-      let event;
-      if (endpointSecret) {
-        event = stripe.webhooks.constructEvent(rawBody, sig, endpointSecret);
-      } else {
-        event = JSON.parse(rawBody.toString());
-        logger.warn('Stripe webhook: No endpoint secret configured, skipping signature verification');
-      }
+      let event: any;
+      event = stripe.webhooks.constructEvent(rawBody, sig, endpointSecret);
 
       logger.info({ eventType: event.type, eventId: event.id }, 'Stripe webhook received');
 
@@ -117,21 +118,41 @@ app.post(
           // Handle extra_seat purchase (usuarios adicionales de pago)
           if (purchaseType === 'extra_seat' && companyId && session.payment_status === 'paid') {
             const role = session.metadata?.role;
-            if (role) {
-              try {
-                const extraSeat = await storage.incrementCompanyExtraSeat(companyId, role);
-                logger.info({ 
-                  companyId, 
-                  role, 
-                  extraSeats: extraSeat.extraSeats,
-                  stripeSessionId: session.id 
-                }, 'Extra seat purchased successfully');
-              } catch (extraSeatError) {
-                logger.error({ err: extraSeatError, companyId, role }, 'Error processing extra seat purchase');
+            if (!role || !session.id) throw new Error('Paid extra-seat checkout missing role or session ID');
+            await db.execute(sql`
+              CREATE TABLE IF NOT EXISTS stripe_extra_seat_claims (
+                session_id varchar PRIMARY KEY,
+                company_id varchar NOT NULL,
+                role varchar NOT NULL,
+                created_at timestamp NOT NULL DEFAULT now()
+              )
+            `);
+            await db.transaction(async (tx) => {
+              const claim = await tx.execute(sql`
+                INSERT INTO stripe_extra_seat_claims (session_id, company_id, role)
+                VALUES (${session.id}, ${companyId}, ${role})
+                ON CONFLICT (session_id) DO NOTHING
+                RETURNING session_id
+              `);
+              if (claim.rows.length === 0) return;
+              await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${companyId}), hashtext(${role}))`);
+              const existing = await tx.execute(sql`
+                SELECT id FROM company_extra_seats
+                WHERE company_id = ${companyId} AND role = ${role} AND status = 'active'
+                ORDER BY created_at LIMIT 1 FOR UPDATE
+              `);
+              if (existing.rows.length) {
+                await tx.execute(sql`
+                  UPDATE company_extra_seats SET extra_seats = extra_seats + 1, updated_at = now()
+                  WHERE id = ${String(existing.rows[0].id)}
+                `);
+              } else {
+                await tx.execute(sql`
+                  INSERT INTO company_extra_seats (company_id, role, extra_seats, price_per_seat_cop, status)
+                  VALUES (${companyId}, ${role}, 1, 10000, 'active')
+                `);
               }
-            } else {
-              logger.warn({ companyId, sessionId: session.id }, 'Extra seat purchase missing role metadata');
-            }
+            });
             break;
           }
           
@@ -836,6 +857,31 @@ app.post(
 
 // Plugin Promotions Webhook - Also needs raw body for signature verification
 // CRITICAL: Must be BEFORE express.json()
+app.post(
+  '/api/pricing-plugin/webhook',
+  express.raw({ type: 'application/json' }),
+  async (req, res) => {
+    const signature = req.headers['stripe-signature'];
+    const secret = process.env.STRIPE_WEBHOOK_SECRET;
+    if (!secret || !signature || !Buffer.isBuffer(req.body)) {
+      return res.status(400).json({ error: 'Invalid signed webhook' });
+    }
+    try {
+      const stripe = await getUncachableStripeClient();
+      const event = stripe.webhooks.constructEvent(
+        req.body,
+        Array.isArray(signature) ? signature[0] : signature,
+        secret
+      );
+      await handlePricingWebhook(event);
+      return res.json({ received: true });
+    } catch (error) {
+      logger.error({ err: error }, 'Pricing plugin signed webhook failed');
+      return res.status(400).json({ error: 'Invalid or unprocessed webhook' });
+    }
+  }
+);
+
 app.post(
   '/api/plugins/promotions/webhook',
   express.raw({ type: 'application/json' }),

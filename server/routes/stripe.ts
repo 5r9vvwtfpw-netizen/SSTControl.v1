@@ -74,7 +74,9 @@ export function registerStripeRoutes(app: Express) {
    * SEGURIDAD: Verifica el JWT server-side antes de usar los precios
    * Implementa: COP como moneda (Problema 2), cupones/descuentos (Problema 3)
    */
-  app.post("/api/stripe/create-quote-checkout", subscriptionMutationLimiter, requireAuth, async (req, res) => {
+  app.post("/api/stripe/create-quote-checkout", subscriptionMutationLimiter, requireAuth, (_req, res) => {
+    res.status(410).json({ error: "Los nuevos pagos se realizan únicamente por PSE de ePayco." });
+  }, async (req, res) => {
     try {
       const quoteCheckoutSchema = z.object({
         // JWT token de la landing page (REQUERIDO para verificación server-side)
@@ -313,7 +315,9 @@ export function registerStripeRoutes(app: Express) {
     }
   });
 
-  app.post("/api/stripe/create-portal-session", billingRateLimiter, requireAuth, async (req, res) => {
+  app.post("/api/stripe/create-portal-session", billingRateLimiter, requireAuth, (_req, res) => {
+    res.status(410).json({ error: "El portal de pagos Stripe ya no está disponible; utilice PSE de ePayco." });
+  }, async (req, res) => {
     try {
       const portalSchema = z.object({
         returnUrl: z.string().url().optional()
@@ -484,7 +488,9 @@ export function registerStripeRoutes(app: Express) {
   // Precio fijo: $10,000 COP/mes por usuario adicional del mismo rol
   const EXTRA_SEAT_PRICE_COP = 10000;
   
-  app.post("/api/stripe/create-extra-seat-checkout", subscriptionMutationLimiter, requireAuth, async (req, res) => {
+  app.post("/api/stripe/create-extra-seat-checkout", subscriptionMutationLimiter, requireAuth, (_req, res) => {
+    res.status(410).json({ error: "Los nuevos pagos se realizan únicamente por PSE de ePayco." });
+  }, async (req, res) => {
     try {
       const extraSeatSchema = z.object({
         role: z.string().min(1, "Rol es requerido"),

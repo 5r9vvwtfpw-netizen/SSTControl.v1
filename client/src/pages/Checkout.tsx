@@ -48,10 +48,9 @@ export default function Checkout() {
   const { toast } = useToast();
   const { user } = useAuth();
 
-  const [isRedirecting, setIsRedirecting] = useState(false);
   const [showContract, setShowContract] = useState(false);
   const [contractAccepted, setContractAccepted] = useState(false);
-  const [contractAcceptanceData, setContractAcceptanceData] = useState<ContractAcceptanceData | null>(null);
+  const [isAcceptingContract, setIsAcceptingContract] = useState(false);
   const [selectedMethod] = useState<PaymentMethod>('pse');
 
   const { data: company, isLoading: loadingCompany } = useQuery<CompanyData>({
@@ -59,59 +58,17 @@ export default function Checkout() {
     enabled: !!user?.companyId && !success && !canceled,
   });
 
-  const { data: currentSubscription } = useQuery<{ planId: string; status: string } | null>({
+  const { data: currentSubscription, isLoading: loadingSubscription } = useQuery<{ planId: string; status: string; contractAcceptedAt: string | null } | null>({
     queryKey: ['/api/billing/subscription'],
     enabled: !!user?.companyId,
   });
 
-  const isUpgradeFromFree = !currentSubscription || currentSubscription.status === 'trial' || currentSubscription.status === 'expired';
+  const isUpgradeFromFree = !currentSubscription?.contractAcceptedAt;
   const { data: epaycoStatus } = useQuery<{ configured: boolean; test: boolean; method: 'PSE' }>({
     queryKey: ['/api/epayco/estado'],
     enabled: !!user?.companyId,
   });
   const isPseAvailable = epaycoStatus?.configured === true;
-
-  const createCheckoutV2Mutation = useMutation({
-    mutationFn: async (acceptanceData?: ContractAcceptanceData) => {
-      if (!company) {
-        throw new Error('No se pudo cargar la informacion de la empresa');
-      }
-
-      if (!company.quoteBaseMonthlyPrice || company.quoteBaseMonthlyPrice <= 0) {
-        throw new Error('Tu empresa no tiene una cotizacion de precio. Visita sst-colombia.com.co para obtener una cotizacion.');
-      }
-
-      if (isUpgradeFromFree && !acceptanceData) {
-        throw new Error('Debe aceptar el contrato de servicios para continuar');
-      }
-
-      const baseUrl = window.location.origin;
-      const successUrl = `${baseUrl}/checkout?success=true&session_id={CHECKOUT_SESSION_ID}`;
-      const cancelUrl = `${baseUrl}/checkout?canceled=true`;
-
-      const res = await apiRequest('POST', '/api/pricing-v2/create-checkout-v2', {
-        companyId: company.id,
-        customerEmail: user?.email || user?.username || '',
-        customerName: company.name,
-        successUrl,
-        cancelUrl,
-      });
-      return await res.json();
-    },
-    onSuccess: (data) => {
-      if (data.sessionUrl) {
-        setIsRedirecting(true);
-        window.location.href = data.sessionUrl;
-      }
-    },
-    onError: (error: Error) => {
-      toast({
-        title: 'Error al iniciar el pago',
-        description: error.message,
-        variant: 'destructive',
-      });
-    },
-  });
 
   useEffect(() => {
     if (success === 'true' && sessionId) {
@@ -135,15 +92,20 @@ export default function Checkout() {
     }
   };
 
-  const handleContractAccept = (data: ContractAcceptanceData) => {
-    setContractAccepted(true);
-    setContractAcceptanceData(data);
-    setShowContract(false);
-    toast({
-      title: 'Contrato aceptado',
-      description: 'Has aceptado los terminos del contrato de servicios.',
-    });
-    navigate('/pago-pse');
+  const handleContractAccept = async (data: ContractAcceptanceData) => {
+    setIsAcceptingContract(true);
+    try {
+      await apiRequest('POST', '/api/billing/contract/accept', data);
+      setContractAccepted(true);
+      queryClient.invalidateQueries({ queryKey: ['/api/billing/subscription'] });
+      setShowContract(false);
+      toast({ title: 'Contrato aceptado', description: 'Has aceptado los términos del contrato de servicios.' });
+      navigate('/pago-pse');
+    } catch (error: any) {
+      toast({ title: 'No se registró el contrato', description: error.message, variant: 'destructive' });
+    } finally {
+      setIsAcceptingContract(false);
+    }
   };
 
   const handleCancel = () => {
@@ -218,7 +180,7 @@ export default function Checkout() {
     );
   }
 
-  if (loadingCompany) {
+  if (loadingCompany || loadingSubscription) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center space-y-4">
@@ -246,7 +208,24 @@ export default function Checkout() {
     );
   }
 
-  const quotePrice = company.quoteBaseMonthlyPrice && company.quoteBaseMonthlyPrice > 0 ? company.quoteBaseMonthlyPrice : null;
+  const quotePrice = company.quoteBaseMonthlyPrice && company.quoteBaseMonthlyPrice > 0
+    ? (company.quoteCurrentPeriodPrice != null && company.quoteCurrentPeriodPrice >= 0
+      && company.quoteCurrentPeriodPrice < company.quoteBaseMonthlyPrice
+      ? company.quoteCurrentPeriodPrice : company.quoteBaseMonthlyPrice)
+    : null;
+
+  if (quotePrice === 0) {
+    return (
+      <div className="container mx-auto max-w-2xl px-4 py-8">
+        <Alert>
+          <CheckCircle className="h-4 w-4" />
+          <AlertTitle>Descuento total aplicado</AlertTitle>
+          <AlertDescription>No necesitas realizar una transferencia. Activa tu prueba desde Mi suscripción.</AlertDescription>
+        </Alert>
+        <Button className="mt-4" onClick={() => navigate('/mi-suscripcion')}>Ir a Mi suscripción</Button>
+      </div>
+    );
+  }
 
   if (!quotePrice) {
     return (
@@ -266,15 +245,6 @@ export default function Checkout() {
             Obtener Cotizacion
           </Button>
         </div>
-      </div>
-    );
-  }
-
-  if (isRedirecting) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" data-testid="loader-redirecting" />
-        <p className="text-muted-foreground">Redirigiendo a la pagina de pago seguro...</p>
       </div>
     );
   }
@@ -484,10 +454,10 @@ export default function Checkout() {
                 className="w-full"
                 size="lg"
                 onClick={handleCheckout}
-                disabled={!isPseAvailable || createCheckoutV2Mutation.isPending}
+                 disabled={!isPseAvailable || isAcceptingContract}
                 data-testid="button-checkout"
               >
-                {createCheckoutV2Mutation.isPending ? (
+                 {isAcceptingContract ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     Procesando...
@@ -517,7 +487,7 @@ export default function Checkout() {
         onAccept={handleContractAccept}
         planName={`SST Colombia - ${company.name}`}
         companyName={company.name}
-        isLoading={createCheckoutV2Mutation.isPending}
+         isLoading={isAcceptingContract}
       />
     </div>
   );

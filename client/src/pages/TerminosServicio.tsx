@@ -151,7 +151,7 @@ export default function TerminosServicio() {
                   <h2 className="text-xl font-semibold mb-3">7. Tarifas y Pagos</h2>
                   <div className="space-y-2 text-muted-foreground">
                     <p><strong>7.1 Modalidad de Pago:</strong> Los servicios se facturan mensualmente o anualmente según el plan contratado.</p>
-                    <p><strong>7.2 Métodos de Pago:</strong> Aceptamos transferencias bancarias, tarjetas de crédito y PSE (Pagos Seguros en Línea).</p>
+                    <p><strong>7.2 Métodos de Pago:</strong> Los pagos nuevos se realizan por transferencia bancaria PSE (Pagos Seguros en Línea) a través de ePayco.</p>
                     <p><strong>7.3 Renovación Automática:</strong> El servicio se renueva automáticamente al finalizar cada período, salvo notificación de cancelación con 30 días de anticipación.</p>
                     <p><strong>7.4 Mora:</strong> El retraso en el pago generará intereses de mora a la tasa máxima legal vigente en Colombia (1.5% mensual).</p>
                     <p><strong>7.5 Suspensión por Falta de Pago:</strong> SST Colombia se reserva el derecho de suspender el acceso a la Plataforma tras 15 días de mora en el pago.</p>

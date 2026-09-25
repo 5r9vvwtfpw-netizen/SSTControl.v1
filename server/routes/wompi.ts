@@ -150,7 +150,9 @@ export function registerWompiRoutes(app: Express) {
   // ==========================================================================
   // POST /api/wompi/pse/iniciar — Iniciar transacción PSE
   // ==========================================================================
-  app.post("/api/wompi/pse/iniciar", requireAuth, async (req, res) => {
+  app.post("/api/wompi/pse/iniciar", requireAuth, (_req, res) => {
+    res.status(410).json({ error: "Los pagos nuevos se realizan únicamente por PSE de ePayco." });
+  }, async (req, res) => {
     if (!isWompiConfigured()) {
       return res.status(503).json({
         error: "wompi_not_configured",

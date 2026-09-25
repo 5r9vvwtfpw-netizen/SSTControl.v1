@@ -137,7 +137,7 @@ export default function MiSuscripcion() {
       } else if (data.paymentUrl) {
         toast({
           title: "Redirigiendo a pasarela de pago",
-          description: "Serás redirigido a Stripe para completar el pago...",
+          description: "Continúa al pago PSE de ePayco...",
         });
         
         setTimeout(() => {

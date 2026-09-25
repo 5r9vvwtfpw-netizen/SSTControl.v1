@@ -64,6 +64,8 @@
 - [Alcance de la profesional SST](sst-professional-scope.md) — auditar, investigar y capacitar son compromisos profesionales propuestos, distintos de las funciones del portal.
 - [Informe gerencial y datos sintéticos](management-report-synthetic-data.md) — excluir acciones explícitamente marcadas como pruebas del diagnóstico y separar resultado registrado de cierre verificado.
 - [Límite de desactivación de proveedores de pago](payment-provider-deactivation-boundary.md) — bloquear creación, consulta, webhook y UI; ocultar el método del checkout no basta.
+- [Stripe to PSE transition](stripe-to-pse-transition.md) — bloquear compras nuevas no cancela renovaciones externas; conservar confirmaciones firmadas de pagos anteriores.
+- [ePayco confirmation status](epayco-confirmation-status.md) — la firma no autentica el texto de estado; consultar el resultado al proveedor antes de habilitar servicios.
 - [Autenticación ePayco](epayco-auth-response.md) — HTTP 200 del login no prueba autenticación; comprobar el cuerpo antes de habilitar pagos.
 - [ePayco callback environments](epayco-callback-environments.md) — en desarrollo, priorizar el dominio dev para respuestas/webhooks; APP_URL compartida apunta a producción.
 - [Resultado PSE simulado vs ePayco](epayco-pse-simulator-result.md) — la aprobación de Banka/ACH en pruebas no garantiza aceptación comercial; manda la confirmación firmada de ePayco.
