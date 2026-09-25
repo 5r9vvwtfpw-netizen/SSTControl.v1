@@ -27,6 +27,8 @@ const EXCLUDED_PATHS = [
   "/reset-password",
   "/verify-email",
   "/checkout",
+  "/pago-pse",
+  "/planes-suscripcion",
   "/pricing",
   "/landing",
   "/mi-suscripcion",
@@ -40,8 +42,8 @@ export function useSubscriptionCheck() {
     retry: false,
   });
 
-  const isExcludedPath = EXCLUDED_PATHS.some((path) => 
-    location === path || location.startsWith(path + "/") || location.startsWith("/checkout")
+  const isExcludedPath = EXCLUDED_PATHS.some((path) =>
+    location === path || location.startsWith(path + "/")
   );
 
   const isDevelopment = import.meta.env.DEV;
