@@ -48379,10 +48379,10 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   app.get("/api/internal-messages/recipients", requireAuth, async (req, res) => {
     try {
       const user = req.user!;
-      let allRecipients: Array<{ id: string; fullName: string | null; role: string; companyName?: string | null }> = [];
+      let allRecipients: Array<{ id: string; fullName: string | null; role: string; companyName?: string | null; companyId?: string }> = [];
       
       // Handle LSO: get recipients from all assigned companies (before companyId check since LSO may have companyId set)
-      if (user.role === 'lso') {
+      if (user.role === 'lso' || user.role === 'lso_externo') {
         const lsoAssignments = await db.select({
           companyId: schema.licensedProfessionalAssignments.companyId,
         })
@@ -48510,6 +48510,23 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       if (!receiver) {
         return res.status(404).send("Destinatario no encontrado");
       }
+
+      const senderIsLso = user.role === 'lso' || user.role === 'lso_externo';
+      if (senderIsLso) {
+        if (!receiver.companyId || (receiver.role !== 'admin' && receiver.role !== 'superusuario')) {
+          return res.status(403).send("El LSO solo puede comunicarse con la empresa asignada");
+        }
+        const assignment = await db.select({ id: schema.licensedProfessionalAssignments.id })
+          .from(schema.licensedProfessionalAssignments)
+          .where(and(
+            eq(schema.licensedProfessionalAssignments.userId, user.id),
+            eq(schema.licensedProfessionalAssignments.companyId, receiver.companyId),
+            eq(schema.licensedProfessionalAssignments.isActive, true)
+          )).limit(1);
+        if (!assignment.length) {
+          return res.status(403).send("El LSO no tiene una asignación activa en esta empresa");
+        }
+      }
       
       // Check if user is support staff (superadmin or soporte)
       const isSupportUser = user.role === 'superadmin' || user.role === 'soporte';
@@ -48520,9 +48537,8 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       // - Receiver is an LSO actively assigned to sender's company (fix: SST-2026-0007)
       const receiverIsSupportUser = receiver.role === 'soporte' || receiver.role === 'superadmin';
       const receiverIsLso = receiver.role === 'lso' || receiver.role === 'lso_externo';
-      const senderIsLso = user.role === 'lso' || user.role === 'lso_externo';
-      if (senderIsLso && (receiver.role === 'admin' || receiver.role === 'superusuario')) {
-        return res.status(403).send("Los gerentes no son destinatarios de mensajes del LSO");
+      if (receiverIsLso && !isSupportUser && user.role !== 'admin' && user.role !== 'superusuario') {
+        return res.status(403).send("Solo la cuenta administrativa de la empresa puede escribir al LSO");
       }
       if (!isSupportUser && !receiverIsSupportUser && receiver.companyId !== user.companyId) {
         // Allow if receiver is an LSO assigned to sender's company
@@ -48579,26 +48595,13 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       // Use receiver's companyId for support users, sender's companyId otherwise.
       // External LSOs often have no fixed companyId, so fall back to the receiver's
       // companyId when the sender is an LSO without one (fix: SST-2026-0008).
-      const messageCompanyId = isSupportUser
+      const messageCompanyId = (isSupportUser || senderIsLso)
         ? receiver.companyId
-        : (senderIsLso ? (user.companyId || receiver.companyId) : user.companyId);
+        : user.companyId;
       
       // When company staff sends to LSO, use company name as sender
       let effectiveSenderName = user.fullName || user.username;
-      const companyStaffRolesForLso = [
-        'admin',
-        'responsable_sst',
-        'superusuario',
-        'coordinador_sst',
-        'coordinador_salud',
-        'coordinador_rrhh',
-        'jefe_personal',
-        'supervisor',
-        'vigia_sst',
-        'auditor_interno',
-        'tecnico_mecanico',
-      ];
-      if (receiver.role === 'lso' && user.companyId && companyStaffRolesForLso.includes(user.role)) {
+      if (receiverIsLso && user.companyId && (user.role === 'admin' || user.role === 'superusuario')) {
         const senderCompany = await storage.getCompany(user.companyId);
         if (senderCompany?.name) {
           effectiveSenderName = senderCompany.name;
@@ -48612,7 +48615,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         senderName: effectiveSenderName,
         senderRole: user.role,
         receiverId,
-        receiverName: receiver.fullName || receiver.username || "Usuario",
+        receiverName: senderIsLso
+          ? (await storage.getCompany(receiver.companyId!))?.name || "Empresa"
+          : receiver.fullName || receiver.username || "Usuario",
         receiverRole: receiver.role,
         subject,
         content,

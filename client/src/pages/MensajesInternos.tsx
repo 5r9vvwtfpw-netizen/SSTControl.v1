@@ -73,6 +73,7 @@ interface Recipient {
   fullName: string | null;
   role: string;
   companyName?: string | null;
+  companyId?: string;
 }
 
 interface CompanyVault {
@@ -120,6 +121,7 @@ export default function MensajesInternos() {
   const [vaultSearchTerm, setVaultSearchTerm] = useState("");
 
   const isSuperadmin = user?.role === 'superadmin';
+  const isLso = user?.role === 'lso' || user?.role === 'lso_externo';
 
   const { data: companies } = useQuery<Company[]>({
     queryKey: ["/api/companies"],
@@ -221,7 +223,7 @@ export default function MensajesInternos() {
   // Fetch LSO assigned companies for company selector
   const { data: lsoEmpresas = [] } = useQuery<any[]>({
     queryKey: ["/api/portal-licenciado/empresas"],
-    enabled: user?.role === 'lso',
+    enabled: isLso,
   });
 
   // Form for new message
@@ -234,6 +236,17 @@ export default function MensajesInternos() {
       priority: "normal",
     },
   });
+
+  // The company, not a designated worker, is the LSO's recipient. The
+  // API resolves each company to its administrative inbox account.
+  useEffect(() => {
+    if (isLso) {
+      form.setValue(
+        "receiverId",
+        recipients?.find((recipient) => recipient.companyId === selectedCompanyFilter)?.id || "",
+      );
+    }
+  }, [isLso, recipients, selectedCompanyFilter, form.setValue]);
 
   // Send message mutation
   const sendMessageMutation = useMutation({
@@ -409,7 +422,7 @@ export default function MensajesInternos() {
             <p className="text-muted-foreground mt-1">
               {showVaults
                 ? "Seleccione una empresa para ver sus mensajes"
-                : "Comunicación interna entre LSO y Responsables SST"}
+                : isLso ? "Comunicación con las empresas asignadas" : "Comunicación interna entre LSO y la empresa"}
             </p>
           </div>
         </div>
@@ -637,18 +650,18 @@ export default function MensajesInternos() {
                         <span className="flex items-center gap-1">
                           <User className="h-3.5 w-3.5" />
                           <strong>De:</strong> {selectedMessage.senderName}
-                          <Badge variant="outline" className="ml-1 text-[10px]">
+                          {!isLso && <Badge variant="outline" className="ml-1 text-[10px]">
                             {roleLabels[selectedMessage.senderRole] || selectedMessage.senderRole}
-                          </Badge>
+                          </Badge>}
                         </span>
                       </div>
                       <div className="flex items-center gap-4 text-sm mt-1">
                         <span className="flex items-center gap-1">
                           <User className="h-3.5 w-3.5" />
                           <strong>Para:</strong> {selectedMessage.receiverName}
-                          <Badge variant="outline" className="ml-1 text-[10px]">
+                          {!isLso && <Badge variant="outline" className="ml-1 text-[10px]">
                             {roleLabels[selectedMessage.receiverRole] || selectedMessage.receiverRole}
-                          </Badge>
+                          </Badge>}
                         </span>
                       </div>
                       <div className="flex items-center gap-1 text-xs text-muted-foreground mt-2">
@@ -700,13 +713,13 @@ export default function MensajesInternos() {
               Nuevo Mensaje
             </DialogTitle>
             <DialogDescription>
-              Envía un mensaje a otro miembro del equipo SST
+              {isLso ? "Envía un mensaje a la empresa seleccionada" : "Envía un mensaje a otro miembro del equipo SST"}
             </DialogDescription>
           </DialogHeader>
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              {user?.role === 'lso' && lsoEmpresas.length > 0 && (
+              {isLso && (
                 <div className="space-y-2">
                   <label className="text-sm font-medium">
                     <Building2 className="h-4 w-4 inline mr-1" />
@@ -723,8 +736,8 @@ export default function MensajesInternos() {
                       <SelectValue placeholder="Seleccionar empresa..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {lsoEmpresas.map((empresa: any) => (
-                        <SelectItem key={empresa.id} value={empresa.name}>
+                        {lsoEmpresas.map((empresa: any) => (
+                          <SelectItem key={empresa.id} value={empresa.id}>
                           {empresa.name}
                         </SelectItem>
                       ))}
@@ -733,25 +746,28 @@ export default function MensajesInternos() {
                 </div>
               )}
 
-              <FormField
+              {isLso && selectedCompanyFilter && !form.watch("receiverId") && !recipientsLoading && (
+                <p className="text-sm text-destructive">
+                  Esta empresa no tiene una cuenta administrativa para recibir mensajes.
+                </p>
+              )}
+
+              {!isLso && <FormField
                 control={form.control}
                 name="receiverId"
                 render={({ field }) => {
-                  const isLso = user?.role === 'lso';
-                  const filteredRecipients = isLso && selectedCompanyFilter
-                    ? recipients?.filter(r => r.companyName === selectedCompanyFilter)
-                    : recipients;
+                  const filteredRecipients = recipients;
                   return (
                   <FormItem>
                     <FormLabel>Destinatario *</FormLabel>
                     <Select 
                       onValueChange={field.onChange} 
                       value={field.value}
-                      disabled={isLso && !selectedCompanyFilter}
+                      disabled={false}
                     >
                       <FormControl>
                         <SelectTrigger data-testid="select-recipient">
-                          <SelectValue placeholder={isLso && !selectedCompanyFilter ? "Primero seleccione una empresa..." : "Seleccionar destinatario..."} />
+                          <SelectValue placeholder="Seleccionar destinatario..." />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -776,7 +792,7 @@ export default function MensajesInternos() {
                   </FormItem>
                   );
                 }}
-              />
+              />}
 
               <div className="grid grid-cols-4 gap-4">
                 <FormField
@@ -853,7 +869,7 @@ export default function MensajesInternos() {
                 </Button>
                 <Button
                   type="submit"
-                  disabled={sendMessageMutation.isPending}
+                  disabled={sendMessageMutation.isPending || (isLso && !form.watch("receiverId"))}
                   data-testid="button-send-message"
                 >
                   {sendMessageMutation.isPending ? (

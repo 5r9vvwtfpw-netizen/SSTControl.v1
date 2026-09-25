@@ -1766,7 +1766,7 @@ export interface IStorage {
   markMessageAsRead(id: string): Promise<InternalMessage | undefined>;
   archiveMessage(id: string): Promise<InternalMessage | undefined>;
   getUnreadMessageCount(userId: string, companyId?: string | null, excludeRelatedEntity?: string): Promise<number>;
-  getMessageRecipients(companyId: string, senderRole: string): Promise<Array<{ id: string; fullName: string | null; role: string; companyName?: string | null }>>;
+  getMessageRecipients(companyId: string, senderRole: string): Promise<Array<{ id: string; fullName: string | null; role: string; companyName?: string | null; companyId?: string }>>;
   
   // ============================================================================
   // SUPPORT ACCESS AUTHORIZATION SYSTEM - Transparencia y autorización de acceso
@@ -14880,36 +14880,29 @@ export class DbStorage implements IStorage {
     return Number(result[0]?.count ?? 0);
   }
 
-  async getMessageRecipients(companyId: string, senderRole: string): Promise<Array<{ id: string; fullName: string | null; role: string; companyName?: string | null }>> {
-    if (senderRole === 'lso') {
-      const responsables = await db.select({
+  async getMessageRecipients(companyId: string, senderRole: string): Promise<Array<{ id: string; fullName: string | null; role: string; companyName?: string | null; companyId?: string }>> {
+    if (senderRole === 'lso' || senderRole === 'lso_externo') {
+      const companyAccounts = await db.select({
         id: schema.users.id,
-        fullName: schema.users.fullName,
+        fullName: schema.companies.name,
         role: schema.users.role,
         companyName: schema.companies.name,
+        companyId: schema.companies.id,
       })
       .from(schema.users)
       .innerJoin(schema.companies, eq(schema.users.companyId, schema.companies.id))
       .where(
         and(
           eq(schema.users.companyId, companyId),
-          inArray(schema.users.role, [
-            'responsable_sst',
-            'coordinador_sst',
-            'coordinador_salud',
-            'coordinador_rrhh',
-            'jefe_personal',
-            'supervisor',
-            'vigia_sst',
-            'auditor_interno',
-            'tecnico_mecanico',
-          ])
+          inArray(schema.users.role, ['admin', 'superusuario'])
         )
-      );
-      return responsables;
+      )
+      .orderBy(sql`CASE WHEN ${schema.users.role} = 'admin' THEN 0 ELSE 1 END`, schema.users.createdAt, schema.users.id)
+      .limit(1);
+      return companyAccounts;
     }
 
-    if (['responsable_sst', 'admin', 'superusuario', 'coordinador_sst', 'coordinador_rrhh', 'coordinador_salud'].includes(senderRole)) {
+    if (senderRole === 'admin' || senderRole === 'superusuario') {
       const assignedLsos = await db.select({
         id: schema.users.id,
         fullName: schema.users.fullName,
@@ -14921,7 +14914,7 @@ export class DbStorage implements IStorage {
         and(
           eq(schema.licensedProfessionalAssignments.companyId, companyId),
           eq(schema.licensedProfessionalAssignments.isActive, true),
-          eq(schema.users.role, 'lso')
+          inArray(schema.users.role, ['lso', 'lso_externo'])
         )
       );
       const uniqueLsos = new Map<string, typeof assignedLsos[0]>();

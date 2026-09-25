@@ -58,6 +58,7 @@
 - [Seguimiento de auditorías internas](internal-audit-follow-up.md) — auditorías cerradas permiten seguimiento de eficacia; un hallazgo exige acciones al 100% y eficaces antes de cerrar.
 - [Firmantes de políticas SST](policy-pdf-signers.md) — formulario y PDF deben usar SST-Colombia, LSO asignado y representante legal configurados en Empresas.
 - [Responsable IPER es el LSO asignado](iperc-lso-responsible.md) — crear y editar matrices debe usar el LSO activo de la empresa, interno o externo.
+- [Mensajería LSO con la empresa](lso-company-messaging.md) — los LSO seleccionan empresas, nunca cargos designados; el contacto se limita a la cuenta administrativa con asignación activa.
 - [Vinculación IPER-PESV en P04](iper-pesv-linking-gap.md) — el alta desde IPERC conserva el ID, crea el vínculo en transacción y muestra el banner en la matriz vial.
 - [Estándar 6.1.3 — acceso y evidencia](standard-613-access-and-evidence.md) — no hay rol autónomo de alta dirección; el módulo mezcla auditoría y revisión gerencial y no expone toda su evidencia estructurada.
 - [Profesionales SST y protección del software](profesional-sst-software-focus.md) — el acuerdo debe proteger primero el software, su propiedad intelectual y el conocimiento reservado; los datos sensibles son obligación complementaria.
