@@ -281,7 +281,7 @@ export default function MiSuscripcion() {
         <div>
           <h1 className="text-3xl font-bold" data-testid="text-page-title">Mi Suscripción</h1>
           <p className="text-muted-foreground mt-1">
-            Gestiona tu plan y revisa tus facturas
+            Consulta tu suscripción y revisa tus facturas
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -320,7 +320,7 @@ export default function MiSuscripcion() {
           <XCircle className="h-4 w-4" />
           <AlertDescription className="flex flex-wrap items-center justify-between gap-4">
             <span>
-              <strong>Cuenta suspendida:</strong> Tu acceso al plan <strong>{plan.displayName || plan.name}</strong> ha sido suspendido por falta de pago. 
+              <strong>Cuenta suspendida:</strong> Tu suscripción ha sido suspendida por falta de pago.
               Reactiva tu cuenta para continuar usando el sistema.
             </span>
           </AlertDescription>
@@ -332,7 +332,7 @@ export default function MiSuscripcion() {
           <XCircle className="h-4 w-4" />
           <AlertDescription className="flex flex-wrap items-center justify-between gap-4">
             <span>
-              <strong>Prueba expirada:</strong> Tu período de prueba del plan <strong>{plan.displayName || plan.name}</strong> ha terminado. 
+              <strong>Prueba expirada:</strong> Tu período de prueba ha terminado.
               Activa tu suscripción para continuar usando el sistema.
             </span>
           </AlertDescription>
@@ -344,7 +344,7 @@ export default function MiSuscripcion() {
           <AlertCircle className="h-4 w-4 text-primary" />
           <AlertDescription className="flex flex-wrap items-center justify-between gap-4">
             <span>
-              Estás en período de prueba del plan <strong>{plan.displayName || plan.name}</strong>. 
+              Estás en período de prueba.
               Activa tu suscripción para asegurar la continuidad del servicio.
             </span>
           </AlertDescription>
@@ -357,12 +357,10 @@ export default function MiSuscripcion() {
           <div className="flex justify-between items-start">
             <div>
               <CardTitle className="text-2xl" data-testid="text-plan-name">
-                {plan.id === 'sst_dinamico' ? 'SST Colombia - Plan Personalizado' : (plan.displayName || plan.name)}
+                Servicio de gestión SG-SST
               </CardTitle>
               <CardDescription>
-                {plan.id === 'sst_dinamico' 
-                  ? 'Precio calculado din\u00e1micamente seg\u00fan el perfil de tu empresa' 
-                  : plan.description}
+                Acceso a SST Colombia para gestionar el Sistema de Seguridad y Salud en el Trabajo de tu empresa.
               </CardDescription>
             </div>
             {getStatusBadge(subscription.status)}
@@ -373,13 +371,17 @@ export default function MiSuscripcion() {
             <div className="flex items-start gap-3">
               <CreditCard className="h-5 w-5 text-primary mt-0.5" />
               <div>
-                <p className="text-sm font-medium">Precio mensual</p>
+                <p className="text-sm font-medium">
+                  {company?.quoteBaseMonthlyPrice && company.quoteBaseMonthlyPrice > 0
+                    ? "Tarifa mensual acordada"
+                    : "Tarifa mensual"}
+                </p>
                 <p className="text-2xl font-bold" data-testid="text-price">
                   {company?.quoteBaseMonthlyPrice && company.quoteBaseMonthlyPrice > 0 ? formatPrice(company.quoteBaseMonthlyPrice) : formatPrice(plan.priceMonthly)}
                 </p>
                 {company?.quoteBaseMonthlyPrice && company.quoteBaseMonthlyPrice > 0 && (
                   <p className="text-xs text-muted-foreground mt-1" data-testid="text-price-breakdown">
-                    Precio acordado desde cotizacion
+                    Valor acordado en la cotización
                   </p>
                 )}
               </div>
