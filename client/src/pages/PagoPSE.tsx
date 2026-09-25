@@ -334,10 +334,11 @@ export default function PagoPSE() {
                 </>
               )}
             </Button>
-            <div className="border-t pt-5 text-center">
+            {!isExtraSeatPurchase && <div className="border-t pt-5 text-center">
               <p className="mb-3 text-sm text-muted-foreground">
-                ¿Prefieres pagar después? Enviaremos un enlace seguro al correo de contacto
-                registrado en tu empresa.
+                Para restablecer el acceso al software, el responsable debe pagar por PSE.
+                Envía el enlace al correo de contacto registrado en la empresa. El acceso
+                se restablecerá cuando ePayco confirme el pago.
               </p>
               <Button
                 type="button"
@@ -353,7 +354,7 @@ export default function PagoPSE() {
                 )}
                 {sendPaymentLink.isPending ? 'Enviando enlace...' : 'Enviar enlace de pago'}
               </Button>
-            </div>
+            </div>}
           </form>
         </CardContent>
       </Card>
