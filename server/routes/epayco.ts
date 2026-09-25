@@ -131,6 +131,20 @@ async function getPaymentByReference(reference: string): Promise<EpaycoPaymentRo
   return (result.rows[0] as EpaycoPaymentRow | undefined) || null;
 }
 
+function matchesVerifiedPayment(payment: EpaycoPaymentRow, verified: EpaycoPseLookup): boolean {
+  return (
+    verified.invoice === payment.invoice &&
+    !!payment.ref_payco &&
+    verified.refPayco === payment.ref_payco &&
+    !!payment.transaction_id &&
+    verified.transactionId === payment.transaction_id &&
+    Number.isFinite(verified.amount) &&
+    verified.amount === Number(payment.amount) &&
+    verified.currency === payment.currency &&
+    verified.test === isEpaycoTestMode()
+  );
+}
+
 async function grantExtraSeatAfterEpayco(
   payment: EpaycoPaymentRow,
   transactionId: string,
@@ -249,34 +263,30 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
 
     const invoiceFilter = invoice ? sql`AND invoice = ${invoice}` : sql``;
     const result = await db.execute(sql`
-      SELECT invoice, status, purchase_type, response_reason, updated_at, ticket_id,
-             transaction_id, ref_payco, amount, currency
+      SELECT id, company_id, subscription_id, invoice, status, purchase_type, role,
+             response, response_reason, updated_at, ticket_id, transaction_id,
+             ref_payco, amount, currency
       FROM epayco_pse_transactions
       WHERE company_id = ${companyId} ${invoiceFilter}
       ORDER BY created_at DESC
       LIMIT 1
     `);
-    const payment = result.rows[0];
+    const payment = result.rows[0] as (EpaycoPaymentRow & {
+      response_reason: string | null;
+      updated_at: Date;
+    }) | undefined;
     if (!payment) return res.status(404).json({ error: "No se encontró el pago PSE" });
 
     let providerStatus: EpaycoPseLookup["status"] | null = null;
     let providerReason: string | null = null;
-    if (payment.status === "PENDING" && payment.ticket_id) {
+    if (payment.status !== "APPROVED" && payment.ticket_id) {
       const key = String(payment.invoice);
       const cached = providerLookupCache.get(key);
       let lookup = cached && cached.until > Date.now() ? cached.result : null;
       if (!cached || cached.until <= Date.now()) {
         try {
           lookup = await getEpaycoPseTransaction(String(payment.ticket_id));
-          if (
-            lookup.invoice !== payment.invoice ||
-            lookup.refPayco !== String(payment.ref_payco) ||
-            lookup.transactionId !== String(payment.transaction_id) ||
-            !Number.isFinite(lookup.amount) ||
-            Math.round(lookup.amount) !== Number(payment.amount) ||
-            lookup.currency !== payment.currency ||
-            lookup.test !== isEpaycoTestMode()
-          ) {
+          if (!matchesVerifiedPayment(payment, lookup)) {
             logger.warn({ invoice: key }, "[ePayco] Consulta PSE no coincide con el pago local");
             lookup = null;
           }
@@ -289,6 +299,25 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
       }
       providerStatus = lookup?.status ?? null;
       providerReason = lookup?.reason ?? null;
+      if (lookup?.status === "APPROVED") {
+        try {
+          if (payment.purchase_type === "extra_seat") {
+            await grantExtraSeatAfterEpayco(
+              payment, lookup.transactionId, lookup.refPayco,
+              "Aceptada", lookup.reason || "Aprobada por ePayco"
+            );
+          } else if (payment.purchase_type === "subscription") {
+            await activateSubscriptionAfterEpayco(payment, lookup.transactionId);
+          } else {
+            throw new Error("Tipo de compra PSE no reconocido");
+          }
+          payment.status = "APPROVED";
+          providerLookupCache.delete(key);
+        } catch (error: any) {
+          logger.error({ invoice: key, error: error.message }, "[ePayco] No se pudo aplicar el pago PSE verificado");
+          return res.status(503).json({ error: "El pago fue aprobado, pero aún no se pudo activar. Reintente consultar su estado." });
+        }
+      }
     }
 
     return res.json({
@@ -537,11 +566,6 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
       logger.warn({ invoice }, "[ePayco] La referencia firmada no coincide con el pago local");
       return res.status(400).send("Invalid reference");
     }
-    if (payment.transaction_id && payment.transaction_id !== transactionId) {
-      logger.warn({ invoice }, "[ePayco] El identificador de transacción no coincide con el pago local");
-      return res.status(400).send("Invalid transaction");
-    }
-
     if (payment.status === "APPROVED") return res.status(200).send("OK");
 
     const expectedAmount = Number(payment.amount);
@@ -567,24 +591,17 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
         logger.warn({ invoice, error: error.message }, "[ePayco] No se pudo verificar la aprobación con el proveedor");
         return res.status(503).send("Retry");
       }
-      if (
-        verified.status !== "APPROVED" ||
-        verified.invoice !== payment.invoice ||
-        verified.refPayco !== refPayco ||
-        verified.transactionId !== transactionId ||
-        !Number.isFinite(verified.amount) ||
-        Math.round(verified.amount) !== expectedAmount ||
-        verified.currency !== payment.currency ||
-        verified.test !== isEpaycoTestMode()
-      ) {
+      if (verified.status !== "APPROVED" || !matchesVerifiedPayment(payment, verified)) {
         logger.warn({ invoice }, "[ePayco] La aprobación no coincide con la consulta directa al proveedor");
         return res.status(503).send("Retry");
       }
       try {
         if (payment.purchase_type === "extra_seat") {
-          await grantExtraSeatAfterEpayco(payment, transactionId, refPayco, response, reason);
+          await grantExtraSeatAfterEpayco(payment, verified.transactionId, verified.refPayco, response, reason);
+        } else if (payment.purchase_type === "subscription") {
+          await activateSubscriptionAfterEpayco(payment, verified.transactionId);
         } else {
-          await activateSubscriptionAfterEpayco(payment, transactionId);
+          throw new Error("Tipo de compra PSE no reconocido");
         }
       } catch (error: any) {
         logger.error({ error: error.message, invoice }, "[ePayco] Error procesando pago aprobado");
@@ -596,8 +613,6 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
         SET status = ${normalizedStatus},
             response = ${response},
             response_reason = ${reason},
-            transaction_id = ${transactionId},
-            ref_payco = ${refPayco},
             updated_at = now()
         WHERE id = ${payment.id} AND status <> 'APPROVED'
       `);

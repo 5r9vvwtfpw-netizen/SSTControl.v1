@@ -1,9 +1,11 @@
+import { useEffect } from 'react';
 import { useLocation, useSearch } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, CheckCircle2, Landmark, Loader2, XCircle } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
+import { queryClient } from '@/lib/queryClient';
 
 type PaymentStatus = {
   invoice: string;
@@ -34,6 +36,13 @@ export default function PagoPSERetorno() {
 
   const approved = payment?.status === 'APPROVED';
   const extraSeat = payment?.purchaseType === 'extra_seat';
+  useEffect(() => {
+    if (!approved) return;
+    queryClient.invalidateQueries({ queryKey: ['/api/user'] });
+    queryClient.invalidateQueries({ queryKey: ['/api/billing/subscription'] });
+    queryClient.invalidateQueries({ queryKey: ['/api/billing/my-subscription'] });
+    queryClient.invalidateQueries({ queryKey: ['/api/company/extra-seats'] });
+  }, [approved]);
   const declined = payment?.status === 'DECLINED';
   const failed = payment?.status === 'ERROR';
   const reportedDeclined = payment?.status === 'PENDING' &&
@@ -89,9 +98,9 @@ export default function PagoPSERetorno() {
               El servicio solo se habilita después de validar la confirmación del servidor.
             </div>
           )}
-          <Button onClick={() => navigate(extraSeat ? '/usuarios' : '/checkout')} data-testid="button-return-checkout">
+          <Button onClick={() => navigate(extraSeat ? '/usuarios' : approved ? '/mi-suscripcion' : '/checkout')} data-testid="button-return-checkout">
             <Landmark className="mr-2 h-4 w-4" />
-            {extraSeat ? 'Volver a usuarios' : 'Volver al checkout'}
+            {extraSeat ? 'Volver a usuarios' : approved ? 'Ver mi suscripción' : 'Volver al checkout'}
           </Button>
         </CardContent>
       </Card>
