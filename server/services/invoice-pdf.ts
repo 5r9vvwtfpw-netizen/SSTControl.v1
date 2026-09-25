@@ -342,7 +342,7 @@ export class InvoicePdfService {
 
     doc.fontSize(7).font('Helvetica')
        .fillColor(this.GRAY)
-       .text('Los pagos se procesan de forma segura a traves de Stripe.', M + 10, y + 17, { lineBreak: false })
+       .text('Los pagos por PSE se procesan de forma segura a traves de ePayco.', M + 10, y + 17, { lineBreak: false })
        .text('Software excluido de IVA segun Art. 476 numeral 21 del Estatuto Tributario.', M + 10, y + 27, { lineBreak: false });
 
     y += 44;
@@ -351,7 +351,7 @@ export class InvoicePdfService {
     // FOOTER — fixed at bottom, compact to avoid blank second page
     // ============================================================
 
-    const footerY = doc.page.height - 72;
+     const footerY = doc.page.height - 88;
 
     // Only draw footer if it doesn't overlap content
     if (footerY > y + 8) {
