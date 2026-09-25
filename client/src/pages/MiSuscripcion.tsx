@@ -308,7 +308,7 @@ export default function MiSuscripcion() {
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription className="flex flex-wrap items-center justify-between gap-4">
             <span>
-              <strong>Pago pendiente:</strong> Tu suscripción al plan <strong>{plan.displayName || plan.name}</strong> está vencida. 
+              <strong>Pago pendiente:</strong> Tu suscripción está vencida.
               Realiza el pago para evitar la suspensión del servicio.
             </span>
           </AlertDescription>
