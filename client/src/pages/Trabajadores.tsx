@@ -722,6 +722,11 @@ export default function Trabajadores() {
       });
       return;
     }
+    if (editingWorker && formData.status === "retirado" && !formData.retirementDate) {
+      setRetirementDateDraft("");
+      setRetirementDialogOpen(true);
+      return;
+    }
     if (formData.status === "retirado" && formData.retirementDate) {
       const today = getTodayDateString();
       if (formData.retirementDate > today) {
@@ -1941,7 +1946,7 @@ export default function Trabajadores() {
                           <Label htmlFor="status">Estado</Label>
                           <Select
                             value={formData.status}
-                            onValueChange={(value: any) => setFormData({ ...formData, status: value })}
+                            onValueChange={(value: "activo" | "inactivo" | "retirado") => handleWorkerStatusChange(value)}
                           >
                             <SelectTrigger id="status" data-testid="select-status">
                                   <SelectValue placeholder="Seleccione el estado" />
@@ -1953,6 +1958,24 @@ export default function Trabajadores() {
                             </SelectContent>
                           </Select>
                         </div>
+                        {formData.status === "retirado" && (
+                          <div className="space-y-2">
+                            <Label htmlFor="retirement-date-edit">Fecha efectiva de retiro *</Label>
+                            <Input
+                              id="retirement-date-edit"
+                              type="date"
+                              value={formData.retirementDate || ""}
+                              min={formData.startDate || undefined}
+                              max={getTodayDateString()}
+                              onChange={(e) => setFormData({ ...formData, retirementDate: e.target.value })}
+                              required
+                              data-testid="input-retirement-date-edit"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                              Es la fecha en que dejó de trabajar, no la fecha de fin del contrato.
+                            </p>
+                          </div>
+                        )}
                       </div>
 
                       {/* Datos Sociodemográficos (Estándar 3.1.1) */}
