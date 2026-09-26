@@ -578,7 +578,7 @@ export default function MiCuenta() {
                       ) : (
                         <>
                           {getStatusBadge(subscriptionData.subscription.status)}
-                          {subscriptionData.subscription.status !== 'active' && (
+                          {subscriptionData.subscription.status !== 'active' && !isInternalTestSubscription && (
                             <Button 
                               onClick={() => activateSubscriptionMutation.mutate()}
                               disabled={activateSubscriptionMutation.isPending || paymentProcessing}

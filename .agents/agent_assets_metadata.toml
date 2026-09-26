@@ -587,3 +587,17 @@ mtime_ms = 1790402144799
 storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/317d6091-3966-4b6c-8655-cd0db46afcfd/ebd50297-c3af-4caf-95bf-904894ebe732"
 storage_version_token = "1790402170125279"
 content_type = "text/html"
+
+[[outputs]]
+id = "iM0B-Fkk61SqZ270c6xYp"
+uri = "file://evidencias/mi-cuenta-pse/reporte-funcional.html"
+type = "html"
+title = "Evidencia funcional · Mi Cuenta y PSE"
+description = "Informe de la prueba en DEMO-PRUEBA de desarrollo: alta, retiro, recálculo y estados de pantalla. Distingue las simulaciones del comportamiento real."
+logical_id = "00e5ae9b-6cf6-4645-9f64-da5b929464b0"
+content_hash = "sha256:64a4dea71442354e36835ac80c0a49de19fc9d599fd44edcbc16fea24ecb46d7"
+size = 7849
+mtime_ms = 1790407341814
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/00e5ae9b-6cf6-4645-9f64-da5b929464b0/4dcdc9eb-2375-40ba-b438-5bd15b911793"
+storage_version_token = "1790407389568104"
+content_type = "text/html"

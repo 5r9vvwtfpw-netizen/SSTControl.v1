@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Prueba funcional · Mi Cuenta y PSE · DEMO-PRUEBA</title>
+  <style>
+    :root { color-scheme: light; font-family: Arial, Helvetica, sans-serif; color: #18312a; background: #f4f7f5; }
+    * { box-sizing: border-box; }
+    body { margin: 0; line-height: 1.55; }
+    main { max-width: 920px; margin: 0 auto; padding: 42px 28px 70px; }
+    h1 { font-size: 30px; line-height: 1.2; margin: 12px 0; }
+    h2 { font-size: 19px; margin: 0 0 14px; }
+    p { margin: 8px 0 14px; }
+    .eyebrow { font-size: 12px; text-transform: uppercase; letter-spacing: .11em; font-weight: 700; color: #2e6e4c; }
+    .lead { font-size: 17px; color: #34564b; }
+    .card { background: #fff; border: 1px solid #dce8df; border-radius: 14px; padding: 24px; margin-top: 18px; }
+    .callout { background: #e7f4eb; border-left: 4px solid #18814b; border-radius: 8px; padding: 16px 20px; margin: 24px 0; }
+    .caution { background: #fff5e8; border-left: 4px solid #b66b0c; }
+    table { border-collapse: collapse; width: 100%; font-size: 14px; margin-top: 12px; }
+    th, td { text-align: left; vertical-align: top; padding: 11px 12px; border-bottom: 1px solid #e2ebe5; }
+    th { background: #f2f7f3; font-weight: 700; }
+    tr:last-child td { border-bottom: 0; }
+    .table-wrap { overflow-x: auto; }
+    .tag { display: inline-block; border-radius: 50px; padding: 2px 9px; background: #e7f4eb; color: #155634; font-size: 12px; font-weight: 700; }
+    .sim { background: #fff0d9; color: #7d4b06; }
+    ul { padding-left: 22px; margin: 8px 0 0; }
+    li { margin: 6px 0; }
+    code { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; background: #edf2ef; padding: 2px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+    .small { font-size: 13px; color: #53675e; }
+    footer { border-top: 1px solid #dce8df; margin-top: 28px; padding-top: 14px; font-size: 13px; color: #53675e; }
+    @media print { :root { background: white; } main { padding: 15px; } .card { break-inside: avoid; } }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="eyebrow">Evidencia funcional · 26 de septiembre de 2026 · Preview / desarrollo</div>
+    <h1>Mi Cuenta y cálculo PSE en DEMO-PRUEBA</h1>
+    <p class="lead">Alta y retiro de un trabajador de prueba, recálculo verificado y comprobación de la pantalla de suscripción. No se inició ningún pago.</p>
+
+    <div class="callout">
+      <strong>Resultado:</strong> el trabajador recién registrado aumentó la cantidad facturable en uno. Tras retirarlo el mismo día, volvió a bajar el conteo de vigentes, pero permaneció en la cotización del ciclo actual. DEMO-PRUEBA continuó sin cobro programado.
+    </div>
+
+    <section class="card">
+      <h2>1. Antes y después</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Comprobación</th><th>Antes</th><th>Tras el alta</th><th>Tras el retiro</th></tr></thead>
+          <tbody>
+            <tr><td>Trabajadores vigentes</td><td>5</td><td>6</td><td>5</td></tr>
+            <tr><td>Trabajadores facturables, cotización PSE</td><td>7</td><td>8</td><td>8</td></tr>
+            <tr><td>Tarifa base verificada</td><td>$70.000 COP</td><td>$80.000 COP</td><td>$80.000 COP</td></tr>
+            <tr><td>Importe devuelto por el cálculo PSE</td><td>$70.000 COP</td><td>$80.000 COP</td><td>$80.000 COP</td></tr>
+            <tr><td>Mi Cuenta real de DEMO-PRUEBA</td><td>Sin cobro programado</td><td>Sin cobro programado</td><td>Sin cobro programado</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="small">Los importes de la tabla son respuestas HTTP 200 de <code>GET /api/epayco/pse/cotizacion</code>. Son valores de referencia del cálculo, <strong>no deudas ni cobros</strong> de la empresa interna de pruebas.</p>
+    </section>
+
+    <section class="card">
+      <h2>2. Registro de prueba que quedó disponible para revisión</h2>
+      <ul>
+        <li><strong>Nombre:</strong> PRUEBA MI CUENTA PSE PP0YFI.</li>
+        <li><strong>Identificación sintética:</strong> MCPSEPP0YFI.</li>
+        <li><strong>Ingreso y retiro efectivo:</strong> 26/09/2026.</li>
+        <li><strong>Estado guardado:</strong> retirado. La tarjeta muestra correctamente «Retirado» después de corregir un rótulo que decía «Inactivo».</li>
+      </ul>
+      <p class="small">El registro funcional se conservó en DEMO-PRUEBA de desarrollo para revisión. La cuenta técnica temporal de acceso sí se eliminó.</p>
+    </section>
+
+    <section class="card">
+      <h2>3. Pantalla y estados de error</h2>
+      <ul>
+        <li><span class="tag">REAL</span> La suscripción efectiva de DEMO-PRUEBA aparece como <code>internal_test</code>. Mi Cuenta muestra «No aplica» y «Sin cobro programado», sin botón «Pagar Ahora». La fecha del próximo período se muestra desde <code>currentPeriodEnd</code>: 24/10/2026. El importe histórico se presenta por separado.</li>
+        <li><span class="tag sim">SIMULADO EN NAVEGADOR</span> Se interceptó únicamente la respuesta de estado de suscripción para mostrar la rama de un cliente pagador, sin cambiar la base de datos. La pantalla mostró 8 trabajadores facturables y $80.000 tanto para tarifa base como para el pago PSE, iguales a la cotización real.</li>
+        <li><span class="tag sim">SIMULADO EN NAVEGADOR</span> Se respondió HTTP 503 a la cotización para probar la falla del servicio: la pantalla mostró «No disponible», explicación y «Reintentar», sin reutilizar $80.000 ni mostrar $0. Las interceptaciones se retiraron después.</li>
+      </ul>
+      <div class="callout caution"><strong>Límite de la prueba:</strong> la rama de pago y la falla 503 fueron simuladas solo en el navegador porque DEMO-PRUEBA está exenta de cobro. No se simuló ni ejecutó un cargo real. Tampoco se probó borrar trabajadores ni importar archivos masivos: habría alterado más registros y no era necesario para verificar el alta, retiro y cálculo solicitados.</div>
+    </section>
+
+    <section class="card">
+      <h2>4. Capturas de pantalla</h2>
+      <p>Las capturas se mostraron en esta conversación. El navegador de pruebas no expuso archivos descargables para incrustarlas en este informe; los identificadores permiten distinguir la evidencia observada:</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Captura</th><th>Qué muestra</th><th>Tipo</th></tr></thead>
+          <tbody>
+            <tr><td><code>hkoin8</code></td><td>Mi Cuenta final: sin cobro y sin botón de pago.</td><td>Real</td></tr>
+            <tr><td><code>8j3wsa</code></td><td>Trabajador de prueba con tarjeta «Retirado».</td><td>Real</td></tr>
+            <tr><td><code>639ezr</code></td><td>Formulario de retiro con fecha efectiva, antes de guardar.</td><td>Real</td></tr>
+            <tr><td><code>ykz976</code></td><td>Precio PSE $80.000 al simular estado pagador.</td><td>Estado simulado</td></tr>
+            <tr><td><code>ew2w4x</code></td><td>«No disponible» al simular error HTTP 503.</td><td>Error simulado</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>5. Integridad y alcance</h2>
+      <ul>
+        <li>Al terminar: 5 trabajadores vigentes, 4 retirados, 9 registros en total y <code>companies.number_of_workers = 5</code>.</li>
+        <li>La fecha efectiva y el estado del trabajador creado se verificaron en la base de desarrollo.</li>
+        <li>Facturas: 1 registro; transacciones PSE: 7 registros. No se hicieron escrituras en facturas, suscripciones ni pagos.</li>
+        <li>No se inició PSE, no se ejecutaron webhooks ni se enviaron correos. La cuenta técnica temporal fue eliminada.</li>
+      </ul>
+    </section>
+    <footer>Esta prueba corresponde al Preview y a la base de desarrollo, no a la aplicación publicada. Los cambios de interfaz no se validaron en producción.</footer>
+  </main>
+</body>
+</html>

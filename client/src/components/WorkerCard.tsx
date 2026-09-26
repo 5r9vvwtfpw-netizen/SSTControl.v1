@@ -147,7 +147,7 @@ export function WorkerCard({ id, name, position, department, contract, startDate
         </div>
         <div className="flex items-center gap-2 flex-wrap pt-1">
           <Badge variant={status === "activo" ? "default" : "secondary"} data-testid={`badge-status-${id}`}>
-            {status === "activo" ? "Activo" : "Inactivo"}
+            {status === "activo" ? "Activo" : status === "retirado" ? "Retirado" : "Inactivo"}
           </Badge>
           {contractStatus && (
             <Badge 
