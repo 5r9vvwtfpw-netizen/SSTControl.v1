@@ -573,3 +573,17 @@ mtime_ms = 1790400930257
 storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/65aa24c3-71aa-4fcd-ae0b-fed0b02a7544/cc7bce93-d5dd-49e0-b68a-662e6f812206"
 storage_version_token = "1790400967190718"
 content_type = "text/html"
+
+[[outputs]]
+id = "bhOBNmpnIU7nlE5rnj-ww"
+uri = "file://evidencias/demo-prueba-trabajador-y-empresa-2026-09-26.html"
+type = "html"
+title = "Prueba funcional DEMO-PRUEBA: trabajador y empresa"
+description = "Resultados del recorrido en navegador, conteos 6→7→6, retiro y hallazgo visual detectado."
+logical_id = "317d6091-3966-4b6c-8655-cd0db46afcfd"
+content_hash = "sha256:7d757e0eb540450e152f7dc2288eccb7f1f71b8f6ff05a9d2161e6580d044c92"
+size = 4533
+mtime_ms = 1790402144799
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/317d6091-3966-4b6c-8655-cd0db46afcfd/ebd50297-c3af-4caf-95bf-904894ebe732"
+storage_version_token = "1790402170125279"
+content_type = "text/html"

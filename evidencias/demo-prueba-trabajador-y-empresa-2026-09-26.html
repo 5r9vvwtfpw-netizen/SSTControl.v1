@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Prueba funcional: Trabajadores y tarjeta de empresa — DEMO-PRUEBA</title>
+  <style>
+    body { margin: 0; background: #f5f8f5; color: #183126; font: 16px/1.5 system-ui, sans-serif; }
+    main { max-width: 860px; margin: 36px auto; padding: 34px; background: white; border: 1px solid #dce8dd; border-radius: 12px; }
+    h1 { font-size: 1.65rem; line-height: 1.2; margin: 0 0 6px; }
+    h2 { font-size: 1.15rem; margin: 28px 0 10px; }
+    .meta, small { color: #567063; }
+    .result { background: #e9f6e9; border-left: 4px solid #2a8f46; padding: 12px 15px; margin-top: 22px; font-weight: 650; }
+    .warning { background: #fff5df; border-left: 4px solid #b87b16; padding: 12px 15px; margin: 20px 0; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border-bottom: 1px solid #e1e9e2; padding: 9px 8px; text-align: left; }
+    th { background: #edf4ee; }
+    code { overflow-wrap: anywhere; background: #edf4ee; padding: 2px 5px; }
+    li { margin: 8px 0; }
+    @media(max-width:650px) { main { margin: 0; padding: 18px; border: 0; } table { font-size: .9rem; } }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Prueba funcional: trabajador y tarjeta de la empresa</h1>
+  <p class="meta">DEMO-PRUEBA · Desarrollo · 26 de septiembre de 2026 · Prueba en navegador y consulta independiente de la base de datos</p>
+  <div class="result">El alta, la confirmación de retiro y el contador de la empresa funcionaron. Se detectó una etiqueta incorrecta en la tarjeta del trabajador retirado.</div>
+
+  <h2>Registro conservado para revisión</h2>
+  <p><strong>Trabajador:</strong> PRUEBA TARJETA RETIRO DEV 20260926 A7X9<br>
+    <strong>Identificación de prueba:</strong> DV260926A7X9<br>
+    <strong>ID del registro:</strong> <code>647cd6db-1e6f-4a17-8863-f25f632ea235</code><br>
+    <strong>Estado persistido:</strong> retirado · <strong>fecha efectiva:</strong> 2026-09-26
+  </p>
+  <p>Para revisarlo: en la aplicación de <strong>desarrollo</strong>, abre <strong>Trabajadores</strong>, entra a DEMO-PRUEBA y busca el nombre anterior. La tarjeta de la empresa se encuentra en <strong>Empresas → DEMO-PRUEBA → Información de la Empresa</strong>.</p>
+
+  <h2>Resultados comprobados</h2>
+  <table>
+    <thead><tr><th>Comprobación</th><th>Antes</th><th>Tras el alta</th><th>Tras el retiro</th></tr></thead>
+    <tbody>
+      <tr><td>Tarjeta de empresa: Trabajadores</td><td>6</td><td>7</td><td>6</td></tr>
+      <tr><td>Trabajadores vigentes en base de datos</td><td>6</td><td>7</td><td>6</td></tr>
+      <tr><td>Registros históricos de trabajadores</td><td>7</td><td>8</td><td>8</td></tr>
+      <tr><td>Transacciones PSE</td><td>7</td><td>7</td><td>7</td></tr>
+    </tbody>
+  </table>
+  <ol>
+    <li>Se inició sesión en el navegador con una cuenta temporal limitada a DEMO-PRUEBA. La tarjeta «Información de la Empresa» mostró 6 trabajadores.</li>
+    <li>Desde Trabajadores se registró el trabajador ficticio como activo. Apareció su ficha y la tarjeta de empresa mostró 7 trabajadores.</li>
+    <li>Al seleccionar «Retirado» se abrió «Confirmar retiro del trabajador» con el campo «Fecha efectiva de retiro». Al pulsar «Cancelar», la ficha siguió en estado activo.</li>
+    <li>Se confirmó el retiro con fecha 2026-09-26 y se guardó la ficha. La base de datos confirmó el estado retirado y la fecha; la tarjeta de empresa volvió a mostrar 6.</li>
+  </ol>
+
+  <div class="warning"><strong>Hallazgo visual pendiente:</strong> la tarjeta individual del trabajador muestra «Inactivo» para cualquier estado distinto de «Activo», incluso cuando el registro está «retirado». La tabla de trabajadores y la base de datos conservan el estado correcto. Este hallazgo no altera el conteo de la tarjeta de la empresa.</div>
+
+  <p><strong>Alcance:</strong> prueba realizada únicamente en desarrollo. No se inició pago PSE ni se modificó producción. El cupo <code>workers_purchased</code> permaneció en 1. La cuenta temporal fue eliminada después de verificar su identidad; el trabajador y el registro de retiro se conservaron.</p>
+  <small>Capturas tomadas durante la prueba de navegador: tarjeta tras el alta (8w2vvg), diálogo de retiro (seexlr) y tarjeta tras el retiro (i3pzon). Estas capturas se muestran en el resultado de la prueba en la conversación; el presente archivo contiene la evidencia textual permanente.</small>
+</main>
+</body>
+</html>
