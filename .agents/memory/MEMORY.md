@@ -28,7 +28,7 @@
 - [Production billing data alignment](production-billing-data-alignment.md) — separar registros locales de suscripciones/facturas de pagos confirmados por Stripe o Wompi.
 - [TypeScript cleanup workflow](typescript-cleanup-workflow.md) — las correcciones delegadas deben validarse de inmediato; pueden dejar mejoras parciales pero nunca sustituyen el chequeo global final.
 - [Worker and contract date synchronization](worker-contract-date-sync.md) — workers y contracts duplican fechas laborales; sincronizar solo el contrato activo en ambas direcciones.
-- [Cobro por alta de trabajador](worker-entry-billing.md) — cada trabajador registrado causa cobro; retirarlo no deshace el importe ya causado. Falta definir meses posteriores.
+- [Cobro por alta de trabajador](worker-entry-billing.md) — todo trabajador nuevo se cobra en su ciclo; el retirado deja de sumar desde el siguiente, sin devolución retroactiva.
 - [Development module access](development-module-access.md) — en desarrollo se omiten gates comerciales para probar módulos; producción conserva capítulo, suscripción y menú.
 - [Empresa interna de pruebas en producción](internal-production-test-company.md) — DEMO-PRUEBA requiere registrar trabajadores sin suscripción; la excepción debe limitarse a su identidad exacta.
 - [Blank form validation](blank-form-validation.md) — los campos de negocio empiezan vacíos y los obligatorios requieren validación explícita antes de mutar.
