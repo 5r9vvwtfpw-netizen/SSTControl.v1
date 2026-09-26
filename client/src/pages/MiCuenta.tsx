@@ -21,7 +21,16 @@ type Subscription = {
   planId: string;
   status: string;
   trialEndsAt: string | null;
-  nextBillingDate: string | null;
+  currentPeriodEnd: string | null;
+};
+
+type WorkerBillingQuote = {
+  employeeCount: number;
+  baseMonthlyPrice: number;
+  currentPeriodPrice: number;
+  paymentAmount: number;
+  couponCode: string | null;
+  currency: "COP";
 };
 
 type SubscriptionPlan = {
@@ -150,6 +159,22 @@ export default function MiCuenta() {
   const { data: subscriptionData, isLoading: isLoadingSubscription } = useQuery<MySubscriptionResponse>({
     queryKey: ['/api/billing/my-subscription'],
     enabled: !!user?.companyId,
+  });
+
+  const isInternalTestSubscription = subscriptionData?.subscription.status === 'internal_test';
+  const verifiedQuoteQuery = useQuery<WorkerBillingQuote>({
+    queryKey: ['/api/epayco/pse/cotizacion'],
+    queryFn: async () => {
+      const response = await fetch('/api/epayco/pse/cotizacion', { credentials: 'include' });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'No se pudo verificar el próximo cobro.');
+      return result as WorkerBillingQuote;
+    },
+    enabled: !!user?.companyId && !!subscriptionData && !isInternalTestSubscription
+      && !['lso', 'lso_externo', 'trabajador'].includes(user.role),
+    staleTime: 0,
+    retry: false,
+    refetchOnWindowFocus: true,
   });
 
   const { data: invoices, isLoading: isLoadingInvoices } = useQuery<Invoice[]>({
@@ -575,27 +600,24 @@ export default function MiCuenta() {
                 <CardContent className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-muted-foreground">Precio Mensual</label>
+                      <label className="text-sm font-medium text-muted-foreground">Tarifa base para pago PSE</label>
                       <div className="flex items-center gap-2">
                         <CreditCard className="h-4 w-4 text-muted-foreground" />
-                        {companyData?.quoteCouponCode ? (
-                          <div>
-                            <span className="text-lg font-bold" data-testid="text-price">
-                              {formatPrice(companyData?.quoteCurrentPeriodPrice ?? companyData?.quoteBaseMonthlyPrice ?? 0)}
-                            </span>
-                            <Badge variant="secondary" className="ml-2">
-                              Cupón: {companyData.quoteCouponCode}
-                            </Badge>
-                          </div>
-                        ) : (
-                          <span className="text-lg font-bold" data-testid="text-price">
-                            {formatPrice(companyData?.quoteBaseMonthlyPrice ?? 0)}
-                          </span>
-                        )}
+                        <span className="text-lg font-bold" data-testid="text-price">
+                          {isInternalTestSubscription
+                            ? "No aplica"
+                            : verifiedQuoteQuery.isFetching
+                            ? "Calculando…"
+                            : verifiedQuoteQuery.isError || !verifiedQuoteQuery.data
+                              ? "No disponible"
+                              : formatPrice(verifiedQuoteQuery.data.baseMonthlyPrice)}
+                        </span>
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        Basado en CIIU {companyData?.ciiuCode || 'N/A'}, {companyData?.numberOfWorkers ?? companyData?.numWorkers ?? 0} empleados, {companyData?.numberOfVehicles ?? 0} vehículos
-                      </p>
+                      {verifiedQuoteQuery.data && !verifiedQuoteQuery.isError && !isInternalTestSubscription && (
+                        <p className="text-xs text-muted-foreground">
+                          Calculada con {verifiedQuoteQuery.data.employeeCount} trabajador{verifiedQuoteQuery.data.employeeCount !== 1 ? "es" : ""} facturable{verifiedQuoteQuery.data.employeeCount !== 1 ? "s" : ""}.
+                        </p>
+                      )}
                     </div>
 
                     {subscriptionData.subscription.status === 'trial' && subscriptionData.subscription.trialEndsAt && (
@@ -632,41 +654,46 @@ export default function MiCuenta() {
 
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-muted-foreground">
-                        Próximo Pago{' '}
-                        {(() => {
-                          const lastPaymentDate = invoices && invoices.length > 0
-                            ? new Date(invoices[0].paidDate || invoices[0].issueDate)
-                            : null;
-                          if (lastPaymentDate) {
-                            const year = lastPaymentDate.getFullYear();
-                            const month = lastPaymentDate.getMonth();
-                            const day = lastPaymentDate.getDate();
-                            const nextMonth = month + 1;
-                            const nextYear = nextMonth > 11 ? year + 1 : year;
-                            const nextMonthNorm = nextMonth > 11 ? 0 : nextMonth;
-                            const daysInNextMonth = new Date(nextYear, nextMonthNorm + 1, 0).getDate();
-                            const nextDay = Math.min(day, daysInNextMonth);
-                            const next = new Date(nextYear, nextMonthNorm, nextDay);
-                            return formatDate(next.toISOString());
-                          }
-                          if (subscriptionData.subscription.trialEndsAt) {
-                            return formatDate(subscriptionData.subscription.trialEndsAt);
-                          }
-                          return '';
-                        })()}
+                        Próximo pago PSE verificado
+                        {subscriptionData.subscription.currentPeriodEnd
+                          ? ` · período desde ${formatDate(subscriptionData.subscription.currentPeriodEnd)}`
+                          : ""}
                       </label>
                       <div className="flex items-center gap-2">
                         <CreditCard className="h-4 w-4 text-muted-foreground" />
                         <span className="text-lg font-bold" data-testid="text-next-payment-amount">
-                          {formatPrice(companyData?.quoteCurrentPeriodPrice ?? companyData?.quoteBaseMonthlyPrice ?? 0)}
+                          {isInternalTestSubscription
+                            ? "Sin cobro programado"
+                            : verifiedQuoteQuery.isFetching
+                            ? "Calculando…"
+                            : verifiedQuoteQuery.isError || !verifiedQuoteQuery.data
+                              ? "No disponible"
+                              : formatPrice(verifiedQuoteQuery.data.paymentAmount)}
                         </span>
-                        {companyData?.quoteCouponCode && (
-                          <Badge variant="outline">con cupón</Badge>
+                        {verifiedQuoteQuery.data?.couponCode && !isInternalTestSubscription && !verifiedQuoteQuery.isError && !verifiedQuoteQuery.isFetching && (
+                          <Badge variant="outline">Cupón: {verifiedQuoteQuery.data.couponCode}</Badge>
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        Basado en CIIU {companyData?.ciiuCode || 'N/A'}, {companyData?.numberOfWorkers ?? companyData?.numWorkers ?? 0} empleados, {companyData?.numberOfVehicles ?? 0} vehículos
-                      </p>
+                      {isInternalTestSubscription ? (
+                        <p className="text-xs text-muted-foreground">Empresa interna de pruebas: no se genera un cobro de suscripción.</p>
+                      ) : verifiedQuoteQuery.isError ? (
+                        <p className="text-xs text-destructive" role="alert">
+                          {verifiedQuoteQuery.error.message}{" "}
+                          <Button type="button" variant="ghost" size="sm" className="h-auto p-0 underline" onClick={() => verifiedQuoteQuery.refetch()}>
+                            Reintentar
+                          </Button>
+                        </p>
+                      ) : verifiedQuoteQuery.data && !verifiedQuoteQuery.isFetching ? (
+                        <p className="text-xs text-muted-foreground">
+                          {verifiedQuoteQuery.data.employeeCount} trabajador{verifiedQuoteQuery.data.employeeCount !== 1 ? "es" : ""} facturable{verifiedQuoteQuery.data.employeeCount !== 1 ? "s" : ""}
+                          {typeof companyData?.numberOfWorkers === "number" && verifiedQuoteQuery.data.employeeCount > companyData.numberOfWorkers
+                            ? ` · ${companyData.numberOfWorkers} vigentes; la diferencia incluye retiros aún cobrables del ciclo`
+                            : ""}
+                          {verifiedQuoteQuery.data.paymentAmount < verifiedQuoteQuery.data.baseMonthlyPrice
+                            ? ` · Descuento aplicado: ${formatPrice(verifiedQuoteQuery.data.baseMonthlyPrice - verifiedQuoteQuery.data.paymentAmount)}`
+                            : ""}. Este importe se vuelve a verificar antes de iniciar el pago; un retiro no devuelve lo ya causado en el ciclo actual.
+                        </p>
+                      ) : null}
                     </div>
                   </div>
                 </CardContent>

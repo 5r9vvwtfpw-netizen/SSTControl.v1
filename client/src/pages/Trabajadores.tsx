@@ -507,6 +507,7 @@ export default function Trabajadores() {
       queryClient.invalidateQueries({ queryKey: ["/api/workers"] });
       queryClient.invalidateQueries({ queryKey: ["/api/contracts"] });
       queryClient.invalidateQueries({ queryKey: ["/api/companies"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/epayco/pse/cotizacion"] });
       setDialogOpen(false);
       setEditingWorker(null);
       setHasConsent(false);
@@ -561,6 +562,7 @@ export default function Trabajadores() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/workers"] });
       queryClient.invalidateQueries({ queryKey: ["/api/companies"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/epayco/pse/cotizacion"] });
       setDialogOpen(false);
       setEditingWorker(null);
       setFormData({
@@ -603,6 +605,7 @@ export default function Trabajadores() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/workers"] });
       queryClient.invalidateQueries({ queryKey: ["/api/companies"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/epayco/pse/cotizacion"] });
       toast({
         title: "Trabajador eliminado",
         description: "El trabajador se ha eliminado exitosamente",
@@ -691,6 +694,7 @@ export default function Trabajadores() {
       queryClient.invalidateQueries({ queryKey: ["/api/workers"] });
       queryClient.invalidateQueries({ queryKey: ["/api/contracts"] });
       queryClient.invalidateQueries({ queryKey: ["/api/companies"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/epayco/pse/cotizacion"] });
       setBulkDeleteResults(data);
       setBulkDeleteConfirmCode("");
       setBulkDeleteCompanyName("");
@@ -1217,6 +1221,7 @@ export default function Trabajadores() {
       setImportResults(data);
       queryClient.invalidateQueries({ queryKey: ["/api/workers"] });
       queryClient.invalidateQueries({ queryKey: ["/api/companies"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/epayco/pse/cotizacion"] });
       
       if (data.failed === 0) {
         toast({

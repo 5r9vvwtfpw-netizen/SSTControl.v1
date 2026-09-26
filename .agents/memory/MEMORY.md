@@ -30,6 +30,7 @@
 - [Worker and contract date synchronization](worker-contract-date-sync.md) — workers y contracts duplican fechas laborales; sincronizar solo el contrato activo en ambas direcciones.
 - [Cobro por alta de trabajador](worker-entry-billing.md) — todo trabajador nuevo se cobra en su ciclo; el retirado deja de sumar desde el siguiente, sin devolución retroactiva.
 - [Conteo de trabajadores en Empresas](company-worker-count-policy.md) — el perfil empresarial no edita el conteo vigente; distinguir declaración inicial y cupo contratado.
+- [Visibilidad del próximo pago](next-payment-visibility.md) — tras un retiro, Mi Cuenta es el lugar para consultar el importe verificado; nunca presentar la tarifa guardada como deuda real.
 - [Development module access](development-module-access.md) — en desarrollo se omiten gates comerciales para probar módulos; producción conserva capítulo, suscripción y menú.
 - [Empresa interna de pruebas en producción](internal-production-test-company.md) — DEMO-PRUEBA requiere registrar trabajadores sin suscripción; la excepción debe limitarse a su identidad exacta.
 - [Blank form validation](blank-form-validation.md) — los campos de negocio empiezan vacíos y los obligatorios requieren validación explícita antes de mutar.
