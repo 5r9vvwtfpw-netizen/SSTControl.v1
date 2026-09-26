@@ -19,6 +19,7 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { seedSstCatalog } from "./sst-seed";
 import { runMigrations } from "./run-migrations";
+import { syncWorkerRetirementDate } from "./migrations/sync-worker-retirement-date";
 import { ensureSchemaSync } from "./migrations/ensure-schema-sync";
 import { createWebPushTables } from "./migrations/create-web-push-tables";
 import { seedAdminUser } from "./seed-admin";
@@ -976,6 +977,14 @@ app.use((req, res, next) => {
     }
   });
 
+  // Gate API traffic while the worker schema required by all worker queries
+  // is being prepared. Production listens first for health checks.
+  let workerSchemaReady = false;
+  app.use("/api", (_req, res, next) => {
+    if (workerSchemaReady) return next();
+    return res.status(503).json({ error: "El servicio está preparando la base de datos. Intente de nuevo en unos segundos." });
+  });
+
   // DB initialization: migrations, schema sync, seeds.
   // In production this runs AFTER server.listen() so Cloud Run health checks
   // don't time out waiting for migrations to complete (~60 s).
@@ -984,6 +993,11 @@ app.use((req, res, next) => {
       logger.info('⏳ Esperando a que la base de datos de producción esté lista...');
       await new Promise(resolve => setTimeout(resolve, 3000));
     }
+    // Esta columna se necesita antes de servir cualquier consulta de workers.
+    // Si falla, la API permanece cerrada en vez de cobrar o consultar con
+    // un esquema incompleto.
+    await syncWorkerRetirementDate();
+    workerSchemaReady = true;
     // Ejecutar migraciones automáticas (sincroniza columnas faltantes)
     try {
       await runMigrations();

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useLocation } from 'wouter';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { queryClient } from '@/lib/queryClient';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,6 +26,16 @@ interface EpaycoStatus {
   configured: boolean;
   test: boolean;
   method: 'PSE';
+}
+
+interface WorkerBillingQuote {
+  employeeCount: number;
+  baseMonthlyPrice: number;
+  currentPeriodPrice: number;
+  paymentAmount: number;
+  discountDurationMonths: number;
+  couponCode: string | null;
+  currency: 'COP';
 }
 
 interface FormState {
@@ -65,19 +76,43 @@ export default function PagoPSE() {
     enabled: status?.configured === true,
   });
 
+  const quoteQuery = useQuery<WorkerBillingQuote>({
+    queryKey: ['/api/epayco/pse/cotizacion'],
+    queryFn: async () => {
+      const response = await fetch('/api/epayco/pse/cotizacion', { credentials: 'include' });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'No se pudo verificar la cotización vigente.');
+      return result as WorkerBillingQuote;
+    },
+    enabled: status?.configured === true && !isExtraSeatPurchase,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    retry: false,
+  });
+
   const startPayment = useMutation({
     mutationFn: async (data: FormState) => {
+      if (!isExtraSeatPurchase && !quoteQuery.data) {
+        throw new Error('No se pudo verificar la cotización vigente. No se inició ningún cobro.');
+      }
       const response = await fetch('/api/epayco/pse/iniciar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
           ...data,
+          ...(!isExtraSeatPurchase ? {
+            expectedAmount: quoteQuery.data!.paymentAmount,
+            expectedEmployeeCount: quoteQuery.data!.employeeCount,
+          } : {}),
           ...(isExtraSeatPurchase ? { purchaseType: 'extra_seat', role: extraSeatRole } : {}),
         }),
       });
       const result = await response.json();
       if (!response.ok) {
+        if (response.status === 409 && !isExtraSeatPurchase) {
+          void queryClient.invalidateQueries({ queryKey: ['/api/epayco/pse/cotizacion'] });
+        }
         if (result.redirectTo) {
           navigate(result.redirectTo);
           throw new Error('');
@@ -186,6 +221,46 @@ export default function PagoPSE() {
             : 'Selecciona tu banco y continúa en el portal seguro de ePayco. Este botón procesa únicamente pagos PSE.'}
         </p>
       </div>
+
+      {!isExtraSeatPurchase && (
+        <Alert
+          className="mb-6"
+          variant={quoteQuery.isError || !quoteQuery.data ? 'destructive' : 'default'}
+          data-testid="alert-pse-billing-quote"
+        >
+          {quoteQuery.isLoading ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <AlertTitle>Verificando cotización</AlertTitle>
+              <AlertDescription>Consultando el precio firmado para los trabajadores facturables del próximo ciclo.</AlertDescription>
+            </>
+          ) : quoteQuery.data ? (
+            <>
+              <Landmark className="h-4 w-4" />
+              <AlertTitle>Importe verificado antes del pago</AlertTitle>
+              <AlertDescription>
+                {quoteQuery.data.employeeCount} trabajadores facturables ·{' '}
+                {new Intl.NumberFormat('es-CO', {
+                  style: 'currency',
+                  currency: 'COP',
+                  maximumFractionDigits: 0,
+                }).format(quoteQuery.data.paymentAmount)}
+                {quoteQuery.data.paymentAmount === 0 && ' · No se iniciará un cobro para esta cotización.'}
+              </AlertDescription>
+            </>
+          ) : (
+            <>
+              <Landmark className="h-4 w-4" />
+              <AlertTitle>No se pudo verificar la cotización</AlertTitle>
+              <AlertDescription>
+                {quoteQuery.error instanceof Error
+                  ? quoteQuery.error.message
+                  : 'No se iniciará ningún cobro mientras no se pueda verificar el precio.'}
+              </AlertDescription>
+            </>
+          )}
+        </Alert>
+      )}
 
       <Card>
         <CardHeader>
@@ -321,7 +396,16 @@ export default function PagoPSE() {
               </p>
             </div>
 
-            <Button type="submit" className="w-full" size="lg" disabled={startPayment.isPending || loadingBanks}>
+            <Button
+              type="submit"
+              className="w-full"
+              size="lg"
+              disabled={
+                startPayment.isPending ||
+                loadingBanks ||
+                (!isExtraSeatPurchase && (!quoteQuery.data || quoteQuery.data.paymentAmount <= 0))
+              }
+            >
               {startPayment.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -345,7 +429,14 @@ export default function PagoPSE() {
                 variant="outline"
                 className="w-full"
                 onClick={() => sendPaymentLink.mutate()}
-                disabled={sendPaymentLink.isPending || startPayment.isPending}
+                disabled={
+                  sendPaymentLink.isPending ||
+                  startPayment.isPending ||
+                  quoteQuery.isLoading ||
+                  quoteQuery.isError ||
+                  !quoteQuery.data ||
+                  quoteQuery.data.paymentAmount <= 0
+                }
               >
                 {sendPaymentLink.isPending ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

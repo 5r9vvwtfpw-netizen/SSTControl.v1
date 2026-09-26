@@ -1413,7 +1413,7 @@ export default function CompanyManagement() {
                                 </Badge>
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p>{stats.workersRegistered} trabajadores registrados de {company.numberOfWorkers} declarados</p>
+                                <p>{stats.workersRegistered} trabajadores vigentes de {company.numberOfWorkers} en la empresa</p>
                               </TooltipContent>
                             </Tooltip>
                             <Tooltip>

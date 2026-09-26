@@ -2,8 +2,8 @@ import { db } from '../db';
 import { sql } from 'drizzle-orm';
 
 /**
- * Backfill: sincroniza company.numberOfWorkers con el conteo real de
- * trabajadores en la tabla workers para todas las empresas.
+ * Backfill: sincroniza company.numberOfWorkers con los trabajadores
+ * vigentes (activos e inactivos). Los retirados quedan en el historial.
  *
  * Esto corrige el desajuste histórico entre el campo manual numberOfWorkers
  * y los registros reales. A partir de ahora createWorker/deleteWorker
@@ -17,10 +17,12 @@ export async function syncWorkerCountBackfill(): Promise<void> {
     const result = await db.execute(sql`
       UPDATE companies
       SET number_of_workers = (
-        SELECT COUNT(*)::int FROM workers WHERE company_id = companies.id
+        SELECT COUNT(*)::int FROM workers
+        WHERE company_id = companies.id AND status IN ('activo', 'inactivo')
       )
       WHERE number_of_workers IS DISTINCT FROM (
-        SELECT COUNT(*)::int FROM workers WHERE company_id = companies.id
+        SELECT COUNT(*)::int FROM workers
+        WHERE company_id = companies.id AND status IN ('activo', 'inactivo')
       )
     `);
 

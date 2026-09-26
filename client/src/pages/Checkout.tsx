@@ -29,6 +29,16 @@ interface CompanyData {
   quoteCouponCode: string | null;
 }
 
+interface WorkerBillingQuote {
+  employeeCount: number;
+  baseMonthlyPrice: number;
+  currentPeriodPrice: number;
+  paymentAmount: number;
+  discountDurationMonths: number;
+  couponCode: string | null;
+  currency: 'COP';
+}
+
 const riskLevelLabels: Record<RiskLevel, string> = {
   I: "Clase I - Minimo",
   II: "Clase II - Bajo",
@@ -63,6 +73,25 @@ export default function Checkout() {
     enabled: !!user?.companyId,
   });
 
+  const {
+    data: verifiedQuote,
+    isLoading: loadingVerifiedQuote,
+    isError: verifiedQuoteFailed,
+    error: verifiedQuoteError,
+  } = useQuery<WorkerBillingQuote>({
+    queryKey: ['/api/epayco/pse/cotizacion'],
+    queryFn: async () => {
+      const response = await fetch('/api/epayco/pse/cotizacion', { credentials: 'include' });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'No se pudo verificar la cotización vigente.');
+      return result as WorkerBillingQuote;
+    },
+    enabled: !!user?.companyId && !success && !canceled,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    retry: false,
+  });
+
   const isUpgradeFromFree = !currentSubscription?.contractAcceptedAt;
   const { data: epaycoStatus } = useQuery<{ configured: boolean; test: boolean; method: 'PSE' }>({
     queryKey: ['/api/epayco/estado'],
@@ -85,6 +114,14 @@ export default function Checkout() {
   }, [success, sessionId]);
 
   const handleCheckout = () => {
+    if (!verifiedQuote) {
+      toast({
+        title: 'Cotización no verificada',
+        description: 'No se iniciará ningún cobro hasta poder verificar el precio vigente.',
+        variant: 'destructive',
+      });
+      return;
+    }
     if (isUpgradeFromFree && !contractAccepted) {
       setShowContract(true);
     } else {
@@ -208,11 +245,35 @@ export default function Checkout() {
     );
   }
 
-  const quotePrice = company.quoteBaseMonthlyPrice && company.quoteBaseMonthlyPrice > 0
-    ? (company.quoteCurrentPeriodPrice != null && company.quoteCurrentPeriodPrice >= 0
-      && company.quoteCurrentPeriodPrice < company.quoteBaseMonthlyPrice
-      ? company.quoteCurrentPeriodPrice : company.quoteBaseMonthlyPrice)
-    : null;
+  const quotePrice = verifiedQuote?.paymentAmount ?? null;
+
+  if (loadingVerifiedQuote) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" />
+          <p className="text-muted-foreground">Verificando trabajadores e importe con la cotización vigente...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (verifiedQuoteFailed || !verifiedQuote) {
+    return (
+      <div className="container mx-auto max-w-2xl px-4 py-8">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>No se pudo verificar la cotización</AlertTitle>
+          <AlertDescription>
+            {(verifiedQuoteError as Error | undefined)?.message || 'No se iniciará ningún cobro. Vuelve a intentarlo cuando la cotización esté disponible.'}
+          </AlertDescription>
+        </Alert>
+        <Button variant="outline" onClick={() => navigate('/planes-suscripcion')} className="mt-4">
+          Volver a planes
+        </Button>
+      </div>
+    );
+  }
 
   if (quotePrice === 0) {
     return (
@@ -298,8 +359,8 @@ export default function Checkout() {
               <div className="grid grid-cols-3 gap-3">
                 <div className="text-center p-2 bg-muted rounded-lg">
                   <Users className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
-                  <p className="text-lg font-bold">{company.numberOfWorkers || 1}</p>
-                  <p className="text-xs text-muted-foreground">Trabajadores</p>
+                  <p className="text-lg font-bold">{verifiedQuote.employeeCount}</p>
+                  <p className="text-xs text-muted-foreground">Trabajadores facturables</p>
                 </div>
                 <div className="text-center p-2 bg-muted rounded-lg">
                   <Shield className="h-4 w-4 mx-auto mb-1 text-muted-foreground" />
@@ -327,15 +388,15 @@ export default function Checkout() {
                     </div>
                   </div>
                 </div>
-                {company.quoteCurrentPeriodPrice !== null && company.quoteCurrentPeriodPrice !== undefined && company.quoteCurrentPeriodPrice < quotePrice && (
+                {verifiedQuote.currentPeriodPrice < verifiedQuote.baseMonthlyPrice && (
                   <div className="mt-2 p-2 rounded-md bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800">
                     <div className="flex justify-between text-sm">
                       <span className="text-green-700 dark:text-green-300 font-medium">
                         Primer mes con descuento
-                        {company.quoteCouponCode && ` (${company.quoteCouponCode})`}
+                        {verifiedQuote.couponCode && ` (${verifiedQuote.couponCode})`}
                       </span>
                       <span className="text-green-700 dark:text-green-300 font-bold">
-                        {formatCurrency(company.quoteCurrentPeriodPrice)}
+                        {formatCurrency(verifiedQuote.currentPeriodPrice)}
                       </span>
                     </div>
                   </div>
@@ -454,7 +515,7 @@ export default function Checkout() {
                 className="w-full"
                 size="lg"
                 onClick={handleCheckout}
-                 disabled={!isPseAvailable || isAcceptingContract}
+                 disabled={!isPseAvailable || isAcceptingContract || !verifiedQuote}
                 data-testid="button-checkout"
               >
                  {isAcceptingContract ? (

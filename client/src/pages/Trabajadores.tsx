@@ -81,6 +81,8 @@ export default function Trabajadores() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingWorker, setEditingWorker] = useState<Worker | null>(null);
   const [hasConsent, setHasConsent] = useState(false);
+  const [retirementDialogOpen, setRetirementDialogOpen] = useState(false);
+  const [retirementDateDraft, setRetirementDateDraft] = useState("");
 
   // For admin: company selection filter
   const isAdmin = user?.role ? canWrite(user.role, 'workers') : false;
@@ -134,6 +136,7 @@ export default function Trabajadores() {
     startDate: string;
     endDate: string;
     status: "" | "activo" | "inactivo" | "retirado";
+    retirementDate?: string;
     jobProfileId?: string;
     gender?: string;
     birthDate?: string;
@@ -151,6 +154,7 @@ export default function Trabajadores() {
     startDate: "",
     endDate: "",
     status: "",
+    retirementDate: "",
     jobProfileId: "",
     gender: "",
     birthDate: "",
@@ -517,6 +521,7 @@ export default function Trabajadores() {
         startDate: "",
         endDate: "",
         status: "",
+        retirementDate: "",
         jobProfileId: "",
         gender: "",
         birthDate: "",
@@ -568,6 +573,7 @@ export default function Trabajadores() {
         startDate: "",
         endDate: "",
         status: "",
+        retirementDate: "",
         jobProfileId: "",
         gender: "",
         birthDate: "",
@@ -708,6 +714,33 @@ export default function Trabajadores() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!editingWorker && formData.status === "retirado") {
+      toast({
+        title: "No se puede crear como retirado",
+        description: "Registre primero al trabajador con estado activo o inactivo. Para retirarlo, abra su ficha y confirme la fecha efectiva de retiro.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (formData.status === "retirado" && formData.retirementDate) {
+      const today = getTodayDateString();
+      if (formData.retirementDate > today) {
+        toast({
+          title: "Fecha de retiro inválida",
+          description: "La fecha efectiva de retiro no puede estar en el futuro.",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (formData.startDate && formData.retirementDate < formData.startDate) {
+        toast({
+          title: "Fecha de retiro inválida",
+          description: "La fecha efectiva de retiro no puede ser anterior a la fecha de inicio del trabajador.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
     if (!formData.companyId) {
       toast({
         title: "Error",
@@ -807,6 +840,9 @@ export default function Trabajadores() {
       ...formData,
       contractType: formData.contractType,
       status: formData.status || undefined,
+      ...(formData.status === "retirado"
+        ? (formData.retirementDate ? { retirementDate: formData.retirementDate } : {})
+        : { retirementDate: null }),
       identificationNumber: cleanedCedula,
       endDate: formData.endDate || undefined,
       sedeId: formData.sedeId || null,
@@ -848,6 +884,7 @@ export default function Trabajadores() {
       startDate: worker.startDate,
       endDate: worker.endDate || "",
       status: worker.status,
+      retirementDate: (worker as Worker & { retirementDate?: string | null }).retirementDate || "",
       jobProfileId: worker.jobProfileId || "",
       gender: worker.gender || "",
       birthDate: worker.birthDate || "",
@@ -856,6 +893,57 @@ export default function Trabajadores() {
       sedeId: worker.sedeId || "",
     });
     setDialogOpen(true);
+  };
+
+  const handleWorkerStatusChange = (status: "activo" | "inactivo" | "retirado") => {
+    if (status === "retirado" && !editingWorker) {
+      toast({
+        title: "Retiro no disponible al crear",
+        description: "Primero registre al trabajador; después podrá retirarlo indicando la fecha efectiva.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (status === "retirado" && editingWorker && formData.status !== "retirado") {
+      setRetirementDateDraft(formData.retirementDate || "");
+      setRetirementDialogOpen(true);
+      return;
+    }
+    setFormData({
+      ...formData,
+      status,
+      retirementDate: status === "retirado" ? (formData.retirementDate || "") : "",
+    });
+  };
+
+  const handleConfirmRetirement = () => {
+    if (!retirementDateDraft) {
+      toast({
+        title: "Fecha requerida",
+        description: "Indique la fecha efectiva de retiro para continuar.",
+        variant: "destructive",
+      });
+      return;
+    }
+    const today = getTodayDateString();
+    if (retirementDateDraft > today) {
+      toast({
+        title: "Fecha de retiro inválida",
+        description: "La fecha efectiva de retiro no puede estar en el futuro.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (formData.startDate && retirementDateDraft < formData.startDate) {
+      toast({
+        title: "Fecha de retiro inválida",
+        description: "La fecha efectiva de retiro no puede ser anterior a la fecha de inicio del trabajador.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setFormData({ ...formData, status: "retirado", retirementDate: retirementDateDraft });
+    setRetirementDialogOpen(false);
   };
 
   const handleDelete = (id: string) => {
@@ -897,6 +985,7 @@ export default function Trabajadores() {
       startDate: "",
       endDate: "",
       status: "",
+      retirementDate: "",
       jobProfileId: "",
       gender: "",
       birthDate: "",
@@ -1183,6 +1272,59 @@ export default function Trabajadores() {
           normativaAplicable={normativaTrabajadores}
           compact={true}
         />
+        <Dialog
+          open={retirementDialogOpen}
+          onOpenChange={(open) => {
+            setRetirementDialogOpen(open);
+            if (!open) setRetirementDateDraft("");
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Confirmar retiro del trabajador</DialogTitle>
+              <DialogDescription>
+                Indique la fecha efectiva en que dejó de trabajar. Esta fecha es independiente de la fecha de fin del contrato.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label htmlFor="retirement-date-confirm">Fecha efectiva de retiro *</Label>
+                <Input
+                  id="retirement-date-confirm"
+                  type="date"
+                  value={retirementDateDraft}
+                  min={formData.startDate || undefined}
+                  max={getTodayDateString()}
+                  onChange={(e) => setRetirementDateDraft(e.target.value)}
+                  required
+                  data-testid="input-retirement-date-confirm"
+                />
+              </div>
+              <Alert className="border-amber-200 bg-amber-50 dark:bg-amber-950/30">
+                <AlertDescription>
+                  Este trabajador se cobra en el ciclo en que se retira y queda excluido de los ciclos posteriores.
+                </AlertDescription>
+              </Alert>
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setRetirementDialogOpen(false)}
+                data-testid="button-cancel-retirement"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                onClick={handleConfirmRetirement}
+                data-testid="button-confirm-retirement"
+              >
+                Confirmar fecha y continuar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
         {isAdmin && (
           <div className="flex flex-wrap gap-2">
             <Button onClick={handleDownloadTemplate} variant="outline" data-testid="button-download-template">
@@ -2509,7 +2651,7 @@ export default function Trabajadores() {
                     <Label htmlFor="status">Estado</Label>
                     <Select
                       value={formData.status}
-                      onValueChange={(value: any) => setFormData({ ...formData, status: value })}
+                      onValueChange={handleWorkerStatusChange}
                     >
                       <SelectTrigger id="status" data-testid="select-status">
                         <SelectValue />
@@ -2521,6 +2663,23 @@ export default function Trabajadores() {
                       </SelectContent>
                     </Select>
                   </div>
+                  {formData.status === "retirado" && (
+                    <div className="space-y-2">
+                      <Label htmlFor="retirement-date">Fecha efectiva de retiro</Label>
+                      <Input
+                        id="retirement-date"
+                        type="date"
+                        value={formData.retirementDate || ""}
+                        min={formData.startDate || undefined}
+                        max={getTodayDateString()}
+                        onChange={(e) => setFormData({ ...formData, retirementDate: e.target.value })}
+                        data-testid="input-retirement-date"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        No es la fecha de fin del contrato. Puede corregirla aquí para un trabajador ya retirado.
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Datos Sociodemográficos (Estándar 3.1.1) */}
@@ -2755,7 +2914,9 @@ export default function Trabajadores() {
                       <CardContent className="space-y-3">
                         <div className="flex items-center gap-2">
                           <Users className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm font-medium" data-testid={`vault-total-${vault.companyId}`}>{vault.total} trabajador{vault.total !== 1 ? "es" : ""}</span>
+                          <span className="text-sm font-medium" data-testid={`vault-total-${vault.companyId}`}>
+                            {vault.activos + vault.inactivos} trabajador{vault.activos + vault.inactivos !== 1 ? "es" : ""} vigente{vault.activos + vault.inactivos !== 1 ? "s" : ""}
+                          </span>
                         </div>
                         <div className="flex flex-wrap gap-1">
                           <Badge variant="default" data-testid={`vault-activos-${vault.companyId}`}>

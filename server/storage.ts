@@ -2990,15 +2990,18 @@ export class DbStorage implements IStorage {
   }
 
   /**
-   * Sincroniza company.numberOfWorkers con el conteo real de trabajadores en BD.
-   * Se llama automáticamente al crear o eliminar trabajadores.
+   * Sincroniza company.numberOfWorkers con los trabajadores vigentes.
+   * Los retirados permanecen como registros históricos.
    */
   private async syncWorkerCount(companyId: string): Promise<void> {
     try {
       const [result] = await db
         .select({ count: sql<number>`count(*)::int` })
         .from(schema.workers)
-        .where(eq(schema.workers.companyId, companyId));
+        .where(and(
+          eq(schema.workers.companyId, companyId),
+          inArray(schema.workers.status, ['activo', 'inactivo'])
+        ));
       const actualCount = result?.count ?? 0;
       await db.update(schema.companies)
         .set({ numberOfWorkers: actualCount })
@@ -3189,6 +3192,10 @@ export class DbStorage implements IStorage {
       }
     }
     
+    if (updated && oldWorker && updated.status !== oldWorker.status) {
+      await this.syncWorkerCount(companyId);
+    }
+
     return updated;
   }
 

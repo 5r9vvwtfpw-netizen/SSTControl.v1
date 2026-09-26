@@ -8,3 +8,9 @@ Cada trabajador que entra al sistema se cobra en el ciclo en que fue registrado,
 **Why:** El usuario aclaró explícitamente que todo trabajador que entra se cobra, pero «retirado» no suma en los demás ciclos. Bajar un conteo vigente no demuestra por sí mismo si debe bajar un importe ya causado; se necesita la fecha efectiva y el período facturado.
 
 **How to apply:** Pedir confirmación de la fecha efectiva mediante un diálogo al marcar el retiro; contar al trabajador en el ciclo del retiro y excluirlo de los posteriores. Guardar un desglose por ciclo para no reescribir pagos anteriores ni el importe de un PSE ya iniciado. No inferir la fecha de retiro de la fecha de fin del contrato.
+
+Al pasar de pagos por transferencia externa a PSE, tratar la fecha de fin del período previamente pagado como límite de cobertura; no reconstruir cobros de retirados históricos sin evidencia de su fecha efectiva. Una vez confirmado un PSE, usar la fecha de **inicio del intento cobrado**, no la fecha de aprobación, como límite para arrastrar nuevas altas no incluidas en aquel importe.
+
+**Why:** Una confirmación bancaria puede llegar después de que se registró y retiró un trabajador; usar la aprobación como límite haría que su alta se perdiera entre ciclos. También sería incorrecto cobrar otra vez los retiros anteriores a la transición.
+
+**How to apply:** Separar la cobertura externa del primer PSE y conservar la fecha de instantánea de cada pago para el ciclo siguiente. No reescribir transacciones pendientes ni pagos confirmados al actualizar la plantilla de cotización.

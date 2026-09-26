@@ -443,6 +443,7 @@ export const workers = pgTable("workers", {
   startDate: date("start_date").notNull(),
   endDate: date("end_date"),
   status: workerStatusEnum("status").notNull().default("activo"),
+  retirementDate: date("retirement_date"), // Fecha efectiva del retiro, distinta del fin de contrato
   // Perfil de cargo asignado (vinculación directa con job_profiles)
   jobProfileId: varchar("job_profile_id"), // Referencia al perfil de cargo (validación en aplicación)
   // Datos sociodemográficos (Estándar 3.1.1 - Resolución 0312/2019)

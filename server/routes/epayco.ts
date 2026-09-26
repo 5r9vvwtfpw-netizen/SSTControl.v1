@@ -31,6 +31,10 @@ import {
 } from "../services/epayco";
 import type { EpaycoPseLookup } from "../services/epayco";
 import { sendEpaycoPaymentLinkEmail } from "../services/payment-link-email";
+import {
+  getVerifiedWorkerBillingQuote,
+  WorkerBillingQuoteError,
+} from "../services/worker-billing-quote";
 
 const paymentLinkReadLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -187,6 +191,7 @@ async function ensureEpaycoTable(): Promise<void> {
   await db.execute(sql`
     ALTER TABLE epayco_pse_transactions
     ADD COLUMN IF NOT EXISTS purchase_type varchar NOT NULL DEFAULT 'subscription',
+    ADD COLUMN IF NOT EXISTS billed_worker_count integer,
     ADD COLUMN IF NOT EXISTS role varchar
   `);
   await db.execute(sql`
@@ -207,7 +212,8 @@ async function ensureEpaycoTable(): Promise<void> {
   `);
   await db.execute(sql`
     ALTER TABLE epayco_pse_payment_links
-    ADD COLUMN IF NOT EXISTS payment_invoice varchar
+    ADD COLUMN IF NOT EXISTS payment_invoice varchar,
+    ADD COLUMN IF NOT EXISTS billed_worker_count integer
   `);
   await db.execute(sql`
     CREATE INDEX IF NOT EXISTS epayco_pse_payment_links_company_created_idx
@@ -230,14 +236,18 @@ function maskEmail(email: string): string {
   return `${local.slice(0, 1)}***@${domain}`;
 }
 
-function getSubscriptionPaymentAmount(company: any): number | null {
-  const base = Number(company.quoteBaseMonthlyPrice || 0);
-  const current = Number(company.quoteCurrentPeriodPrice || 0);
-  if (base > 0 && company.quoteCurrentPeriodPrice === 0) return null;
-  const amount = current > 0 && current < base ? current : base;
-  return Number.isFinite(amount) && amount > 0 && Number.isSafeInteger(Math.round(amount))
-    ? Math.round(amount)
-    : null;
+async function saveVerifiedSubscriptionQuote(
+  companyId: string,
+  quote: Awaited<ReturnType<typeof getVerifiedWorkerBillingQuote>>,
+): Promise<void> {
+  await db.execute(sql`
+    UPDATE companies
+    SET quote_base_monthly_price = ${quote.baseMonthlyPrice},
+        quote_current_period_price = ${quote.currentPeriodPrice},
+        quote_discount_duration_months = ${quote.discountDurationMonths},
+        quote_coupon_code = ${quote.couponCode}
+    WHERE id = ${companyId}
+  `);
 }
 
 async function getPaymentByReference(reference: string): Promise<EpaycoPaymentRow | null> {
@@ -362,6 +372,10 @@ async function activateSubscriptionAfterEpayco(
       LIMIT 1
     `);
     if (!existingInvoice.rows.length) {
+      const billedWorkerResult = await tx.execute(sql`
+        SELECT billed_worker_count FROM epayco_pse_transactions WHERE id = ${payment.id}
+      `);
+      const billedWorkerCount = Number(billedWorkerResult.rows[0]?.billed_worker_count);
       const companyResult = await tx.execute(sql`
         SELECT name, nit, contact_email, address, ciiu_code,
                number_of_workers, number_of_vehicles
@@ -405,7 +419,9 @@ async function activateSubscriptionAfterEpayco(
           ${now}, ${nextPeriodEnd}, ${now}, ${now}, ${now},
           ${company.name}, ${company.nit || "N/A"}, ${company.contact_email || ""},
           ${company.address || ""}, ${lineItems}, ${note}, ${company.ciiu_code},
-          ${company.number_of_workers}, ${company.number_of_vehicles}
+          ${Number.isSafeInteger(billedWorkerCount) && billedWorkerCount > 0
+            ? billedWorkerCount
+            : company.number_of_workers}, ${company.number_of_vehicles}
         )
       `);
     }
@@ -538,6 +554,29 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
     }
   });
 
+  app.get("/api/epayco/pse/cotizacion", paymentLinkReadLimiter, requireAuth, async (req: any, res) => {
+    const companyId = getEffectiveCompanyId(req);
+    if (!companyId) return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+    if (["lso", "lso_externo", "trabajador"].includes(req.user?.role)) {
+      return res.status(403).json({ error: "Este portal no requiere pagos de suscripción" });
+    }
+    const subscription = await storage.getSubscriptionByCompany(companyId);
+    if (!subscription) return res.status(404).json({ error: "No tiene una suscripción. Contacte a soporte." });
+    const company = await storage.getCompany(companyId);
+    if (!company) return res.status(404).json({ error: "Empresa no encontrada" });
+    try {
+      const quote = await getVerifiedWorkerBillingQuote(company, subscription.id);
+      return res.json(quote);
+    } catch (error: any) {
+      logger.warn({ companyId, error: error.message }, "[ePayco] No se pudo calcular cotización vigente");
+      return res.status(error instanceof WorkerBillingQuoteError ? 409 : 503).json({
+        error: error instanceof WorkerBillingQuoteError
+          ? error.message
+          : "No se pudo verificar el precio vigente. No se inició ningún cobro.",
+      });
+    }
+  });
+
   app.post("/api/epayco/pse/enlace/enviar", paymentOperationLimiter, requireAuth, async (req: any, res) => {
     if (process.env.NODE_ENV !== "production") {
       return res.status(503).json({ error: "El envío de enlaces de pago no está disponible en este entorno." });
@@ -588,12 +627,24 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
     if (!recipient || !z.string().email().safeParse(recipient).success) {
       return res.status(409).json({ error: "La empresa no tiene un correo de contacto válido registrado." });
     }
-    const amount = getSubscriptionPaymentAmount(company);
-    if (!amount) {
+    let quote: Awaited<ReturnType<typeof getVerifiedWorkerBillingQuote>>;
+    try {
+      quote = await getVerifiedWorkerBillingQuote(company, subscription.id);
+    } catch (error: any) {
+      logger.warn({ companyId, error: error.message }, "[ePayco] No se pudo verificar cotización para enlace");
+      return res.status(error instanceof WorkerBillingQuoteError ? 409 : 503).json({
+        error: error instanceof WorkerBillingQuoteError
+          ? error.message
+          : "No se pudo verificar el precio vigente. No se creó ningún enlace.",
+      });
+    }
+    const amount = quote.paymentAmount;
+    if (!Number.isSafeInteger(amount) || amount <= 0) {
       return res.status(409).json({
         error: "Su empresa no tiene una cotización de precio válida para pagar.",
       });
     }
+    await saveVerifiedSubscriptionQuote(companyId, quote);
 
     const token = crypto.randomBytes(32).toString("base64url");
     const tokenHash = hashPaymentLinkToken(token);
@@ -608,9 +659,10 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
 
       await tx.execute(sql`
         INSERT INTO epayco_pse_payment_links (
-          token_hash, company_id, subscription_id, amount, currency, expires_at
+          token_hash, company_id, subscription_id, amount, currency, billed_worker_count, expires_at
         ) VALUES (
-          ${tokenHash}, ${companyId}, ${subscription.id}, ${amount}, 'COP', now() + interval '24 hours'
+          ${tokenHash}, ${companyId}, ${subscription.id}, ${amount}, 'COP',
+          ${quote.employeeCount}, now() + interval '24 hours'
         )
       `);
       return true;
@@ -655,7 +707,7 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
     if (!token) return res.status(404).json({ error: "Enlace de pago no válido o vencido." });
     const tokenHash = hashPaymentLinkToken(token);
     const result = await db.execute(sql`
-      SELECT l.company_id, l.subscription_id, l.amount, l.currency, l.expires_at,
+      SELECT l.company_id, l.subscription_id, l.amount, l.currency, l.billed_worker_count, l.expires_at,
              l.used_at, l.revoked_at, c.name AS company_name
       FROM epayco_pse_payment_links l
       JOIN companies c ON c.id = l.company_id
@@ -664,11 +716,39 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
     `);
     const link = result.rows[0] as {
       company_id: string; subscription_id: string; amount: number; currency: string;
+      billed_worker_count: number | null;
       expires_at: Date; used_at: Date | null; revoked_at: Date | null; company_name: string;
     } | undefined;
     if (!link || (link.revoked_at && !link.used_at) ||
       (!link.used_at && new Date(link.expires_at).getTime() <= Date.now())) {
       return res.status(404).json({ error: "Enlace de pago no válido o vencido." });
+    }
+
+    if (!link.used_at) {
+      if (link.billed_worker_count === null) {
+        return res.status(409).json({ error: "Este enlace fue emitido antes de la cotización vigente. Solicite un nuevo enlace de pago." });
+      }
+      const subscription = await storage.getSubscription(link.subscription_id);
+      const company = await storage.getCompany(link.company_id);
+      if (!subscription || !company) {
+        return res.status(404).json({ error: "No se encontró la suscripción asociada al enlace." });
+      }
+      try {
+        const quote = await getVerifiedWorkerBillingQuote(company, subscription.id);
+        if (
+          quote.paymentAmount !== Number(link.amount) ||
+          quote.employeeCount !== Number(link.billed_worker_count)
+        ) {
+          return res.status(409).json({ error: "El precio del enlace cambió. Solicite un nuevo enlace de pago." });
+        }
+      } catch (error: any) {
+        logger.warn({ companyId: link.company_id, error: error.message }, "[ePayco] No se pudo verificar cotización del enlace");
+        return res.status(409).json({
+          error: error instanceof WorkerBillingQuoteError
+            ? error.message
+            : "No se pudo verificar el precio vigente. No se inició ningún cobro.",
+        });
+      }
     }
 
     let banks: Awaited<ReturnType<typeof getEpaycoPseBanks>> = [];
@@ -737,17 +817,21 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
     if (!token) return res.status(404).json({ error: "Enlace de pago no válido o vencido." });
     const tokenHash = hashPaymentLinkToken(token);
     const linkResult = await db.execute(sql`
-      SELECT company_id, subscription_id, amount, currency, expires_at, used_at, revoked_at
+      SELECT company_id, subscription_id, amount, currency, billed_worker_count, expires_at, used_at, revoked_at
       FROM epayco_pse_payment_links
       WHERE token_hash = ${tokenHash}
       LIMIT 1
     `);
     const link = linkResult.rows[0] as {
       company_id: string; subscription_id: string; amount: number; currency: string;
+      billed_worker_count: number | null;
       expires_at: Date; used_at: Date | null; revoked_at: Date | null;
     } | undefined;
     if (!link || link.revoked_at || link.used_at || new Date(link.expires_at).getTime() <= Date.now()) {
       return res.status(410).json({ error: "Este enlace ya fue utilizado o venció." });
+    }
+    if (link.billed_worker_count === null) {
+      return res.status(409).json({ error: "Este enlace fue emitido antes de la cotización vigente. Solicite un nuevo enlace de pago." });
     }
 
     const subscription = await storage.getSubscription(link.subscription_id);
@@ -763,8 +847,21 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
     }
     const company = await storage.getCompany(link.company_id);
     if (!company) return res.status(404).json({ error: "Empresa no encontrada" });
-    const currentAmount = getSubscriptionPaymentAmount(company);
-    if (currentAmount !== Number(link.amount)) {
+    let currentQuote: Awaited<ReturnType<typeof getVerifiedWorkerBillingQuote>>;
+    try {
+      currentQuote = await getVerifiedWorkerBillingQuote(company, subscription.id);
+    } catch (error: any) {
+      logger.warn({ companyId: link.company_id, error: error.message }, "[ePayco] No se pudo verificar cotización del enlace");
+      return res.status(409).json({
+        error: error instanceof WorkerBillingQuoteError
+          ? error.message
+          : "No se pudo verificar el precio vigente. No se inició ningún cobro.",
+      });
+    }
+    if (
+      currentQuote.paymentAmount !== Number(link.amount) ||
+      currentQuote.employeeCount !== Number(link.billed_worker_count)
+    ) {
       return res.status(409).json({ error: "El precio de la suscripción cambió. Solicite un nuevo enlace de pago." });
     }
 
@@ -788,20 +885,22 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
         SET used_at = now()
         WHERE token_hash = ${tokenHash}
           AND used_at IS NULL AND revoked_at IS NULL AND expires_at > now()
-        RETURNING company_id, subscription_id, amount, currency
+        RETURNING company_id, subscription_id, amount, currency, billed_worker_count
       `);
       const claimedLink = claimed.rows[0] as {
         company_id: string; subscription_id: string; amount: number; currency: string;
+        billed_worker_count: number | null;
       } | undefined;
       if (!claimedLink) return { kind: "unavailable" as const };
 
       const invoice = `sst-pse-${claimedLink.subscription_id}-${Date.now()}`;
       await tx.execute(sql`
         INSERT INTO epayco_pse_transactions (
-          company_id, subscription_id, invoice, amount, currency, status, purchase_type
+          company_id, subscription_id, invoice, amount, currency, status, purchase_type, billed_worker_count
         ) VALUES (
           ${claimedLink.company_id}, ${claimedLink.subscription_id}, ${invoice},
-          ${Number(claimedLink.amount)}, ${claimedLink.currency}, 'PENDING', 'subscription'
+          ${Number(claimedLink.amount)}, ${claimedLink.currency}, 'PENDING', 'subscription',
+          ${currentQuote.employeeCount}
         )
       `);
       await tx.execute(sql`
@@ -818,20 +917,10 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
     const { claimedLink, invoice } = start;
     const { firstName, lastName } = splitFullName(parsed.data.fullName);
     try {
-      const latestCompany = await storage.getCompany(claimedLink.company_id);
-      if (!latestCompany || getSubscriptionPaymentAmount(latestCompany) !== Number(claimedLink.amount)) {
-        await db.execute(sql`
-          UPDATE epayco_pse_transactions
-          SET status = 'ERROR', response = 'Subscription quote changed before payment initiation',
-              response_reason = 'Subscription quote changed before payment initiation', updated_at = now()
-          WHERE invoice = ${invoice}
-        `);
-        return res.status(409).json({ error: "El precio de la suscripción cambió. Solicite un nuevo enlace de pago." });
-      }
       const result = await createEpaycoPseTransaction({
         bankCode: parsed.data.bankCode,
         invoice,
-        description: `Suscripción mensual SST Colombia — ${latestCompany.name}`,
+        description: `Suscripción mensual SST Colombia — ${company.name}`,
         amount: Number(claimedLink.amount),
         documentType: parsed.data.idType,
         documentNumber: parsed.data.idNumber,
@@ -960,6 +1049,8 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
 
     const bodySchema = z.object({
       purchaseType: z.enum(["subscription", "extra_seat"]).optional().default("subscription"),
+      expectedAmount: z.number().int().nonnegative().optional(),
+      expectedEmployeeCount: z.number().int().min(1).optional(),
       role: z.string().optional(),
       bankCode: z.string().min(1, "Seleccione un banco"),
       userType: z.enum(["0", "1"]),
@@ -1043,6 +1134,8 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
     const company = await storage.getCompany(companyId);
     if (!company) return res.status(404).json({ error: "Empresa no encontrada" });
 
+    let verifiedSubscriptionQuote: Awaited<ReturnType<typeof getVerifiedWorkerBillingQuote>> | null = null;
+    let quoteWorkerCount: number | null = null;
     const forwardedFor = req.headers["x-forwarded-for"];
     let clientIp: string;
     try {
@@ -1055,17 +1148,46 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
       return res.status(503).json({ error: error.message });
     }
 
-    const companyAny = company as any;
-    const quoteBase = Number(companyAny.quoteBaseMonthlyPrice || 0);
-    const quoteCurrent = Number(companyAny.quoteCurrentPeriodPrice || 0);
-    if (parsed.data.purchaseType === "subscription" && quoteBase > 0 && companyAny.quoteCurrentPeriodPrice === 0) {
-      return res.status(409).json({
-        error: "Esta cotización tiene descuento total. Active su prueba gratuita desde Mi suscripción.",
-      });
+    let amount: number;
+    if (parsed.data.purchaseType === "extra_seat") {
+      amount = 10000;
+    } else {
+      if (parsed.data.expectedAmount === undefined) {
+        return res.status(400).json({ error: "Debe revisar la cotización vigente antes de iniciar el pago." });
+      }
+      if (parsed.data.expectedEmployeeCount === undefined) {
+        return res.status(400).json({ error: "Debe confirmar la cantidad de trabajadores facturables antes de iniciar el pago." });
+      }
+      try {
+        verifiedSubscriptionQuote = await getVerifiedWorkerBillingQuote(company, subscription.id);
+      } catch (error: any) {
+        logger.warn({ companyId, error: error.message }, "[ePayco] No se pudo verificar cotización antes de iniciar PSE");
+        return res.status(error instanceof WorkerBillingQuoteError ? 409 : 503).json({
+          error: error instanceof WorkerBillingQuoteError
+            ? error.message
+            : "No se pudo verificar el precio vigente. No se inició ningún cobro.",
+        });
+      }
+      if (
+        verifiedSubscriptionQuote.paymentAmount !== parsed.data.expectedAmount ||
+        verifiedSubscriptionQuote.employeeCount !== parsed.data.expectedEmployeeCount
+      ) {
+        return res.status(409).json({
+          error: "La cotización cambió. Revise el nuevo importe antes de continuar.",
+          quote: {
+            employeeCount: verifiedSubscriptionQuote.employeeCount,
+            paymentAmount: verifiedSubscriptionQuote.paymentAmount,
+          },
+        });
+      }
+      if (verifiedSubscriptionQuote.paymentAmount <= 0) {
+        return res.status(409).json({
+          error: "Esta cotización tiene descuento total. Active su prueba gratuita desde Mi suscripción.",
+        });
+      }
+      amount = verifiedSubscriptionQuote.paymentAmount;
+      quoteWorkerCount = verifiedSubscriptionQuote.employeeCount;
     }
-    const amount = parsed.data.purchaseType === "extra_seat"
-      ? 10000
-      : quoteCurrent > 0 && quoteCurrent < quoteBase ? quoteCurrent : quoteBase;
     if (!Number.isFinite(amount) || amount <= 0 || !Number.isSafeInteger(Math.round(amount))) {
       return res.status(400).json({
         error: "Su empresa no tiene una cotización de precio válida para pagar.",
@@ -1080,12 +1202,25 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
       ) {
         return false;
       }
+      if (parsed.data.purchaseType === "subscription") {
+        if (!verifiedSubscriptionQuote) return false;
+        await tx.execute(sql`
+          UPDATE companies
+          SET quote_base_monthly_price = ${verifiedSubscriptionQuote.baseMonthlyPrice},
+              quote_current_period_price = ${verifiedSubscriptionQuote.currentPeriodPrice},
+              quote_discount_duration_months = ${verifiedSubscriptionQuote.discountDurationMonths},
+              quote_coupon_code = ${verifiedSubscriptionQuote.couponCode}
+          WHERE id = ${companyId}
+        `);
+      }
       await tx.execute(sql`
         INSERT INTO epayco_pse_transactions (
-          company_id, subscription_id, invoice, amount, currency, status, purchase_type, role
+          company_id, subscription_id, invoice, amount, currency, status, purchase_type, role,
+          billed_worker_count
         ) VALUES (
           ${companyId}, ${subscription.id}, ${invoice}, ${Math.round(amount)}, 'COP', 'PENDING',
-          ${parsed.data.purchaseType}, ${extraSeatRole}
+          ${parsed.data.purchaseType}, ${extraSeatRole},
+          ${parsed.data.purchaseType === 'subscription' ? quoteWorkerCount : null}
         )
       `);
       return true;

@@ -46,6 +46,7 @@ import { extendHvgLicense2026 } from './migrations/extend-hvg-license-2026';
 import { createDriverComparendosTable } from './migrations/create-driver-comparendos-table';
 import { addPlacaToComparendos } from './migrations/add-placa-to-comparendos';
 import { syncWorkerCountBackfill } from './migrations/sync-worker-count-backfill';
+import { syncWorkerRetirementDate } from './migrations/sync-worker-retirement-date';
 import { syncUserRoleEnum } from './migrations/sync-user-role-enum';
 import { addGpsWebhookKey } from './migrations/add-gps-webhook-key';
 import { syncComunicacionesSstColumns } from './migrations/sync-comunicaciones-sst-columns';
@@ -134,6 +135,7 @@ export async function runMigrations() {
     await extendHvgLicense2026();
     await createDriverComparendosTable();
     await addPlacaToComparendos();
+    await syncWorkerRetirementDate();
     await syncWorkerCountBackfill();
     await syncUserRoleEnum();
     await addGpsWebhookKey();

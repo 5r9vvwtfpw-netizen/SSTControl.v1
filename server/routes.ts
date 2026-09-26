@@ -2947,7 +2947,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           riskLevel: company.riskLevel,
           calculatedChapter: company.calculatedChapter,
           stats: {
-            workersRegistered: companyWorkers.length,
+            workersRegistered: companyWorkers.filter(w => w.status === 'activo' || w.status === 'inactivo').length,
             usersCount: companyUsers.length,
             trainingsCount: companyTrainings.length,
             accidentsCount: companyAccidents.length,
@@ -3069,6 +3069,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/companies/:id", requirePermission("companies:edit"), async (req, res) => {
     try {
       const validatedData = insertCompanySchema.partial().parse(req.body);
+      if (validatedData.numberOfWorkers !== undefined) {
+        const [counts] = await db.select({
+          registered: sql<number>`count(*)::int`,
+          current: sql<number>`count(*) FILTER (WHERE status IN ('activo', 'inactivo'))::int`,
+        }).from(schema.workers).where(eq(schema.workers.companyId, req.params.id));
+        if (counts.registered > 0 && validatedData.numberOfWorkers !== counts.current) {
+          return res.status(409).json({
+            error: "El número de trabajadores vigentes se actualiza desde Trabajadores. No puede cambiarse manualmente mientras haya registros.",
+          });
+        }
+      }
       // Automatización CIIU: Si cambia el código CIIU, recalcular nivel de riesgo
       // Solo auto-asignar si se proporciona CIIU y no hay riesgo manual explícito
       let dataToUpdate = { ...validatedData };
@@ -3354,10 +3365,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { numberOfWorkers, numberOfVehicles, ciiuCode, riskLevel } = req.body;
+      const [counts] = await db.select({
+        registered: sql<number>`count(*)::int`,
+        current: sql<number>`count(*) FILTER (WHERE status IN ('activo', 'inactivo'))::int`,
+      }).from(schema.workers).where(eq(schema.workers.companyId, companyId));
+      if (counts.registered > 0 && numberOfWorkers != null && Number(numberOfWorkers) !== counts.current) {
+        return res.status(409).json({
+          error: "La cotización debe usar los trabajadores vigentes. Actualice el estado de los trabajadores antes de recalcular.",
+        });
+      }
 
       const requestData = {
         company_name: company.name,
-        employees: numberOfWorkers ?? company.numberOfWorkers ?? 1,
+        employees: counts.registered > 0 ? counts.current : (numberOfWorkers ?? company.numberOfWorkers ?? 1),
         vehicles: 0,
         risk_level: "I",
         coupon_code: (company as any).quoteCouponCode || undefined,
@@ -4202,6 +4222,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/workers", requirePermission("workers:create"), checkWorkerLimit(), async (req, res) => {
     try {
       const validatedData = insertWorkerSchema.parse(req.body);
+      if (validatedData.status === 'retirado') {
+        return res.status(400).json({ error: "Registre al trabajador activo o inactivo antes de registrar su retiro con fecha efectiva." });
+      }
+      if (validatedData.retirementDate) {
+        return res.status(400).json({ error: "La fecha efectiva de retiro solo corresponde a trabajadores retirados." });
+      }
       
       // SECURITY: Validate uniqueness in parallel before DB write
       const [existingByIdentification, existingByEmail] = await Promise.all([
@@ -4323,7 +4349,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      const updateData = { ...req.body };
+      if (req.body.companyId && req.body.companyId !== existingWorker.companyId) {
+        return res.status(403).json({ error: "No se puede trasladar un trabajador a otra empresa." });
+      }
+      // No aceptar createdAt ni companyId desde el navegador: la fecha de alta
+      // determina si un retiro reciente se cobra en el siguiente ciclo.
+      const updateData = insertWorkerSchema.partial().omit({ companyId: true }).parse(req.body);
+      const nextStatus = updateData.status ?? existingWorker.status;
+      if (nextStatus === 'retirado') {
+        const date = updateData.retirementDate;
+        if (existingWorker.status !== 'retirado' || date !== undefined) {
+          const startDate = String(updateData.startDate ?? existingWorker.startDate);
+          const todayInColombia = new Intl.DateTimeFormat('sv-SE', {
+            timeZone: 'America/Bogota', year: 'numeric', month: '2-digit', day: '2-digit'
+          }).format(new Date());
+          const validDate = typeof date === 'string' &&
+            /^\d{4}-\d{2}-\d{2}$/.test(date) &&
+            !Number.isNaN(Date.parse(`${date}T00:00:00Z`)) &&
+            new Date(`${date}T00:00:00Z`).toISOString().slice(0, 10) === date &&
+            date >= startDate && date <= todayInColombia;
+          if (!validDate) {
+            return res.status(400).json({
+              error: "Confirme una fecha efectiva de retiro válida, entre la fecha de inicio y hoy. La fecha de fin del contrato no es la fecha de retiro.",
+            });
+          }
+        }
+        if (updateData.startDate && (date ?? existingWorker.retirementDate) &&
+            (date ?? existingWorker.retirementDate)! < updateData.startDate) {
+          return res.status(400).json({ error: "La fecha de retiro no puede ser anterior a la fecha de inicio." });
+        }
+      } else if (existingWorker.status === 'retirado') {
+        updateData.retirementDate = null;
+      } else if (updateData.retirementDate) {
+        return res.status(400).json({ error: "La fecha efectiva de retiro solo corresponde a trabajadores retirados." });
+      }
       if (updateData.email !== undefined && updateData.email === existingWorker.email) {
         delete updateData.email;
       }
