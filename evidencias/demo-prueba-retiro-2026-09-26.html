@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Evidencia funcional — retiro de trabajador en DEMO-PRUEBA</title>
+  <style>
+    body { font: 16px/1.5 system-ui, sans-serif; color: #172e25; background: #f5f8f5; margin: 0; }
+    main { max-width: 850px; margin: 40px auto; padding: 34px; background: white; border: 1px solid #dce8dd; border-radius: 12px; }
+    h1 { font-size: 1.7rem; line-height: 1.2; margin: 0 0 8px; }
+    h2 { font-size: 1.15rem; margin: 30px 0 10px; }
+    .meta { color: #50665b; margin: 0; }
+    .pass { background: #e9f6e9; color: #18562d; border-left: 4px solid #2a8f46; padding: 12px 15px; margin-top: 22px; font-weight: 650; }
+    .note { background: #fff7e4; border-left: 4px solid #b17d18; padding: 12px 15px; }
+    table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+    th, td { border-bottom: 1px solid #e0e7e1; padding: 9px 8px; text-align: left; }
+    th { background: #edf4ee; }
+    code { overflow-wrap: anywhere; background: #edf4ee; padding: 2px 4px; }
+    li { margin: 8px 0; }
+    small { color: #50665b; }
+    @media(max-width: 650px) { main { margin: 0; padding: 20px; border: 0; } table { font-size: .9rem; } }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Prueba funcional: alta y retiro de trabajador</h1>
+  <p class="meta">DEMO-PRUEBA · Entorno de desarrollo · 26 de septiembre de 2026</p>
+  <div class="pass">Resultado: APROBADO en API autenticada y base de datos. Registro de prueba conservado.</div>
+  <h2>Registro para revisar en la aplicación</h2>
+  <p><strong>Trabajador:</strong> PRUEBA FUNCIONAL RETIRO DEV 20260926<br>
+     <strong>ID:</strong> <code>0037f542-a804-4770-a739-3941c5855e47</code><br>
+     <strong>Estado final:</strong> Retirado<br>
+     <strong>Fecha efectiva de retiro:</strong> 2026-09-26<br>
+     <strong>Correo y fecha de nacimiento:</strong> sin dato<br>
+     <strong>Contrato generado:</strong> 1</p>
+  <p>En el entorno de desarrollo, entra a <strong>Trabajadores</strong>, selecciona <strong>DEMO-PRUEBA</strong> y busca el nombre anterior. El registro permanece en el historial.</p>
+  <h2>Comprobaciones</h2>
+  <table>
+    <thead><tr><th>Indicador</th><th>Antes</th><th>Tras el alta</th><th>Tras el retiro</th></tr></thead>
+    <tbody>
+      <tr><td>Registros históricos</td><td>6</td><td>7</td><td>7</td></tr>
+      <tr><td>Trabajadores vigentes</td><td>6</td><td>7</td><td>6</td></tr>
+      <tr><td>Contador de la empresa</td><td>6</td><td>7</td><td>6</td></tr>
+      <tr><td>Transacciones PSE</td><td>7</td><td>7</td><td>7</td></tr>
+    </tbody>
+  </table>
+  <ol>
+    <li>Se autenticó una cuenta temporal adscrita a DEMO-PRUEBA y se registró el trabajador ficticio activo, con correo y fecha de nacimiento en blanco. La API devolvió 201 y guardó ambos campos como <code>NULL</code>.</li>
+    <li>Se intentó retirarlo sin fecha efectiva: la API rechazó la solicitud con HTTP 400; el trabajador siguió activo.</li>
+    <li>Se repitió el retiro con fecha efectiva 2026-09-26: la API devolvió 200. Una consulta independiente confirmó el estado, la fecha, el contrato y los conteos finales de esta tabla.</li>
+    <li>La cuenta temporal se eliminó tras verificar su identidad exacta. El trabajador de prueba no se eliminó.</li>
+  </ol>
+  <p class="note"><strong>Alcance:</strong> no se inició ningún PSE ni se modificaron pagos o datos de producción. La automatización de navegador quedó interrumpida por un 502 del servidor durante el reintento; por eso esta evidencia certifica la operación autenticada por API y su persistencia en la base de desarrollo, no una captura del diálogo final en la interfaz.</p>
+  <small>La empresa DEMO-PRUEBA es interna de pruebas; esta comprobación no establece un importe comercial de suscripción.</small>
+</main>
+</body>
+</html>

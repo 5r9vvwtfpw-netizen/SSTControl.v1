@@ -838,13 +838,15 @@ export default function Trabajadores() {
     
     const cleanedFormData = {
       ...formData,
+      email: formData.email?.trim() || null,
+      birthDate: formData.birthDate || null,
       contractType: formData.contractType,
       status: formData.status || undefined,
       ...(formData.status === "retirado"
         ? (formData.retirementDate ? { retirementDate: formData.retirementDate } : {})
         : { retirementDate: null }),
       identificationNumber: cleanedCedula,
-      endDate: formData.endDate || undefined,
+      endDate: formData.endDate || null,
       sedeId: formData.sedeId || null,
       gender: ["masculino", "femenino", "otro", "prefiero_no_decir"].includes(formData.gender || "")
         ? formData.gender as "masculino" | "femenino" | "otro" | "prefiero_no_decir"

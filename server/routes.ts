@@ -4221,7 +4221,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/workers", requirePermission("workers:create"), checkWorkerLimit(), async (req, res) => {
     try {
-      const validatedData = insertWorkerSchema.parse(req.body);
+      const validatedData = insertWorkerSchema.parse({
+        ...req.body,
+        email: typeof req.body.email === "string" ? req.body.email.trim() || null : req.body.email,
+        birthDate: req.body.birthDate === "" ? null : req.body.birthDate,
+        endDate: req.body.endDate === "" ? null : req.body.endDate,
+        retirementDate: req.body.retirementDate === "" ? null : req.body.retirementDate,
+      });
       if (validatedData.status === 'retirado') {
         return res.status(400).json({ error: "Registre al trabajador activo o inactivo antes de registrar su retiro con fecha efectiva." });
       }
@@ -4354,7 +4360,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       // No aceptar createdAt ni companyId desde el navegador: la fecha de alta
       // determina si un retiro reciente se cobra en el siguiente ciclo.
-      const updateData = insertWorkerSchema.partial().omit({ companyId: true }).parse(req.body);
+      const updateData = insertWorkerSchema.partial().omit({ companyId: true }).parse({
+        ...req.body,
+        email: typeof req.body.email === "string" ? req.body.email.trim() || null : req.body.email,
+        birthDate: req.body.birthDate === "" ? null : req.body.birthDate,
+        endDate: req.body.endDate === "" ? null : req.body.endDate,
+      });
       const nextStatus = updateData.status ?? existingWorker.status;
       if (nextStatus === 'retirado') {
         const date = updateData.retirementDate;
