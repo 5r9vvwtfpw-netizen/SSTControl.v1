@@ -560,6 +560,7 @@ export default function Trabajadores() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/workers"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/companies"] });
       setDialogOpen(false);
       setEditingWorker(null);
       setFormData({

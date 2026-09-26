@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Pencil, Trash2, Building2, Upload, Image, AlertTriangle, Loader2, Users, GraduationCap, AlertCircle, ClipboardCheck, BarChart3, Wrench, RefreshCw, Settings2, CheckCircle2, Info, CreditCard, Tag, Search, Unlock, Lock, Mail, Send, CalendarCheck, Banknote } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link, useLocation, useRouter } from "wouter";
 import { Company, insertCompanySchema } from "@shared/schema";
@@ -165,10 +165,8 @@ export default function CompanyManagement() {
   const [welcomeEmailDialogOpen, setWelcomeEmailDialogOpen] = useState(false);
   const [companyForWelcome, setCompanyForWelcome] = useState<Company | null>(null);
   const [welcomeOverrideEmail, setWelcomeOverrideEmail] = useState("");
-  const [pricingChangeDialogOpen, setPricingChangeDialogOpen] = useState(false);
   const [companySearchTerm, setCompanySearchTerm] = useState("");
   const [subscriptionFilter, setSubscriptionFilter] = useState<string>("all");
-  const [pendingPricingUpdate, setPendingPricingUpdate] = useState<{ changedFields: string[] } | null>(null);
   const [licenseDialogOpen, setLicenseDialogOpen] = useState(false);
   const [companyForLicense, setCompanyForLicense] = useState<Company | null>(null);
   const [licenseDate, setLicenseDate] = useState("2026-12-31");
@@ -179,38 +177,6 @@ export default function CompanyManagement() {
   const [activateMonths, setActivateMonths] = useState("1");
   const [activateNotes, setActivateNotes] = useState("");
   
-  const [livePrice, setLivePrice] = useState<{ base: number; current: number } | null>(null);
-  const livePriceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const calcWorkerPrice = (workers: number): number => {
-    const base = 20000;
-    const additionalRate = 10000;
-    return base + Math.max(0, workers - 2) * additionalRate;
-  };
-
-  const formatCOP = (amount: number): string =>
-    `$${amount.toLocaleString("es-CO")} COP`;
-
-  useEffect(() => {
-    if (!editingCompany) {
-      setLivePrice(null);
-      return;
-    }
-    const hasChanges = formData.numberOfWorkers !== (editingCompany.numberOfWorkers ?? 1);
-
-    if (!hasChanges) {
-      setLivePrice(null);
-      return;
-    }
-
-    const newPrice = calcWorkerPrice(formData.numberOfWorkers);
-    setLivePrice({ base: newPrice, current: newPrice });
-
-    return () => {
-      if (livePriceTimerRef.current) clearTimeout(livePriceTimerRef.current);
-    };
-  }, [editingCompany, formData.numberOfWorkers]);
-
   // Estados para diagnóstico de empresas (superadmin)
   const [diagnosticoEmpresasOpen, setDiagnosticoEmpresasOpen] = useState(false);
   const [diagnosticoEmpresasData, setDiagnosticoEmpresasData] = useState<any>(null);
@@ -293,16 +259,6 @@ export default function CompanyManagement() {
         description: error.message,
         variant: "destructive",
       });
-    },
-  });
-
-  const recalculateQuoteMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<CompanyFormData> }) => {
-      const res = await apiRequest("POST", `/api/companies/${id}/recalculate-quote`, data);
-      return res.json();
-    },
-    onError: (error: Error) => {
-      console.warn('[Quote-Recalculate] Error recalculating quote:', error.message);
     },
   });
 
@@ -519,17 +475,6 @@ export default function CompanyManagement() {
     },
   });
 
-  const detectPricingChanges = (): string[] => {
-    if (!editingCompany) return [];
-    const changes: string[] = [];
-    if (formData.numberOfWorkers !== (editingCompany.numberOfWorkers ?? 1)) {
-      changes.push(`Trabajadores: ${editingCompany.numberOfWorkers ?? 1} → ${formData.numberOfWorkers}`);
-    }
-
-
-    return changes;
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -552,15 +497,6 @@ export default function CompanyManagement() {
       return;
     }
 
-    if (editingCompany) {
-      const pricingChanges = detectPricingChanges();
-      if (pricingChanges.length > 0) {
-        setPendingPricingUpdate({ changedFields: pricingChanges });
-        setPricingChangeDialogOpen(true);
-        return;
-      }
-    }
-
     await executeUpdate();
   };
 
@@ -570,35 +506,11 @@ export default function CompanyManagement() {
     
     try {
       if (editingCompany) {
-        const hasPricingChanges = pendingPricingUpdate !== null;
-
-        if (hasPricingChanges) {
-          try {
-            const recalcResult = await recalculateQuoteMutation.mutateAsync(
-              { id: editingCompany.id, data: formData }
-            );
-            if (recalcResult?.success && recalcResult.newBaseMonthlyPrice) {
-              toast({
-                title: "Precio actualizado",
-                description: `El nuevo precio mensual ha sido actualizado. Se reflejará en su próxima factura.`,
-                duration: 10000,
-              });
-            }
-          } catch (recalcError: any) {
-            // El recálculo de precio falló, pero continuamos guardando los datos de la empresa.
-            // El precio se actualizará en el próximo ciclo de facturación.
-            console.warn('[Quote-Recalculate] Fallo al recalcular precio, continuando con actualización de empresa:', recalcError?.message);
-            toast({
-              title: "Aviso: precio no recalculado",
-              description: "No fue posible actualizar el precio desde el servicio externo, pero los datos de la empresa sí se guardarán.",
-              variant: "destructive",
-              duration: 7000,
-            });
-          }
-          setPendingPricingUpdate(null);
-        }
-
-        const updateResult = await updateCompanyMutation.mutateAsync({ id: editingCompany.id, data: formData });
+        // El conteo se sincroniza desde Trabajadores; ni siquiera se envía
+        // al actualizar los otros datos de la empresa.
+        const companyUpdates: Partial<typeof formData> = { ...formData };
+        delete companyUpdates.numberOfWorkers;
+        const updateResult = await updateCompanyMutation.mutateAsync({ id: editingCompany.id, data: companyUpdates });
         
         // Upload logo if a new file was selected (optional - don't fail if upload fails)
         let logoErrorMessage = '';
@@ -742,7 +654,7 @@ export default function CompanyManagement() {
       legalRepName: company.legalRepName || "",
       legalRepId: company.legalRepId || "",
       legalRepPosition: company.legalRepPosition || "",
-      numberOfWorkers: company.numberOfWorkers || 1,
+      numberOfWorkers: company.numberOfWorkers ?? 0,
       numberOfVehicles: company.numberOfVehicles || quoteVehicles || 0,
       dailyAlcoholTestingEnabled: company.dailyAlcoholTestingEnabled || 0,
       riskLevel: company.riskLevel,
@@ -1169,28 +1081,52 @@ export default function CompanyManagement() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="numberOfWorkers">Número de Trabajadores *</Label>
-                  <Input
-                    id="numberOfWorkers"
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    value={formData.numberOfWorkers === 0 ? "" : formData.numberOfWorkers}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      if (val === "" || /^\d+$/.test(val)) {
-                        setFormData({ ...formData, numberOfWorkers: val === "" ? 0 : parseInt(val, 10) });
-                      }
-                    }}
-                    onBlur={(e) => {
-                      // Asegurar mínimo de 1 trabajador al salir del campo
-                      if (!e.target.value || parseInt(e.target.value, 10) < 1) {
-                        setFormData({ ...formData, numberOfWorkers: 1 });
-                      }
-                    }}
-                    required
-                    data-testid="input-number-of-workers"
-                  />
+                  <Label htmlFor="numberOfWorkers">
+                    {editingCompany ? "Trabajadores vigentes (automático)" : "Cantidad inicial declarada de trabajadores *"}
+                  </Label>
+                  {editingCompany ? (
+                    <>
+                      <Input
+                        id="numberOfWorkers"
+                        type="text"
+                        value={editingCompany.numberOfWorkers ?? 0}
+                        readOnly
+                        aria-readonly="true"
+                        aria-describedby="workers-count-help"
+                        className="bg-muted cursor-default"
+                        data-testid="input-number-of-workers"
+                      />
+                      <p id="workers-count-help" className="text-xs text-muted-foreground">
+                        Se actualiza desde Trabajadores al registrar o retirar personal. El cupo contratado se gestiona por separado.
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <Input
+                        id="numberOfWorkers"
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        value={formData.numberOfWorkers === 0 ? "" : formData.numberOfWorkers}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === "" || /^\d+$/.test(val)) {
+                            setFormData({ ...formData, numberOfWorkers: val === "" ? 0 : parseInt(val, 10) });
+                          }
+                        }}
+                        onBlur={(e) => {
+                          if (!e.target.value || parseInt(e.target.value, 10) < 1) {
+                            setFormData({ ...formData, numberOfWorkers: 1 });
+                          }
+                        }}
+                        required
+                        data-testid="input-number-of-workers"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Cantidad declarada al crear la empresa. Después, el conteo vigente se actualiza desde Trabajadores.
+                      </p>
+                    </>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="riskLevel">Nivel de Riesgo *</Label>
@@ -1260,35 +1196,6 @@ export default function CompanyManagement() {
                   </p>
                 </div>
               </div>
-
-              {editingCompany && livePrice && (
-                <div className="col-span-2 mt-2" data-testid="live-price-preview">
-                  <Card className="border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/30">
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <CreditCard className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                        <span className="text-sm font-medium text-blue-700 dark:text-blue-300">Vista previa del nuevo precio mensual</span>
-                      </div>
-                      <div className="space-y-1">
-                        <div className="flex items-baseline gap-2">
-                          <p className="text-2xl font-bold text-foreground" data-testid="text-live-price">
-                            {formatCOP(livePrice.base)}
-                          </p>
-                          <span className="text-sm text-muted-foreground">/ mes</span>
-                        </div>
-                        {editingCompany.numberOfWorkers != null && (
-                          <p className="text-xs text-muted-foreground" data-testid="text-price-comparison">
-                            Antes: {formatCOP(calcWorkerPrice(editingCompany.numberOfWorkers ?? 1))} — Después: {formatCOP(livePrice.base)}
-                          </p>
-                        )}
-                        <p className="text-xs text-muted-foreground">
-                          $20,000 base (hasta 2 trabajadores) + $10,000 por trabajador adicional.
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
 
               <DialogFooter>
                 <Button 
@@ -1659,70 +1566,6 @@ export default function CompanyManagement() {
       </div>
 
       {/* Delete Confirmation Dialog */}
-      <AlertDialog open={pricingChangeDialogOpen} onOpenChange={(open) => {
-        setPricingChangeDialogOpen(open);
-        if (!open) setPendingPricingUpdate(null);
-      }}>
-        <AlertDialogContent className="max-w-md">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <CreditCard className="h-5 w-5 text-amber-600" />
-              Cambio en la Facturación
-            </AlertDialogTitle>
-            <AlertDialogDescription asChild>
-              <div className="space-y-3">
-                <p>
-                  Los siguientes cambios afectan el precio de su suscripción:
-                </p>
-                <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3 text-sm">
-                  <ul className="list-disc list-inside space-y-1 text-foreground">
-                    {pendingPricingUpdate?.changedFields.map((field, i) => (
-                      <li key={i}>{field}</li>
-                    ))}
-                  </ul>
-                </div>
-                <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3 text-sm">
-                  <p className="font-medium text-blue-700 dark:text-blue-300 mb-2">Nuevo precio mensual:</p>
-                  <div className="flex items-baseline gap-2 mb-1">
-                    <p className="text-2xl font-bold text-foreground" data-testid="text-dialog-new-price">
-                      {livePrice ? formatCOP(livePrice.base) : formatCOP(calcWorkerPrice(formData.numberOfWorkers))}
-                    </p>
-                    <span className="text-sm text-muted-foreground">/ mes</span>
-                  </div>
-                  {editingCompany && (
-                    <p className="text-xs text-muted-foreground">
-                      Precio anterior: {formatCOP(calcWorkerPrice(editingCompany.numberOfWorkers ?? 1))}
-                    </p>
-                  )}
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Este precio se reflejará en su <strong>próxima factura mensual</strong>.
-                </p>
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel 
-              disabled={updateCompanyMutation.isPending || recalculateQuoteMutation.isPending}
-              data-testid="button-cancel-pricing-change"
-            >
-              Cancelar
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                setPricingChangeDialogOpen(false);
-                executeUpdate();
-              }}
-              disabled={updateCompanyMutation.isPending || recalculateQuoteMutation.isPending}
-              data-testid="button-confirm-pricing-change"
-            >
-              {(updateCompanyMutation.isPending || recalculateQuoteMutation.isPending) && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              Confirmar y Actualizar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>
