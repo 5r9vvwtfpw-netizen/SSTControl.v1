@@ -68,6 +68,7 @@
 - [Estándar 6.1.3 — acceso y evidencia](standard-613-access-and-evidence.md) — no hay rol autónomo de alta dirección; el módulo mezcla auditoría y revisión gerencial y no expone toda su evidencia estructurada.
 - [Profesionales SST y protección del software](profesional-sst-software-focus.md) — el acuerdo debe proteger primero el software, su propiedad intelectual y el conocimiento reservado; los datos sensibles son obligación complementaria.
 - [Responsabilidad por informes SaaS](saas-report-responsibility.md) — el proveedor responde por generar informes conforme al alcance ofrecido; el cliente aporta datos y decide acciones.
+- [Firmante del contrato SaaS](saas-contract-signing-policy.md) — firmará el representante legal o un apoderado autorizado, no cualquier administrador de la cuenta.
 - [Alcance de la profesional SST](sst-professional-scope.md) — auditar, investigar y capacitar son compromisos profesionales propuestos, distintos de las funciones del portal.
 - [Informe gerencial y datos sintéticos](management-report-synthetic-data.md) — excluir acciones explícitamente marcadas como pruebas del diagnóstico y separar resultado registrado de cierre verificado.
 - [Límite de desactivación de proveedores de pago](payment-provider-deactivation-boundary.md) — bloquear creación, consulta, webhook y UI; ocultar el método del checkout no basta.
