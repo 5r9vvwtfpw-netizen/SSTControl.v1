@@ -17,6 +17,7 @@ import { getCompanyFeatures } from "../middleware/subscription-limits";
 import { getUncachableStripeClient } from "../stripeClient";
 import { billingHealthCheck } from "../lib/billing-validator";
 import { getSubscriptionStatus } from "../middleware/subscription-check";
+import { SAAS_CONTRACT_VERSION } from "@shared/saas-contract";
 
 // Helper: resolve the effective company being viewed (superadmin/lso/lso_externo
 // can view any company via X-Company-Id header or ?companyId= query param).
@@ -45,7 +46,6 @@ export function registerBillingRoutes(app: Express) {
       const parsed = z.object({
         acceptedTerms: z.literal(true),
         acceptedDataTreatment: z.literal(true),
-        acceptedAutoRenewal: z.literal(true),
       }).safeParse(req.body);
       if (!parsed.success) return res.status(400).json({ error: "Debe aceptar el contrato de servicios" });
       const companyId = getEffectiveCompanyId(req);
@@ -58,7 +58,7 @@ export function registerBillingRoutes(app: Express) {
       const company = await storage.getCompany(companyId);
       await storage.updateSubscription(subscription.id, {
         contractAcceptedAt: new Date(),
-        contractTermsVersion: '1.0',
+        contractTermsVersion: SAAS_CONTRACT_VERSION,
         contractData: {
           ...parsed.data,
           planName: `SST Colombia - ${company?.name || ''}`,

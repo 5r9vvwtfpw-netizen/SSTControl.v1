@@ -19,11 +19,14 @@ import {
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { ContratoSaaSContent } from "@/pages/ContratoSaaS";
+import { SAAS_CONTRACT_VERSION } from "@shared/saas-contract";
 
 type ContractData = {
   acceptedTerms: boolean;
   acceptedDataTreatment: boolean;
-  acceptedAutoRenewal: boolean;
+  acceptedAutoRenewal?: boolean;
   planName: string;
 };
 
@@ -516,7 +519,7 @@ export default function MiSuscripcion() {
               </div>
 
               {subscription.contractData && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="flex items-center gap-2 p-3 border rounded-lg">
                     <Check className={`h-4 w-4 ${subscription.contractData.acceptedTerms ? "text-green-600" : "text-muted-foreground"}`} />
                     <span className="text-sm">Términos y condiciones</span>
@@ -525,10 +528,12 @@ export default function MiSuscripcion() {
                     <Check className={`h-4 w-4 ${subscription.contractData.acceptedDataTreatment ? "text-green-600" : "text-muted-foreground"}`} />
                     <span className="text-sm">Tratamiento de datos</span>
                   </div>
-                  <div className="flex items-center gap-2 p-3 border rounded-lg">
-                    <Check className={`h-4 w-4 ${subscription.contractData.acceptedAutoRenewal ? "text-green-600" : "text-muted-foreground"}`} />
-                    <span className="text-sm">Renovación automática</span>
-                  </div>
+                  {subscription.contractData.acceptedAutoRenewal && (
+                    <div className="flex items-center gap-2 p-3 border rounded-lg">
+                      <Check className="h-4 w-4 text-green-600" />
+                      <span className="text-sm">Renovación automática (declaración anterior)</span>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -539,7 +544,7 @@ export default function MiSuscripcion() {
                 data-testid="button-view-contract"
               >
                 <Eye className="h-4 w-4 mr-2" />
-                Ver contrato completo
+                Ver contrato vigente
               </Button>
             </div>
           ) : (
@@ -547,7 +552,7 @@ export default function MiSuscripcion() {
               <ScrollText className="h-12 w-12 mx-auto mb-3 opacity-50" />
               <p>No hay contrato registrado para esta suscripción</p>
               <p className="text-sm mt-1">
-                El contrato se genera automáticamente al realizar el primer pago
+                El contrato se presenta antes de iniciar la primera compra
               </p>
             </div>
           )}
@@ -556,63 +561,26 @@ export default function MiSuscripcion() {
 
       {/* Contract View Dialog */}
       <Dialog open={contractDialogOpen} onOpenChange={setContractDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ScrollText className="h-5 w-5" />
               Contrato de Servicios SaaS
             </DialogTitle>
             <DialogDescription>
-              Contrato aceptado el {subscription.contractAcceptedAt ? formatDate(subscription.contractAcceptedAt) : "N/A"}
+              Versión vigente {SAAS_CONTRACT_VERSION}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="prose dark:prose-invert max-w-none text-sm">
-            <h3>CONTRATO DE PRESTACIÓN DE SERVICIOS DE SOFTWARE COMO SERVICIO (SaaS)</h3>
-
-            <p>
-              El presente contrato regula la prestación de servicios del Sistema de Gestión de Seguridad
-              y Salud en el Trabajo (SG-SST) conforme a la normativa colombiana vigente.
+          {subscription.contractTermsVersion !== SAAS_CONTRACT_VERSION && (
+            <p className="text-sm text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-md p-3">
+              Tu aceptación anterior corresponde a la versión {subscription.contractTermsVersion || "no registrada"}.
+              Este es el contrato vigente para consulta; no es una copia de la versión que aceptaste ni constituye una nueva aceptación.
             </p>
-
-            <h4>CLÁUSULA PRIMERA - OBJETO</h4>
-            <p>
-              EL PROVEEDOR se compromete a prestar al CLIENTE el servicio de acceso y uso de la
-              plataforma tecnológica "SST Colombia" para la gestión del Sistema de Seguridad y Salud
-              en el Trabajo, conforme a los requisitos de la Resolución 0312 de 2019 y demás normas aplicables.
-            </p>
-
-            <h4>CLÁUSULA SEGUNDA - DURACIÓN</h4>
-            <p>
-              El contrato tiene duración según el período de facturación seleccionado, con renovación
-              automática salvo notificación previa de 15 días antes del vencimiento.
-            </p>
-
-            <h4>CLÁUSULA TERCERA - PRECIO</h4>
-            <p>
-              El precio se determina según la cotización personalizada de su empresa,
-              calculada desde la landing page según su perfil empresarial, más IVA (19%).
-            </p>
-
-            <h4>CLÁUSULA CUARTA - PROTECCIÓN DE DATOS (Ley 1581/2012)</h4>
-            <p>
-              EL PROVEEDOR actúa como Encargado del tratamiento de datos personales, procesando
-              los datos exclusivamente según las instrucciones del CLIENTE y para los fines del contrato.
-            </p>
-
-            <h4>CLÁUSULA QUINTA - CONFIDENCIALIDAD</h4>
-            <p>
-              Las partes se comprometen a mantener la confidencialidad de toda información sensible
-              intercambiada durante la vigencia del contrato.
-            </p>
-
-            <div className="mt-6 p-4 bg-muted rounded-lg">
-              <p className="text-xs text-muted-foreground">
-                Este contrato fue aceptado electrónicamente conforme a la Ley 527/1999 de Comercio Electrónico
-                y el Decreto 1074/2015. La aceptación electrónica tiene la misma validez legal que una firma manuscrita.
-              </p>
-            </div>
-          </div>
+          )}
+          <ScrollArea className="flex-1 min-h-0 pr-4">
+            <ContratoSaaSContent />
+          </ScrollArea>
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setContractDialogOpen(false)}>

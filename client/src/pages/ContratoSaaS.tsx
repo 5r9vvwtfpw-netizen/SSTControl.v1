@@ -2,29 +2,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { FileSignature } from "lucide-react";
+import { SAAS_CONTRACT_EFFECTIVE_DATE, SAAS_CONTRACT_VERSION } from "@shared/saas-contract";
 
-export default function ContratoSaaS() {
-  const lastUpdated = "16 de febrero de 2026";
-
+export function ContratoSaaSContent() {
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <Card>
-          <CardHeader className="space-y-2">
-            <div className="flex items-center gap-2">
-              <FileSignature className="h-6 w-6 text-foreground" />
-              <CardTitle className="text-3xl" data-testid="text-page-title">Contrato de Prestación de Servicios SaaS</CardTitle>
-            </div>
-            <CardDescription>
-              Contrato de Servicios de Software como Servicio (SaaS) - SST Colombia
-            </CardDescription>
-            <p className="text-sm text-muted-foreground">
-              Última actualización: {lastUpdated}
-            </p>
-          </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-[600px] pr-4">
-              <div className="space-y-6 text-sm">
+    <div className="space-y-6 text-sm">
                 <section data-testid="section-partes">
                   <h2 className="text-xl font-semibold mb-3">1. Partes del Contrato</h2>
                   <div className="space-y-3 text-muted-foreground">
@@ -310,10 +292,33 @@ export default function ContratoSaaS() {
                 </section>
 
                 <div className="text-center text-xs text-muted-foreground mt-8 pt-4 border-t">
-                  <p>Documento versión 1.0 | Fecha de vigencia: {lastUpdated}</p>
+                  <p>Documento versión {SAAS_CONTRACT_VERSION} | Fecha de vigencia: {SAAS_CONTRACT_EFFECTIVE_DATE}</p>
                   <p className="mt-1">© 2026 SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S. Todos los derechos reservados.</p>
                 </div>
-              </div>
+    </div>
+  );
+}
+
+export default function ContratoSaaS() {
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <Card>
+          <CardHeader className="space-y-2">
+            <div className="flex items-center gap-2">
+              <FileSignature className="h-6 w-6 text-foreground" />
+              <CardTitle className="text-3xl" data-testid="text-page-title">Contrato de Prestación de Servicios SaaS</CardTitle>
+            </div>
+            <CardDescription>
+              Contrato de Servicios de Software como Servicio (SaaS) - SST Colombia
+            </CardDescription>
+            <p className="text-sm text-muted-foreground">
+              Última actualización: {SAAS_CONTRACT_EFFECTIVE_DATE}
+            </p>
+          </CardHeader>
+          <CardContent>
+            <ScrollArea className="h-[600px] pr-4">
+              <ContratoSaaSContent />
             </ScrollArea>
           </CardContent>
         </Card>

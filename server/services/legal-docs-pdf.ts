@@ -345,23 +345,26 @@ export class LegalDocsPdfService {
     currentY += 15;
 
     // Section 5: SaaS Contract
-    addSectionTitle('5. CONTRATO DE SERVICIOS SAAS - 14 CLÁUSULAS');
-    
-    addTableRow('Cláusula', 'Título', 'Contenido Clave', true);
-    addTableRow('1', 'Objeto del Contrato', 'SaaS para SG-SST según Res. 0312/2019');
-    addTableRow('2', 'Duración y Terminación', '1 mes o 1 año, renovación automática');
-    addTableRow('3', 'Precio y Pago', '$26,000 COP/trabajador/mes + IVA 19%');
-    addTableRow('4', 'Protección de Datos', 'Ley 1581/2012, roles Responsable/Encargado');
-    addTableRow('5', 'Propiedad Intelectual', 'Licencia temporal, prohibición ingeniería inversa');
-    addTableRow('6', 'Nivel de Servicio (SLA)', '99.5% disponibilidad (99.9% Gran Empresa)');
-    addTableRow('7', 'Confidencialidad', '3 años post-terminación');
-    addTableRow('8', 'Seguridad y Respaldos', 'SSL/TLS, backups diarios, RBAC');
-    addTableRow('9', 'Soporte Técnico', 'Email, chat L-V 8-18h');
-    addTableRow('10', 'Obligaciones del Cliente', 'Pago, confidencialidad, uso legal');
-    addTableRow('11', 'Responsabilidad', 'Daños directos, límite 12 meses');
-    addTableRow('12', 'No Contratación', 'Prohibición 24 meses post-terminación');
-    addTableRow('13', 'Resolución de Controversias', 'Conciliación Bogotá D.C.');
-    addTableRow('14', 'Ley Aplicable', 'Colombia: Código Comercio, Ley 1581');
+    addSectionTitle('5. CONTRATO DE SERVICIOS SAAS - 17 SECCIONES');
+
+    addTableRow('Sección', 'Título', 'Contenido Clave', true);
+    addTableRow('1', 'Partes del Contrato', 'Proveedor y cliente identificados al suscribirse');
+    addTableRow('2', 'Objeto del Contrato', 'Gestión SG-SST, Res. 0312/2019');
+    addTableRow('3', 'Alcance de los Servicios', 'SG-SST, PESV, reportes y soporte');
+    addTableRow('4', 'Niveles de Servicio', '99.5% disponibilidad; 99.9% grandes empresas');
+    addTableRow('5', 'Obligaciones del Proveedor', 'Disponibilidad, protección de datos y soporte');
+    addTableRow('6', 'Obligaciones del Cliente', 'Información veraz, pagos y uso legal');
+    addTableRow('7', 'Propiedad Intelectual', 'Licencia de uso y registro DNDA');
+    addTableRow('8', 'Protección de Datos', 'Ley 1581/2012; Responsable y Encargado');
+    addTableRow('9', 'Confidencialidad', 'Cinco años tras la terminación');
+    addTableRow('10', 'Precio y Forma de Pago', 'Planes vigentes; pagos nuevos por PSE');
+    addTableRow('11', 'Duración y Terminación', 'Vigencia de la suscripción y exportación de datos');
+    addTableRow('12', 'Suspensión del Servicio', 'Falta de pago, uso indebido u orden judicial');
+    addTableRow('13', 'Limitación de Responsabilidad', 'Informes según alcance ofrecido; límite de 12 meses');
+    addTableRow('14', 'Ley Aplicable', 'Leyes de la República de Colombia');
+    addTableRow('15', 'Resolución de Controversias', 'Conciliación y jurisdicción de Medellín');
+    addTableRow('16', 'Modificaciones', 'Notificación con 30 días de anticipación');
+    addTableRow('17', 'Contacto', 'Canales legales y soporte técnico');
     
     currentY += 15;
 

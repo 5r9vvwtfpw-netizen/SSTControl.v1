@@ -6076,7 +6076,7 @@ export const subscriptions = pgTable("subscriptions", {
   // Contract Acceptance (Ley 527/1999 - Comercio Electrónico)
   contractAcceptedAt: timestamp("contract_accepted_at"), // Fecha de aceptación del contrato
   contractTermsVersion: text("contract_terms_version"), // Versión del contrato aceptado (e.g., "1.0")
-  contractData: jsonb("contract_data"), // { acceptedTerms, acceptedDataTreatment, acceptedAutoRenewal, planName, ipAddress }
+  contractData: jsonb("contract_data"), // Aceptaciones actuales y campos históricos (p. ej. acceptedAutoRenewal), planName
   
   // Aviso de vencimiento próximo (2 días antes) - guarda el currentPeriodEnd
   // para el que ya se envió el aviso, así no se duplica en cada reinicio del
