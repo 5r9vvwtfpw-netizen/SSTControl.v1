@@ -1,4 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { Link } from "wouter";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -29,7 +30,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { DollarSign, Users, TrendingUp, TrendingDown, Loader2, Ban, CheckCircle, XCircle, ShieldAlert, AlertTriangle, Plus, Search, ArrowLeft, Building2, CalendarClock, ChevronRight } from "lucide-react";
+import { DollarSign, Users, TrendingUp, TrendingDown, Loader2, Ban, CheckCircle, XCircle, ShieldAlert, AlertTriangle, Plus, Search, ArrowLeft, Building2, CalendarClock, ChevronRight, FileSignature } from "lucide-react";
 import { useState, useMemo } from "react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -292,12 +293,24 @@ export default function DashboardFacturacion() {
   return (
     <div className="container mx-auto py-8 px-4 max-w-7xl">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2" data-testid="text-title">
-          Panel de Facturación
-        </h1>
-        <p className="text-muted-foreground" data-testid="text-subtitle">
-          Métricas de negocio, análisis de ingresos y gestión de suscripciones
-        </p>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h1 className="text-4xl font-bold mb-2" data-testid="text-title">
+              Panel de Facturación
+            </h1>
+            <p className="text-muted-foreground" data-testid="text-subtitle">
+              Métricas de negocio, análisis de ingresos y gestión de suscripciones
+            </p>
+          </div>
+          <Link
+            href="/admin/firma-contrato-saas"
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-input bg-background px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+            data-testid="link-saas-signature-review"
+          >
+            <FileSignature className="h-4 w-4" />
+            Revisar firmas de contratos
+          </Link>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">

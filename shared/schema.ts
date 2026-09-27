@@ -11396,3 +11396,72 @@ export const loginVerificationChallenges = pgTable("login_verification_challenge
 });
 
 export type LoginVerificationChallenge = typeof loginVerificationChallenges.$inferSelect;
+
+// Firma electrónica de contratos SaaS. Los consentimientos del checkout
+// existentes permanecen en subscriptions y no se convierten en firmas.
+export const saasContractSigningRequests = pgTable("saas_contract_signing_requests", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull().references(() => companies.id),
+  requestedByUserId: varchar("requested_by_user_id").notNull().references(() => users.id),
+  signerName: text("signer_name").notNull(),
+  signerEmail: text("signer_email").notNull(),
+  signerId: text("signer_id").notNull(),
+  capacity: text("capacity").notNull(),
+  contractVersion: text("contract_version").notNull(),
+  proofObjectPath: text("proof_object_path").notNull(),
+  proofMimeType: text("proof_mime_type").notNull(),
+  proofSha256: text("proof_sha256").notNull(),
+  sourceObjectPath: text("source_object_path").notNull(),
+  sourceSha256: text("source_sha256").notNull(),
+  status: text("status").notNull().default("pending_review"),
+  reviewedByUserId: varchar("reviewed_by_user_id").references(() => users.id),
+  reviewedAt: timestamp("reviewed_at"),
+  rejectionReason: text("rejection_reason"),
+  invitationSentAt: timestamp("invitation_sent_at"),
+  testOnly: boolean("test_only").notNull().default(false),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+});
+
+export const saasContractSigningChallenges = pgTable("saas_contract_signing_challenges", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  requestId: varchar("request_id").notNull().references(() => saasContractSigningRequests.id, { onDelete: "cascade" }),
+  codeHash: text("code_hash").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  attempts: integer("attempts").notNull().default(0),
+  requestIpHash: text("request_ip_hash").notNull(),
+  attemptIpHash: text("attempt_ip_hash"),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  usedAt: timestamp("used_at"),
+});
+
+export const saasContractSigningIpEvents = pgTable("saas_contract_signing_ip_events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  ipHash: text("ip_hash").notNull(),
+  eventType: text("event_type").notNull(),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+});
+
+export const saasContractSignatures = pgTable("saas_contract_signatures", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  requestId: varchar("request_id").notNull().unique().references(() => saasContractSigningRequests.id),
+  challengeId: varchar("challenge_id").notNull().unique().references(() => saasContractSigningChallenges.id),
+  companyId: varchar("company_id").notNull().references(() => companies.id),
+  signerName: text("signer_name").notNull(),
+  signerId: text("signer_id").notNull(),
+  capacity: text("capacity").notNull(),
+  contractVersion: text("contract_version").notNull(),
+  sourceSha256: text("source_sha256").notNull(),
+  signedHtmlObjectPath: text("signed_html_object_path").notNull(),
+  signedHtmlSha256: text("signed_html_sha256").notNull(),
+  signedPdfObjectPath: text("signed_pdf_object_path").notNull(),
+  signedPdfSha256: text("signed_pdf_sha256").notNull(),
+  signedAt: timestamp("signed_at").notNull().default(sql`now()`),
+  signerIp: text("signer_ip").notNull(),
+  signerUserAgent: text("signer_user_agent").notNull(),
+  testOnly: boolean("test_only").notNull().default(false),
+});
+
+export type SaasContractSigningRequest = typeof saasContractSigningRequests.$inferSelect;
+export type SaasContractSigningChallenge = typeof saasContractSigningChallenges.$inferSelect;
+export type SaasContractSignature = typeof saasContractSignatures.$inferSelect;

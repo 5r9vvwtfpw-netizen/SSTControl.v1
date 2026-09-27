@@ -22,6 +22,7 @@ import { useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ContratoSaaSContent } from "@/pages/ContratoSaaS";
 import { SAAS_CONTRACT_VERSION } from "@shared/saas-contract";
+import { SolicitudFirmaContratoSaaS } from "@/components/SolicitudFirmaContratoSaaS";
 
 type ContractData = {
   acceptedTerms: boolean;
@@ -235,6 +236,9 @@ export default function MiSuscripcion() {
   if (!subscriptionData) {
     return (
       <div className="container mx-auto p-6 max-w-6xl">
+        {["admin", "superusuario"].includes(user?.role || "") && (
+          <SolicitudFirmaContratoSaaS />
+        )}
         <Card>
           <CardContent className="pt-6">
             <div className="flex flex-col items-center gap-4 text-center">
@@ -416,6 +420,10 @@ export default function MiSuscripcion() {
           </div>
         </CardContent>
       </Card>
+
+      {["admin", "superusuario"].includes(user?.role || "") && (
+        <SolicitudFirmaContratoSaaS />
+      )}
 
       {/* Invoices List */}
       <Card>

@@ -25,7 +25,81 @@ export class EmailService {
       console.log(`[EMAIL-DEV] Envío bloqueado en desarrollo. Para: ${Array.isArray(params.to) ? params.to.join(', ') : params.to} | Asunto: ${params.subject}`);
       return;
     }
-    await this.sendEmail(params);
+    const result = await resend.emails.send(params);
+    if (result.error) throw new Error(result.error.message);
+  }
+
+  private escapeEmailValue(value: string): string {
+    return value.replace(/[&<>"']/g, (character) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    })[character]!);
+  }
+
+  async sendSaasContractSigningCodeEmail(params: {
+    to: string;
+    code: string;
+    companyName: string;
+  }): Promise<{ success: boolean; error?: string }> {
+    if (!IS_PRODUCTION) {
+      console.log(`[EMAIL-DEV] Envío bloqueado en desarrollo. Para: ${params.to} | Asunto: código de firma SaaS`);
+      return { success: false, error: "El envío de correos de firma está deshabilitado en desarrollo." };
+    }
+    try {
+      await this.sendEmail({
+        from: FROM_EMAIL,
+        to: params.to,
+        subject: "Código para firmar el contrato SaaS — SST Colombia",
+        html: `<!doctype html><html lang="es"><body style="font-family:Arial,sans-serif;color:#1f2937">
+          <div style="max-width:560px;margin:24px auto;padding:28px;border:1px solid #e5e7eb;border-radius:10px">
+            <h2 style="color:#166534">Firma electrónica del contrato</h2>
+            <p>Se solicitó confirmar la firma del contrato SaaS de <strong>${this.escapeEmailValue(params.companyName)}</strong>.</p>
+            <p>Tu código de un solo uso es:</p>
+            <p style="font-size:32px;font-weight:700;letter-spacing:8px;text-align:center">${this.escapeEmailValue(params.code)}</p>
+            <p>Vence en 10 minutos. No lo compartas. Si no solicitaste esta firma, ignora este correo.</p>
+          </div>
+        </body></html>`,
+      });
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error?.message || "No se pudo enviar el código de firma" };
+    }
+  }
+
+  async sendSaasContractSigningInvitationEmail(params: {
+    to: string;
+    signerName: string;
+    companyName: string;
+    invitationUrl: string;
+    contractVersion: string;
+  }): Promise<{ success: boolean; error?: string }> {
+    if (!IS_PRODUCTION) {
+      console.log(`[EMAIL-DEV] Envío bloqueado en desarrollo. Para: ${params.to} | Asunto: invitación a firma SaaS`);
+      return { success: false, error: "El envío de correos de firma está deshabilitado en desarrollo." };
+    }
+    try {
+      await this.sendEmail({
+        from: FROM_EMAIL,
+        to: params.to,
+        subject: `Firma pendiente: contrato SaaS ${params.contractVersion} — SST Colombia`,
+        html: `<!doctype html><html lang="es"><body style="font-family:Arial,sans-serif;color:#1f2937">
+          <div style="max-width:600px;margin:24px auto;padding:28px;border:1px solid #e5e7eb;border-radius:10px">
+            <h2 style="color:#166534">Revisa y firma el contrato SaaS</h2>
+            <p>Hola ${this.escapeEmailValue(params.signerName)},</p>
+            <p>Se aprobó tu autorización para firmar en nombre de <strong>${this.escapeEmailValue(params.companyName)}</strong>.</p>
+            <p>Revisa el contrato versión ${this.escapeEmailValue(params.contractVersion)} y confirma tu firma desde el enlace seguro:</p>
+            <p><a href="${this.escapeEmailValue(params.invitationUrl)}" style="display:inline-block;padding:12px 20px;background:#166534;color:#fff;text-decoration:none;border-radius:6px">Revisar y firmar contrato</a></p>
+            <p style="font-size:13px;color:#6b7280">El código de verificación se enviará al correo al iniciar la firma. Si no esperabas esta invitación, comunícate con la empresa.</p>
+          </div>
+        </body></html>`,
+      });
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error?.message || "No se pudo enviar la invitación a firmar" };
+    }
   }
   /**
    * Send invoice payment confirmation email

@@ -176,6 +176,8 @@ import PagoPSEEnlace from "@/pages/PagoPSEEnlace";
 import DashboardFacturacion from "@/pages/DashboardFacturacion";
 import MiCuenta from "@/pages/MiCuenta";
 import MiSuscripcion from "@/pages/MiSuscripcion";
+import FirmaContratoSaaS from "@/pages/FirmaContratoSaaS";
+import RevisionFirmaContratoSaaS from "@/pages/RevisionFirmaContratoSaaS";
 import Pricing from "@/pages/Pricing";
 import PricingPluginCalculator from "@/pages/PricingPluginCalculator";
 import PricingPluginAdmin from "@/pages/PricingPluginAdmin";
@@ -467,6 +469,8 @@ function Router() {
       <Route path="/aviso-privacidad" component={AvisoPrivacidad} />
       <Route path="/politica-cookies" component={PoliticaCookies} />
       <Route path="/contrato-saas" component={ContratoSaaS} />
+      <Route path="/firma-contrato-saas" component={FirmaContratoSaaS} />
+      <Route path="/admin/firma-contrato-saas" component={RevisionFirmaContratoSaaS} />
       <ProtectedRoute path="/alianza-consultores-sst" component={AlianzaConsultoresSST} />
       <ProtectedRoute path="/confidencialidad-asistentes" component={ConfidencialidadAsistentes} />
       <ProtectedRoute path="/confidencialidad-profesionales-sst" component={ConfidencialidadProfesionalesSst} />

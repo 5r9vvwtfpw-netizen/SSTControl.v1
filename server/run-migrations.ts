@@ -73,6 +73,7 @@ import { syncAuditoriasInternasPhva } from './migrations/sync-auditorias-interna
 import { syncAuditoriaChecklistEvidenceSource } from './migrations/sync-auditoria-checklist-evidence-source';
 import { syncPoliticasSstName } from './migrations/sync-politicas-sst-name';
 import { syncManagementReviewControls } from './migrations/sync-management-review-controls';
+import { createSaasContractSigningTables } from './migrations/create-saas-contract-signing';
 
 /**
  * Ejecuta migraciones de base de datos automáticamente
@@ -159,6 +160,7 @@ export async function runMigrations() {
     await syncAuditoriaChecklistEvidenceSource();
     await syncPoliticasSstName();
     await syncManagementReviewControls();
+    await createSaasContractSigningTables();
     console.log('✅ Migraciones completadas exitosamente');
   } catch (error: any) {
     console.error('⚠️ Error en migraciones:', error.message);

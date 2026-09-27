@@ -30,6 +30,8 @@ import { logger } from "./lib/logger";
 import { validateDailyAlcoholSubmission } from "./lib/pesv-daily-alcohol-validation";
 import { validateManagementReviewApproval } from "./lib/management-review-approval";
 import { registerBillingRoutes } from "./routes/billing";
+import { registerSaasSigningRoutes } from "./routes/saas-signing";
+import { SAAS_SIGNING_OBJECTS_PATH_PATTERN } from "./services/saas-signing-security";
 import { registerStripeRoutes } from "./routes/stripe";
 import { registerWompiRoutes } from "./routes/wompi";
 import { registerEpaycoRoutes } from "./routes/epayco";
@@ -1871,6 +1873,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
   // Object Storage routes - serve files from Replit Object Storage
+
+  // SaaS signing artifacts contain proofs, source contracts, and signature evidence.
+  // They are readable only through purpose-specific, authenticated scoped APIs.
+  app.get(SAAS_SIGNING_OBJECTS_PATH_PATTERN, (_req, res) => {
+    return res.status(404).end();
+  });
 
   // Route to serve authenticated files directly from Object Storage at /objects/*
   app.get("/objects/*", authRequireAuth, async (req, res) => {
@@ -53442,6 +53450,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   app.use(companyCreationDiagnosticRoutes);
   app.use(writeTestDiagnosticRoutes);
   registerBillingRoutes(app);
+  registerSaasSigningRoutes(app);
   registerSubscriptionCheckRoutes(app);
 
   // Inducción Virtual routes

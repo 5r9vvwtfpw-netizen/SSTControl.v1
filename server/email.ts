@@ -1,4 +1,5 @@
 import { Resend } from 'resend';
+import { emailService } from "./services/email";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -2701,4 +2702,22 @@ export async function sendLoginVerificationCodeEmail(params: {
   } catch (error: any) {
     return { success: false, error: error?.message || "Error enviando código de seguridad" };
   }
+}
+
+export async function sendSaasContractSigningCodeEmail(params: {
+  to: string;
+  code: string;
+  companyName: string;
+}): Promise<{ success: boolean; error?: string }> {
+  return emailService.sendSaasContractSigningCodeEmail(params);
+}
+
+export async function sendSaasContractSigningInvitationEmail(params: {
+  to: string;
+  signerName: string;
+  companyName: string;
+  invitationUrl: string;
+  contractVersion: string;
+}): Promise<{ success: boolean; error?: string }> {
+  return emailService.sendSaasContractSigningInvitationEmail(params);
 }
