@@ -211,7 +211,7 @@ export function ContratoSaaSContent() {
                   <div className="space-y-2 text-muted-foreground">
                     <p>El Proveedor podrá suspender el acceso a la plataforma en los siguientes casos:</p>
                     <ul className="list-disc pl-6 space-y-1">
-                      <li><strong>Falta de pago:</strong> Después de 30 días de gracia contados desde la fecha de vencimiento de la factura</li>
+                      <li><strong>Falta de pago:</strong> Cuando venza el período de servicio sin que se haya confirmado el pago correspondiente</li>
                       <li><strong>Uso indebido:</strong> Cuando se detecte uso fraudulento, ilegal o que ponga en riesgo la seguridad de la plataforma o de otros usuarios</li>
                       <li><strong>Orden judicial:</strong> Cuando medie orden de autoridad judicial o administrativa competente</li>
                     </ul>
