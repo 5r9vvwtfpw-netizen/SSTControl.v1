@@ -247,8 +247,8 @@ export default function ContratoSaaS() {
                       <ul className="list-disc pl-6 space-y-1">
                         <li>El Proveedor <strong>no será responsable</strong> por daños indirectos, incidentales, especiales o consecuentes derivados del uso o imposibilidad de uso de la plataforma</li>
                         <li>La responsabilidad máxima del Proveedor estará limitada al <strong>valor total pagado por el Cliente en los últimos 12 meses</strong> de servicio</li>
-                        <li>El Proveedor no es responsable por las decisiones tomadas por el Cliente basándose en la información generada por la plataforma</li>
-                        <li>El Proveedor no garantiza el cumplimiento legal total del SG-SST, ya que este depende de la implementación real por parte del Cliente</li>
+                        <li>El Cliente es responsable de suministrar información completa y actualizada, revisar los informes de acuerdo con el contexto de su organización y decidir e implementar las acciones correspondientes. Esto no exonera al Proveedor de responder por el funcionamiento de la Plataforma y por la generación de informes conforme a las funcionalidades y al alcance ofrecidos</li>
+                        <li>Los informes son una herramienta de apoyo y no garantizan por sí solos el cumplimiento legal integral del SG-SST, que también depende de la calidad de los datos y de la implementación efectiva por parte del Cliente. Esta cláusula no excluye responsabilidades que la ley no permita limitar</li>
                       </ul>
                     </div>
                   </div>
