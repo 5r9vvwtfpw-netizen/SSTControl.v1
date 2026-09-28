@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { requireAuth, requirePermission, requireAnyPermission, requireSuperadmin, requireRole } from "../auth";
 import { storage } from "../storage";
 import { db } from "../db";
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { emailService } from "../services/email";
 import { invoicePdfService } from "../services/invoice-pdf";
 import { getAuditContext, logAuditEvent } from "../lib/audit-logger";
@@ -1223,6 +1223,14 @@ export function registerBillingRoutes(app: Express) {
           requestId: auditContext.requestId
         }
       });
+
+      // Reactivar el acceso descarta el aviso de bienvenida para toda la empresa,
+      // sin afirmar que una inducción haya sido completada.
+      if (status === 'active') {
+        await db.update(schema.companies)
+          .set({ welcomeDismissedAt: new Date() })
+          .where(eq(schema.companies.id, subscription.companyId));
+      }
 
       res.json({ 
         success: true, 

@@ -38,6 +38,29 @@ export async function syncOnboardingColumns() {
     } else {
       console.log('[Migration] ✅ Columna onboarding_completed_at ya existe en companies');
     }
+
+    await db.execute(sql`
+      ALTER TABLE companies ADD COLUMN IF NOT EXISTS welcome_dismissed_at TIMESTAMP
+    `);
+    console.log('[Migration] ✅ Columna welcome_dismissed_at verificada en companies');
+
+    // Un desbloqueo realizado antes de desplegar este cambio también debe
+    // ocultar el aviso, sin alterar el estado real de inducción de la empresa.
+    await db.execute(sql`
+      UPDATE companies AS c
+      SET welcome_dismissed_at = unlocks.last_unlocked_at
+      FROM (
+        SELECT company_id, MAX(timestamp) AS last_unlocked_at
+        FROM audit_logs
+        WHERE entity_type = 'subscription'
+          AND user_role = 'superadmin'
+          AND description LIKE 'Admin changed subscription status from % to active'
+        GROUP BY company_id
+      ) AS unlocks
+      WHERE c.id = unlocks.company_id
+        AND c.welcome_dismissed_at IS NULL
+        AND c.onboarding_completed = 0
+    `);
   } catch (error: any) {
     console.error('[Migration] ⚠️ Error sincronizando columnas de onboarding:', error.message);
   }

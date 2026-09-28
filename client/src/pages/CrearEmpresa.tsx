@@ -18,6 +18,7 @@ import { Building2, CheckCircle2, Loader2, Shield, MapPin, Phone, Mail, Sparkles
 import type { User } from "@shared/schema";
 import { calculateChapter } from "@shared/utils";
 import { CIIU_CODES, CIIU_SECTIONS } from "@/lib/ciiu-codes";
+import { colombianDepartments, getColombianMunicipalities } from "@/data/colombia-divipola";
 
 // Información de estándares según Resolución 0312/2019 - basado en trabajadores y riesgo
 const chapterInfo: Record<string, { name: string; standards: number; description: string; color: string }> = {
@@ -41,21 +42,10 @@ const chapterInfo: Record<string, { name: string; standards: number; description
   }
 };
 
-// Lista de ciudades principales de Colombia para documentos oficiales
-const colombianCities = [
-  "Bogotá D.C.", "Medellín", "Cali", "Barranquilla", "Cartagena", "Bucaramanga",
-  "Pereira", "Manizales", "Santa Marta", "Ibagué", "Cúcuta", "Villavicencio",
-  "Pasto", "Montería", "Neiva", "Armenia", "Popayán", "Sincelejo", "Valledupar",
-  "Tunja", "Riohacha", "Florencia", "Quibdó", "Yopal", "Mocoa", "Leticia",
-  "San José del Guaviare", "Inírida", "Puerto Carreño", "Mitú", "Arauca",
-  "Soacha", "Bello", "Soledad", "Itagüí", "Floridablanca", "Envigado",
-  "Palmira", "Dosquebradas", "Rionegro", "Zipaquirá", "Chía", "Facatativá",
-  "Girardot", "Barrancabermeja", "Sogamoso", "Duitama", "Tuluá"
-];
-
 const createCompanySchema = z.object({
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres"),
   nit: z.string().min(9, "El NIT debe tener al menos 9 caracteres").max(15, "El NIT no puede tener más de 15 caracteres"),
+  departmentCode: z.string().min(1, "Selecciona el departamento"),
   city: z.string().min(1, "La ciudad es obligatoria"),
   ciiuCode: z.string().min(1, "El código CIIU es obligatorio"),
   ciiuCode2: z.string().optional(),
@@ -109,6 +99,7 @@ export default function CrearEmpresa() {
     defaultValues: {
       name: quoteData?.companyName || registrationCompanyName || "",
       nit: "",
+      departmentCode: "",
       city: "",
       ciiuCode: "",
       ciiuCode2: "",
@@ -124,6 +115,7 @@ export default function CrearEmpresa() {
 
   // Watch form values for real-time chapter calculation
   const watchedWorkers = form.watch("numberOfWorkers");
+  const selectedDepartment = form.watch("departmentCode");
   const watchedRisk = form.watch("riskLevel");
   
   // Calculate chapter dynamically based on current form values (Resolución 0312/2019)
@@ -297,30 +289,49 @@ export default function CrearEmpresa() {
 
                   <FormField
                     control={form.control}
+                    name="departmentCode"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Departamento *</FormLabel>
+                        <Select value={field.value} onValueChange={(code) => {
+                          field.onChange(code);
+                          form.setValue("city", "", { shouldValidate: true });
+                        }}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-department"><SelectValue placeholder="Selecciona el departamento" /></SelectTrigger>
+                          </FormControl>
+                          <SelectContent className="max-h-72">
+                            {colombianDepartments.map(({ code, name }) => (
+                              <SelectItem key={code} value={code}>{name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
                     name="city"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="flex items-center gap-1">
                           <MapPin className="h-4 w-4" />
-                          Ciudad *
+                          Municipio o ciudad *
                         </FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value} disabled={!selectedDepartment}>
                           <FormControl>
                             <SelectTrigger data-testid="select-city">
-                              <SelectValue placeholder="Selecciona la ciudad" />
+                              <SelectValue placeholder={selectedDepartment ? "Selecciona el municipio" : "Primero selecciona el departamento"} />
                             </SelectTrigger>
                           </FormControl>
-                          <SelectContent>
-                            {colombianCities.map((city) => (
-                              <SelectItem key={city} value={city}>
-                                {city}
-                              </SelectItem>
+                          <SelectContent className="max-h-72">
+                            {getColombianMunicipalities(selectedDepartment).map(city => (
+                              <SelectItem key={city} value={city}>{city}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
-                        <FormDescription>
-                          Para documentos oficiales del SG-SST
-                        </FormDescription>
+                        <FormDescription>Para documentos oficiales del SG-SST</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}

@@ -10,6 +10,7 @@ type CompanyBasic = {
   name: string;
   nit: string;
   onboardingCompleted: number;
+  welcomeDismissedAt: string | null;
 };
 
 const BYPASS_ROLES = ["superadmin", "soporte", "lso", "lso_externo"];
@@ -33,19 +34,18 @@ export function WelcomeGate({ children }: WelcomeGateProps) {
     queryKey: ["/api/company/current"],
     enabled: shouldCheck,
     staleTime: 60000,
+    refetchOnWindowFocus: "always",
+    refetchInterval: visible ? 15000 : false,
   });
 
   useEffect(() => {
-    if (!company || company.onboardingCompleted === 1) return;
-    if (shouldBlock) {
+    if (!shouldCheck || !company || company.onboardingCompleted === 1 || company.welcomeDismissedAt || shouldBlock) {
       setVisible(false);
       return;
     }
     const key = `sst_welcome_dismissed_${company.id}`;
-    if (!localStorage.getItem(key)) {
-      setVisible(true);
-    }
-  }, [company, shouldBlock]);
+    setVisible(!localStorage.getItem(key));
+  }, [company, shouldBlock, shouldCheck]);
 
   const dismiss = () => {
     if (company) {

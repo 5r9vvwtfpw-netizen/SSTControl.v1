@@ -28,6 +28,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { CIIU_CODES, CIIU_SECTIONS, getCiiuLabel } from "@/lib/ciiu-codes";
 import { compressLogoImage, compressSignatureImage } from "@/lib/imageCompression";
+import { colombianDepartments, findDepartmentForMunicipality, getColombianMunicipalities } from "@/data/colombia-divipola";
 import { AnimatedWarningIcon } from "@/components/animated-warning-icon";
 import { WorkerPricingDialog } from "@/components/WorkerPricingDialog";
 
@@ -84,18 +85,6 @@ type CompanyStats = {
     source: string;
   } | null;
 };
-
-// Lista de ciudades principales de Colombia para documentos oficiales
-const colombianCities = [
-  "Bogotá D.C.", "Medellín", "Cali", "Barranquilla", "Cartagena", "Bucaramanga",
-  "Pereira", "Manizales", "Santa Marta", "Ibagué", "Cúcuta", "Villavicencio",
-  "Pasto", "Montería", "Neiva", "Armenia", "Popayán", "Sincelejo", "Valledupar",
-  "Tunja", "Riohacha", "Florencia", "Quibdó", "Yopal", "Mocoa", "Leticia",
-  "San José del Guaviare", "Inírida", "Puerto Carreño", "Mitú", "Arauca",
-  "Soacha", "Bello", "Soledad", "Itagüí", "Floridablanca", "Envigado",
-  "Palmira", "Dosquebradas", "Rionegro", "Zipaquirá", "Chía", "Facatativá",
-  "Girardot", "Barrancabermeja", "Sogamoso", "Duitama", "Tuluá"
-];
 
 type CompanyFormData = {
   name: string;
@@ -156,6 +145,7 @@ export default function CompanyManagement() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
   const [formData, setFormData] = useState<CompanyFormData>(initialFormData);
+  const [selectedDepartment, setSelectedDepartment] = useState("");
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [signatureFile, setSignatureFile] = useState<File | null>(null);
@@ -418,6 +408,7 @@ export default function CompanyManagement() {
     onSuccess: (_, { status }) => {
       queryClient.invalidateQueries({ queryKey: ["/api/companies/stats/all"] });
       queryClient.invalidateQueries({ queryKey: ["/api/companies"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/company/current"] });
       toast({
         title: status === "suspended" ? "Empresa bloqueada" : "Empresa desbloqueada",
         description: status === "suspended"
@@ -639,6 +630,7 @@ export default function CompanyManagement() {
 
   const handleEdit = (company: Company) => {
     setEditingCompany(company);
+    setSelectedDepartment(findDepartmentForMunicipality(company.city || ""));
     const quoteDataRaw = typeof window !== 'undefined' ? localStorage.getItem('sst_quote_data') : null;
     const quoteData = quoteDataRaw ? JSON.parse(quoteDataRaw) : null;
     const quoteVehicles = quoteData?.vehicles ? parseInt(String(quoteData.vehicles), 10) : 0;
@@ -879,19 +871,32 @@ export default function CompanyManagement() {
                   <p className="text-xs text-muted-foreground">8 a 10 dígitos · Formato: 900123456-7</p>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="city">Ciudad *</Label>
+                  <Label>Departamento *</Label>
+                  <Select value={selectedDepartment} onValueChange={(code) => {
+                    setSelectedDepartment(code);
+                    setFormData(prev => ({ ...prev, city: "" }));
+                  }}>
+                    <SelectTrigger data-testid="select-department"><SelectValue placeholder="Seleccione departamento" /></SelectTrigger>
+                    <SelectContent className="max-h-72">
+                      {colombianDepartments.map(({ code, name }) => (
+                        <SelectItem key={code} value={code}>{name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="city">Municipio o ciudad *</Label>
                   <Select
                     value={formData.city}
+                    disabled={!selectedDepartment}
                     onValueChange={(value) => setFormData({ ...formData, city: value })}
                   >
                     <SelectTrigger data-testid="select-city">
-                      <SelectValue placeholder="Seleccione ciudad" />
+                      <SelectValue placeholder={selectedDepartment ? "Seleccione municipio" : "Primero seleccione departamento"} />
                     </SelectTrigger>
-                    <SelectContent>
-                      {colombianCities.map((city) => (
-                        <SelectItem key={city} value={city}>
-                          {city}
-                        </SelectItem>
+                    <SelectContent className="max-h-72">
+                      {getColombianMunicipalities(selectedDepartment).map(city => (
+                        <SelectItem key={city} value={city}>{city}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>

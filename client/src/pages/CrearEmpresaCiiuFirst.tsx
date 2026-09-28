@@ -23,6 +23,7 @@ import { calculateChapter } from "@shared/utils";
 import { CIIU_CODES, CIIU_SECTIONS } from "@/lib/ciiu-codes";
 import { getRiskLevelFromCiiu, getCiiuClassification } from "@shared/ciiu-risk-classification";
 import { TerminosServicioContent, TERMS_LAST_UPDATED } from "./TerminosServicio";
+import { colombianDepartments, findDepartmentForMunicipality, getColombianMunicipalities } from "@/data/colombia-divipola";
 
 const chapterInfo: Record<string, { name: string; standards: number; description: string; color: string; bgColor: string }> = {
   "1": {
@@ -68,20 +69,10 @@ function formatCOP(n: number) {
   return "$" + n.toLocaleString("es-CO") + "/mes";
 }
 
-const colombianCities = [
-  "Bogotá D.C.", "Medellín", "Cali", "Barranquilla", "Cartagena", "Bucaramanga",
-  "Pereira", "Manizales", "Santa Marta", "Ibagué", "Cúcuta", "Villavicencio",
-  "Pasto", "Montería", "Neiva", "Armenia", "Popayán", "Sincelejo", "Valledupar",
-  "Tunja", "Riohacha", "Florencia", "Quibdó", "Yopal", "Mocoa", "Leticia",
-  "San José del Guaviare", "Inírida", "Puerto Carreño", "Mitú", "Arauca",
-  "Soacha", "Bello", "Soledad", "Itagüí", "Floridablanca", "Envigado",
-  "Palmira", "Dosquebradas", "Rionegro", "Zipaquirá", "Chía", "Facatativá",
-  "Girardot", "Barrancabermeja", "Sogamoso", "Duitama", "Tuluá"
-];
-
 const createCompanySchema = z.object({
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres"),
   nit: z.string().transform(v => v.replace(/[\s.\-]/g, '')).pipe(z.string().min(8, "El NIT debe tener mínimo 8 dígitos").max(10, "El NIT colombiano tiene máximo 10 dígitos").regex(/^\d+$/, "El NIT solo debe contener números")),
+  departmentCode: z.string().min(1, "Selecciona el departamento"),
   city: z.string().min(1, "La ciudad es obligatoria"),
   ciiuCode: z.string().min(1, "El código CIIU es obligatorio"),
   ciiuCode2: z.string().optional(),
@@ -169,6 +160,7 @@ export default function CrearEmpresaCiiuFirst() {
   const regCompanyName = typeof window !== 'undefined' ? localStorage.getItem('sst_registration_company_name') : null;
   const regEmail = typeof window !== 'undefined' ? localStorage.getItem('sst_registration_email') : null;
   const regNit = typeof window !== 'undefined' ? localStorage.getItem('sst_registration_nit') : null;
+  const regDepartment = typeof window !== 'undefined' ? localStorage.getItem('sst_registration_department') : null;
   const regCity = typeof window !== 'undefined' ? localStorage.getItem('sst_registration_city') : null;
   const regCiiu = typeof window !== 'undefined' ? localStorage.getItem('sst_registration_ciiu') : null;
   const regWorkers = typeof window !== 'undefined' ? localStorage.getItem('sst_registration_workers') : null;
@@ -206,6 +198,7 @@ export default function CrearEmpresaCiiuFirst() {
     defaultValues: {
       name: quoteData?.companyName || regCompanyName || "",
       nit: regNit || "",
+      departmentCode: regDepartment || findDepartmentForMunicipality(regCity || ""),
       city: regCity || "",
       ciiuCode: quoteData?.ciiuCode || regCiiu || "",
       ciiuCode2: "",
@@ -228,6 +221,7 @@ export default function CrearEmpresaCiiuFirst() {
   }, [user, form]);
 
   const watchedWorkers = form.watch("numberOfWorkers");
+  const selectedDepartment = form.watch("departmentCode");
   const watchedCiiu = form.watch("ciiuCode");
   const watchedRisk = form.watch("riskLevel");
   const watchedName = form.watch("name");
@@ -275,6 +269,7 @@ export default function CrearEmpresaCiiuFirst() {
       localStorage.removeItem('sst_registration_email');
       localStorage.removeItem('sst_registration_username');
       localStorage.removeItem('sst_registration_nit');
+      localStorage.removeItem('sst_registration_department');
       localStorage.removeItem('sst_registration_city');
       localStorage.removeItem('sst_registration_ciiu');
       localStorage.removeItem('sst_registration_workers');
@@ -782,24 +777,45 @@ export default function CrearEmpresaCiiuFirst() {
 
                       <FormField
                         control={form.control}
+                        name="departmentCode"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Departamento *</FormLabel>
+                            <Select value={field.value} onValueChange={(code) => {
+                              field.onChange(code);
+                              form.setValue("city", "", { shouldValidate: true });
+                            }}>
+                              <FormControl>
+                                <SelectTrigger data-testid="select-department"><SelectValue placeholder="Selecciona el departamento" /></SelectTrigger>
+                              </FormControl>
+                              <SelectContent className="max-h-72">
+                                {colombianDepartments.map(({ code, name }) => (
+                                  <SelectItem key={code} value={code}>{name}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
                         name="city"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className="flex items-center gap-1">
                               <MapPin className="h-4 w-4" />
-                              Ciudad *
+                              Municipio o ciudad *
                             </FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
+                            <Select onValueChange={field.onChange} value={field.value} disabled={!selectedDepartment}>
                               <FormControl>
                                 <SelectTrigger data-testid="select-city">
-                                  <SelectValue placeholder="Selecciona la ciudad" />
+                                  <SelectValue placeholder={selectedDepartment ? "Selecciona el municipio" : "Primero selecciona el departamento"} />
                                 </SelectTrigger>
                               </FormControl>
-                              <SelectContent>
-                                {colombianCities.map((city) => (
-                                  <SelectItem key={city} value={city}>
-                                    {city}
-                                  </SelectItem>
+                              <SelectContent className="max-h-72">
+                                {getColombianMunicipalities(selectedDepartment).map(city => (
+                                  <SelectItem key={city} value={city}>{city}</SelectItem>
                                 ))}
                               </SelectContent>
                             </Select>

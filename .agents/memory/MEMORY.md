@@ -85,3 +85,5 @@
 - [IP de cliente en Preview para PSE](replit-preview-pse-ip.md) — en este entorno el Preview da IP local incluso en XFF y descarta la cabecera inyectada desde el navegador.
 - [Evidencias PESV de Supertransporte](supertransporte-pesv-mapping.md) — tratar las capturas entregadas por la empresa como requisitos, no como evidencias ya existentes en la aplicación.
 - [Tarifas negociadas por empresa](negotiated-worker-pricing.md) — tarifa fija o porcentual no acumula cupones; conservar el importe de cobros ya iniciados.
+- [Municipios homónimos de Colombia](colombia-location-identity.md) — DIVIPOLA distingue localidades por departamento; el nombre municipal por sí solo no identifica siempre la ubicación.
+- [Desbloqueo y aviso de inducción](welcome-unlock-induction.md) — reactivar una empresa debe ocultar la bienvenida sin atribuirle una inducción completada.

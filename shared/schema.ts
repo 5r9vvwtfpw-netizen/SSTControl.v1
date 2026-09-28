@@ -107,6 +107,7 @@ export const companies = pgTable("companies", {
   workerPricingUpdatedBy: text("worker_pricing_updated_by"),
   onboardingCompleted: integer("onboarding_completed").notNull().default(0), // 0 = pendiente inducción, 1 = inducción completada
   onboardingCompletedAt: timestamp("onboarding_completed_at"), // Fecha en que se liberó el acceso
+  welcomeDismissedAt: timestamp("welcome_dismissed_at"), // Ocultar aviso tras desbloqueo manual sin marcar inducción completada
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
 

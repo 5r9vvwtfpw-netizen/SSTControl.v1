@@ -19,6 +19,7 @@ import { CIIU_CODES, CIIU_SECTIONS } from "@/lib/ciiu-codes";
 import { getRiskLevelFromCiiu, getCiiuClassification } from "@shared/ciiu-risk-classification";
 import { calculateChapter } from "@shared/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { colombianDepartments, getColombianMunicipalities } from "@/data/colombia-divipola";
 
 const chapterInfo: Record<string, { name: string; standards: number; description: string }> = {
   "1": { name: "Estándares Mínimos", standards: 7, description: "Empresas de 1-10 trabajadores con Riesgo I, II o III" },
@@ -34,17 +35,6 @@ const riskLevelInfo: Record<string, { name: string; color: string }> = {
   "V": { name: "Riesgo Máximo", color: "text-red-600 dark:text-red-400" }
 };
 
-const colombianCities = [
-  "Bogotá D.C.", "Medellín", "Cali", "Barranquilla", "Cartagena", "Bucaramanga",
-  "Pereira", "Manizales", "Santa Marta", "Ibagué", "Cúcuta", "Villavicencio",
-  "Pasto", "Montería", "Neiva", "Armenia", "Popayán", "Sincelejo", "Valledupar",
-  "Tunja", "Riohacha", "Florencia", "Quibdó", "Yopal", "Mocoa", "Leticia",
-  "San José del Guaviare", "Inírida", "Puerto Carreño", "Mitú", "Arauca",
-  "Soacha", "Bello", "Soledad", "Itagüí", "Floridablanca", "Envigado",
-  "Palmira", "Dosquebradas", "Rionegro", "Zipaquirá", "Chía", "Facatativá",
-  "Girardot", "Barrancabermeja", "Sogamoso", "Duitama", "Tuluá"
-];
-
 export default function AuthPage() {
   const { user, loginMutation, verifyLoginCodeMutation, registerMutation } = useAuth();
   const [location] = useLocation();
@@ -58,6 +48,7 @@ export default function AuthPage() {
   });
   const [companyData, setCompanyData] = useState({
     nit: "",
+    departmentCode: "",
     city: "",
     ciiuCode: "",
     numberOfWorkers: 1,
@@ -265,7 +256,8 @@ export default function AuthPage() {
     companyData.ciiuCode && 
     companyData.numberOfWorkers >= 1 && 
     companyData.nit && companyData.nit.length >= 9 && 
-    companyData.city && 
+    companyData.departmentCode &&
+    getColombianMunicipalities(companyData.departmentCode).includes(companyData.city) &&
     companyData.address && companyData.address.length >= 5 && 
     companyData.contactPhone && companyData.contactPhone.length >= 7;
 
@@ -350,7 +342,10 @@ export default function AuthPage() {
     if (!companyData.ciiuCode) errors.ciiuCode = "Selecciona la actividad económica (CIIU)";
     if (companyData.numberOfWorkers < 1) errors.numberOfWorkers = "Ingresa el número de trabajadores";
     if (!companyData.nit.trim() || companyData.nit.length < 9) errors.nit = "Ingresa el NIT (mínimo 9 caracteres)";
-    if (!companyData.city) errors.city = "Selecciona la ciudad";
+    if (!companyData.departmentCode) errors.departmentCode = "Selecciona el departamento";
+    if (!companyData.city || !getColombianMunicipalities(companyData.departmentCode).includes(companyData.city)) {
+      errors.city = "Selecciona un municipio del departamento";
+    }
     if (!companyData.address.trim() || companyData.address.length < 5) errors.address = "Ingresa la dirección (mínimo 5 caracteres)";
     if (!companyData.contactPhone.trim() || companyData.contactPhone.length < 7) errors.contactPhone = "Ingresa el teléfono (mínimo 7 dígitos)";
     if (!registerData.username.trim()) errors.username = "Ingresa el nombre de usuario";
@@ -373,6 +368,7 @@ export default function AuthPage() {
         localStorage.setItem('sst_registration_email', registerData.email);
         localStorage.setItem('sst_registration_username', registerData.username);
         localStorage.setItem('sst_registration_nit', companyData.nit);
+        localStorage.setItem('sst_registration_department', companyData.departmentCode);
         localStorage.setItem('sst_registration_city', companyData.city);
         localStorage.setItem('sst_registration_ciiu', companyData.ciiuCode);
         localStorage.setItem('sst_registration_workers', String(companyData.numberOfWorkers));
@@ -390,7 +386,7 @@ export default function AuthPage() {
           setRegistrationSuccess(true);
         }
         setRegisterData({ username: "", password: "", fullName: "", email: "" });
-        setCompanyData({ nit: "", city: "", ciiuCode: "", numberOfWorkers: 1, numberOfVehicles: 0, address: "", contactPhone: "" });
+        setCompanyData({ nit: "", departmentCode: "", city: "", ciiuCode: "", numberOfWorkers: 1, numberOfVehicles: 0, address: "", contactPhone: "" });
         setQuotePreFilled({});
       },
     });
@@ -796,7 +792,7 @@ export default function AuthPage() {
                     </Alert>
                   )}
 
-                  <div className="grid grid-cols-2 gap-3">
+                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="space-y-2">
                       <Label>NIT *</Label>
                       <Input 
@@ -812,23 +808,47 @@ export default function AuthPage() {
                     <div className="space-y-2">
                       <Label className="flex items-center gap-1">
                         <MapPin className="h-3.5 w-3.5" />
-                        Ciudad *
+                         Departamento *
                       </Label>
                       <Select 
-                        value={companyData.city} 
-                        onValueChange={(val) => { setCompanyData({ ...companyData, city: val }); setFieldErrors(prev => ({ ...prev, city: "" })); }}
+                         value={companyData.departmentCode}
+                         onValueChange={(val) => {
+                           setCompanyData(prev => ({ ...prev, departmentCode: val, city: "" }));
+                           setFieldErrors(prev => ({ ...prev, departmentCode: "", city: "" }));
+                         }}
                       >
-                        <SelectTrigger data-testid="select-register-city" className={fieldErrors.city ? "border-red-500 dark:border-red-500" : ""} data-field-error={fieldErrors.city ? "true" : undefined}>
-                          <SelectValue placeholder="Selecciona" />
+                         <SelectTrigger data-testid="select-register-department" className={fieldErrors.departmentCode ? "border-red-500 dark:border-red-500" : ""} data-field-error={fieldErrors.departmentCode ? "true" : undefined}>
+                           <SelectValue placeholder="Selecciona el departamento" />
                         </SelectTrigger>
-                        <SelectContent>
-                          {colombianCities.map((city) => (
-                            <SelectItem key={city} value={city}>{city}</SelectItem>
+                         <SelectContent className="max-h-72">
+                           {colombianDepartments.map(({ code, name }) => (
+                             <SelectItem key={code} value={code}>{name}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
+                       {fieldErrors.departmentCode && <p className="text-xs text-red-600 dark:text-red-400">{fieldErrors.departmentCode}</p>}
+                     </div>
+                   </div>
+                   <div className="space-y-2">
+                     <Label className="flex items-center gap-1">
+                       <MapPin className="h-3.5 w-3.5" />
+                       Municipio o ciudad *
+                     </Label>
+                     <Select
+                       value={companyData.city}
+                       onValueChange={(val) => { setCompanyData(prev => ({ ...prev, city: val })); setFieldErrors(prev => ({ ...prev, city: "" })); }}
+                       disabled={!companyData.departmentCode}
+                     >
+                       <SelectTrigger data-testid="select-register-city" className={fieldErrors.city ? "border-red-500 dark:border-red-500" : ""} data-field-error={fieldErrors.city ? "true" : undefined}>
+                         <SelectValue placeholder={companyData.departmentCode ? "Selecciona el municipio" : "Primero selecciona el departamento"} />
+                       </SelectTrigger>
+                       <SelectContent className="max-h-72">
+                         {getColombianMunicipalities(companyData.departmentCode).map(city => (
+                           <SelectItem key={city} value={city}>{city}</SelectItem>
+                         ))}
+                       </SelectContent>
+                     </Select>
                       {fieldErrors.city && <p className="text-xs text-red-600 dark:text-red-400">{fieldErrors.city}</p>}
-                    </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">

@@ -10,6 +10,7 @@ const REGISTRATION_KEYS = [
   'sst_registration_email',
   'sst_registration_username',
   'sst_registration_nit',
+  'sst_registration_department',
   'sst_registration_city',
   'sst_registration_ciiu',
   'sst_registration_workers',
