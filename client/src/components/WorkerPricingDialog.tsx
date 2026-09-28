@@ -19,6 +19,20 @@ type CompanyPricing = {
 
 type CompanySummary = { id: string; name: string };
 
+type PricingHistoryEntry = {
+  mode: PricingMode;
+  unit_price_cop: number | null;
+  discount_percent: number | null;
+  changed_by_name: string;
+  changed_at: string;
+};
+
+function describePricing(entry: PricingHistoryEntry) {
+  if (entry.mode === "fixed") return `$${Number(entry.unit_price_cop).toLocaleString("es-CO")} por trabajador`;
+  if (entry.mode === "percentage") return `${entry.discount_percent}% de descuento`;
+  return "Tarifa general";
+}
+
 export function WorkerPricingDialog({
   company,
   onClose,
@@ -37,6 +51,15 @@ export function WorkerPricingDialog({
     enabled: !!company,
     queryFn: async () => {
       const response = await apiRequest("GET", endpoint);
+      return response.json();
+    },
+  });
+
+  const { data: history, isError: historyError } = useQuery<{ history: PricingHistoryEntry[] }>({
+    queryKey: [endpoint, "history"],
+    enabled: !!company,
+    queryFn: async () => {
+      const response = await apiRequest("GET", `${endpoint}/history`);
       return response.json();
     },
   });
@@ -68,6 +91,7 @@ export function WorkerPricingDialog({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [endpoint] });
+      queryClient.invalidateQueries({ queryKey: [endpoint, "history"] });
       queryClient.invalidateQueries({ queryKey: ["/api/companies"] });
       queryClient.invalidateQueries({ queryKey: ["/api/company/current"] });
       queryClient.invalidateQueries({ queryKey: ["/api/billing"] });
@@ -165,6 +189,25 @@ export function WorkerPricingDialog({
                 Último cambio: {new Date(pricing.updatedAt).toLocaleString("es-CO")}
               </p>
             )}
+            <div className="space-y-2 border-t pt-4">
+              <p className="text-sm font-medium">Historial de tarifas</p>
+              {historyError ? (
+                <p role="alert" className="text-xs text-destructive">No se pudo consultar el historial.</p>
+              ) : history?.history.length === 0 ? (
+                <p className="text-xs text-muted-foreground">Aún no hay cambios registrados.</p>
+              ) : (
+                <ul className="max-h-36 space-y-2 overflow-y-auto text-xs" data-testid="worker-pricing-history">
+                  {history?.history.map((entry, index) => (
+                    <li key={`${entry.changed_at}-${index}`} className="rounded-md border p-2">
+                      <span className="font-medium">{describePricing(entry)}</span>
+                      <span className="block text-muted-foreground">
+                        {new Date(entry.changed_at).toLocaleString("es-CO")} · {entry.changed_by_name}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
         )}
         <DialogFooter>
