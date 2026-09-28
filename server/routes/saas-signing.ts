@@ -329,7 +329,7 @@ export function registerSaasSigningRoutes(
             WHERE company_id = ${scoped.companyId} AND contract_version = ${SAAS_CONTRACT_VERSION}
               AND status = 'signed' AND test_only = false LIMIT 1
           `);
-          if ((signed as any).rows.length) return { status: 409 as const, error: "La empresa ya firmó el contrato vigente." };
+          if ((signed as any).rows.length) return { status: 409 as const, error: "Esta versión del contrato ya fue firmada por la empresa." };
         }
         await tx.execute(sql`
           INSERT INTO saas_contract_signing_requests (

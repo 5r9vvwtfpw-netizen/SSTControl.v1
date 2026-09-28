@@ -199,8 +199,8 @@ export async function generateSignedSaasContractPdf(
     doc.moveDown();
     doc.fontSize(8).fillColor("#4b5563").text(
       adminUpload
-        ? "La constancia identifica la operación y el documento aceptado. La imagen aportada y la declaración del administrador no verifican externamente la identidad ni la autorización específica del representante legal."
-        : "La constancia identifica el método electrónico y el documento aceptado. La imagen adjunta y el código no constituyen una validación externa de la identidad o de las facultades del firmante.",
+        ? "La constancia identifica la operación y la versión aceptada. La imagen aportada y la declaración del administrador no verifican externamente la identidad ni la autorización específica del representante legal."
+        : "La constancia identifica el método electrónico y la versión del documento aceptada. La imagen adjunta y el código no constituyen una validación externa de la identidad o de las facultades del firmante.",
       { lineGap: 3 },
     );
     doc.end();
