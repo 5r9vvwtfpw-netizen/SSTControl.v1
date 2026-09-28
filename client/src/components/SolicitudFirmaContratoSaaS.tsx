@@ -136,7 +136,7 @@ export function SolicitudFirmaContratoSaaS() {
       const url = URL.createObjectURL(pdf);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `Contrato-SaaS-${request.contractVersion}.pdf`;
+      link.download = "Contrato-SaaS.pdf";
       document.body.appendChild(link);
       link.click();
       link.remove();

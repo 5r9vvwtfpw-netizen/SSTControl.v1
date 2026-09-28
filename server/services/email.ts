@@ -84,13 +84,13 @@ export class EmailService {
       await this.sendEmail({
         from: FROM_EMAIL,
         to: params.to,
-        subject: `Firma pendiente: contrato SaaS ${params.contractVersion} — SST Colombia`,
+        subject: "Firma pendiente: contrato SaaS — SST Colombia",
         html: `<!doctype html><html lang="es"><body style="font-family:Arial,sans-serif;color:#1f2937">
           <div style="max-width:600px;margin:24px auto;padding:28px;border:1px solid #e5e7eb;border-radius:10px">
             <h2 style="color:#166534">Revisa y firma el contrato SaaS</h2>
             <p>Hola ${this.escapeEmailValue(params.signerName)},</p>
             <p>Se aprobó tu autorización para firmar en nombre de <strong>${this.escapeEmailValue(params.companyName)}</strong>.</p>
-            <p>Revisa el contrato versión ${this.escapeEmailValue(params.contractVersion)} y confirma tu firma desde el enlace seguro:</p>
+            <p>Revisa el contrato y confirma tu firma desde el enlace seguro:</p>
             <p><a href="${this.escapeEmailValue(params.invitationUrl)}" style="display:inline-block;padding:12px 20px;background:#166534;color:#fff;text-decoration:none;border-radius:6px">Revisar y firmar contrato</a></p>
             <p style="font-size:13px;color:#6b7280">El código de verificación se enviará al correo al iniciar la firma. Si no esperabas esta invitación, comunícate con la empresa.</p>
           </div>

@@ -8,7 +8,6 @@ import { Badge } from "@/components/ui/badge";
 import { AlertCircle, FileText, Scale, CheckCircle2 } from "lucide-react";
 import { ColombianFlag } from "./ColombianFlag";
 import { ContratoSaaSContent } from "@/pages/ContratoSaaS";
-import { SAAS_CONTRACT_VERSION } from "@shared/saas-contract";
 
 export interface ContractAcceptanceData {
   acceptedTerms: boolean;
@@ -71,7 +70,6 @@ export function ContratoServiciosSaas({
               Colombia
             </Badge>
             <Badge variant="secondary">{companyName || planName}</Badge>
-            <Badge variant="outline">Versión {SAAS_CONTRACT_VERSION}</Badge>
           </div>
         </DialogHeader>
 
@@ -91,7 +89,7 @@ export function ContratoServiciosSaas({
                 data-testid="checkbox-accept-terms"
               />
               <Label htmlFor="terms" className="text-sm cursor-pointer leading-relaxed">
-                He leído y acepto el contrato de prestación de servicios SaaS, versión {SAAS_CONTRACT_VERSION}.
+                He leído y acepto el contrato de prestación de servicios SaaS.
               </Label>
             </div>
             <div className="flex items-start space-x-3">

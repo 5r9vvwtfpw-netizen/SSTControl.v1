@@ -81,7 +81,7 @@ ${snapshot.testOnly ? `<div style="padding:12px;background:#fee2e2;color:#991b1b
 <section style="page-break-before:always;border-top:2px solid #166534;margin-top:32px;padding-top:20px;font-family:Arial,sans-serif;color:#1f2937">
 <h1>Constancia de firma electrónica</h1>
 ${snapshot.testOnly ? `<p style="color:#b91c1c;font-weight:bold">PRUEBA FUNCIONAL — SIN EFECTO CONTRACTUAL</p>` : ""}
-<p>Documento correspondiente al contrato SaaS versión <strong>${escapeHtml(snapshot.contractVersion)}</strong>.</p>
+<p>Documento correspondiente al contrato SaaS aceptado.</p>
 <p><strong>Empresa:</strong> ${escapeHtml(snapshot.companyName)} — NIT ${escapeHtml(snapshot.companyNit)}</p>
 <p><strong>Representante legal indicado:</strong> ${escapeHtml(snapshot.signerName)} — identificación ${escapeHtml(snapshot.signerId)}</p>
 <p><strong>Calidad declarada:</strong> ${capacityLabel}</p>
@@ -94,7 +94,7 @@ ${adminUpload
 <p><strong>Imagen de firma adjunta:</strong> SHA-256 ${sha256(snapshot.signatureImage)}</p>
 <img alt="Firma adjunta por el representante legal" src="data:image/png;base64,${snapshot.signatureImage.toString("base64")}" style="display:block;max-width:260px;max-height:110px;object-fit:contain;margin:16px 0">
 <p><strong>Agente de usuario:</strong> ${escapeHtml(snapshot.userAgent)}</p>
-<p>La constancia identifica la operación y la versión del documento aceptada. ${limitation}</p>
+<p>La constancia identifica la operación y el documento aceptado. ${limitation}</p>
 </section></body></html>`;
 }
 
@@ -136,7 +136,7 @@ export async function generateSignedSaasContractPdf(
       size: "LETTER",
       margin: 52,
       info: {
-        Title: `Contrato SaaS v${snapshot.contractVersion} — ${snapshot.companyName}`,
+        Title: `Contrato SaaS — ${snapshot.companyName}`,
         Author: "SST Colombia",
         Subject: `Integridad de la fuente SHA-256 ${snapshot.sourceSha256}`,
       },
@@ -153,7 +153,7 @@ export async function generateSignedSaasContractPdf(
     }
     doc.moveDown(0.4);
     doc.font("Helvetica").fontSize(9).fillColor("#374151")
-      .text(`Versión ${snapshot.contractVersion} · SHA-256 de la fuente: ${snapshot.sourceSha256}`, { align: "center" });
+      .text(`SHA-256 de la fuente: ${snapshot.sourceSha256}`, { align: "center" });
     doc.moveDown(1);
     doc.font("Helvetica").fontSize(9).fillColor("#111827")
       .text(contractText, { lineGap: 3, paragraphGap: 2, align: "left" });
@@ -170,7 +170,6 @@ export async function generateSignedSaasContractPdf(
       ["Empresa", `${snapshot.companyName} — NIT ${snapshot.companyNit}`],
       ["Representante legal indicado", `${snapshot.signerName} — identificación ${snapshot.signerId}`],
       ["Calidad declarada", snapshot.capacity === "attorney" ? "Apoderado autorizado" : "Representante legal"],
-      ["Versión del contrato", snapshot.contractVersion],
       ["Fecha y hora (UTC)", snapshot.signedAt.toISOString()],
       ["Método", adminUpload
         ? "Imagen de firma aportada por el administrador de la cuenta para este contrato"

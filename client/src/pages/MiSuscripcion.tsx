@@ -575,15 +575,12 @@ export default function MiSuscripcion() {
               <ScrollText className="h-5 w-5" />
               Contrato de Servicios SaaS
             </DialogTitle>
-            <DialogDescription>
-              Versión vigente {SAAS_CONTRACT_VERSION}
-            </DialogDescription>
           </DialogHeader>
 
           {subscription.contractTermsVersion !== SAAS_CONTRACT_VERSION && (
             <p className="text-sm text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-md p-3">
-              Tu aceptación anterior corresponde a la versión {subscription.contractTermsVersion || "no registrada"}.
-              Este es el contrato vigente para consulta; no es una copia de la versión que aceptaste ni constituye una nueva aceptación.
+              Tu aceptación anterior corresponde a una redacción anterior.
+              Este es el contrato vigente para consulta; no es una copia del texto que aceptaste ni constituye una nueva aceptación.
             </p>
           )}
           <ScrollArea className="flex-1 min-h-0 pr-4">

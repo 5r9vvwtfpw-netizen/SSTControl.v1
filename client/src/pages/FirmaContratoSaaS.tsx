@@ -188,7 +188,6 @@ export default function FirmaContratoSaaS() {
             <span className="font-medium">Calidad:</span>{" "}
             Representante legal
           </p>
-          <p><span className="font-medium">Versión del contrato:</span> {invitation.contractVersion}</p>
         </CardContent>
       </Card>
 
@@ -212,7 +211,7 @@ export default function FirmaContratoSaaS() {
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                Esta invitación corresponde a la versión {invitation.contractVersion}, pero aquí está disponible la versión {SAAS_CONTRACT_VERSION}. No firmes hasta que soporte confirme la versión correcta.
+                El contrato asociado a esta invitación no coincide con el documento disponible. No firmes hasta que soporte confirme cuál debes aceptar.
               </AlertDescription>
             </Alert>
           )}
@@ -220,12 +219,12 @@ export default function FirmaContratoSaaS() {
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Documento para revisión</CardTitle>
-              <CardDescription>Contrato SaaS versión {invitation.contractVersion}</CardDescription>
+              <CardDescription>Contrato de prestación de servicios SaaS</CardDescription>
             </CardHeader>
             <CardContent>
               {hasFrozenContract ? (
                 <iframe
-                  title={`Contrato SaaS versión ${invitation.contractVersion}`}
+                  title="Contrato de prestación de servicios SaaS"
                   srcDoc={invitation.contractHtml}
                   sandbox=""
                   className="h-[55vh] w-full rounded-md border bg-white"
@@ -296,7 +295,7 @@ export default function FirmaContratoSaaS() {
                     data-testid="checkbox-signing-accept"
                   />
                   <span>
-                    He leído el contrato completo versión {invitation.contractVersion}, mis datos y la calidad indicada son correctos, y manifiesto expresamente mi decisión de firmarlo por la empresa.
+                    He leído el contrato completo; mis datos y la calidad indicada son correctos, y manifiesto expresamente mi decisión de firmarlo por la empresa.
                   </span>
                 </label>
 

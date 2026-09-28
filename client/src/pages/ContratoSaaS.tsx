@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { FileSignature } from "lucide-react";
-import { SAAS_CONTRACT_EFFECTIVE_DATE, SAAS_CONTRACT_VERSION } from "@shared/saas-contract";
+import { SAAS_CONTRACT_EFFECTIVE_DATE } from "@shared/saas-contract";
 
 export function ContratoSaaSContent() {
   return (
@@ -287,7 +287,7 @@ export function ContratoSaaSContent() {
                 </section>
 
                 <div className="text-center text-xs text-muted-foreground mt-8 pt-4 border-t">
-                  <p>Documento versión {SAAS_CONTRACT_VERSION} | Fecha de vigencia: {SAAS_CONTRACT_EFFECTIVE_DATE}</p>
+                  <p>Fecha de vigencia: {SAAS_CONTRACT_EFFECTIVE_DATE}</p>
                   <p className="mt-1">© 2026 SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S. Todos los derechos reservados.</p>
                 </div>
     </div>
