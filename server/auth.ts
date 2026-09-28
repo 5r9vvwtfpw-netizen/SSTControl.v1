@@ -27,6 +27,7 @@ const UNAUTHORIZED_IP_ALLOWED_ATTEMPTS = 3;
 const UNAUTHORIZED_IP_WINDOW_HOURS = 24;
 const LOGIN_CODE_MINUTES = 10;
 const LOGIN_CODE_MAX_ATTEMPTS = 5;
+const RETIRED_WORKER_PORTAL_MESSAGE = "Tu acceso al Portal de Empleados está bloqueado porque se registró tu retiro de la empresa. Si consideras que es un error, comunícate con la empresa.";
 // La empresa demo interna usa inicio de sesión directo para las demostraciones.
 // Mantener esta excepción limitada a su ID evita desactivar MFA para otros clientes.
 const MFA_EXEMPT_COMPANY_IDS = new Set(["demo-company-001"]);
@@ -163,6 +164,39 @@ function destroyStoredSession(sessionId: string): Promise<void> {
       resolve();
     });
   });
+}
+
+async function isRetiredWorkerPortalUser(user: SelectUser): Promise<boolean> {
+  if (user.role !== "trabajador") return false;
+  const worker = user.workerId
+    ? await storage.getWorkerById(user.workerId)
+    : user.email && user.companyId
+      ? await storage.getWorkerByEmail(user.email, user.companyId)
+      : undefined;
+  return worker?.status === "retirado";
+}
+
+// Invalidar las sesiones del portal sin afectar otras cuentas/roles del mismo trabajador.
+// El chequeo de estado en cada petición sigue protegiendo el acceso si falla el almacén de sesiones.
+export async function revokeRetiredWorkerPortalSessions(worker: { id: string; companyId: string; email: string | null }): Promise<void> {
+  const result = await db.execute(sql`
+    UPDATE user_sessions_log s
+    SET is_active = false,
+        logout_at = now(),
+        duration_minutes = EXTRACT(EPOCH FROM (now() - s.login_at)) / 60,
+        alert_note = CONCAT_WS(' | ', s.alert_note, 'Sesión cerrada por retiro del trabajador')
+    FROM users u
+    WHERE s.user_id = u.id
+      AND u.role = 'trabajador'
+      AND (u.worker_id = ${worker.id}
+        OR (u.worker_id IS NULL AND u.email = ${worker.email} AND u.company_id = ${worker.companyId}))
+      AND s.is_active = true
+    RETURNING s.session_id
+  `);
+  const sessionIds = ((result as any).rows ?? [])
+    .map((row: { session_id: string | null }) => row.session_id)
+    .filter((id: string | null): id is string => Boolean(id));
+  await Promise.all(sessionIds.map(destroyStoredSession));
 }
 
 async function recordLoginSession(
@@ -308,6 +342,29 @@ async function expireLoginSession(sessionId: string) {
 async function enforceAuthenticatedSessionActivity(req: Request, res: Response, next: NextFunction) {
   if (req.path === "/api/logout") return next();
   if (!req.isAuthenticated?.() || !req.sessionID) return next();
+
+  if (req.user?.role === "trabajador") {
+    try {
+      if (await isRetiredWorkerPortalUser(req.user)) {
+        await closeLoginSession(req.sessionID);
+        req.logout((logoutError) => {
+          if (logoutError) logger.error({ err: logoutError }, "[SESSION] Error cerrando sesión de trabajador retirado");
+          req.session.destroy((destroyError) => {
+            if (destroyError) logger.error({ err: destroyError }, "[SESSION] Error destruyendo sesión de trabajador retirado");
+            res.clearCookie("connect.sid");
+            return res.status(403).json({
+              error: RETIRED_WORKER_PORTAL_MESSAGE,
+              code: "WORKER_RETIRED",
+            });
+          });
+        });
+        return;
+      }
+    } catch (error) {
+      logger.error({ err: error }, "[SESSION] No se pudo verificar estado laboral del trabajador");
+      return res.status(503).json({ error: "No se pudo verificar tu acceso al portal. Intenta nuevamente." });
+    }
+  }
 
   try {
     const result = await db.execute(sql`
@@ -814,6 +871,15 @@ export function setupAuth(app: Express) {
       if (!user) {
         logger.warn("Login failed - invalid credentials");
         return res.status(401).json({ error: "Usuario o contraseña incorrectos" });
+      }
+
+      try {
+        if (await isRetiredWorkerPortalUser(user)) {
+          return res.status(403).json({ error: RETIRED_WORKER_PORTAL_MESSAGE, code: "WORKER_RETIRED" });
+        }
+      } catch (error) {
+        logger.error({ err: error }, "[LOGIN] No se pudo verificar estado laboral del trabajador");
+        return res.status(503).json({ error: "No se pudo verificar tu acceso al portal. Intenta nuevamente." });
       }
       
       // Block support-only users from regular login - they must use /api/support-login

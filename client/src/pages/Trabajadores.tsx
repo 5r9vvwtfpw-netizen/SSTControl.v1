@@ -559,7 +559,7 @@ export default function Trabajadores() {
       const res = await apiRequest("PATCH", `/api/workers/${id}`, data);
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (worker: Worker) => {
       queryClient.invalidateQueries({ queryKey: ["/api/workers"] });
       queryClient.invalidateQueries({ queryKey: ["/api/companies"] });
       queryClient.invalidateQueries({ queryKey: ["/api/epayco/pse/cotizacion"] });
@@ -585,7 +585,9 @@ export default function Trabajadores() {
       });
       toast({
         title: "Trabajador actualizado",
-        description: "Los datos se han actualizado exitosamente",
+        description: worker.status === "retirado"
+          ? "Retiro registrado. El acceso del trabajador al Portal de Empleados está bloqueado."
+          : "Los datos se han actualizado exitosamente",
         className: "bg-yellow-50 border-yellow-200",
       });
     },
@@ -1316,6 +1318,7 @@ export default function Trabajadores() {
               <Alert className="border-amber-200 bg-amber-50 dark:bg-amber-950/30">
                 <AlertDescription>
                   Este trabajador se cobra en el ciclo en que se retira y queda excluido de los ciclos posteriores.
+                  Al guardar el retiro, se bloqueará su acceso al Portal de Empleados y se cerrarán sus sesiones abiertas.
                 </AlertDescription>
               </Alert>
             </div>

@@ -132,7 +132,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       finishLogin(result);
     },
     onError: (error: Error & { code?: string; canResend?: boolean; email?: string }) => {
-      if ((error as any).code === "EMAIL_NOT_VERIFIED") {
+      if ((error as any).code === "WORKER_RETIRED") {
+        toast({
+          title: "Acceso al portal bloqueado",
+          description: error.message,
+          variant: "destructive",
+          duration: 10000,
+        });
+      } else if ((error as any).code === "EMAIL_NOT_VERIFIED") {
         toast({
           title: "Verificación de correo pendiente",
           description: error.message,

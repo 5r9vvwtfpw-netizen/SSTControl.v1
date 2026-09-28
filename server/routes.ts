@@ -18,7 +18,7 @@ import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
 import { eq, and, sql, desc, ne, inArray, ilike, or } from "drizzle-orm";
 import { initializeWebSocket, notifyNewMessage, notifyMessageRead, setSessionParser, broadcastToSupportAgents, getOnlineSupportUserIds } from "./websocket";
-import { setupAuth, getSessionMiddleware, requireAuth as authRequireAuth, requirePermission, requireAnyPermission, requireRole, hashPassword, stripPassword, requireActiveSubscription } from "./auth";
+import { setupAuth, getSessionMiddleware, requireAuth as authRequireAuth, requirePermission, requireAnyPermission, requireRole, hashPassword, stripPassword, requireActiveSubscription, revokeRetiredWorkerPortalSessions } from "./auth";
 import { demoReadOnlyMiddleware } from "../plugins/demo-engine/readonly-middleware";
 import { isDemoEnabled } from "../plugins/demo-engine/types";
 import { storage } from "./storage";
@@ -4447,6 +4447,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).send("Trabajador no encontrado");
       }
 
+      if (worker.status === "retirado" && existingWorker.status !== "retirado") {
+        try {
+          await revokeRetiredWorkerPortalSessions(worker);
+        } catch (error) {
+          // El estado del trabajador ya quedó guardado; login y peticiones activas
+          // consultan ese estado y bloquean el portal incluso si falla esta limpieza.
+          logger.error({ err: error, workerId: worker.id }, "No se pudieron cerrar las sesiones del portal tras el retiro");
+        }
+      }
+
       // WORKER-DOWNGRADE: Si el trabajador pasa a 'retirado', reducir workersPurchased si aplica
       if (updateData.status === 'retirado' && existingWorker.status !== 'retirado') {
         try {
@@ -4764,6 +4774,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "No tiene permisos para este trabajador" });
       }
 
+      if (worker.status === "retirado") {
+        return res.status(400).json({ error: "No se puede crear acceso al portal para un trabajador retirado." });
+      }
+
       // Check if worker has email
       if (!worker.email) {
         return res.status(400).json({ error: "El trabajador no tiene email registrado. Por favor, actualice su información primero." });
@@ -4910,6 +4924,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ error: "No tiene permisos para este trabajador" });
       }
 
+      if (worker.status === "retirado") {
+        return res.status(400).json({ error: "No se pueden reenviar credenciales del portal a un trabajador retirado." });
+      }
+
       if (!worker.email) {
         return res.status(400).json({ error: "El trabajador no tiene email registrado. Por favor, actualice su información primero." });
       }
@@ -4996,6 +5014,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let skipped = 0;
 
       for (const worker of workersWithEmail) {
+        if (worker.status === "retirado") {
+          skipped++;
+          results.push({ workerId: worker.id, name: worker.name, email: worker.email, status: "skipped", error: "Trabajador retirado" });
+          continue;
+        }
+
         const existingUserByWorker = await storage.getUserByWorkerId(worker.id);
         if (existingUserByWorker) {
           skipped++;
