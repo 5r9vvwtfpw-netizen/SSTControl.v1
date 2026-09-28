@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AlertCircle, CheckCircle2, Clock3, Download, FileSignature, FileText, Loader2, Upload } from "lucide-react";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, buildHeaders, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { formatDate } from "@/lib/utils/formatters";
@@ -27,6 +27,7 @@ type SigningRequest = {
 type CompanySigningResponse = {
   requests: SigningRequest[];
   currentVersion: string;
+  representative: { name: string; identification: string };
 };
 
 function getStatusLabel(status: string) {
@@ -57,9 +58,7 @@ function getStatusVariant(status: string): "default" | "secondary" | "destructiv
 export function SolicitudFirmaContratoSaaS() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [signerName, setSignerName] = useState("");
-  const [signerEmail, setSignerEmail] = useState("");
-  const [signerId, setSignerId] = useState("");
+  const [signatureFile, setSignatureFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
@@ -87,31 +86,37 @@ export function SolicitudFirmaContratoSaaS() {
       request.contractVersion === data?.currentVersion,
   );
   const canSubmit = ["admin", "superusuario"].includes(user?.role || "");
-  const mailDisabledHere = import.meta.env.DEV;
 
   const submitRequest = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!canSubmit || hasOpenRequest || hasCurrentSignedContract) return;
+    if (!canSubmit || !signatureFile || hasOpenRequest || hasCurrentSignedContract) return;
 
     setSubmitting(true);
     try {
-      await apiRequest("POST", "/api/saas-signing/company", {
-        signerName: signerName.trim(),
-        signerEmail: signerEmail.trim(),
-        signerId: signerId.trim(),
-        capacity: "legal_representative",
+      const formData = new FormData();
+      formData.append("accepted", "true");
+      formData.append("signature", signatureFile);
+      const response = await fetch("/api/saas-signing/company/sign", {
+        method: "POST",
+        headers: buildHeaders(false),
+        credentials: "include",
+        body: formData,
       });
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(body.error || "No se pudo firmar el contrato.");
+      }
       toast({
-        title: "Invitación enviada",
-        description: "El representante legal podrá adjuntar su firma y solicitar el código desde el enlace recibido.",
+        title: import.meta.env.DEV ? "Firma de prueba registrada" : "Contrato firmado",
+        description: import.meta.env.DEV
+          ? "El registro de desarrollo no tiene efecto contractual."
+          : "Puedes descargar el contrato firmado desde esta sección.",
       });
-      setSignerName("");
-      setSignerEmail("");
-      setSignerId("");
+      setSignatureFile(null);
       await queryClient.invalidateQueries({ queryKey: ["/api/saas-signing/company"] });
     } catch (submitError) {
       toast({
-        title: "No se pudo enviar la solicitud",
+        title: "No se pudo firmar el contrato",
         description: submitError instanceof Error ? submitError.message : "Intenta nuevamente.",
         variant: "destructive",
       });
@@ -157,7 +162,7 @@ export function SolicitudFirmaContratoSaaS() {
           Firma del contrato SaaS
         </CardTitle>
         <CardDescription>
-          Invita al representante legal registrado en la empresa. Recibirá un enlace para adjuntar su firma PNG o JPG y verificarla mediante un código enviado a su correo.
+          Adjunta aquí la firma del representante legal para este contrato. Esta imagen queda independiente de la firma registrada en Empresas; no se envían enlaces ni códigos.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
@@ -189,11 +194,11 @@ export function SolicitudFirmaContratoSaaS() {
             </AlertDescription>
           </Alert>
         )}
-        {mailDisabledHere && (
+        {import.meta.env.DEV && (
           <Alert>
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              En este entorno de desarrollo no se envían invitaciones ni códigos de firma. Los registros marcados como prueba no tienen efecto contractual. El envío real corresponde a la aplicación publicada.
+              En desarrollo, las firmas se guardan como pruebas sin efecto contractual.
             </AlertDescription>
           </Alert>
         )}
@@ -201,16 +206,15 @@ export function SolicitudFirmaContratoSaaS() {
         {requests.length > 0 && (
           <div className="space-y-3">
             {requests.map((request) => {
-              const isApproved = ["approved", "pending_signature"].includes(request.status);
               const isTestOnly = request.testOnly === true || request.status === "test_signed";
               const isRealSigned = request.status === "signed" && !isTestOnly;
-              const invitationUrl = `${window.location.origin}/firma-contrato-saas?id=${encodeURIComponent(request.id)}`;
+              const canDownload = isRealSigned || (import.meta.env.DEV && request.status === "test_signed");
               return (
                 <div key={request.id} className="rounded-lg border p-4 space-y-3" data-testid={`signing-request-${request.id}`}>
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <p className="font-medium">{request.signerName}</p>
-                      <p className="text-sm text-muted-foreground">{request.signerEmail}</p>
+                      {request.signerEmail && <p className="text-sm text-muted-foreground">{request.signerEmail}</p>}
                     </div>
                     <Badge variant={isTestOnly ? "destructive" : getStatusVariant(request.status)}>
                       {isTestOnly ? "PRUEBA · SIN EFECTO CONTRACTUAL" : getStatusLabel(request.status)}
@@ -224,42 +228,15 @@ export function SolicitudFirmaContratoSaaS() {
                   </p>
                   {request.status === "pending_review" && (
                     <p className="text-sm text-muted-foreground">
-                      Solicitud del flujo anterior, ya no disponible. Registra una nueva invitación para el representante legal.
+                      Solicitud del flujo anterior, ya no disponible.
                     </p>
-                  )}
-                  {isApproved && (
-                    <div className="flex flex-wrap items-center gap-3">
-                      <a
-                        href={invitationUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-sm text-primary underline underline-offset-4"
-                      >
-                        Abrir enlace de firma
-                      </a>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={async () => {
-                          try {
-                            await navigator.clipboard.writeText(invitationUrl);
-                            toast({ title: "Enlace copiado", description: "Compártelo únicamente con la persona firmante." });
-                          } catch {
-                            toast({ title: "No se pudo copiar el enlace", description: "Ábrelo y copia la dirección desde el navegador.", variant: "destructive" });
-                          }
-                        }}
-                      >
-                        Copiar enlace de firma
-                      </Button>
-                    </div>
                   )}
                   {isTestOnly && (
                     <p className="text-sm font-medium text-destructive">
                       Registro de prueba: no representa una firma real y no tiene efecto contractual.
                     </p>
                   )}
-                  {isRealSigned && (
+                  {canDownload && (
                     <Button
                       type="button"
                       variant="outline"
@@ -270,7 +247,7 @@ export function SolicitudFirmaContratoSaaS() {
                       {downloadingId === request.id
                         ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         : <Download className="mr-2 h-4 w-4" />}
-                      Descargar contrato firmado
+                      {isTestOnly ? "Descargar contrato de prueba" : "Descargar contrato firmado"}
                     </Button>
                   )}
                 </div>
@@ -288,61 +265,50 @@ export function SolicitudFirmaContratoSaaS() {
           <Alert>
             <Clock3 className="h-4 w-4" />
             <AlertDescription>
-              Ya existe una solicitud en curso. Podrás iniciar otra cuando esta solicitud sea resuelta.
+              Existe una solicitud anterior en curso. Al actualizar el flujo quedará cerrada para permitir la firma directa.
             </AlertDescription>
           </Alert>
         ) : (
           <form onSubmit={submitRequest} className="space-y-4 border-t pt-5" data-testid="form-saas-signing-request">
             <div>
-              <h3 className="font-semibold">Solicitar firma</h3>
+              <h3 className="font-semibold">Firmar contrato</h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                El nombre y la identificación deben coincidir con los del representante legal en Empresas. No se requiere revisión manual.
+                Representante legal: {data?.representative?.name || "No registrado"} · Identificación: {data?.representative?.identification || "No registrada"}.
+                La imagen que cargues aquí se conservará con esta versión del contrato.
               </p>
             </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              <label className="space-y-1 text-sm font-medium">
-                Nombre completo del firmante
-                <input
-                  required
-                  autoComplete="name"
-                  value={signerName}
-                  onChange={(event) => setSignerName(event.target.value)}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-normal"
-                  data-testid="input-signer-name"
-                />
-              </label>
-              <label className="space-y-1 text-sm font-medium">
-                Correo electrónico del firmante
-                <input
-                  required
-                  type="email"
-                  autoComplete="email"
-                  value={signerEmail}
-                  onChange={(event) => setSignerEmail(event.target.value)}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-normal"
-                  data-testid="input-signer-email"
-                />
-              </label>
-              <label className="space-y-1 text-sm font-medium">
-                Número de identificación
-                <input
-                  required
-                  value={signerId}
-                  onChange={(event) => setSignerId(event.target.value)}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-normal"
-                  data-testid="input-signer-id"
-                />
-              </label>
-            </div>
+            <label className="block max-w-md space-y-1 text-sm font-medium">
+              Firma del representante legal para este contrato (PNG o JPG, máximo 1 MB)
+              <input
+                type="file"
+                required
+                accept=".png,.jpg,.jpeg,image/png,image/jpeg"
+                onChange={(event) => {
+                  const file = event.target.files?.[0] || null;
+                  if (file && (!["image/png", "image/jpeg"].includes(file.type) || file.size > 1024 * 1024)) {
+                    event.target.value = "";
+                    setSignatureFile(null);
+                    toast({ title: "Firma no válida", description: "Selecciona una imagen PNG o JPG de máximo 1 MB.", variant: "destructive" });
+                    return;
+                  }
+                  setSignatureFile(file);
+                }}
+                className="block w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-normal file:mr-4 file:border-0 file:bg-muted file:px-3 file:py-1.5"
+                data-testid="input-contract-signature-image"
+              />
+            </label>
+            <p className="text-sm text-muted-foreground">
+              Al firmar, confirmas que cuentas con autorización para aportar esta imagen y aceptar el contrato vigente en nombre de la empresa.
+            </p>
             <Button
               type="submit"
-              disabled={submitting || isLoading || isError || mailDisabledHere}
+              disabled={submitting || isLoading || isError || !signatureFile || !data?.representative?.name || !data?.representative?.identification}
               data-testid="button-submit-signing-request"
             >
               {submitting
                 ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 : <Upload className="mr-2 h-4 w-4" />}
-              {submitting ? "Enviando invitación…" : "Invitar al representante legal"}
+              {submitting ? "Registrando firma…" : "Firmar contrato con esta imagen"}
             </Button>
           </form>
         )}

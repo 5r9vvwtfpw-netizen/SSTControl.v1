@@ -217,7 +217,7 @@ export function registerSaasSigningRoutes(
     throw new Error("No se permite inyectar dependencias de prueba en el registro de firma de producción.");
   }
   const mailer = options.mailer || defaultMailer;
-  const testOnly = !!options.mailer;
+  const testOnly = !!options.mailer || process.env.NODE_ENV !== "production";
   const auth = options.testMiddlewares?.requireAuth || requireAuth;
   const superadminAuth = options.testMiddlewares?.requireSuperadmin || requireSuperadmin;
 
@@ -237,100 +237,155 @@ export function registerSaasSigningRoutes(
       return res.json({
         requests: (rows as any).rows.map(requestPublicShape),
         currentVersion: SAAS_CONTRACT_VERSION,
+        representative: {
+          name: scoped.company.legalRepName || "",
+          identification: scoped.company.legalRepId || "",
+        },
       });
     } catch {
       return res.status(500).json({ error: "No se pudo consultar el estado de firma del contrato." });
     }
   });
 
-  app.post("/api/saas-signing/company", auth, async (req, res) => {
-    let uploadedSourcePath: string | null = null;
+  app.post("/api/saas-signing/company/sign", auth, safeSignatureUpload, async (req, res) => {
+    const uploadedPaths: string[] = [];
+    const cleanup = async () => {
+      await Promise.allSettled(uploadedPaths.map((path) => objectStorageService.deleteObject(path)));
+    };
     try {
       const scoped = await resolveCompany(req);
       if ("status" in scoped) return res.status(scoped.status).json({ error: scoped.error });
-
-      const signerName = getField(req.body.signerName).replace(/\s+/g, " ");
-      const signerEmail = getField(req.body.signerEmail).toLowerCase();
-      const signerId = getField(req.body.signerId).replace(/\s+/g, " ");
-      const capacity = getSignerCapacity(req.body.capacity);
-      if (signerName.length < 3 || signerName.length > 150) {
-        return res.status(400).json({ error: "Ingresa el nombre completo del firmante." });
+      if (req.body?.accepted !== "true") {
+        return res.status(400).json({ error: "Confirma que cuentas con autorización para aportar la firma y aceptar este contrato." });
       }
-      if (signerEmail.length > 254 ||
-        !/^[A-Z0-9.!#$%&'*+/=?^_~-]+@[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?(?:\.[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?)+$/i.test(signerEmail)) {
-        return res.status(400).json({ error: "Ingresa un correo válido del representante legal." });
+      const signerName = getField(scoped.company.legalRepName).replace(/\s+/g, " ");
+      const signerId = getField(scoped.company.legalRepId).replace(/\s+/g, " ");
+      if (!signerName || !signerId) {
+        return res.status(409).json({ error: "Registra el nombre y la identificación del representante legal en Empresas antes de firmar." });
       }
-      if (signerId.length < 4 || signerId.length > 60 || !/^[\p{L}\p{N} .-]+$/u.test(signerId)) {
-        return res.status(400).json({ error: "Ingresa el número de identificación del firmante." });
+      if (!req.file || !verifyUploadedProofMime(req.file.mimetype, req.file.buffer)) {
+        return res.status(400).json({ error: "Adjunta una imagen PNG o JPG válida para la firma de este contrato." });
       }
-      if (capacity !== "legal_representative") {
-        return res.status(400).json({ error: "Solo el representante legal registrado puede firmar el contrato." });
+      let signatureImage: Buffer;
+      try {
+        const metadata = await sharp(req.file.buffer, { limitInputPixels: 4_000_000 }).metadata();
+        if (!metadata.width || !metadata.height || metadata.width < 30 || metadata.height < 15 ||
+            metadata.width > 2000 || metadata.height > 2000) {
+          return res.status(400).json({ error: "La firma debe medir entre 30 × 15 y 2000 × 2000 píxeles." });
+        }
+        signatureImage = await sharp(req.file.buffer, { limitInputPixels: 4_000_000 }).rotate().png().toBuffer();
+      } catch {
+        return res.status(400).json({ error: "La imagen de firma no es válida o está dañada." });
       }
-      if (!scoped.company.legalRepName || !scoped.company.legalRepId ||
-        normalizePersonName(scoped.company.legalRepName) !== normalizePersonName(signerName) ||
-        normalizeSignerId(scoped.company.legalRepId) !== normalizeSignerId(signerId)) {
-        return res.status(409).json({
-          error: "El nombre y la identificación deben coincidir con el representante legal registrado en Empresas. Actualiza los datos de la empresa antes de continuar.",
-        });
-      }
-
-      const pending = await db.execute(sql`
-        SELECT id FROM saas_contract_signing_requests
-        WHERE company_id = ${scoped.companyId} AND status IN ('pending_review', 'approved')
-          AND test_only = ${testOnly}
-        LIMIT 1
-      `);
-      if ((pending as any).rows.length > 0) {
-        return res.status(409).json({ error: "Esta empresa ya tiene una invitación de firma en curso." });
-      }
-
       const requestId = randomUUID();
       const sourceHtml = renderCanonicalSaasContractHtml();
       const sourceBuffer = Buffer.from(sourceHtml, "utf8");
       const sourceSha256 = sha256(sourceBuffer);
       const sourcePath = `saas-signing/${scoped.companyId}/${requestId}/contract-v${SAAS_CONTRACT_VERSION}-${sourceSha256}.html`;
+      const signedAt = new Date();
+      const actor = req.user as any;
+      const ip = getClientIp(req);
+      const snapshot: ContractSignerSnapshot = {
+        signerName,
+        signerId,
+        capacity: "legal_representative",
+        companyName: scoped.company.name,
+        companyNit: scoped.company.nit || "",
+        contractVersion: SAAS_CONTRACT_VERSION,
+        sourceSha256,
+        signingMethod: "admin_upload",
+        signedByUserId: actor.id,
+        signedByName: actor.fullName?.trim() || "Administrador de empresa",
+        signedAt,
+        ip,
+        userAgent: String(req.get("user-agent") || "desconocido").replace(/[\r\n\t]/g, " ").slice(0, 1000),
+        testOnly,
+        signatureImage,
+      };
+      const signedHtmlBuffer = Buffer.from(renderSignedSaasContractHtml(sourceHtml, snapshot), "utf8");
+      const htmlHash = sha256(signedHtmlBuffer);
+      const signedPdf = await generateSignedSaasContractPdf(sourceHtml, snapshot);
+      const pdfHash = sha256(signedPdf);
+      const imageHash = sha256(signatureImage);
+      const signedBase = `saas-signing/${scoped.companyId}/${requestId}/signed-${signedAt.getTime()}`;
+      const imagePath = `${signedBase}-signature-${imageHash}.png`;
+      const htmlPath = `${signedBase}-${htmlHash}.html`;
+      const pdfPath = `${signedBase}-${pdfHash}.pdf`;
+      const upload = async (path: string, buffer: Buffer, mime: string) => {
+        const url = await objectStorageService.uploadObject(path, buffer, mime);
+        uploadedPaths.push(url);
+        return url;
+      };
+      const sourceUrl = await upload(sourcePath, sourceBuffer, "text/html; charset=utf-8");
+      const imageUrl = await upload(imagePath, signatureImage, "image/png");
+      const htmlUrl = await upload(htmlPath, signedHtmlBuffer, "text/html; charset=utf-8");
+      const pdfUrl = await upload(pdfPath, signedPdf, "application/pdf");
 
-      uploadedSourcePath = await objectStorageService.uploadObject(sourcePath, sourceBuffer, "text/html; charset=utf-8")
-        .then(() => `/objects/${sourcePath}`);
-
-      const invitationUrl = createInviteUrl(requestId);
-      const insertResult = await db.execute(sql`
-        INSERT INTO saas_contract_signing_requests (
-          id, company_id, company_name, company_nit, requested_by_user_id, signer_name, signer_email, signer_id,
-          capacity, contract_version, source_object_path, source_sha256, status, test_only, signature_required
-        ) VALUES (
-          ${requestId}, ${scoped.companyId}, ${scoped.company.name}, ${scoped.company.nit || ""}, ${(req.user as any).id},
-          ${signerName}, ${signerEmail}, ${signerId},
-          ${capacity}, ${SAAS_CONTRACT_VERSION},
-          ${uploadedSourcePath}, ${sourceSha256}, 'approved', ${testOnly}, true
-        )
-        RETURNING id, status, signer_name, signer_email, capacity, contract_version, created_at, test_only
-      `);
-      const emailResult = await mailer.sendInvitation({
-        to: signerEmail, signerName, companyName: scoped.company.name,
-        invitationUrl, contractVersion: SAAS_CONTRACT_VERSION,
-      });
-      if (!emailResult.success) {
-        await db.execute(sql`
-          UPDATE saas_contract_signing_requests SET status = 'rejected',
-            rejection_reason = 'No se pudo enviar la invitación; solicita una nueva.',
-            updated_at = now()
-          WHERE id = ${requestId} AND status = 'approved' AND invitation_sent_at IS NULL
+      const result = await db.transaction(async (tx) => {
+        await tx.execute(sql`SELECT id FROM companies WHERE id = ${scoped.companyId} FOR UPDATE`);
+        if (!testOnly) {
+          const signed = await tx.execute(sql`
+            SELECT id FROM saas_contract_signing_requests
+            WHERE company_id = ${scoped.companyId} AND contract_version = ${SAAS_CONTRACT_VERSION}
+              AND status = 'signed' AND test_only = false LIMIT 1
+          `);
+          if ((signed as any).rows.length) return { status: 409 as const, error: "Esta versión del contrato ya fue firmada por la empresa." };
+        }
+        await tx.execute(sql`
+          INSERT INTO saas_contract_signing_requests (
+            id, company_id, company_name, company_nit, requested_by_user_id, signer_name,
+            signer_email, signer_id, capacity, contract_version, source_object_path,
+            source_sha256, status, test_only, signature_required
+          ) VALUES (
+            ${requestId}, ${scoped.companyId}, ${scoped.company.name}, ${scoped.company.nit || ""},
+            ${actor.id}, ${signerName}, '', ${signerId}, 'legal_representative',
+            ${SAAS_CONTRACT_VERSION}, ${sourceUrl}, ${sourceSha256}, 'approved', ${testOnly}, true
+          )
         `);
-        return res.status(502).json({ error: emailResult.error || "No se pudo enviar la invitación de firma." });
+        await tx.execute(sql`
+          INSERT INTO saas_contract_signatures (
+            request_id, company_id, signer_name, signer_id, capacity, contract_version,
+            source_sha256, signed_html_object_path, signed_html_sha256,
+            signed_pdf_object_path, signed_pdf_sha256, signature_image_object_path, signature_image_sha256,
+            signed_at, signer_ip, signer_user_agent, test_only, signing_method,
+            signed_by_user_id, authorization_declared
+          ) VALUES (
+            ${requestId}, ${scoped.companyId}, ${signerName}, ${signerId}, 'legal_representative',
+            ${SAAS_CONTRACT_VERSION}, ${sourceSha256}, ${htmlUrl}, ${htmlHash},
+            ${pdfUrl}, ${pdfHash}, ${imageUrl}, ${imageHash},
+            ${signedAt}, ${ip.slice(0, 128)}, ${snapshot.userAgent}, ${testOnly},
+            'admin_upload', ${actor.id}, true
+          )
+        `);
+        await tx.execute(sql`
+          UPDATE saas_contract_signing_requests
+          SET status = ${testOnly ? "test_signed" : "signed"}, updated_at = now()
+          WHERE id = ${requestId} AND status = 'approved'
+        `);
+        return { status: 201 as const };
+      });
+      if (result.status !== 201) {
+        await cleanup();
+        return res.status(result.status).json({ error: result.error });
       }
-      await db.execute(sql`
-        UPDATE saas_contract_signing_requests SET invitation_sent_at = now(), updated_at = now()
-        WHERE id = ${requestId} AND status = 'approved'
-      `);
-      const created = (insertResult as any).rows[0];
-      return res.status(201).json({ request: requestPublicShape(created) });
+      return res.status(201).json({
+        signed: true,
+        status: testOnly ? "test_signed" : "signed",
+        requestId,
+        signedAt: signedAt.toISOString(),
+        contractVersion: SAAS_CONTRACT_VERSION,
+      });
     } catch (error) {
+      await cleanup();
       if ((error as any)?.code === "23505") {
-        return res.status(409).json({ error: "Esta empresa ya tiene una invitación de firma en curso." });
+        return res.status(409).json({ error: "Esta empresa ya tiene una firma o solicitud en curso." });
       }
-      return res.status(500).json({ error: getErrorMessage(error, "No se pudo crear la solicitud de firma.") });
+      return res.status(503).json({ error: getErrorMessage(error, "No se pudo firmar el contrato.") });
     }
+  });
+
+  app.post("/api/saas-signing/company", auth, (_req, res) => {
+    res.status(410).json({ error: "La invitación fue reemplazada por la firma cargada directamente en el módulo del contrato." });
   });
 
   // Retired manual review endpoints cannot approve legacy links.
@@ -517,6 +572,12 @@ export function registerSaasSigningRoutes(
     } catch {
       return res.status(500).json({ error: "No se pudo rechazar la solicitud de firma." });
     }
+  });
+
+  // Previously issued invitation links are closed. New signatures are uploaded
+  // directly by the authenticated company administrator, not by email/OTP.
+  app.use("/api/saas-signing/invite", (_req, res) => {
+    res.status(410).json({ error: "Este enlace de firma ya no está disponible." });
   });
 
   app.get("/api/saas-signing/invite/:id", async (req, res) => {

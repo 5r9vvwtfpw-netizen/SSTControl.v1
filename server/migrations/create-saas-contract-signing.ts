@@ -50,13 +50,6 @@ export async function createSaasContractSigningTables(): Promise<void> {
       ALTER COLUMN proof_sha256 DROP NOT NULL;
     ALTER TABLE saas_contract_signing_requests
       ADD COLUMN IF NOT EXISTS signature_required BOOLEAN NOT NULL DEFAULT false;
-    -- Preserve old requests as history but revoke unsigned links from the former
-    -- manual-review workflow; they did not require an attached signature.
-    UPDATE saas_contract_signing_requests
-    SET status = 'rejected', rejection_reason = 'Flujo anterior cerrado: solo firma automática del representante legal con imagen de firma.',
-        updated_at = now()
-    WHERE status IN ('pending_review', 'approved') AND signature_required = false;
-
     CREATE INDEX IF NOT EXISTS saas_signing_requests_company_created_idx
       ON saas_contract_signing_requests(company_id, created_at DESC);
     CREATE INDEX IF NOT EXISTS saas_signing_requests_review_idx
@@ -99,7 +92,10 @@ export async function createSaasContractSigningTables(): Promise<void> {
     CREATE TABLE IF NOT EXISTS saas_contract_signatures (
       id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
       request_id VARCHAR NOT NULL UNIQUE REFERENCES saas_contract_signing_requests(id),
-      challenge_id VARCHAR NOT NULL UNIQUE REFERENCES saas_contract_signing_challenges(id),
+      challenge_id VARCHAR UNIQUE REFERENCES saas_contract_signing_challenges(id),
+      signing_method TEXT NOT NULL DEFAULT 'email_otp' CHECK (signing_method IN ('email_otp', 'admin_upload')),
+      signed_by_user_id VARCHAR REFERENCES users(id),
+      authorization_declared BOOLEAN NOT NULL DEFAULT false,
       company_id VARCHAR NOT NULL REFERENCES companies(id),
       signer_name TEXT NOT NULL,
       signer_id TEXT NOT NULL,
@@ -118,6 +114,19 @@ export async function createSaasContractSigningTables(): Promise<void> {
     ALTER TABLE saas_contract_signatures
       ADD COLUMN IF NOT EXISTS signature_image_object_path TEXT,
       ADD COLUMN IF NOT EXISTS signature_image_sha256 TEXT;
+    ALTER TABLE saas_contract_signatures
+      ALTER COLUMN challenge_id DROP NOT NULL,
+      ADD COLUMN IF NOT EXISTS signing_method TEXT NOT NULL DEFAULT 'email_otp',
+      ADD COLUMN IF NOT EXISTS signed_by_user_id VARCHAR REFERENCES users(id),
+      ADD COLUMN IF NOT EXISTS authorization_declared BOOLEAN NOT NULL DEFAULT false;
+    -- Close only unsigned invitations from the retired flow. Keep completed
+    -- signatures even if their request status was left inconsistent.
+    UPDATE saas_contract_signing_requests r
+    SET status = 'rejected',
+        rejection_reason = 'Flujo de invitación cerrado: la firma del contrato se carga en el módulo por el administrador.',
+        updated_at = now()
+    WHERE r.status IN ('pending_review', 'approved')
+      AND NOT EXISTS (SELECT 1 FROM saas_contract_signatures s WHERE s.request_id = r.id);
     CREATE INDEX IF NOT EXISTS saas_signatures_company_signed_idx
       ON saas_contract_signatures(company_id, signed_at DESC);
   `);

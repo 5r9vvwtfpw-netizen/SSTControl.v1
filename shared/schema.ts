@@ -11446,7 +11446,10 @@ export const saasContractSigningIpEvents = pgTable("saas_contract_signing_ip_eve
 export const saasContractSignatures = pgTable("saas_contract_signatures", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   requestId: varchar("request_id").notNull().unique().references(() => saasContractSigningRequests.id),
-  challengeId: varchar("challenge_id").notNull().unique().references(() => saasContractSigningChallenges.id),
+  challengeId: varchar("challenge_id").unique().references(() => saasContractSigningChallenges.id),
+  signingMethod: text("signing_method").notNull().default("email_otp"),
+  signedByUserId: varchar("signed_by_user_id").references(() => users.id),
+  authorizationDeclared: boolean("authorization_declared").notNull().default(false),
   companyId: varchar("company_id").notNull().references(() => companies.id),
   signerName: text("signer_name").notNull(),
   signerId: text("signer_id").notNull(),

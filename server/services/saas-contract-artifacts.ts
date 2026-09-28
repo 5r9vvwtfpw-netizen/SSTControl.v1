@@ -12,7 +12,10 @@ export interface ContractSignerSnapshot {
   companyNit: string;
   contractVersion: string;
   sourceSha256: string;
-  challengeId: string;
+  challengeId?: string;
+  signingMethod?: "email_otp" | "admin_upload";
+  signedByUserId?: string;
+  signedByName?: string;
   signedAt: Date;
   ip: string;
   userAgent: string;
@@ -65,6 +68,13 @@ export function renderSignedSaasContractHtml(
   const capacityLabel = snapshot.capacity === "attorney"
     ? "Apoderado autorizado"
     : "Representante legal";
+  const adminUpload = snapshot.signingMethod === "admin_upload";
+  const methodText = adminUpload
+    ? "El administrador cargó una imagen de firma específica para este contrato y registró su aceptación declarando contar con autorización del representante legal."
+    : "Código de un solo uso enviado al correo registrado del firmante.";
+  const limitation = adminUpload
+    ? "La imagen aportada y la declaración del administrador no verifican externamente la identidad ni la autorización específica del representante legal."
+    : "La imagen adjunta y el código no constituyen una validación externa de la identidad o de las facultades del firmante.";
   return `<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Contrato SaaS firmado</title></head><body>
 ${snapshot.testOnly ? `<div style="padding:12px;background:#fee2e2;color:#991b1b;font-weight:bold">PRUEBA FUNCIONAL — SIN EFECTO CONTRACTUAL</div>` : ""}
 <main>${contractHtml}</main>
@@ -73,16 +83,18 @@ ${snapshot.testOnly ? `<div style="padding:12px;background:#fee2e2;color:#991b1b
 ${snapshot.testOnly ? `<p style="color:#b91c1c;font-weight:bold">PRUEBA FUNCIONAL — SIN EFECTO CONTRACTUAL</p>` : ""}
 <p>Documento correspondiente al contrato SaaS versión <strong>${escapeHtml(snapshot.contractVersion)}</strong>.</p>
 <p><strong>Empresa:</strong> ${escapeHtml(snapshot.companyName)} — NIT ${escapeHtml(snapshot.companyNit)}</p>
-<p><strong>Firmante:</strong> ${escapeHtml(snapshot.signerName)} — identificación ${escapeHtml(snapshot.signerId)}</p>
+<p><strong>Representante legal indicado:</strong> ${escapeHtml(snapshot.signerName)} — identificación ${escapeHtml(snapshot.signerId)}</p>
 <p><strong>Calidad declarada:</strong> ${capacityLabel}</p>
 <p><strong>Fecha y hora (UTC):</strong> ${escapeHtml(snapshot.signedAt.toISOString())}</p>
-<p><strong>Reto OTP:</strong> ${escapeHtml(snapshot.challengeId)}</p>
+${adminUpload
+  ? `<p><strong>Acción realizada por:</strong> ${escapeHtml(snapshot.signedByName || "Administrador")} (usuario ${escapeHtml(snapshot.signedByUserId || "no registrado")})</p>`
+  : `<p><strong>Reto OTP:</strong> ${escapeHtml(snapshot.challengeId || "")}</p>`}
 <p><strong>Integridad del contrato presentado:</strong> SHA-256 ${escapeHtml(snapshot.sourceSha256)}</p>
-<p><strong>Registro de la firma:</strong> Código de un solo uso enviado al correo registrado del firmante; dirección IP ${escapeHtml(snapshot.ip)}.</p>
+<p><strong>Registro de la firma:</strong> ${methodText} Dirección IP ${escapeHtml(snapshot.ip)}.</p>
 <p><strong>Imagen de firma adjunta:</strong> SHA-256 ${sha256(snapshot.signatureImage)}</p>
 <img alt="Firma adjunta por el representante legal" src="data:image/png;base64,${snapshot.signatureImage.toString("base64")}" style="display:block;max-width:260px;max-height:110px;object-fit:contain;margin:16px 0">
 <p><strong>Agente de usuario:</strong> ${escapeHtml(snapshot.userAgent)}</p>
-<p>La constancia identifica el método electrónico y la versión del documento aceptada. La imagen adjunta y el código no constituyen una validación externa de la identidad o de las facultades del firmante.</p>
+<p>La constancia identifica la operación y la versión del documento aceptada. ${limitation}</p>
 </section></body></html>`;
 }
 
@@ -112,6 +124,7 @@ export async function generateSignedSaasContractPdf(
   contractHtml: string,
   snapshot: ContractSignerSnapshot,
 ): Promise<Buffer> {
+  const adminUpload = snapshot.signingMethod === "admin_upload";
   const contractText = decodeHtmlText(contractHtml);
   if (!contractText.includes("1. Partes del Contrato") || !contractText.includes("17. Contacto")) {
     throw new Error("El contrato fuente está incompleto y no puede firmarse");
@@ -155,12 +168,19 @@ export async function generateSignedSaasContractPdf(
     doc.font("Helvetica").fontSize(10).fillColor("#111827");
     const details: Array<[string, string]> = [
       ["Empresa", `${snapshot.companyName} — NIT ${snapshot.companyNit}`],
-      ["Firmante", `${snapshot.signerName} — identificación ${snapshot.signerId}`],
+      ["Representante legal indicado", `${snapshot.signerName} — identificación ${snapshot.signerId}`],
       ["Calidad declarada", snapshot.capacity === "attorney" ? "Apoderado autorizado" : "Representante legal"],
       ["Versión del contrato", snapshot.contractVersion],
       ["Fecha y hora (UTC)", snapshot.signedAt.toISOString()],
-      ["Método", "Código de verificación de un solo uso enviado al correo registrado del firmante"],
-      ["Reto OTP", snapshot.challengeId],
+      ["Método", adminUpload
+        ? "Imagen de firma aportada por el administrador de la cuenta para este contrato"
+        : "Código de verificación de un solo uso enviado al correo registrado del firmante"],
+      ...(adminUpload
+        ? [
+            ["Acción realizada por", `${snapshot.signedByName || "Administrador"} (usuario ${snapshot.signedByUserId || "no registrado"})`],
+            ["Declaración", "El administrador declaró contar con autorización del representante legal para aceptar este contrato."],
+          ] as Array<[string, string]>
+        : [["Reto OTP", snapshot.challengeId || ""]] as Array<[string, string]>),
       ["Dirección IP", snapshot.ip],
       ["Agente de usuario", snapshot.userAgent],
       ["SHA-256 del contrato presentado", snapshot.sourceSha256],
@@ -179,7 +199,9 @@ export async function generateSignedSaasContractPdf(
     doc.y = imageY + 95;
     doc.moveDown();
     doc.fontSize(8).fillColor("#4b5563").text(
-      "La constancia identifica el método electrónico y la versión del documento aceptada. La imagen adjunta y el código no constituyen una validación externa de la identidad o de las facultades del firmante.",
+      adminUpload
+        ? "La constancia identifica la operación y la versión aceptada. La imagen aportada y la declaración del administrador no verifican externamente la identidad ni la autorización específica del representante legal."
+        : "La constancia identifica el método electrónico y la versión del documento aceptada. La imagen adjunta y el código no constituyen una validación externa de la identidad o de las facultades del firmante.",
       { lineGap: 3 },
     );
     doc.end();
