@@ -100,9 +100,29 @@ export const companies = pgTable("companies", {
   quoteDiscountDurationMonths: integer("quote_discount_duration_months"),
   quoteCouponCode: text("quote_coupon_code"),
   quoteReferrerId: text("quote_referrer_id"),
+  workerPricingMode: text("worker_pricing_mode").notNull().default("standard"),
+  workerUnitPriceCop: integer("worker_unit_price_cop"),
+  workerDiscountPercent: integer("worker_discount_percent"),
+  workerPricingUpdatedAt: timestamp("worker_pricing_updated_at"),
+  workerPricingUpdatedBy: text("worker_pricing_updated_by"),
   onboardingCompleted: integer("onboarding_completed").notNull().default(0), // 0 = pendiente inducción, 1 = inducción completada
   onboardingCompletedAt: timestamp("onboarding_completed_at"), // Fecha en que se liberó el acceso
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
+});
+
+export const companyWorkerPricingHistory = pgTable("company_worker_pricing_history", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  // Keep audit evidence even if a company record is later removed.
+  companyId: varchar("company_id").notNull(),
+  previousMode: text("previous_mode").notNull(),
+  previousUnitPriceCop: integer("previous_unit_price_cop"),
+  previousDiscountPercent: integer("previous_discount_percent"),
+  mode: text("mode").notNull(),
+  unitPriceCop: integer("unit_price_cop"),
+  discountPercent: integer("discount_percent"),
+  changedByUserId: text("changed_by_user_id").notNull(),
+  changedByName: text("changed_by_name").notNull(),
+  changedAt: timestamp("changed_at").notNull().default(sql`now()`),
 });
 
 // Company branches/locations table

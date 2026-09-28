@@ -1,12 +1,21 @@
 import { sql } from "drizzle-orm";
 import { verifyRecalculateToken } from "../../plugins/landing-page-integration";
 import { db } from "../db";
+import {
+  calculateWorkerPricingCharge,
+  getCompanyWorkerPricing,
+  type WorkerPricingMode,
+} from "./company-worker-pricing";
 
 export interface WorkerBillingQuote {
   employeeCount: number;
   baseMonthlyPrice: number;
   currentPeriodPrice: number;
   paymentAmount: number;
+  publicBaseMonthlyPrice: number;
+  effectiveUnitPriceCop: number;
+  pricingMode: WorkerPricingMode;
+  discountPercent: number | null;
   discountDurationMonths: number;
   couponCode: string | null;
   currency: "COP";
@@ -77,6 +86,7 @@ export async function getVerifiedWorkerBillingQuote(
     throw new WorkerBillingQuoteError("No hay una cantidad válida de trabajadores para cotizar. No se inició ningún cobro.");
   }
 
+  const pricing = await getCompanyWorkerPricing(company.id);
   const landingUrl = process.env.LANDING_PAGE_BASE_URL || "https://sst-colombia.com.co";
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 10_000);
@@ -90,7 +100,7 @@ export async function getVerifiedWorkerBillingQuote(
         employees: employeeCount,
         vehicles: 0,
         risk_level: "I",
-        coupon_code: company.quoteCouponCode || undefined,
+        coupon_code: pricing.mode === "standard" ? company.quoteCouponCode || undefined : undefined,
       }),
       signal: controller.signal,
     });
@@ -147,15 +157,24 @@ export async function getVerifiedWorkerBillingQuote(
     throw new WorkerBillingQuoteError("La cantidad de trabajadores cambió durante la cotización. Actualice la cotización antes de pagar.");
   }
 
+  const charge = calculateWorkerPricingCharge(
+    pricing,
+    employeeCount,
+    quote.baseMonthlyPrice,
+    quote.currentPeriodPrice,
+  );
+
   return {
     employeeCount,
     baseMonthlyPrice: quote.baseMonthlyPrice,
-    currentPeriodPrice: quote.currentPeriodPrice,
-    paymentAmount: quote.currentPeriodPrice < quote.baseMonthlyPrice
-      ? quote.currentPeriodPrice
-      : quote.baseMonthlyPrice,
-    discountDurationMonths: quote.discountDurationMonths,
-    couponCode: quote.couponCode,
+    currentPeriodPrice: charge.currentPeriodAmount,
+    paymentAmount: charge.paymentAmount,
+    publicBaseMonthlyPrice: quote.baseMonthlyPrice,
+    effectiveUnitPriceCop: charge.effectiveUnitPriceCop,
+    pricingMode: charge.mode,
+    discountPercent: charge.discountPercent,
+    discountDurationMonths: pricing.mode === "standard" ? quote.discountDurationMonths : 0,
+    couponCode: pricing.mode === "standard" ? quote.couponCode : null,
     currency: "COP",
   };
 }

@@ -29,6 +29,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { CIIU_CODES, CIIU_SECTIONS, getCiiuLabel } from "@/lib/ciiu-codes";
 import { compressLogoImage, compressSignatureImage } from "@/lib/imageCompression";
 import { AnimatedWarningIcon } from "@/components/animated-warning-icon";
+import { WorkerPricingDialog } from "@/components/WorkerPricingDialog";
 
 const LOGO_MAX_SIZE_BYTES = 5 * 1024 * 1024;
 const LOGO_ALLOWED_TYPES = new Set([
@@ -170,6 +171,7 @@ export default function CompanyManagement() {
   const [licenseDialogOpen, setLicenseDialogOpen] = useState(false);
   const [companyForLicense, setCompanyForLicense] = useState<Company | null>(null);
   const [licenseDate, setLicenseDate] = useState("2026-12-31");
+  const [companyForPricing, setCompanyForPricing] = useState<Company | null>(null);
 
   // Activación manual de suscripción (transferencia bancaria)
   const [activateSubDialogOpen, setActivateSubDialogOpen] = useState(false);
@@ -1423,6 +1425,22 @@ export default function CompanyManagement() {
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
+                        {user?.role === "superadmin" && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setCompanyForPricing(company)}
+                                aria-label={`Configurar tarifa de ${company.name}`}
+                                data-testid={`button-worker-pricing-${company.id}`}
+                              >
+                                <Tag className="h-4 w-4 text-indigo-600" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Tarifa por trabajador</TooltipContent>
+                          </Tooltip>
+                        )}
                         {user?.role === 'superadmin' && (() => {
                           const sub = getCompanySubscription(company.id);
                           if (!sub) return null;
@@ -1564,6 +1582,13 @@ export default function CompanyManagement() {
           </TableBody>
         </Table>
       </div>
+
+      {user?.role === "superadmin" && (
+        <WorkerPricingDialog
+          company={companyForPricing}
+          onClose={() => setCompanyForPricing(null)}
+        />
+      )}
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

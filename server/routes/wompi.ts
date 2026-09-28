@@ -17,6 +17,8 @@ import { sql } from "drizzle-orm";
 import { z } from "zod";
 import logger from "../lib/logger";
 import { webhookRateLimiter } from "../middleware/rate-limit";
+import { getCompanyWorkerPricing } from "../services/company-worker-pricing";
+import { getVerifiedWorkerBillingQuote, WorkerBillingQuoteError } from "../services/worker-billing-quote";
 import {
   isWompiConfigured,
   getWompiPublicKey,
@@ -199,15 +201,31 @@ export function registerWompiRoutes(app: Express) {
       const companyAny = company as any;
       const quoteBase = companyAny.quoteBaseMonthlyPrice as number | null;
       const quoteCurrent = companyAny.quoteCurrentPeriodPrice as number | null;
+      const workerPricing = await getCompanyWorkerPricing(company.id);
 
-      if (!quoteBase || quoteBase <= 0) {
+      if (workerPricing.mode === "standard" && (!quoteBase || quoteBase <= 0)) {
         return res.status(400).json({
           error: "Su empresa no tiene una cotización de precio. Visite sst-colombia.com.co para obtener una cotización antes de proceder al pago.",
         });
       }
 
       // El precio en pesos (quoteBase está en centavos de COP)
-      const monthlyPriceCOP = quoteCurrent != null && quoteCurrent > 0 ? quoteCurrent : quoteBase;
+      let monthlyPriceCOP: number;
+      if (workerPricing.mode === "standard") {
+        monthlyPriceCOP = quoteCurrent != null && quoteCurrent > 0 ? quoteCurrent : quoteBase!;
+      } else {
+        try {
+          const verifiedQuote = await getVerifiedWorkerBillingQuote(company, subscription.id);
+          monthlyPriceCOP = verifiedQuote.paymentAmount;
+        } catch (error: any) {
+          logger.warn({ companyId, error: error.message }, "[Wompi] No se pudo verificar tarifa negociada");
+          return res.status(error instanceof WorkerBillingQuoteError ? 409 : 503).json({
+            error: error instanceof WorkerBillingQuoteError
+              ? error.message
+              : "No se pudo verificar la tarifa acordada. No se inició ningún cobro.",
+          });
+        }
+      }
 
       // Construir URL de retorno
       const baseUrl =

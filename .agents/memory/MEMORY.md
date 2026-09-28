@@ -82,3 +82,4 @@
 - [Catálogo y correo de prueba PSE](epayco-pse-sandbox-setup.md) — el catálogo necesita modo de pruebas; Banka aún puede exigir un código enviado a un correo accesible.
 - [IP de cliente en Preview para PSE](replit-preview-pse-ip.md) — en este entorno el Preview da IP local incluso en XFF y descarta la cabecera inyectada desde el navegador.
 - [Evidencias PESV de Supertransporte](supertransporte-pesv-mapping.md) — tratar las capturas entregadas por la empresa como requisitos, no como evidencias ya existentes en la aplicación.
+- [Tarifas negociadas por empresa](negotiated-worker-pricing.md) — tarifa fija o porcentual no acumula cupones; conservar el importe de cobros ya iniciados.

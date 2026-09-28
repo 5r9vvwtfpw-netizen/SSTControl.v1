@@ -2988,6 +2988,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/companies", requirePermission("companies:create"), async (req, res) => {
     try {
+      const workerPricingFields = [
+        "workerPricingMode",
+        "workerUnitPriceCop",
+        "workerDiscountPercent",
+        "workerPricingUpdatedAt",
+        "workerPricingUpdatedBy",
+      ];
+      if (workerPricingFields.some((field) => Object.prototype.hasOwnProperty.call(req.body || {}, field))) {
+        return res.status(403).json({ error: "La tarifa por trabajador solo se configura desde la administración de tarifas." });
+      }
       const validatedData = insertCompanySchema.parse(req.body);
       const userRole = req.user!.role;
       const isAdmin = hasGlobalAccess(userRole);
@@ -3076,6 +3086,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/companies/:id", requirePermission("companies:edit"), async (req, res) => {
     try {
+      const workerPricingFields = [
+        "workerPricingMode",
+        "workerUnitPriceCop",
+        "workerDiscountPercent",
+        "workerPricingUpdatedAt",
+        "workerPricingUpdatedBy",
+      ];
+      if (workerPricingFields.some((field) => Object.prototype.hasOwnProperty.call(req.body || {}, field))) {
+        return res.status(403).json({ error: "La tarifa por trabajador solo se configura desde la administración de tarifas." });
+      }
       const validatedData = insertCompanySchema.partial().parse(req.body);
       if (validatedData.numberOfWorkers !== undefined) {
         const [counts] = await db.select({

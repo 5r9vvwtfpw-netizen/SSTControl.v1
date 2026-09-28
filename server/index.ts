@@ -20,6 +20,12 @@ import { setupVite, serveStatic, log } from "./vite";
 import { seedSstCatalog } from "./sst-seed";
 import { runMigrations } from "./run-migrations";
 import { syncWorkerRetirementDate } from "./migrations/sync-worker-retirement-date";
+import { syncCompanyWorkerPricing } from "./migrations/sync-company-worker-pricing";
+import {
+  isWorkerPricingSchemaReady,
+  markWorkerPricingSchemaReady,
+  markWorkerPricingSchemaUnavailable,
+} from "./services/worker-pricing-schema-state";
 import { ensureSchemaSync } from "./migrations/ensure-schema-sync";
 import { createWebPushTables } from "./migrations/create-web-push-tables";
 import { seedAdminUser } from "./seed-admin";
@@ -649,8 +655,25 @@ app.post(
           }, 'Invoice created (draft) - verifying amount before finalization');
 
           if (draftInvoice.subscription && draftInvoice.status === 'draft') {
+            if (!isWorkerPricingSchemaReady()) {
+              try {
+                const stripeClientForInvoice = await getUncachableStripeClient();
+                await stripeClientForInvoice.invoices.update(draftInvoice.id, { auto_advance: false });
+              } catch (holdError) {
+                logger.error({ err: holdError, invoiceId: draftInvoice.id },
+                  "Could not hold Stripe draft while worker-pricing schema is unavailable");
+              }
+              return res.status(503).json({
+                error: "La configuración de tarifas no está lista. La factura quedó retenida para reintento.",
+              });
+            }
+
+            const resumeInvoiceAutoAdvance = draftInvoice.auto_advance ?? true;
+            let stripeClientForInvoice: Awaited<ReturnType<typeof getUncachableStripeClient>> | null = null;
+            let negotiatedInvoiceHeld = false;
+            let negotiatedCompanyDetected = false;
             try {
-              const stripeClientForInvoice = await getUncachableStripeClient();
+              stripeClientForInvoice = await getUncachableStripeClient();
               const draftCustomerId = typeof draftInvoice.customer === 'string'
                 ? draftInvoice.customer
                 : (draftInvoice.customer as any)?.id;
@@ -665,14 +688,66 @@ app.post(
                   .limit(1);
 
                 if (matchingSub) {
-                  const invoiceCompany = await storage.getCompany(matchingSub.companyId);
+                  const invoiceCompanyResult = await db.execute(sql`
+                    SELECT c.id, c.name, c.quote_current_period_price, c.quote_base_monthly_price,
+                           c.quote_coupon_code,
+                           COALESCE(to_jsonb(c)->>'worker_pricing_mode', 'standard') AS worker_pricing_mode
+                    FROM companies c
+                    WHERE c.id = ${matchingSub.companyId}
+                    LIMIT 1
+                  `);
+                  const companyRow = invoiceCompanyResult.rows[0] as {
+                    id: string;
+                    name: string;
+                    quote_current_period_price: number | null;
+                    quote_base_monthly_price: number | null;
+                    quote_coupon_code: string | null;
+                    worker_pricing_mode: string;
+                  } | undefined;
+                  const invoiceCompany = companyRow ? {
+                    id: companyRow.id,
+                    name: companyRow.name,
+                    quoteCurrentPeriodPrice: companyRow.quote_current_period_price,
+                    quoteBaseMonthlyPrice: companyRow.quote_base_monthly_price,
+                    quoteCouponCode: companyRow.quote_coupon_code,
+                    workerPricingMode: companyRow.worker_pricing_mode || "standard",
+                  } : null;
 
                   if (invoiceCompany) {
-                    const expectedPriceCOP = Math.round(
+                    const isNegotiatedCompany =
+                      invoiceCompany.workerPricingMode !== "standard";
+                    if (isNegotiatedCompany) {
+                      negotiatedCompanyDetected = true;
+                      negotiatedInvoiceHeld = true;
+                      await stripeClientForInvoice.invoices.update(draftInvoice.id, { auto_advance: false });
+                    }
+
+                    let expectedPriceCOP = Math.round(
                       invoiceCompany.quoteCurrentPeriodPrice ??
                       invoiceCompany.quoteBaseMonthlyPrice ??
                       0
                     );
+                    let negotiatedPricingSnapshot: {
+                      mode: string;
+                      employeeCount: number;
+                      unitPriceCop: number;
+                      discountPercent: number | null;
+                      publicBaseAmount: number;
+                      paymentAmount: number;
+                    } | null = null;
+                    if (isNegotiatedCompany) {
+                      const { getVerifiedWorkerBillingQuote } = await import("./services/worker-billing-quote");
+                      const verifiedQuote = await getVerifiedWorkerBillingQuote(invoiceCompany, matchingSub.id);
+                      expectedPriceCOP = verifiedQuote.paymentAmount;
+                      negotiatedPricingSnapshot = {
+                        mode: verifiedQuote.pricingMode,
+                        employeeCount: verifiedQuote.employeeCount,
+                        unitPriceCop: verifiedQuote.effectiveUnitPriceCop,
+                        discountPercent: verifiedQuote.discountPercent,
+                        publicBaseAmount: verifiedQuote.publicBaseMonthlyPrice,
+                        paymentAmount: verifiedQuote.paymentAmount,
+                      };
+                    }
                     const expectedPrice = expectedPriceCOP * 100;
 
                     if (expectedPrice > 0 && draftInvoice.amount_due !== expectedPrice) {
@@ -696,21 +771,57 @@ app.post(
                           invoice: draftInvoice.id,
                           amount: adjustment,
                           currency: 'cop',
-                          description: adjustment > 0
+                          description: negotiatedPricingSnapshot
+                            ? `Ajuste de tarifa acordada (${negotiatedPricingSnapshot.employeeCount} trabajadores, $${negotiatedPricingSnapshot.unitPriceCop} COP c/u${negotiatedPricingSnapshot.discountPercent ? `, descuento ${negotiatedPricingSnapshot.discountPercent}%` : ""})`
+                            : adjustment > 0
                             ? 'Ajuste de precio por actualización de parámetros de empresa'
                             : 'Crédito por ajuste de precio de empresa',
                         });
+                        if (!negotiatedPricingSnapshot) {
+                          const updatedInvoice = await stripeClientForInvoice.invoices.retrieve(draftInvoice.id);
+                          logger.info({
+                            invoiceId: draftInvoice.id,
+                            companyId: matchingSub.companyId,
+                            adjustment,
+                            newAmountDue: updatedInvoice.amount_due,
+                            newExpectedTotal: expectedPrice,
+                          }, 'Invoice adjusted with corrective invoice item - verified new total');
+                        }
+                      }
+                    }
 
-                        const updatedInvoice = await stripeClientForInvoice.invoices.retrieve(draftInvoice.id);
-                        logger.info({
+                    if (negotiatedPricingSnapshot) {
+                      const verifiedInvoice = await stripeClientForInvoice.invoices.retrieve(draftInvoice.id);
+                      if (verifiedInvoice.amount_due !== expectedPrice) {
+                        logger.error({
                           invoiceId: draftInvoice.id,
                           companyId: matchingSub.companyId,
-                          adjustment,
-                          newAmountDue: updatedInvoice.amount_due,
-                          newExpectedTotal: expectedPrice,
-                        }, 'Invoice adjusted with corrective invoice item - verified new total');
+                          expectedAmount: expectedPrice,
+                          actualAmount: verifiedInvoice.amount_due,
+                        }, "Negotiated Stripe invoice amount did not reconcile; draft remains held");
+                        return res.status(503).json({ error: "El importe negociado no coincide. La factura quedó retenida para revisión." });
                       }
-                    } else if (expectedPrice > 0) {
+
+                      await stripeClientForInvoice.invoices.update(draftInvoice.id, {
+                        metadata: {
+                          workerPricingMode: negotiatedPricingSnapshot.mode,
+                          billedWorkerCount: String(negotiatedPricingSnapshot.employeeCount),
+                          billedUnitPriceCop: String(negotiatedPricingSnapshot.unitPriceCop),
+                          workerDiscountPercent: negotiatedPricingSnapshot.discountPercent == null
+                            ? ""
+                            : String(negotiatedPricingSnapshot.discountPercent),
+                          publicBaseAmountCop: String(negotiatedPricingSnapshot.publicBaseAmount),
+                          billedTotalCop: String(negotiatedPricingSnapshot.paymentAmount),
+                          billingPeriodStart: String((draftInvoice as any).period_start ?? ""),
+                          billingPeriodEnd: String((draftInvoice as any).period_end ?? ""),
+                        },
+                      });
+
+                      await stripeClientForInvoice.invoices.update(draftInvoice.id, {
+                        auto_advance: resumeInvoiceAutoAdvance,
+                      });
+                      negotiatedInvoiceHeld = false;
+                    } else if (expectedPrice > 0 && draftInvoice.amount_due === expectedPrice) {
                       logger.info({
                         invoiceId: draftInvoice.id,
                         companyId: matchingSub.companyId,
@@ -721,9 +832,31 @@ app.post(
                   }
                 }
               }
+              if (!negotiatedCompanyDetected && resumeInvoiceAutoAdvance) {
+                await stripeClientForInvoice.invoices.update(draftInvoice.id, { auto_advance: true });
+              }
             } catch (invoiceAdjustError) {
+              if (negotiatedInvoiceHeld && stripeClientForInvoice) {
+                try {
+                  await stripeClientForInvoice.invoices.update(draftInvoice.id, { auto_advance: false });
+                } catch (holdError) {
+                  logger.error({ err: holdError, invoiceId: draftInvoice.id },
+                    "Failed to re-hold negotiated Stripe invoice after error");
+                }
+                logger.error({ err: invoiceAdjustError, invoiceId: draftInvoice.id },
+                  "Negotiated Stripe invoice processing failed; draft remains held for retry");
+                return res.status(503).json({ error: "No se pudo verificar la tarifa acordada. La factura quedó retenida para reintento." });
+              }
+              if (resumeInvoiceAutoAdvance && stripeClientForInvoice) {
+                try {
+                  await stripeClientForInvoice.invoices.update(draftInvoice.id, { auto_advance: true });
+                } catch (resumeError) {
+                  logger.error({ err: resumeError, invoiceId: draftInvoice.id },
+                    "Could not resume standard Stripe invoice after non-critical verification error");
+                }
+              }
               logger.error({ err: invoiceAdjustError, invoiceId: draftInvoice.id },
-                'Error verifying/adjusting draft invoice amount (non-critical)');
+                'Error verifying/adjusting draft invoice (standard billing flow)');
             }
           }
           break;
@@ -998,6 +1131,14 @@ app.use((req, res, next) => {
     // un esquema incompleto.
     await syncWorkerRetirementDate();
     workerSchemaReady = true;
+    try {
+      await syncCompanyWorkerPricing();
+      markWorkerPricingSchemaReady();
+      logger.info("✅ Worker pricing schema ready");
+    } catch (error) {
+      markWorkerPricingSchemaUnavailable(error);
+      logger.error({ err: error }, "⚠️ Worker pricing schema migration failed; pricing admin and payment requests will return 503");
+    }
     // Ejecutar migraciones automáticas (sincroniza columnas faltantes)
     try {
       await runMigrations();

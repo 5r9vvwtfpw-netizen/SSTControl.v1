@@ -35,6 +35,11 @@ import {
   getVerifiedWorkerBillingQuote,
   WorkerBillingQuoteError,
 } from "../services/worker-billing-quote";
+import {
+  workerPricingConfigMatchesQuote,
+  workerPricingSnapshotMatchesQuote,
+} from "../services/company-worker-pricing";
+import { assertWorkerPricingSchemaReady } from "../services/worker-pricing-schema-state";
 
 const paymentLinkReadLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -42,6 +47,15 @@ const paymentLinkReadLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
+
+function requireWorkerPricingSchema(_req: any, res: any, next: any) {
+  try {
+    assertWorkerPricingSchemaReady();
+    next();
+  } catch (error: any) {
+    return res.status(503).json({ error: error.message });
+  }
+}
 
 type EpaycoPaymentRow = {
   id: string;
@@ -192,7 +206,11 @@ async function ensureEpaycoTable(): Promise<void> {
     ALTER TABLE epayco_pse_transactions
     ADD COLUMN IF NOT EXISTS purchase_type varchar NOT NULL DEFAULT 'subscription',
     ADD COLUMN IF NOT EXISTS billed_worker_count integer,
-    ADD COLUMN IF NOT EXISTS role varchar
+    ADD COLUMN IF NOT EXISTS role varchar,
+    ADD COLUMN IF NOT EXISTS worker_pricing_mode varchar,
+    ADD COLUMN IF NOT EXISTS worker_pricing_base_amount integer,
+    ADD COLUMN IF NOT EXISTS billed_unit_price_cop numeric(14, 2),
+    ADD COLUMN IF NOT EXISTS worker_discount_percent integer
   `);
   await db.execute(sql`
     CREATE TABLE IF NOT EXISTS epayco_pse_payment_links (
@@ -213,7 +231,11 @@ async function ensureEpaycoTable(): Promise<void> {
   await db.execute(sql`
     ALTER TABLE epayco_pse_payment_links
     ADD COLUMN IF NOT EXISTS payment_invoice varchar,
-    ADD COLUMN IF NOT EXISTS billed_worker_count integer
+    ADD COLUMN IF NOT EXISTS billed_worker_count integer,
+    ADD COLUMN IF NOT EXISTS worker_pricing_mode varchar,
+    ADD COLUMN IF NOT EXISTS worker_pricing_base_amount integer,
+    ADD COLUMN IF NOT EXISTS billed_unit_price_cop numeric(14, 2),
+    ADD COLUMN IF NOT EXISTS worker_discount_percent integer
   `);
   await db.execute(sql`
     CREATE INDEX IF NOT EXISTS epayco_pse_payment_links_company_created_idx
@@ -228,6 +250,31 @@ async function ensureEpaycoTable(): Promise<void> {
 
 function hashPaymentLinkToken(token: string): string {
   return crypto.createHash("sha256").update(token).digest("hex");
+}
+
+function paymentLinkMatchesQuote(
+  link: {
+    amount: number;
+    billed_worker_count: number | null;
+    worker_pricing_mode: string | null;
+    worker_pricing_base_amount: number | null;
+    billed_unit_price_cop: string | number | null;
+    worker_discount_percent: number | null;
+  },
+  quote: Awaited<ReturnType<typeof getVerifiedWorkerBillingQuote>>,
+): boolean {
+  return workerPricingSnapshotMatchesQuote(quote, {
+    amount: Number(link.amount),
+    employeeCount: Number(link.billed_worker_count),
+    mode: link.worker_pricing_mode,
+    publicBaseAmount: link.worker_pricing_base_amount == null
+      ? null
+      : Number(link.worker_pricing_base_amount),
+    effectiveUnitPriceCop: link.billed_unit_price_cop,
+    discountPercent: link.worker_discount_percent == null
+      ? null
+      : Number(link.worker_discount_percent),
+  });
 }
 
 function maskEmail(email: string): string {
@@ -373,9 +420,18 @@ async function activateSubscriptionAfterEpayco(
     `);
     if (!existingInvoice.rows.length) {
       const billedWorkerResult = await tx.execute(sql`
-        SELECT billed_worker_count FROM epayco_pse_transactions WHERE id = ${payment.id}
+        SELECT billed_worker_count, worker_pricing_mode, worker_pricing_base_amount,
+               billed_unit_price_cop, worker_discount_percent
+        FROM epayco_pse_transactions WHERE id = ${payment.id}
       `);
-      const billedWorkerCount = Number(billedWorkerResult.rows[0]?.billed_worker_count);
+      const billingSnapshot = billedWorkerResult.rows[0] as {
+        billed_worker_count: number | null;
+        worker_pricing_mode: string | null;
+        worker_pricing_base_amount: number | null;
+        billed_unit_price_cop: string | number | null;
+        worker_discount_percent: number | null;
+      } | undefined;
+      const billedWorkerCount = Number(billingSnapshot?.billed_worker_count);
       const companyResult = await tx.execute(sql`
         SELECT name, nit, contact_email, address, ciiu_code,
                number_of_workers, number_of_vehicles
@@ -400,10 +456,49 @@ async function activateSubscriptionAfterEpayco(
       const invoiceNumber = `${prefix}${String(lastNumber + 1).padStart(3, "0")}`;
       const amount = Number(payment.amount);
       const subtotal = Math.round(amount / 1.19);
-      const lineItems = JSON.stringify([{
-        description: "Suscripción Software SST Colombia - Mensual",
-        quantity: 1, unitPrice: amount, total: amount,
-      }]);
+      const hasWorkerPricingSnapshot =
+        ["standard", "fixed", "percentage"].includes(billingSnapshot?.worker_pricing_mode || "") &&
+        Number.isSafeInteger(billedWorkerCount) &&
+        billedWorkerCount > 0 &&
+        Number.isFinite(Number(billingSnapshot?.billed_unit_price_cop));
+      let invoiceLineItems: unknown[];
+      if (hasWorkerPricingSnapshot) {
+        const unitPriceCop = Number(billingSnapshot!.billed_unit_price_cop);
+        const workerLineTotal = Math.floor(amount / billedWorkerCount) * billedWorkerCount;
+        const roundingRemainder = amount - workerLineTotal;
+        invoiceLineItems = [{
+          description: `Suscripción Software SST Colombia — ${billedWorkerCount} trabajadores` +
+            ` (tarifa efectiva ${unitPriceCop.toFixed(2)} COP por trabajador)` +
+            (billingSnapshot!.worker_pricing_mode === "fixed" ? " (tarifa fija)" :
+              billingSnapshot!.worker_pricing_mode === "percentage"
+                ? ` (descuento negociado ${billingSnapshot!.worker_discount_percent}%)`
+                : ""),
+          quantity: billedWorkerCount,
+          unitPrice: Math.floor(amount / billedWorkerCount),
+          total: workerLineTotal,
+          pricingMode: billingSnapshot!.worker_pricing_mode,
+          billedWorkerCount,
+          discountPercent: billingSnapshot!.worker_discount_percent,
+          publicBaseAmount: billingSnapshot!.worker_pricing_base_amount,
+          effectiveUnitPriceCop: unitPriceCop,
+          paymentAmount: amount,
+        }];
+        if (roundingRemainder > 0) {
+          invoiceLineItems.push({
+            description: "Ajuste de redondeo para conciliar el total facturado",
+            quantity: 1,
+            unitPrice: roundingRemainder,
+            total: roundingRemainder,
+            pricingAdjustment: "rounding",
+          });
+        }
+      } else {
+        invoiceLineItems = [{
+            description: "Suscripción Software SST Colombia - Mensual",
+            quantity: 1, unitPrice: amount, total: amount,
+        }];
+      }
+      const lineItems = JSON.stringify(invoiceLineItems);
 
       await tx.execute(sql`
         INSERT INTO invoices (
@@ -554,7 +649,7 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
     }
   });
 
-  app.get("/api/epayco/pse/cotizacion", paymentLinkReadLimiter, requireAuth, async (req: any, res) => {
+  app.get("/api/epayco/pse/cotizacion", paymentLinkReadLimiter, requireAuth, requireWorkerPricingSchema, async (req: any, res) => {
     const companyId = getEffectiveCompanyId(req);
     if (!companyId) return res.status(403).json({ error: "Usuario no asociado a una empresa" });
     if (["lso", "lso_externo", "trabajador"].includes(req.user?.role)) {
@@ -577,7 +672,7 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
     }
   });
 
-  app.post("/api/epayco/pse/enlace/enviar", paymentOperationLimiter, requireAuth, async (req: any, res) => {
+  app.post("/api/epayco/pse/enlace/enviar", paymentOperationLimiter, requireAuth, requireWorkerPricingSchema, async (req: any, res) => {
     if (process.env.NODE_ENV !== "production") {
       return res.status(503).json({ error: "El envío de enlaces de pago no está disponible en este entorno." });
     }
@@ -650,24 +745,46 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
     const tokenHash = hashPaymentLinkToken(token);
     const issuedLink = await db.transaction(async (tx) => {
       await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${companyId}), hashtext('epayco_pse_payment_link'))`);
+      const pricingRowResult = await tx.execute(sql`
+        SELECT worker_pricing_mode, worker_unit_price_cop, worker_discount_percent
+        FROM companies WHERE id = ${companyId} FOR SHARE
+      `);
+      const pricingRow = pricingRowResult.rows[0] as {
+        worker_pricing_mode: string;
+        worker_unit_price_cop: number | null;
+        worker_discount_percent: number | null;
+      } | undefined;
+      if (!pricingRow || !workerPricingConfigMatchesQuote(quote, {
+        mode: (pricingRow.worker_pricing_mode || "standard") as "standard" | "fixed" | "percentage",
+        unitPriceCop: pricingRow.worker_unit_price_cop == null ? null : Number(pricingRow.worker_unit_price_cop),
+        discountPercent: pricingRow.worker_discount_percent == null ? null : Number(pricingRow.worker_discount_percent),
+      })) {
+        return "stale" as const;
+      }
       const recent = await tx.execute(sql`
         SELECT id FROM epayco_pse_payment_links
         WHERE company_id = ${companyId} AND sent_at > now() - interval '60 seconds'
         LIMIT 1
       `);
-      if (recent.rows.length) return false;
+      if (recent.rows.length) return "rate_limited" as const;
 
       await tx.execute(sql`
         INSERT INTO epayco_pse_payment_links (
-          token_hash, company_id, subscription_id, amount, currency, billed_worker_count, expires_at
+          token_hash, company_id, subscription_id, amount, currency, billed_worker_count,
+          worker_pricing_mode, worker_pricing_base_amount, billed_unit_price_cop,
+          worker_discount_percent, expires_at
         ) VALUES (
           ${tokenHash}, ${companyId}, ${subscription.id}, ${amount}, 'COP',
-          ${quote.employeeCount}, now() + interval '24 hours'
+          ${quote.employeeCount}, ${quote.pricingMode}, ${quote.publicBaseMonthlyPrice},
+          ${quote.effectiveUnitPriceCop}, ${quote.discountPercent}, now() + interval '24 hours'
         )
       `);
-      return true;
+      return "issued" as const;
     });
-    if (!issuedLink) {
+    if (issuedLink === "stale") {
+      return res.status(409).json({ error: "La tarifa cambió durante la cotización. Revise el importe antes de solicitar un enlace." });
+    }
+    if (issuedLink === "rate_limited") {
       return res.status(429).json({ error: "Espere un minuto antes de solicitar otro enlace de pago." });
     }
 
@@ -702,13 +819,15 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
     });
   });
 
-  app.get("/api/epayco/pse/enlace/detalle", paymentLinkReadLimiter, async (req, res) => {
+  app.get("/api/epayco/pse/enlace/detalle", paymentLinkReadLimiter, requireWorkerPricingSchema, async (req, res) => {
     const token = getPaymentLinkToken(req);
     if (!token) return res.status(404).json({ error: "Enlace de pago no válido o vencido." });
     const tokenHash = hashPaymentLinkToken(token);
     const result = await db.execute(sql`
-      SELECT l.company_id, l.subscription_id, l.amount, l.currency, l.billed_worker_count, l.expires_at,
-             l.used_at, l.revoked_at, c.name AS company_name
+      SELECT l.company_id, l.subscription_id, l.amount, l.currency, l.billed_worker_count,
+             l.worker_pricing_mode, l.worker_pricing_base_amount, l.billed_unit_price_cop,
+             l.worker_discount_percent, l.expires_at, l.used_at, l.revoked_at,
+             c.name AS company_name
       FROM epayco_pse_payment_links l
       JOIN companies c ON c.id = l.company_id
       WHERE l.token_hash = ${tokenHash}
@@ -717,6 +836,8 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
     const link = result.rows[0] as {
       company_id: string; subscription_id: string; amount: number; currency: string;
       billed_worker_count: number | null;
+      worker_pricing_mode: string | null; worker_pricing_base_amount: number | null;
+      billed_unit_price_cop: string | number | null; worker_discount_percent: number | null;
       expires_at: Date; used_at: Date | null; revoked_at: Date | null; company_name: string;
     } | undefined;
     if (!link || (link.revoked_at && !link.used_at) ||
@@ -725,7 +846,12 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
     }
 
     if (!link.used_at) {
-      if (link.billed_worker_count === null) {
+      if (
+        link.billed_worker_count === null ||
+        link.worker_pricing_mode === null ||
+        link.worker_pricing_base_amount === null ||
+        link.billed_unit_price_cop === null
+      ) {
         return res.status(409).json({ error: "Este enlace fue emitido antes de la cotización vigente. Solicite un nuevo enlace de pago." });
       }
       const subscription = await storage.getSubscription(link.subscription_id);
@@ -735,15 +861,12 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
       }
       try {
         const quote = await getVerifiedWorkerBillingQuote(company, subscription.id);
-        if (
-          quote.paymentAmount !== Number(link.amount) ||
-          quote.employeeCount !== Number(link.billed_worker_count)
-        ) {
+        if (!paymentLinkMatchesQuote(link, quote)) {
           return res.status(409).json({ error: "El precio del enlace cambió. Solicite un nuevo enlace de pago." });
         }
       } catch (error: any) {
         logger.warn({ companyId: link.company_id, error: error.message }, "[ePayco] No se pudo verificar cotización del enlace");
-        return res.status(409).json({
+        return res.status(error instanceof WorkerBillingQuoteError ? 409 : 503).json({
           error: error instanceof WorkerBillingQuoteError
             ? error.message
             : "No se pudo verificar el precio vigente. No se inició ningún cobro.",
@@ -782,7 +905,7 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
     });
   });
 
-  app.post("/api/epayco/pse/enlace/iniciar", paymentOperationLimiter, async (req, res) => {
+  app.post("/api/epayco/pse/enlace/iniciar", paymentOperationLimiter, requireWorkerPricingSchema, async (req, res) => {
     const bodySchema = z.object({
       bankCode: z.string().min(1, "Seleccione un banco"),
       userType: z.enum(["0", "1"]),
@@ -817,7 +940,9 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
     if (!token) return res.status(404).json({ error: "Enlace de pago no válido o vencido." });
     const tokenHash = hashPaymentLinkToken(token);
     const linkResult = await db.execute(sql`
-      SELECT company_id, subscription_id, amount, currency, billed_worker_count, expires_at, used_at, revoked_at
+      SELECT company_id, subscription_id, amount, currency, billed_worker_count,
+             worker_pricing_mode, worker_pricing_base_amount, billed_unit_price_cop,
+             worker_discount_percent, expires_at, used_at, revoked_at
       FROM epayco_pse_payment_links
       WHERE token_hash = ${tokenHash}
       LIMIT 1
@@ -825,12 +950,19 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
     const link = linkResult.rows[0] as {
       company_id: string; subscription_id: string; amount: number; currency: string;
       billed_worker_count: number | null;
+      worker_pricing_mode: string | null; worker_pricing_base_amount: number | null;
+      billed_unit_price_cop: string | number | null; worker_discount_percent: number | null;
       expires_at: Date; used_at: Date | null; revoked_at: Date | null;
     } | undefined;
     if (!link || link.revoked_at || link.used_at || new Date(link.expires_at).getTime() <= Date.now()) {
       return res.status(410).json({ error: "Este enlace ya fue utilizado o venció." });
     }
-    if (link.billed_worker_count === null) {
+    if (
+      link.billed_worker_count === null ||
+      link.worker_pricing_mode === null ||
+      link.worker_pricing_base_amount === null ||
+      link.billed_unit_price_cop === null
+    ) {
       return res.status(409).json({ error: "Este enlace fue emitido antes de la cotización vigente. Solicite un nuevo enlace de pago." });
     }
 
@@ -852,16 +984,13 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
       currentQuote = await getVerifiedWorkerBillingQuote(company, subscription.id);
     } catch (error: any) {
       logger.warn({ companyId: link.company_id, error: error.message }, "[ePayco] No se pudo verificar cotización del enlace");
-      return res.status(409).json({
+      return res.status(error instanceof WorkerBillingQuoteError ? 409 : 503).json({
         error: error instanceof WorkerBillingQuoteError
           ? error.message
           : "No se pudo verificar el precio vigente. No se inició ningún cobro.",
       });
     }
-    if (
-      currentQuote.paymentAmount !== Number(link.amount) ||
-      currentQuote.employeeCount !== Number(link.billed_worker_count)
-    ) {
+    if (!paymentLinkMatchesQuote(link, currentQuote)) {
       return res.status(409).json({ error: "El precio de la suscripción cambió. Solicite un nuevo enlace de pago." });
     }
 
@@ -880,27 +1009,74 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
       if (!(await lockSubscriptionPseInitiation(tx, link.company_id))) {
         return { kind: "pending" as const };
       }
+      const pricingRowResult = await tx.execute(sql`
+        SELECT worker_pricing_mode, worker_unit_price_cop, worker_discount_percent
+        FROM companies WHERE id = ${link.company_id} FOR SHARE
+      `);
+      const pricingRow = pricingRowResult.rows[0] as {
+        worker_pricing_mode: string;
+        worker_unit_price_cop: number | null;
+        worker_discount_percent: number | null;
+      } | undefined;
+      if (!pricingRow || !workerPricingConfigMatchesQuote(currentQuote, {
+        mode: (pricingRow.worker_pricing_mode || "standard") as "standard" | "fixed" | "percentage",
+        unitPriceCop: pricingRow.worker_unit_price_cop == null ? null : Number(pricingRow.worker_unit_price_cop),
+        discountPercent: pricingRow.worker_discount_percent == null ? null : Number(pricingRow.worker_discount_percent),
+      })) {
+        return { kind: "stale" as const };
+      }
+      const lockedLinkResult = await tx.execute(sql`
+        SELECT company_id, subscription_id, amount, currency, billed_worker_count,
+               worker_pricing_mode, worker_pricing_base_amount, billed_unit_price_cop,
+               worker_discount_percent
+        FROM epayco_pse_payment_links
+        WHERE token_hash = ${tokenHash}
+          AND used_at IS NULL AND revoked_at IS NULL AND expires_at > now()
+        FOR UPDATE
+      `);
+      const lockedLink = lockedLinkResult.rows[0] as {
+        company_id: string;
+        subscription_id: string;
+        amount: number;
+        currency: string;
+        billed_worker_count: number | null;
+        worker_pricing_mode: string | null;
+        worker_pricing_base_amount: number | null;
+        billed_unit_price_cop: string | number | null;
+        worker_discount_percent: number | null;
+      } | undefined;
+      if (!lockedLink) return { kind: "unavailable" as const };
+      if (!paymentLinkMatchesQuote(lockedLink, currentQuote)) return { kind: "stale" as const };
+
       const claimed = await tx.execute(sql`
         UPDATE epayco_pse_payment_links
         SET used_at = now()
         WHERE token_hash = ${tokenHash}
           AND used_at IS NULL AND revoked_at IS NULL AND expires_at > now()
-        RETURNING company_id, subscription_id, amount, currency, billed_worker_count
+        RETURNING company_id, subscription_id, amount, currency, billed_worker_count,
+                  worker_pricing_mode, worker_pricing_base_amount, billed_unit_price_cop,
+                  worker_discount_percent
       `);
       const claimedLink = claimed.rows[0] as {
         company_id: string; subscription_id: string; amount: number; currency: string;
         billed_worker_count: number | null;
+        worker_pricing_mode: string | null; worker_pricing_base_amount: number | null;
+        billed_unit_price_cop: string | number | null; worker_discount_percent: number | null;
       } | undefined;
       if (!claimedLink) return { kind: "unavailable" as const };
 
       const invoice = `sst-pse-${claimedLink.subscription_id}-${Date.now()}`;
       await tx.execute(sql`
         INSERT INTO epayco_pse_transactions (
-          company_id, subscription_id, invoice, amount, currency, status, purchase_type, billed_worker_count
+          company_id, subscription_id, invoice, amount, currency, status, purchase_type,
+          billed_worker_count, worker_pricing_mode, worker_pricing_base_amount,
+          billed_unit_price_cop, worker_discount_percent
         ) VALUES (
           ${claimedLink.company_id}, ${claimedLink.subscription_id}, ${invoice},
           ${Number(claimedLink.amount)}, ${claimedLink.currency}, 'PENDING', 'subscription',
-          ${currentQuote.employeeCount}
+          ${claimedLink.billed_worker_count}, ${claimedLink.worker_pricing_mode},
+          ${claimedLink.worker_pricing_base_amount}, ${claimedLink.billed_unit_price_cop},
+          ${claimedLink.worker_discount_percent}
         )
       `);
       await tx.execute(sql`
@@ -912,6 +1088,9 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
     });
     if (start.kind === "pending") {
       return res.status(409).json({ error: "Hay un pago PSE pendiente de confirmación. Revise su estado antes de iniciar otro." });
+    }
+    if (start.kind === "stale") {
+      return res.status(409).json({ error: "La tarifa cambió. Solicite un nuevo enlace de pago antes de continuar." });
     }
     if (start.kind === "unavailable") return res.status(410).json({ error: "Este enlace ya fue utilizado o venció." });
     const { claimedLink, invoice } = start;
@@ -1040,13 +1219,6 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
   });
 
   app.post("/api/epayco/pse/iniciar", paymentOperationLimiter, requireAuth, async (req: any, res) => {
-    if (!isEpaycoConfigured()) {
-      return res.status(503).json({
-        error: "epayco_not_configured",
-        message: "El pago por transferencia bancaria aún no está configurado.",
-      });
-    }
-
     const bodySchema = z.object({
       purchaseType: z.enum(["subscription", "extra_seat"]).optional().default("subscription"),
       expectedAmount: z.number().int().nonnegative().optional(),
@@ -1065,6 +1237,19 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
       return res.status(400).json({
         error: "Datos inválidos",
         details: parsed.error.errors.map((error) => error.message),
+      });
+    }
+    if (parsed.data.purchaseType === "subscription") {
+      try {
+        assertWorkerPricingSchemaReady();
+      } catch (error: any) {
+        return res.status(503).json({ error: error.message });
+      }
+    }
+    if (!isEpaycoConfigured()) {
+      return res.status(503).json({
+        error: "epayco_not_configured",
+        message: "El pago por transferencia bancaria aún no está configurado.",
       });
     }
 
@@ -1200,10 +1385,28 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
         parsed.data.purchaseType === "subscription" &&
         !(await lockSubscriptionPseInitiation(tx, companyId))
       ) {
-        return false;
+        return { kind: "pending" as const };
       }
       if (parsed.data.purchaseType === "subscription") {
-        if (!verifiedSubscriptionQuote) return false;
+        if (!verifiedSubscriptionQuote) return { kind: "pending" as const };
+        const pricingResult = await tx.execute(sql`
+          SELECT worker_pricing_mode, worker_unit_price_cop, worker_discount_percent
+          FROM companies
+          WHERE id = ${companyId}
+          FOR SHARE
+        `);
+        const pricingRow = pricingResult.rows[0] as {
+          worker_pricing_mode: string | null;
+          worker_unit_price_cop: number | null;
+          worker_discount_percent: number | null;
+        } | undefined;
+        if (!pricingRow || !workerPricingConfigMatchesQuote(verifiedSubscriptionQuote, {
+          mode: (pricingRow.worker_pricing_mode || "standard") as "standard" | "fixed" | "percentage",
+          unitPriceCop: pricingRow.worker_unit_price_cop == null ? null : Number(pricingRow.worker_unit_price_cop),
+          discountPercent: pricingRow.worker_discount_percent == null ? null : Number(pricingRow.worker_discount_percent),
+        })) {
+          return { kind: "stale" as const };
+        }
         await tx.execute(sql`
           UPDATE companies
           SET quote_base_monthly_price = ${verifiedSubscriptionQuote.baseMonthlyPrice},
@@ -1216,16 +1419,26 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
       await tx.execute(sql`
         INSERT INTO epayco_pse_transactions (
           company_id, subscription_id, invoice, amount, currency, status, purchase_type, role,
-          billed_worker_count
+            billed_worker_count, worker_pricing_mode, worker_pricing_base_amount,
+            billed_unit_price_cop, worker_discount_percent
         ) VALUES (
           ${companyId}, ${subscription.id}, ${invoice}, ${Math.round(amount)}, 'COP', 'PENDING',
           ${parsed.data.purchaseType}, ${extraSeatRole},
-          ${parsed.data.purchaseType === 'subscription' ? quoteWorkerCount : null}
+            ${parsed.data.purchaseType === 'subscription' ? quoteWorkerCount : null},
+            ${parsed.data.purchaseType === 'subscription' ? verifiedSubscriptionQuote?.pricingMode ?? null : null},
+            ${parsed.data.purchaseType === 'subscription' ? verifiedSubscriptionQuote?.publicBaseMonthlyPrice ?? null : null},
+            ${parsed.data.purchaseType === 'subscription' ? verifiedSubscriptionQuote?.effectiveUnitPriceCop ?? null : null},
+            ${parsed.data.purchaseType === 'subscription' ? verifiedSubscriptionQuote?.discountPercent ?? null : null}
         )
       `);
-      return true;
+      return { kind: "inserted" as const };
     });
-    if (!inserted) {
+    if (inserted.kind === "stale") {
+      return res.status(409).json({
+        error: "La tarifa cambió mientras se preparaba el pago. Revise la cotización antes de continuar.",
+      });
+    }
+    if (inserted.kind === "pending") {
       return res.status(409).json({
         error: "Hay un pago PSE pendiente de confirmación. Revise su estado antes de iniciar otro.",
       });

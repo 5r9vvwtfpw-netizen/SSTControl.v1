@@ -1,6 +1,8 @@
 import type { Express } from "express";
-import { requireAuth, requirePermission, requireAnyPermission, requireSuperadmin } from "../auth";
+import { requireAuth, requirePermission, requireAnyPermission, requireSuperadmin, requireRole } from "../auth";
 import { storage } from "../storage";
+import { db } from "../db";
+import { sql } from "drizzle-orm";
 import { emailService } from "../services/email";
 import { invoicePdfService } from "../services/invoice-pdf";
 import { getAuditContext, logAuditEvent } from "../lib/audit-logger";
@@ -18,6 +20,22 @@ import { getUncachableStripeClient } from "../stripeClient";
 import { billingHealthCheck } from "../lib/billing-validator";
 import { getSubscriptionStatus } from "../middleware/subscription-check";
 import { SAAS_CONTRACT_VERSION } from "@shared/saas-contract";
+import {
+  getCompanyWorkerPricing,
+  parseWorkerPricingUpdate,
+  WorkerPricingValidationError,
+} from "../services/company-worker-pricing";
+import { getVerifiedWorkerBillingQuote, WorkerBillingQuoteError } from "../services/worker-billing-quote";
+import { assertWorkerPricingSchemaReady } from "../services/worker-pricing-schema-state";
+
+function requireWorkerPricingSchema(_req: any, res: any, next: any) {
+  try {
+    assertWorkerPricingSchemaReady();
+    next();
+  } catch (error: any) {
+    return res.status(503).json({ error: error.message });
+  }
+}
 
 // Helper: resolve the effective company being viewed (superadmin/lso/lso_externo
 // can view any company via X-Company-Id header or ?companyId= query param).
@@ -39,6 +57,114 @@ function getEffectiveCompanyId(req: any): string | null {
  * Integración con pasarela Stripe para pagos
  */
 export function registerBillingRoutes(app: Express) {
+  app.get("/api/admin/companies/:id/worker-pricing", requireRole(["superadmin"]), requireWorkerPricingSchema, async (req, res) => {
+    try {
+      const company = await storage.getCompany(req.params.id);
+      if (!company) return res.status(404).json({ error: "Empresa no encontrada" });
+      const pricing = await getCompanyWorkerPricing(company.id);
+      return res.json({
+        mode: pricing.mode,
+        unitPriceCop: pricing.unitPriceCop,
+        discountPercent: pricing.discountPercent,
+        updatedAt: pricing.updatedAt ?? null,
+        updatedBy: pricing.updatedBy ?? null,
+      });
+    } catch (error: any) {
+      console.error("[Billing] Error loading company worker pricing:", error);
+      return res.status(500).json({ error: "No se pudo obtener la tarifa de la empresa" });
+    }
+  });
+
+  app.put("/api/admin/companies/:id/worker-pricing", requireRole(["superadmin"]), requireWorkerPricingSchema, async (req, res) => {
+    let nextPricing;
+    try {
+      nextPricing = parseWorkerPricingUpdate(req.body);
+    } catch (error: any) {
+      return res.status(400).json({
+        error: error instanceof WorkerPricingValidationError ? error.message : "La configuración de tarifa no es válida.",
+      });
+    }
+
+    try {
+      const actorId = String(req.user!.id);
+      const actorName = String(req.user!.username || req.user!.fullName || req.user!.id);
+      const updatedAt = new Date();
+      const updated = await db.transaction(async (tx) => {
+        const currentResult = await tx.execute(sql`
+          SELECT worker_pricing_mode, worker_unit_price_cop, worker_discount_percent
+          FROM companies
+          WHERE id = ${req.params.id}
+          FOR UPDATE
+        `);
+        const current = currentResult.rows[0] as {
+          worker_pricing_mode: string | null;
+          worker_unit_price_cop: number | null;
+          worker_discount_percent: number | null;
+        } | undefined;
+        if (!current) return null;
+
+        await tx.execute(sql`
+          UPDATE companies
+          SET worker_pricing_mode = ${nextPricing.mode},
+              worker_unit_price_cop = ${nextPricing.unitPriceCop},
+              worker_discount_percent = ${nextPricing.discountPercent},
+              worker_pricing_updated_at = ${updatedAt},
+              worker_pricing_updated_by = ${actorName}
+          WHERE id = ${req.params.id}
+        `);
+        await tx.execute(sql`
+          INSERT INTO company_worker_pricing_history (
+            company_id, previous_mode, previous_unit_price_cop, previous_discount_percent,
+            mode, unit_price_cop, discount_percent, changed_by_user_id, changed_by_name, changed_at
+          ) VALUES (
+            ${req.params.id},
+            ${current.worker_pricing_mode || "standard"},
+            ${current.worker_unit_price_cop},
+            ${current.worker_discount_percent},
+            ${nextPricing.mode},
+            ${nextPricing.unitPriceCop},
+            ${nextPricing.discountPercent},
+            ${actorId},
+            ${actorName},
+            ${updatedAt}
+          )
+        `);
+        return true;
+      });
+
+      if (!updated) return res.status(404).json({ error: "Empresa no encontrada" });
+      return res.json({
+        mode: nextPricing.mode,
+        unitPriceCop: nextPricing.unitPriceCop,
+        discountPercent: nextPricing.discountPercent,
+        updatedAt,
+        updatedBy: actorName,
+      });
+    } catch (error: any) {
+      console.error("[Billing] Error updating company worker pricing:", error);
+      return res.status(500).json({ error: "No se pudo guardar la tarifa de la empresa" });
+    }
+  });
+
+  app.get("/api/admin/companies/:id/worker-pricing/history", requireRole(["superadmin"]), requireWorkerPricingSchema, async (req, res) => {
+    try {
+      const company = await storage.getCompany(req.params.id);
+      if (!company) return res.status(404).json({ error: "Empresa no encontrada" });
+      const result = await db.execute(sql`
+        SELECT previous_mode, previous_unit_price_cop, previous_discount_percent,
+               mode, unit_price_cop, discount_percent, changed_by_user_id,
+               changed_by_name, changed_at
+        FROM company_worker_pricing_history
+        WHERE company_id = ${company.id}
+        ORDER BY changed_at DESC, id DESC
+      `);
+      return res.json({ history: result.rows });
+    } catch (error: any) {
+      console.error("[Billing] Error loading worker pricing history:", error);
+      return res.status(500).json({ error: "No se pudo obtener el historial de tarifas" });
+    }
+  });
+
   // El contrato se registra antes de iniciar PSE; la confirmación firmada es
   // la única que puede activar la suscripción tras un cobro.
   app.post("/api/billing/contract/accept", subscriptionMutationLimiter, requireAuth, async (req, res) => {
@@ -521,7 +647,7 @@ export function registerBillingRoutes(app: Express) {
    * Envía al checkout PSE de ePayco para el primer mes del plan actual
    * Permisos: admin (todas), otros (solo su empresa)
    */
-  app.post("/api/billing/subscription/:id/activate", subscriptionMutationLimiter, requireAuth, async (req, res) => {
+  app.post("/api/billing/subscription/:id/activate", subscriptionMutationLimiter, requireAuth, requireWorkerPricingSchema, async (req, res) => {
     try {
       console.log('[Billing] Starting subscription activation for:', req.params.id);
       const subscriptionId = req.params.id;
@@ -579,6 +705,7 @@ export function registerBillingRoutes(app: Express) {
 
       let isFullDiscount = false;
       let couponCode: string | undefined;
+      let negotiatedWorkerQuote: Awaited<ReturnType<typeof getVerifiedWorkerBillingQuote>> | null = null;
 
       // PRINCIPIO: El precio SIEMPRE viene del token/quote guardado en companies.
       // NUNCA se recalcula durante registro ni checkout.
@@ -589,8 +716,21 @@ export function registerBillingRoutes(app: Express) {
       let companyQuoteCurrent = company ? (company as any).quoteCurrentPeriodPrice : null;
       let companyCouponCode = company ? (company as any).quoteCouponCode : null;
 
+      if (company && (company as any).workerPricingMode && (company as any).workerPricingMode !== "standard") {
+        try {
+          negotiatedWorkerQuote = await getVerifiedWorkerBillingQuote(company, subscription.id);
+        } catch (error: any) {
+          console.error("[Billing] Could not verify negotiated worker price:", error);
+          return res.status(error instanceof WorkerBillingQuoteError ? 409 : 503).json({
+            error: error instanceof WorkerBillingQuoteError
+              ? error.message
+              : "No se pudo verificar la tarifa acordada. No se inició ningún cobro.",
+          });
+        }
+      }
+
       // Si no hay cotización guardada, intentar obtener una automáticamente de la landing page
-      if (!companyQuoteBase || companyQuoteBase <= 0) {
+      if ((!companyQuoteBase || companyQuoteBase <= 0) && !negotiatedWorkerQuote) {
         console.log('[Billing] No quote found. Attempting auto-quote from landing page for company:', company?.id);
         
         // Try to recover quote data from user's stored quote token (registered via landing page)
@@ -707,7 +847,19 @@ export function registerBillingRoutes(app: Express) {
         }
       }
 
-      if (companyQuoteBase && companyQuoteBase > 0) {
+      if (negotiatedWorkerQuote) {
+        amountInCOP = negotiatedWorkerQuote.paymentAmount;
+        quoteSource = "company_worker_pricing";
+        couponCode = undefined;
+        isFullDiscount = false;
+        console.log("[Billing] Using verified negotiated worker price:", {
+          companyId: company?.id,
+          mode: negotiatedWorkerQuote.pricingMode,
+          employeeCount: negotiatedWorkerQuote.employeeCount,
+          unitPriceCop: negotiatedWorkerQuote.effectiveUnitPriceCop,
+          amountInCOP,
+        });
+      } else if (companyQuoteBase && companyQuoteBase > 0) {
         couponCode = companyCouponCode || undefined;
         isFullDiscount = companyQuoteCurrent === 0 && companyQuoteBase > 0;
         amountInCOP = isFullDiscount ? companyQuoteBase : (companyQuoteCurrent != null && companyQuoteCurrent > 0 && companyQuoteCurrent < companyQuoteBase ? companyQuoteCurrent : companyQuoteBase);
