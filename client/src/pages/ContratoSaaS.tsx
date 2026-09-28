@@ -222,10 +222,9 @@ export function ContratoSaaSContent() {
                 <Separator />
 
                 <section data-testid="section-limitacion-responsabilidad">
-                  <h2 className="text-xl font-semibold mb-3">13. Limitación de Responsabilidad</h2>
+                  <h2 className="text-xl font-semibold mb-3">13. Responsabilidades sobre el servicio</h2>
                   <div className="space-y-2 text-muted-foreground">
                     <ul className="list-disc pl-6 space-y-1">
-                      <li>La responsabilidad máxima del Proveedor estará limitada al valor total pagado por el Cliente en los últimos 12 meses de servicio</li>
                       <li>El Cliente es responsable de suministrar información completa y actualizada, revisar los informes de acuerdo con el contexto de su organización y decidir e implementar las acciones correspondientes. Esto no exonera al Proveedor de responder por el funcionamiento de la Plataforma y por la generación de informes conforme a las funcionalidades y al alcance ofrecidos</li>
                       <li>Los informes son una herramienta de apoyo y no garantizan por sí solos el cumplimiento legal integral del SG-SST, que también depende de la calidad de los datos y de la implementación efectiva por parte del Cliente. Esta cláusula no excluye responsabilidades que la ley no permita limitar</li>
                     </ul>
