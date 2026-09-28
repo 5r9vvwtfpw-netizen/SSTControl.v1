@@ -22,6 +22,7 @@ import type { User } from "@shared/schema";
 import { calculateChapter } from "@shared/utils";
 import { CIIU_CODES, CIIU_SECTIONS } from "@/lib/ciiu-codes";
 import { getRiskLevelFromCiiu, getCiiuClassification } from "@shared/ciiu-risk-classification";
+import { TerminosServicioContent, TERMS_LAST_UPDATED } from "./TerminosServicio";
 
 const chapterInfo: Record<string, { name: string; standards: number; description: string; color: string; bgColor: string }> = {
   "1": {
@@ -1044,116 +1045,12 @@ export default function CrearEmpresaCiiuFirst() {
               </DialogTitle>
             </div>
             <DialogDescription>
-              SST Colombia - Última actualización: 11 de noviembre de 2025
+              SST Colombia - Última actualización: {legalDialogType === "terms" ? TERMS_LAST_UPDATED : "11 de noviembre de 2025"}
             </DialogDescription>
           </DialogHeader>
           <div className="overflow-y-auto flex-1 px-6 py-4" data-testid="dialog-legal-scroll-area">
             <div className="space-y-6 text-sm">
-              {legalDialogType === "terms" && (
-                <>
-                  <section>
-                    <h2 className="text-lg font-semibold mb-3">1. Aceptación de los Términos</h2>
-                    <p className="text-muted-foreground leading-relaxed">
-                      Al acceder y utilizar la plataforma SST Colombia (en adelante, "la Plataforma"), 
-                      el usuario (en adelante, "el Cliente") acepta estar obligado por estos Términos y 
-                      Condiciones de Servicio, todas las leyes y regulaciones aplicables, y acepta que es 
-                      responsable del cumplimiento de todas las leyes locales aplicables.
-                    </p>
-                  </section>
-                  <Separator />
-                  <section>
-                    <h2 className="text-lg font-semibold mb-3">2. Definiciones</h2>
-                    <div className="space-y-2 text-muted-foreground">
-                      <p><strong>2.1 Plataforma:</strong> Sistema web SST Colombia para gestión de Sistemas de Gestión de Seguridad y Salud en el Trabajo (SG-SST).</p>
-                      <p><strong>2.2 Cliente:</strong> Empresa o persona jurídica que contrata los servicios de la Plataforma.</p>
-                      <p><strong>2.3 Usuario:</strong> Persona autorizada por el Cliente para acceder a la Plataforma.</p>
-                      <p><strong>2.4 Datos Personales:</strong> Información de trabajadores y empleados almacenada en la Plataforma según Ley 1581/2012.</p>
-                      <p><strong>2.5 SG-SST:</strong> Sistema de Gestión de la Seguridad y Salud en el Trabajo según Decreto 1072/2015.</p>
-                    </div>
-                  </section>
-                  <Separator />
-                  <section>
-                    <h2 className="text-lg font-semibold mb-3">3. Descripción del Servicio</h2>
-                    <div className="space-y-3 text-muted-foreground">
-                      <p><strong>3.1 Servicios Incluidos:</strong></p>
-                      <ul className="list-disc pl-6 space-y-1">
-                        <li>Gestión de información de trabajadores y datos ocupacionales</li>
-                        <li>Registro y seguimiento de accidentes e incidentes laborales (FURAT/FUREL)</li>
-                        <li>Matrices de identificación de peligros y evaluación de riesgos (IPERC)</li>
-                        <li>Gestión de capacitaciones y exámenes médicos ocupacionales</li>
-                        <li>Auditorías internas y revisiones por dirección</li>
-                        <li>Dashboards ejecutivos del ciclo PHVA</li>
-                        <li>Generación de reportes normativos para autoridades competentes</li>
-                        <li>Almacenamiento seguro en la nube con respaldos diarios</li>
-                      </ul>
-                      <p><strong>3.2 Nivel de Servicio:</strong></p>
-                      <ul className="list-disc pl-6 space-y-1">
-                        <li>Disponibilidad objetivo: 99.5% mensual</li>
-                        <li>Mantenimientos programados: Se notificarán con 48 horas de anticipación</li>
-                        <li>Soporte técnico: Horario laboral Colombia (Lunes a Viernes 8:00-17:00)</li>
-                      </ul>
-                    </div>
-                  </section>
-                  <Separator />
-                  <section>
-                    <h2 className="text-lg font-semibold mb-3">4. Obligaciones del Cliente</h2>
-                    <div className="space-y-2 text-muted-foreground">
-                      <p><strong>4.1 Uso Apropiado:</strong> El Cliente se compromete a usar la Plataforma exclusivamente para fines relacionados con la gestión de SST conforme a la legislación colombiana.</p>
-                      <p><strong>4.2 Información Veraz:</strong> El Cliente garantiza que toda la información ingresada en la Plataforma es veraz, actualizada y completa.</p>
-                      <p><strong>4.3 Seguridad de Credenciales:</strong> El Cliente es responsable de mantener la confidencialidad de sus credenciales de acceso.</p>
-                      <p><strong>4.4 Cumplimiento Legal:</strong> El Cliente se compromete a cumplir con toda la normatividad SST colombiana vigente.</p>
-                    </div>
-                  </section>
-                  <Separator />
-                  <section>
-                    <h2 className="text-lg font-semibold mb-3">5. Propiedad Intelectual</h2>
-                    <div className="space-y-3 text-muted-foreground">
-                      <div className="bg-primary/5 p-3 rounded-lg border border-primary/20">
-                        <p><strong>5.1 PROPIEDAD INTELECTUAL:</strong> El Software, incluyendo su código fuente, arquitectura de datos, interfaces de usuario, diseños, y la metodología de filtrado lógico de estándares, son propiedad exclusiva de SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S.</p>
-                      </div>
-                      <p><strong>5.2 Registro Legal:</strong> Protegidos por las leyes de derecho de autor con registro oficial ante la DNDA bajo el número 13-197-177.</p>
-                      <p><strong>5.3 Licencia de Uso:</strong> Se otorga al Cliente una licencia no exclusiva, no transferible y revocable.</p>
-                    </div>
-                  </section>
-                  <Separator />
-                  <section>
-                    <h2 className="text-lg font-semibold mb-3">6. Protección de Datos Personales</h2>
-                    <div className="space-y-2 text-muted-foreground">
-                      <p><strong>6.1 Marco Legal:</strong> El tratamiento se rige por la Ley 1581 de 2012, Decreto 1377 de 2013 y el GDPR.</p>
-                      <p><strong>6.2</strong> El Cliente actúa como Responsable del Tratamiento de los datos personales de sus trabajadores.</p>
-                      <p><strong>6.3</strong> SST Colombia actúa como Encargado del Tratamiento bajo instrucciones documentadas del Cliente.</p>
-                      <p><strong>6.6 Seguridad:</strong> Cifrado TLS 1.3 y AES-256, RBAC, auditoría completa, respaldos diarios encriptados.</p>
-                    </div>
-                  </section>
-                  <Separator />
-                  <section>
-                    <h2 className="text-lg font-semibold mb-3">7. Tarifas y Pagos</h2>
-                    <div className="space-y-2 text-muted-foreground">
-                      <p><strong>7.1</strong> Los servicios se facturan mensualmente o anualmente según el plan contratado.</p>
-                      <p><strong>7.3</strong> Renovación automática salvo notificación de cancelación con 30 días de anticipación.</p>
-                      <p><strong>7.5</strong> SST Colombia se reserva el derecho de suspender el acceso tras 15 días de mora en el pago.</p>
-                    </div>
-                  </section>
-                  <Separator />
-                  <section>
-                    <h2 className="text-lg font-semibold mb-3">8-13. Disposiciones Adicionales</h2>
-                    <div className="space-y-2 text-muted-foreground">
-                      <p><strong>Cancelación:</strong> El Cliente puede cancelar con 30 días de anticipación. Tras terminación, tiene 30 días para exportar sus datos.</p>
-                      <p><strong>Limitación de Responsabilidad:</strong> La Plataforma se proporciona "tal cual". SST Colombia no será responsable por daños indirectos superiores al monto pagado en los últimos 12 meses.</p>
-                      <p><strong>Ley Aplicable:</strong> Estos Términos se rigen por las leyes de la República de Colombia. Jurisdicción: Bogotá D.C.</p>
-                      <p><strong>Modificaciones:</strong> Los cambios materiales se notificarán por correo electrónico con 30 días de anticipación.</p>
-                    </div>
-                  </section>
-                  <Separator />
-                  <section className="bg-muted/50 p-4 rounded-lg">
-                    <h2 className="text-lg font-semibold mb-3">Declaración de Aceptación</h2>
-                    <p className="text-muted-foreground leading-relaxed">
-                      <strong>AL CREAR UNA CUENTA Y UTILIZAR LA PLATAFORMA SST COLOMBIA, USTED RECONOCE HABER LEÍDO, 
-                      COMPRENDIDO Y ACEPTADO ESTOS TÉRMINOS Y CONDICIONES DE SERVICIO EN SU TOTALIDAD.</strong>
-                    </p>
-                  </section>
-                </>
-              )}
+              {legalDialogType === "terms" && <TerminosServicioContent />}
 
               {legalDialogType === "ip-policy" && (
                 <>

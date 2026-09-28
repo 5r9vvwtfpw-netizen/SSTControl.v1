@@ -2,29 +2,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { FileText } from "lucide-react";
+import { PROVIDER_LEGAL_ADDRESS } from "@shared/legal-contact";
 
-export default function TerminosServicio() {
-  const lastUpdated = "8 de septiembre de 2026";
+export const TERMS_LAST_UPDATED = "28 de septiembre de 2026";
 
+export function TerminosServicioContent() {
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <Card>
-          <CardHeader className="space-y-2">
-            <div className="flex items-center gap-2">
-              <FileText className="h-6 w-6 text-primary" />
-              <CardTitle className="text-3xl">Términos y Condiciones de Servicio</CardTitle>
-            </div>
-            <CardDescription>
-              SST Colombia - Sistema de Gestión de Salud y Seguridad en el Trabajo
-            </CardDescription>
-            <p className="text-sm text-muted-foreground">
-              Última actualización: {lastUpdated}
-            </p>
-          </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-[600px] pr-4">
-              <div className="space-y-6 text-sm">
+    <div className="space-y-6 text-sm">
                 <section>
                   <h2 className="text-xl font-semibold mb-3">1. Aceptación de los Términos</h2>
                   <p className="text-muted-foreground leading-relaxed">
@@ -63,11 +47,12 @@ export default function TerminosServicio() {
                       <li>Auditorías internas y revisiones por dirección</li>
                       <li>Dashboards ejecutivos del ciclo PHVA</li>
                       <li>Generación de reportes normativos para autoridades competentes</li>
-                      <li>Almacenamiento seguro en la nube con respaldos diarios</li>
+                      <li>Gestión del Plan Estratégico de Seguridad Vial (PESV), según las funcionalidades contratadas</li>
+                      <li>Almacenamiento seguro en la nube con respaldos diarios cifrados y retención de hasta 20 años mientras la suscripción esté activa. Al terminar el servicio, el Cliente dispone de 30 días para exportar informes y datos, tras lo cual se eliminan salvo registros sujetos a conservación legal, conforme al contrato SaaS y al DPA</li>
                     </ul>
                     <p><strong>3.2 Nivel de Servicio:</strong></p>
                     <ul className="list-disc pl-6 space-y-1">
-                      <li>Disponibilidad objetivo: 99.5% mensual (excluyendo mantenimientos programados)</li>
+                      <li>Disponibilidad mensual: 99.5% (99.9% para planes de grandes empresas), excluyendo mantenimientos programados, según el contrato SaaS</li>
                       <li>Mantenimientos programados: Se notificarán con 48 horas de anticipación</li>
                       <li>Soporte técnico: Horario laboral Colombia (Lunes a Viernes 8:00-17:00)</li>
                     </ul>
@@ -80,8 +65,8 @@ export default function TerminosServicio() {
                   <h2 className="text-xl font-semibold mb-3">4. Obligaciones del Cliente</h2>
                   <div className="space-y-2 text-muted-foreground">
                     <p><strong>4.1 Uso Apropiado:</strong> El Cliente se compromete a usar la Plataforma exclusivamente para fines relacionados con la gestión de SST conforme a la legislación colombiana.</p>
-                    <p><strong>4.2 Información Veraz:</strong> El Cliente garantiza que toda la información ingresada en la Plataforma es veraz, actualizada y completa.</p>
-                    <p><strong>4.3 Seguridad de Credenciales:</strong> El Cliente es responsable de mantener la confidencialidad de sus credenciales de acceso y de todas las actividades que ocurran bajo su cuenta.</p>
+                    <p><strong>4.2 Información Veraz:</strong> El Cliente debe suministrar información veraz, actualizada y completa y revisar los resultados según el contexto de su organización. SST Colombia responde por el funcionamiento de la Plataforma y la generación de informes conforme al alcance ofrecido.</p>
+                    <p><strong>4.3 Seguridad de Credenciales:</strong> El Cliente debe mantener la confidencialidad de sus credenciales y notificar usos no autorizados; esto no exime a SST Colombia de sus propias obligaciones de seguridad.</p>
                     <p><strong>4.4 Cumplimiento Legal:</strong> El Cliente se compromete a cumplir con toda la normatividad SST colombiana vigente, incluyendo pero no limitado a:</p>
                     <ul className="list-disc pl-6 space-y-1">
                       <li>Decreto 1072 de 2015 (Decreto Único Reglamentario del Sector Trabajo)</li>
@@ -103,7 +88,7 @@ export default function TerminosServicio() {
                     </div>
                     <p><strong>5.2 Registro Legal:</strong> Dichos activos se encuentran protegidos por las leyes de derecho de autor y tratados internacionales, contando con el <strong>registro oficial ante la Dirección Nacional de Derecho de Autor (DNDA) bajo el número 13-197-177</strong>.</p>
                     <p><strong>5.3 Licencia de Uso:</strong> Se otorga al Cliente una licencia no exclusiva, no transferible y revocable para usar la Plataforma durante la vigencia del contrato.</p>
-                    <p><strong>5.4 Propiedad de Datos:</strong> Los datos ingresados por el Cliente permanecen como propiedad del Cliente. SST Colombia actúa únicamente como procesador de datos según GDPR Art. 28 y Ley 1581/2012.</p>
+                    <p><strong>5.4 Propiedad de Datos:</strong> Los datos ingresados por el Cliente permanecen bajo su titularidad. Respecto de los datos de trabajadores cargados por el Cliente, SST Colombia actúa como Encargado del Tratamiento conforme a la Ley 1581 de 2012 y al DPA.</p>
                     <div className="bg-destructive/10 p-3 rounded-lg border border-destructive/30 mt-4">
                       <p className="font-semibold text-destructive mb-2">5.5 PROHIBICIÓN DE INGENIERÍA INVERSA:</p>
                       <p className="mb-2">Queda expresamente prohibido al Cliente, a sus empleados, contratistas o cualquier tercero relacionado:</p>
@@ -135,7 +120,7 @@ export default function TerminosServicio() {
                       <li>Cifrado de datos en tránsito (TLS 1.3) y en reposo (AES-256)</li>
                       <li>Control de acceso basado en roles (RBAC) con 6 niveles de autorización</li>
                       <li>Auditoría completa de operaciones CRUD sobre datos regulados</li>
-                      <li>Respaldos diarios encriptados con retención de 20 años</li>
+                      <li>Respaldos diarios cifrados con retención de hasta 20 años mientras la suscripción permanezca activa; al terminar el servicio, se eliminan después del plazo de exportación de 30 días, salvo obligación legal de conservación</li>
                        <li>Registro de IP, dispositivo, navegador, sesiones y eventos de acceso para seguridad y prevención de fraude</li>
                     </ul>
                      <div className="bg-primary/5 p-3 rounded-lg border border-primary/20 mt-3">
@@ -152,10 +137,10 @@ export default function TerminosServicio() {
                   <div className="space-y-2 text-muted-foreground">
                     <p><strong>7.1 Modalidad de Pago:</strong> Los servicios se facturan mensualmente o anualmente según el plan contratado.</p>
                     <p><strong>7.2 Métodos de Pago:</strong> Los pagos nuevos se realizan por transferencia bancaria PSE (Pagos Seguros en Línea) a través de ePayco.</p>
-                    <p><strong>7.3 Renovación Automática:</strong> El servicio se renueva automáticamente al finalizar cada período, salvo notificación de cancelación con 30 días de anticipación.</p>
-                    <p><strong>7.4 Mora:</strong> El retraso en el pago generará intereses de mora a la tasa máxima legal vigente en Colombia (1.5% mensual).</p>
-                    <p><strong>7.5 Suspensión por Falta de Pago:</strong> SST Colombia se reserva el derecho de suspender el acceso a la Plataforma tras 15 días de mora en el pago.</p>
-                    <p><strong>7.6 Modificación de Tarifas:</strong> Los precios pueden modificarse con notificación de 60 días de anticipación. El Cliente puede cancelar sin penalización durante este período.</p>
+                    <p><strong>7.3 Renovación:</strong> La vigencia y renovación se rigen por el plan contratado y las condiciones de pago aceptadas. Los pagos nuevos mediante PSE requieren confirmación y no autorizan por sí solos cobros automáticos.</p>
+                    <p><strong>7.4 Mora:</strong> El retraso en el pago generará intereses de mora a la tasa máxima legal vigente en Colombia.</p>
+                    <p><strong>7.5 Suspensión por Falta de Pago:</strong> SST Colombia podrá suspender el acceso cuando venza el período de servicio sin que se haya confirmado el pago correspondiente, conforme al contrato SaaS. El acceso se restablecerá al regularizar el pago y los datos se conservarán de forma segura durante la suspensión.</p>
+                    <p><strong>7.6 Modificación de Tarifas:</strong> Los cambios de tarifas se notificarán con 30 días de anticipación, conforme al contrato SaaS. El Cliente puede terminar el servicio sin penalización durante este período.</p>
                   </div>
                 </section>
 
@@ -165,50 +150,22 @@ export default function TerminosServicio() {
                   <h2 className="text-xl font-semibold mb-3">8. Cancelación y Terminación</h2>
                   <div className="space-y-2 text-muted-foreground">
                     <p><strong>8.1 Cancelación por el Cliente:</strong> El Cliente puede cancelar el servicio con 30 días de anticipación. No se realizarán reembolsos por períodos parciales.</p>
-                    <p><strong>8.2 Terminación por SST Colombia:</strong> SST Colombia puede terminar el servicio inmediatamente en caso de:</p>
-                    <ul className="list-disc pl-6 space-y-1">
-                      <li>Uso fraudulento o ilegal de la Plataforma</li>
-                      <li>Violación material de estos Términos</li>
-                      <li>Falta de pago superior a 30 días</li>
-                      <li>Actividades que pongan en riesgo la seguridad de la Plataforma</li>
-                    </ul>
-                    <p><strong>8.3 Exportación de Datos:</strong> Tras la terminación, el Cliente tiene 30 días para exportar sus datos. Posterior a este período, los datos serán anonimizados o eliminados.</p>
-                    <p><strong>8.4 Retención Legal:</strong> SST Colombia retendrá registros de auditoría durante 20 años según Decreto 1074/2015 Art. 2.2.4.6.13.</p>
+                    <p><strong>8.2 Terminación por SST Colombia:</strong> SST Colombia puede terminar el servicio con 30 días de anticipación o de inmediato ante incumplimiento grave del Cliente, como uso fraudulento o ilegal que ponga en riesgo la Plataforma. La falta de pago se gestiona conforme al apartado 7.5 y al contrato SaaS.</p>
+                    <p><strong>8.3 Exportación de Datos:</strong> Tras la terminación, el Cliente dispone de 30 días para exportar sus datos. Después serán eliminados conforme al DPA, sin perjuicio de los registros que deban conservarse por obligación legal.</p>
+                    <p><strong>8.4 Retención Legal:</strong> Los registros sujetos a conservación obligatoria se mantendrán por el plazo legal que corresponda, de acuerdo con el DPA y la normativa aplicable.</p>
                   </div>
                 </section>
 
                 <Separator />
 
                 <section>
-                  <h2 className="text-xl font-semibold mb-3">9. Limitación de Responsabilidad y Alcance del Servicio</h2>
+                  <h2 className="text-xl font-semibold mb-3">9. Responsabilidades sobre el servicio</h2>
                   <div className="space-y-3 text-muted-foreground">
-                    <div className="bg-amber-500/10 p-3 rounded-lg border border-amber-500/30">
-                      <p><strong>9.1 ALCANCE DEL SERVICIO:</strong> El Cliente acepta que el Software es una <strong>herramienta digital diseñada para facilitar la autoevaluación y gestión</strong> de los estándares mínimos de la Resolución 0312 de 2019. El uso del Software <strong>no garantiza por sí solo el cumplimiento legal total</strong>, ya que este depende de la ejecución real de las actividades, capacitaciones y medidas de control en los centros de trabajo físicos del Cliente.</p>
-                    </div>
-                    
-                    <div className="bg-primary/5 p-3 rounded-lg border border-primary/20">
-                      <p className="font-semibold mb-2">9.2 RESPONSABILIDAD DEL CLIENTE:</p>
-                      <p className="mb-2">Es responsabilidad exclusiva del Cliente:</p>
-                      <ul className="list-disc pl-6 space-y-1">
-                        <li>La veracidad y exactitud de los datos ingresados (número de trabajadores, nivel de riesgo, NIT, etc.).</li>
-                        <li>El cumplimiento de las actividades de campo, inspecciones y mantenimientos que sugiere el sistema.</li>
-                        <li>Contar con el acompañamiento de un profesional, tecnólogo o técnico con <strong>licencia vigente en SST</strong> cuando la norma así lo exija para el diseño y firma del sistema.</li>
-                      </ul>
-                    </div>
-
-                    <div className="bg-destructive/10 p-3 rounded-lg border border-destructive/30">
-                      <p className="font-semibold text-destructive mb-2">9.3 LIMITACIÓN DE RESPONSABILIDAD:</p>
-                      <p className="mb-2">SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S. <strong>NO será responsable</strong> por:</p>
-                      <ul className="list-disc pl-6 space-y-1">
-                        <li>Sanciones o multas impuestas por el Ministerio del Trabajo o cualquier autoridad competente debido a la falta de implementación real del sistema por parte del Cliente.</li>
-                        <li>Accidentes de trabajo o enfermedades laborales ocurridas en las instalaciones del Cliente.</li>
-                        <li>Pérdida de beneficios o daños indirectos derivados del uso de la plataforma.</li>
-                      </ul>
-                    </div>
-
-                    <p><strong>9.4 Exclusión de Garantías:</strong> La Plataforma se proporciona "tal cual" y "según disponibilidad". SST Colombia no garantiza que el servicio será ininterrumpido o libre de errores.</p>
-                    <p><strong>9.5 Límite Monetario:</strong> En ningún caso SST Colombia será responsable por daños indirectos, incidentales o consecuentes superiores al monto pagado por el Cliente en los últimos 12 meses.</p>
-                    <p><strong>9.6 Fuerza Mayor:</strong> SST Colombia no será responsable por incumplimientos causados por eventos fuera de su control razonable (desastres naturales, fallas de infraestructura de terceros, etc.).</p>
+                    <p><strong>9.1 Alcance:</strong> La Plataforma facilita la gestión del SG-SST y del PESV. Los informes son herramientas de apoyo y no garantizan por sí solos el cumplimiento legal integral; este también depende de la calidad de los datos y de la implementación efectiva en la organización del Cliente.</p>
+                    <p><strong>9.2 Responsabilidades del Cliente:</strong> El Cliente suministra información completa y actualizada, revisa los informes según su contexto y decide e implementa las acciones en sus centros de trabajo, con los profesionales habilitados cuando la norma lo exija.</p>
+                    <p><strong>9.3 Responsabilidades de SST Colombia:</strong> SST Colombia responde por el funcionamiento de la Plataforma conforme a los niveles de servicio comprometidos, por la protección de datos según el contrato y el DPA, y por la generación de informes conforme a las funcionalidades y al alcance ofrecidos. Las obligaciones del Cliente no excluyen los incumplimientos imputables a SST Colombia.</p>
+                    <p><strong>9.4 Cumplimiento:</strong> La asignación de acciones al Cliente no exonera a SST Colombia de sus propias obligaciones ni de las responsabilidades que la ley no permita excluir. Cada parte responde por sus incumplimientos según el contrato SaaS y la ley aplicable.</p>
+                    <p><strong>9.5 Fuerza mayor:</strong> Un evento fuera del control razonable de una parte puede afectar el cumplimiento de sus obligaciones en la medida causada por ese evento. La parte afectada deberá informar y adoptar medidas razonables para mitigar sus efectos; esto no cubre fallas propias ajenas al evento.</p>
                   </div>
                 </section>
 
@@ -217,11 +174,10 @@ export default function TerminosServicio() {
                 <section>
                   <h2 className="text-xl font-semibold mb-3">10. Indemnización</h2>
                   <p className="text-muted-foreground">
-                    El Cliente acuerda indemnizar y eximir de responsabilidad a SST Colombia, sus directores, 
-                    empleados y agentes de cualquier reclamo, demanda, daño, costo o gasto (incluyendo honorarios 
-                    legales razonables) que surjan de: (a) uso de la Plataforma por el Cliente, (b) violación de 
-                    estos Términos, (c) violación de normatividad SST colombiana, o (d) infracción de derechos de 
-                    terceros, incluyendo derechos de protección de datos.
+                    El Cliente responderá frente a reclamaciones de terceros en la medida en que deriven directamente
+                    de datos suministrados sin autorización, uso ilícito de la Plataforma o incumplimientos que le sean
+                    imputables. Esta obligación no cubre fallas de la Plataforma, de protección de datos o de generación
+                    de informes imputables a SST Colombia, ni traslada responsabilidades que la ley no permita trasladar.
                   </p>
                 </section>
 
@@ -237,8 +193,8 @@ export default function TerminosServicio() {
                       <li>Ley 527 de 1999 (Comercio Electrónico y Firmas Digitales)</li>
                       <li>Decreto 1072 de 2015 (Sector Trabajo)</li>
                     </ul>
-                    <p><strong>11.2 Jurisdicción:</strong> Cualquier disputa será resuelta por los tribunales competentes de Bogotá D.C., Colombia.</p>
-                    <p><strong>11.3 Resolución de Controversias:</strong> Las partes acuerdan intentar resolver cualquier disputa mediante mediación antes de acudir a tribunales.</p>
+                    <p><strong>11.2 Jurisdicción:</strong> Si no se llega a un acuerdo mediante conciliación, las partes acudirán a los juzgados competentes de Medellín, Colombia.</p>
+                    <p><strong>11.3 Resolución de Controversias:</strong> Las partes acudirán inicialmente a conciliación ante el Centro de Conciliación de la Cámara de Comercio de Medellín, conforme al contrato SaaS.</p>
                     <p><strong>11.4 Idioma:</strong> La versión en español de estos Términos prevalecerá en caso de discrepancias con traducciones.</p>
                   </div>
                 </section>
@@ -248,8 +204,8 @@ export default function TerminosServicio() {
                 <section>
                   <h2 className="text-xl font-semibold mb-3">12. Modificaciones a los Términos</h2>
                   <div className="space-y-2 text-muted-foreground">
-                    <p><strong>12.1 Derecho a Modificar:</strong> SST Colombia se reserva el derecho de modificar estos Términos en cualquier momento.</p>
-                    <p><strong>12.2 Notificación:</strong> Los cambios materiales se notificarán por correo electrónico con 30 días de anticipación.</p>
+                    <p><strong>12.1 Derecho a Modificar:</strong> SST Colombia podrá modificar estos Términos con 30 días de anticipación, de acuerdo con el contrato SaaS.</p>
+                    <p><strong>12.2 Notificación:</strong> Los cambios se notificarán por correo electrónico a la dirección registrada y dentro de la Plataforma.</p>
                     <p><strong>12.3 Aceptación de Cambios:</strong> El uso continuado de la Plataforma tras la notificación constituye aceptación de los nuevos términos.</p>
                     <p><strong>12.4 Rechazo de Cambios:</strong> Si el Cliente no acepta los cambios, puede cancelar el servicio sin penalización durante el período de notificación.</p>
                   </div>
@@ -260,7 +216,7 @@ export default function TerminosServicio() {
                 <section>
                   <h2 className="text-xl font-semibold mb-3">13. Disposiciones Generales</h2>
                   <div className="space-y-2 text-muted-foreground">
-                    <p><strong>13.1 Totalidad del Acuerdo:</strong> Estos Términos constituyen el acuerdo completo entre las partes y reemplazan cualquier acuerdo previo.</p>
+                    <p><strong>13.1 Relación entre documentos:</strong> Estos Términos regulan el uso de la Plataforma y se interpretan junto con el contrato SaaS aceptado por el Cliente y el DPA. En caso de contradicción sobre el servicio contratado, prevalece el contrato SaaS aceptado; para el tratamiento de datos, se aplicará el DPA. Estos Términos no modifican retroactivamente documentos ya firmados.</p>
                     <p><strong>13.2 Divisibilidad:</strong> Si alguna disposición es declarada inválida, las demás disposiciones permanecerán en vigor.</p>
                     <p><strong>13.3 No Renuncia:</strong> La falta de ejercicio de un derecho no constituye renuncia al mismo.</p>
                     <p><strong>13.4 Cesión:</strong> El Cliente no puede ceder estos Términos sin consentimiento escrito de SST Colombia.</p>
@@ -276,7 +232,7 @@ export default function TerminosServicio() {
                     <p><strong>Razón Social:</strong> SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S.</p>
                     <p><strong>NIT:</strong> 902.036.337-4</p>
                     <p><strong>Representante Legal:</strong> Luz Adriana Díaz Calle</p>
-                    <p><strong>Domicilio:</strong> CL 48 No. 38-45, Medellín, Antioquia, Colombia</p>
+                    <p><strong>Domicilio:</strong> {PROVIDER_LEGAL_ADDRESS}</p>
                     <p><strong>Correo Electrónico:</strong> LADIC2023@ICLOUD.COM | legal@sst-colombia.com</p>
                     <p><strong>Teléfono:</strong> 300 522 0679</p>
                     <p><strong>Soporte Técnico:</strong> soporte@sst-colombia.com</p>
@@ -298,10 +254,33 @@ export default function TerminosServicio() {
                 </section>
 
                 <div className="text-center text-xs text-muted-foreground mt-8 pt-4 border-t">
-                  <p>Documento versión 1.0 | Fecha de vigencia: {lastUpdated}</p>
+                  <p>Fecha de vigencia: {TERMS_LAST_UPDATED}</p>
                   <p className="mt-1">© 2026 SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S. Todos los derechos reservados.</p>
                 </div>
-              </div>
+    </div>
+  );
+}
+
+export default function TerminosServicio() {
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <Card>
+          <CardHeader className="space-y-2">
+            <div className="flex items-center gap-2">
+              <FileText className="h-6 w-6 text-primary" />
+              <CardTitle className="text-3xl">Términos y Condiciones de Servicio</CardTitle>
+            </div>
+            <CardDescription>
+              SST Colombia - Sistema de Gestión de Salud y Seguridad en el Trabajo
+            </CardDescription>
+            <p className="text-sm text-muted-foreground">
+              Última actualización: {TERMS_LAST_UPDATED}
+            </p>
+          </CardHeader>
+          <CardContent>
+            <ScrollArea className="h-[600px] pr-4">
+              <TerminosServicioContent />
             </ScrollArea>
           </CardContent>
         </Card>

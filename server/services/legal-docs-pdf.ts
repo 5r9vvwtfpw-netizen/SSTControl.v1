@@ -13,6 +13,7 @@ import { PDFDocument } from 'pdf-lib-with-encrypt';
 import { addStandardHeader, addSignatureFooter, addProviderContactFooter, PdfSigners, loadCompanyLogo } from './pdf-standardizer';
 import * as fs from 'fs';
 import * as path from 'path';
+import { PROVIDER_LEGAL_ADDRESS } from '../../shared/legal-contact';
 
 function loadSstColombiaLogo(): Buffer | null {
   try {
@@ -319,17 +320,15 @@ export class LegalDocsPdfService {
     
     currentY += 15;
 
-    // Section 3: Liability
-    addSectionTitle('3. LIMITACIÓN DE RESPONSABILIDAD');
+    // Section 3: Service responsibilities
+    addSectionTitle('3. RESPONSABILIDADES SOBRE EL SERVICIO');
     
     addBullet('Alcance: Herramienta digital de apoyo - NO garantiza cumplimiento legal total');
-    addBullet('Veracidad de datos: Responsabilidad exclusiva del Cliente');
-    addBullet('Cumplimiento de campo: Cliente responsable de inspecciones y medidas en sitio');
-    addBullet('Profesional SST: Cliente debe contar con profesional con licencia vigente');
-    addBullet('Sanciones MinTrabajo: SST Colombia NO responsable por multas');
-    addBullet('Accidentes laborales: SST Colombia NO responsable por accidentes');
-    addBullet('Daños indirectos: NO responsable por daños consecuenciales');
-    addBullet('Límite monetario: Máximo 12 meses de pagos del Cliente');
+    addBullet('Proveedor: funcionamiento de la Plataforma y generación de informes según el alcance ofrecido');
+    addBullet('Proveedor: protección de datos y niveles de servicio según el contrato y el DPA');
+    addBullet('Cliente: datos completos, revisión de informes e implementación de medidas en su organización');
+    addBullet('Profesionales SST: el Cliente debe contar con personal habilitado cuando la norma lo exija');
+    addBullet('Cada parte responde por sus incumplimientos conforme al contrato SaaS y la ley');
     
     currentY += 15;
 
@@ -360,7 +359,7 @@ export class LegalDocsPdfService {
     addTableRow('10', 'Precio y Forma de Pago', 'Planes vigentes; pagos nuevos por PSE');
     addTableRow('11', 'Duración y Terminación', 'Vigencia de la suscripción y exportación de datos');
     addTableRow('12', 'Suspensión del Servicio', 'Falta de pago, uso indebido u orden judicial');
-    addTableRow('13', 'Limitación de Responsabilidad', 'Informes según alcance ofrecido; límite de 12 meses');
+    addTableRow('13', 'Responsabilidades sobre el servicio', 'Proveedor: Plataforma e informes; Cliente: datos y acciones');
     addTableRow('14', 'Ley Aplicable', 'Leyes de la República de Colombia');
     addTableRow('15', 'Resolución de Controversias', 'Conciliación y jurisdicción de Medellín');
     addTableRow('16', 'Modificaciones', 'Notificación con 30 días de anticipación');
@@ -444,7 +443,7 @@ export class LegalDocsPdfService {
     addTableRow('Control de acceso', 'RBAC con 13 roles (Decreto 1072/2015)', 'Política Privacidad');
     addTableRow('Firewall/WAF', 'DDoS, SQL injection, XSS', 'Política Privacidad');
     addTableRow('Monitoreo', '24/7 con logging estructurado JSON', 'Contrato Cláusula 6.5');
-    addTableRow('Backups', 'Automáticos cifrados, 20 años', 'Contrato Cláusula 8');
+    addTableRow('Backups', 'Diarios cifrados; hasta 20 años durante suscripción activa; luego plazo de exportación y eliminación', 'Contrato Cláusulas 4 y 11.4');
     addTableRow('Disaster Recovery', 'RTO ≤4h, RPO ≤24h', 'Política Privacidad');
     
     currentY += 15;
@@ -497,8 +496,8 @@ export class LegalDocsPdfService {
     addSectionTitle('14. JURISDICCIÓN Y RESOLUCIÓN DE CONFLICTOS');
     
     addBullet('Ley aplicable: República de Colombia');
-    addBullet('Jurisdicción: Tribunales competentes de Bogotá D.C.');
-    addBullet('Resolución previa: Mediación/Conciliación obligatoria (30 días)');
+    addBullet('Jurisdicción: juzgados competentes de Medellín, Colombia');
+    addBullet('Resolución previa: conciliación ante la Cámara de Comercio de Medellín');
     addBullet('Idioma prevalente: Español');
     
     currentY += 15;
@@ -510,7 +509,7 @@ export class LegalDocsPdfService {
     addTableRow('Razón Social', 'SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S.', '');
     addTableRow('NIT', '902.036.337-4', '');
     addTableRow('Representante Legal', 'Luz Adriana Díaz Calle', '');
-    addTableRow('Domicilio', 'CL 48 No. 38-45, Medellín, Antioquia, Colombia', '');
+    addTableRow('Domicilio', PROVIDER_LEGAL_ADDRESS, '');
     addTableRow('Correo Legal', 'legal@sst-colombia.com', '');
     addTableRow('Soporte Técnico', 'soporte@sst-colombia.com', '');
     addTableRow('DPO', 'dpo@sst-colombia.com', '');
@@ -864,7 +863,7 @@ export class LegalDocsPdfService {
       ['Roles del sistema:', 'Superadmin, Soporte, Superusuario, Admin, Responsable SST, Coordinador Salud, LSO, Coordinador SST, Coordinador RRHH, Jefe Personal, Supervisor, Vigía SST, Auditor Interno, Trabajador'],
       ['Firewall/WAF:', 'DDoS, SQL injection, XSS'],
       ['Monitoreo:', '24/7 con logging estructurado JSON'],
-      ['Backups:', 'Automáticos cifrados, retención 20 años (Decreto 1074/2015)'],
+      ['Backups:', 'Diarios cifrados hasta 20 años durante suscripción activa; eliminación tras plazo de exportación, salvo retención legal'],
       ['Disaster Recovery:', 'RTO ≤4h, RPO ≤24h']
     ];
 

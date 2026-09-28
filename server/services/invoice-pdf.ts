@@ -4,6 +4,7 @@
  * Generates professional payment receipt PDFs using PDFKit for Colombian B2B billing.
  * Provider: SADGI S.A.S. (NIT 902.036.337-4)
  */
+import { PROVIDER_LEGAL_ADDRESS } from '../../shared/legal-contact';
 
 interface InvoiceData {
   invoiceNumber: string;
@@ -374,8 +375,12 @@ export class InvoicePdfService {
          );
 
       doc.text(
-        'SISTEMA AUTOMATIZADO DE GESTION INTEGRAL S.A.S. | NIT 902.036.337-4 | DNDA 13-197-177 | CL 48 No. 38-45, Medellin',
+        'SISTEMA AUTOMATIZADO DE GESTION INTEGRAL S.A.S. | NIT 902.036.337-4 | DNDA 13-197-177',
         M, footerY + 28, { width: contentW, align: 'center', lineBreak: false }
+      );
+      doc.text(
+        PROVIDER_LEGAL_ADDRESS,
+        M, footerY + 37, { width: contentW, align: 'center', lineBreak: false }
       );
     }
 

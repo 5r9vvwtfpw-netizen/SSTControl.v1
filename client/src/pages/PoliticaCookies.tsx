@@ -2,9 +2,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Cookie } from "lucide-react";
+import { PROVIDER_LEGAL_ADDRESS } from "@shared/legal-contact";
 
 export default function PoliticaCookies() {
-  const lastUpdated = "16 de febrero de 2026";
+  const lastUpdated = "28 de septiembre de 2026";
 
   return (
     <div className="min-h-screen bg-background">
@@ -155,7 +156,7 @@ export default function PoliticaCookies() {
                     <div className="bg-muted p-3 rounded">
                       <p><strong>Soporte Técnico:</strong> <a href="mailto:soporte@sst-colombia.com" className="underline hover:text-foreground transition-colors" data-testid="link-email-soporte-2">soporte@sst-colombia.com</a></p>
                       <p><strong>NIT:</strong> 902.036.337-4</p>
-                      <p><strong>Domicilio:</strong> CL 48 No. 38-45, Medellín, Antioquia, Colombia</p>
+                      <p><strong>Domicilio:</strong> {PROVIDER_LEGAL_ADDRESS}</p>
                     </div>
                   </div>
                 </section>

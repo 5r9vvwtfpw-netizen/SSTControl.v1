@@ -2,9 +2,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { FileSignature } from "lucide-react";
+import { PROVIDER_LEGAL_ADDRESS } from "@shared/legal-contact";
 
 export default function AcuerdoProcesamientoDatos() {
-  const lastUpdated = "11 de noviembre de 2025";
+  const lastUpdated = "28 de septiembre de 2026";
 
   return (
     <div className="min-h-screen bg-background">
@@ -136,7 +137,7 @@ export default function AcuerdoProcesamientoDatos() {
                         <li><strong>Cifrado:</strong> TLS 1.3 en tránsito, AES-256 en reposo</li>
                         <li><strong>Control de Acceso:</strong> RBAC con 6 niveles de autorización, autenticación multi-factor opcional</li>
                         <li><strong>Trazabilidad:</strong> Audit logs completos de todas las operaciones CRUD</li>
-                        <li><strong>Backups:</strong> Respaldos diarios cifrados con retención de 20 años</li>
+                        <li><strong>Backups:</strong> Respaldos diarios cifrados, con retención de hasta 20 años mientras el servicio permanezca activo; al terminar, se eliminan conforme al apartado 10, salvo obligación legal de conservación</li>
                         <li><strong>Disaster Recovery:</strong> Plan documentado con RTO ≤ 4h, RPO ≤ 24h</li>
                         <li><strong>Monitoreo:</strong> Detección de accesos no autorizados 24/7</li>
                         <li><strong>Segregación:</strong> Aislamiento multi-tenant (cada empresa ve solo sus datos)</li>
@@ -304,10 +305,10 @@ export default function AcuerdoProcesamientoDatos() {
                 <section>
                   <h2 className="text-xl font-semibold mb-3">10. Retorno y Eliminación de Datos</h2>
                   <div className="space-y-2 text-muted-foreground">
-                    <p><strong>10.1 Al Finalizar el Servicio:</strong> Dentro de 30 días de terminación del contrato, el Encargado deberá:</p>
+                    <p><strong>10.1 Al Finalizar el Servicio:</strong> Durante los 30 días posteriores a la terminación del contrato, el Responsable podrá descargar y exportar sus informes y datos. Al concluir ese plazo, el Encargado deberá:</p>
                     <ul className="list-disc pl-6 space-y-1">
                       <li>Proporcionar al Responsable copia completa de todos los datos personales en formato estructurado (JSON/CSV)</li>
-                      <li>Eliminar todos los datos personales de sistemas de producción</li>
+                      <li>Eliminar los datos personales de sistemas de producción, salvo aquellos sujetos a conservación legal</li>
                       <li>Eliminar copias de backups salvo obligación legal de conservación</li>
                     </ul>
                     <p><strong>10.2 Conservación Legal:</strong> El Encargado podrá conservar:</p>
@@ -329,20 +330,11 @@ export default function AcuerdoProcesamientoDatos() {
                 <Separator />
 
                 <section>
-                  <h2 className="text-xl font-semibold mb-3">11. Responsabilidad y Limitaciones</h2>
+                  <h2 className="text-xl font-semibold mb-3">11. Responsabilidades de las partes</h2>
                   <div className="space-y-2 text-muted-foreground">
-                    <p><strong>11.1 Responsabilidad Solidaria (GDPR Art. 82):</strong> Responsable y Encargado pueden ser responsables solidariamente por daños causados por tratamiento ilegal.</p>
-                    <p><strong>11.2 Exención de Responsabilidad del Encargado:</strong> El Encargado solo será responsable si:</p>
-                    <ul className="list-disc pl-6 space-y-1">
-                      <li>No cumplió obligaciones del GDPR dirigidas específicamente a encargados, o</li>
-                      <li>Actuó fuera o en contra de instrucciones legales del Responsable</li>
-                    </ul>
-                    <p><strong>11.3 Límite de Responsabilidad:</strong> Según Términos de Servicio, limitada a 12 meses de tarifas pagadas, excepto:</p>
-                    <ul className="list-disc pl-6 space-y-1">
-                      <li>Violaciones dolosas o culpa grave</li>
-                      <li>Daños causados por incumplimiento de obligaciones de confidencialidad</li>
-                      <li>Multas impuestas por autoridades de protección de datos</li>
-                    </ul>
+                    <p><strong>11.1 Marco aplicable:</strong> Cuando resulte aplicable el GDPR, la responsabilidad del Responsable y del Encargado por daños derivados del tratamiento se determina conforme a su artículo 82. En los demás casos rige la normativa aplicable.</p>
+                    <p><strong>11.2 Responsabilidad del Encargado:</strong> El Encargado responde por los incumplimientos que le sean imputables de este DPA, del contrato SaaS y de sus propias obligaciones legales, incluyendo el tratamiento fuera de las instrucciones lícitas del Responsable.</p>
+                    <p><strong>11.3 Relación con el contrato:</strong> Cada parte responde por sus propios incumplimientos conforme al contrato SaaS, este DPA y la ley aplicable. Las obligaciones del Responsable no excluyen las fallas imputables al Encargado.</p>
                   </div>
                 </section>
 
@@ -354,7 +346,7 @@ export default function AcuerdoProcesamientoDatos() {
                     <p><strong>12.1 Duración:</strong> Este DPA entra en vigor con la aceptación de Términos de Servicio y permanece vigente mientras dure el contrato de servicio.</p>
                     <p><strong>12.2 Supervivencia de Obligaciones:</strong> Las siguientes obligaciones sobreviven a la terminación:</p>
                     <ul className="list-disc pl-6 space-y-1">
-                      <li>Confidencialidad (indefinidamente)</li>
+                      <li>Confidencialidad (5 años después de la terminación conforme al contrato SaaS; respecto de datos personales retenidos por obligación legal, durante su conservación)</li>
                       <li>Retorno/eliminación de datos (30 días post-terminación)</li>
                       <li>Conservación de audit logs (20 años según ley colombiana)</li>
                       <li>Cooperación en investigaciones de autoridades (indefinidamente)</li>
@@ -368,7 +360,7 @@ export default function AcuerdoProcesamientoDatos() {
                   <h2 className="text-xl font-semibold mb-3">13. Modificaciones al DPA</h2>
                   <div className="space-y-2 text-muted-foreground">
                     <p><strong>13.1 Cambios Normativos:</strong> El Encargado puede modificar este DPA para cumplir con cambios en GDPR, Ley 1581/2012 o nueva regulación aplicable.</p>
-                    <p><strong>13.2 Notificación:</strong> Cambios materiales se notificarán con 60 días de anticipación por correo electrónico.</p>
+                    <p><strong>13.2 Notificación:</strong> Los cambios se notificarán con 30 días de anticipación por correo electrónico a la dirección registrada y mediante notificación dentro de la Plataforma, conforme al contrato SaaS.</p>
                     <p><strong>13.3 Objeción:</strong> El Responsable puede objetar cambios y terminar el servicio sin penalización durante el período de notificación.</p>
                   </div>
                 </section>
@@ -379,8 +371,8 @@ export default function AcuerdoProcesamientoDatos() {
                   <h2 className="text-xl font-semibold mb-3">14. Ley Aplicable y Jurisdicción</h2>
                   <div className="space-y-2 text-muted-foreground">
                     <p><strong>14.1 Ley Aplicable:</strong> Este DPA se rige por las leyes de Colombia y el GDPR (UE) 2016/679 cuando aplique.</p>
-                    <p><strong>14.2 Jurisdicción:</strong> Tribunales competentes de Bogotá D.C., Colombia, sin perjuicio de derechos de titulares europeos ante autoridades de la UE.</p>
-                    <p><strong>14.3 Resolución de Disputas:</strong> Las partes intentarán resolver disputas mediante mediación antes de acudir a tribunales.</p>
+                    <p><strong>14.2 Jurisdicción:</strong> En caso de no llegar a un acuerdo mediante conciliación, las partes acudirán a los juzgados competentes de Medellín, Colombia, sin perjuicio de los derechos de los titulares ante las autoridades competentes.</p>
+                    <p><strong>14.3 Resolución de Disputas:</strong> Las partes acudirán inicialmente a conciliación ante el Centro de Conciliación de la Cámara de Comercio de Medellín, conforme al contrato SaaS.</p>
                   </div>
                 </section>
 
@@ -394,7 +386,7 @@ export default function AcuerdoProcesamientoDatos() {
                       <p className="mt-1">SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S.</p>
                       <p>NIT: 902.036.337-4</p>
                       <p>Representante Legal: Luz Adriana Díaz Calle</p>
-                      <p>Domicilio: CL 48 No. 38-45, Medellín, Antioquia, Colombia</p>
+                      <p>Domicilio: {PROVIDER_LEGAL_ADDRESS}</p>
                       <p>DPO Email: <a href="mailto:dpo@sst-colombia.com" className="text-primary hover:underline">dpo@sst-colombia.com</a></p>
                       <p>Legal Email: <a href="mailto:legal@sst-colombia.com" className="text-primary hover:underline">legal@sst-colombia.com</a></p>
                       <p>Teléfono: 300 522 0679</p>

@@ -517,11 +517,6 @@ export default function MiSuscripcion() {
                     <p className="text-sm text-green-700 dark:text-green-400 mt-1">
                       Fecha de aceptación: {formatDate(subscription.contractAcceptedAt)}
                     </p>
-                    {subscription.contractTermsVersion && (
-                      <p className="text-sm text-green-700 dark:text-green-400">
-                        Versión del contrato: {subscription.contractTermsVersion}
-                      </p>
-                    )}
                   </div>
                 </div>
               </div>

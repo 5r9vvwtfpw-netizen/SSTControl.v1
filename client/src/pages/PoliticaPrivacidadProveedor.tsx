@@ -2,9 +2,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Shield, Building2, Scale, FileText, Users, Clock, Eye, Mail, Phone, MapPin } from "lucide-react";
+import { PROVIDER_LEGAL_ADDRESS } from "@shared/legal-contact";
 
 export default function PoliticaPrivacidadProveedor() {
-  const lastUpdated = "27 de noviembre de 2025";
+  const lastUpdated = "28 de septiembre de 2026";
   const policyVersion = "1.0";
 
   return (
@@ -57,7 +58,7 @@ export default function PoliticaPrivacidadProveedor() {
                       <p><strong>Representante Legal:</strong> Luz Adriana Díaz Calle</p>
                       <p className="flex items-center gap-2">
                         <MapPin className="h-4 w-4" />
-                        <span><strong>Domicilio:</strong> CL 48 No. 38-45, Medellín, Antioquia, Colombia</span>
+                        <span><strong>Domicilio:</strong> {PROVIDER_LEGAL_ADDRESS}</span>
                       </p>
                       <p className="flex items-center gap-2">
                         <Mail className="h-4 w-4" />
@@ -472,7 +473,7 @@ export default function PoliticaPrivacidadProveedor() {
                       </p>
                       <p className="flex items-center gap-2">
                         <MapPin className="h-4 w-4" />
-                        <span>CL 48 No. 38-45, Medellín, Antioquia, Colombia</span>
+                        <span>{PROVIDER_LEGAL_ADDRESS}</span>
                       </p>
                     </div>
                     <p className="text-sm">

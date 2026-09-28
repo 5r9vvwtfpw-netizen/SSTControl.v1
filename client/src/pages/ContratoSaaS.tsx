@@ -3,6 +3,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { FileSignature } from "lucide-react";
 import { SAAS_CONTRACT_EFFECTIVE_DATE } from "@shared/saas-contract";
+import { PROVIDER_LEGAL_ADDRESS } from "@shared/legal-contact";
 
 export function ContratoSaaSContent() {
   return (
@@ -15,7 +16,7 @@ export function ContratoSaaSContent() {
                       <p><strong>Razón Social:</strong> SISTEMA AUTOMATIZADO DE GESTIÓN INTEGRAL S.A.S.</p>
                       <p><strong>NIT:</strong> 902.036.337-4</p>
                       <p><strong>Representante Legal:</strong> Luz Adriana Díaz Calle</p>
-                      <p><strong>Domicilio:</strong> CL 48 No. 38-45, Medellín, Antioquia, Colombia</p>
+                      <p><strong>Domicilio:</strong> {PROVIDER_LEGAL_ADDRESS}</p>
                       <p><strong>Actividad:</strong> Prestación de servicios de software para gestión de Seguridad y Salud en el Trabajo</p>
                     </div>
                     <div className="bg-muted p-3 rounded">
@@ -30,10 +31,11 @@ export function ContratoSaaSContent() {
                 <section data-testid="section-objeto">
                   <h2 className="text-xl font-semibold mb-3">2. Objeto del Contrato</h2>
                   <div className="space-y-2 text-muted-foreground">
-                    <p>El presente contrato tiene por objeto la prestación de servicios de Software como Servicio (SaaS) para la gestión integral del Sistema de Gestión de Seguridad y Salud en el Trabajo (SG-SST), conforme a la normatividad colombiana vigente:</p>
+                    <p>El presente contrato tiene por objeto la prestación de servicios de Software como Servicio (SaaS) para la gestión del Sistema de Gestión de Seguridad y Salud en el Trabajo (SG-SST) y del Plan Estratégico de Seguridad Vial (PESV), conforme a la normatividad colombiana aplicable:</p>
                     <ul className="list-disc pl-6 space-y-1">
                       <li><strong>Decreto 1072 de 2015:</strong> Decreto Único Reglamentario del Sector Trabajo</li>
                       <li><strong>Resolución 0312 de 2019:</strong> Estándares Mínimos del SG-SST</li>
+                      <li><strong>Resolución 40595 de 2022:</strong> Metodología del PESV</li>
                       <li><strong>ISO 45001:2018:</strong> Sistemas de Gestión de la Seguridad y Salud en el Trabajo</li>
                     </ul>
                   </div>
@@ -85,7 +87,7 @@ export function ContratoSaaSContent() {
                           </tr>
                           <tr>
                             <td className="py-2 pr-4 font-semibold">Backups</td>
-                            <td className="py-2">Automáticos diarios con retención de 20 años</td>
+                            <td className="py-2">Respaldos diarios cifrados, con retención de hasta 20 años mientras la suscripción permanezca activa; al terminar el servicio, rige el plazo de exportación y eliminación de la sección 11.4</td>
                           </tr>
                         </tbody>
                       </table>
@@ -103,7 +105,7 @@ export function ContratoSaaSContent() {
                     <ul className="list-disc pl-6 space-y-1">
                       <li>Mantener la plataforma disponible conforme a los niveles de servicio establecidos</li>
                       <li>Proteger los datos personales de acuerdo con la Ley 1581 de 2012 y el GDPR</li>
-                      <li>Cumplir con la normatividad colombiana aplicable en materia de SST</li>
+                      <li>Prestar las funcionalidades y generar los informes ofrecidos conforme al alcance contratado y a la normativa aplicable a la Plataforma, sin asumir las obligaciones de implementación que corresponden al Cliente</li>
                       <li>Notificar al Cliente sobre incidentes de seguridad que afecten sus datos dentro de 24 horas</li>
                       <li>Realizar actualizaciones y mejoras continuas a la plataforma</li>
                       <li>Brindar soporte técnico en los tiempos establecidos</li>
@@ -175,7 +177,7 @@ export function ContratoSaaSContent() {
                       <li>Documentación técnica y operativa del SG-SST</li>
                       <li>Credenciales de acceso y configuraciones de seguridad</li>
                     </ul>
-                    <p className="mt-2">Esta obligación de confidencialidad permanecerá vigente durante la ejecución del contrato y por un período de <strong>5 años</strong> después de su terminación.</p>
+                    <p className="mt-2">Esta obligación de confidencialidad permanecerá vigente durante la ejecución del contrato y por un período de <strong>5 años</strong> después de su terminación, sin perjuicio de la reserva de los datos personales conservados por obligación legal mientras se mantengan.</p>
                   </div>
                 </section>
 
@@ -200,7 +202,7 @@ export function ContratoSaaSContent() {
                     <p><strong>11.1 Duración:</strong> El presente contrato estará vigente mientras dure la suscripción activa del Cliente al servicio.</p>
                     <p><strong>11.2 Terminación por el Cliente:</strong> El Cliente puede terminar el contrato en cualquier momento con <strong>30 días de anticipación</strong>. No se realizarán reembolsos por períodos parciales.</p>
                     <p><strong>11.3 Terminación por el Proveedor:</strong> El Proveedor puede terminar el contrato con 30 días de anticipación o de forma inmediata en caso de incumplimiento grave por parte del Cliente.</p>
-                    <p><strong>11.4 Efectos de la Terminación:</strong> Tras la terminación, el Cliente dispondrá de 30 días para exportar sus datos. Transcurrido este período, los datos serán eliminados conforme al DPA.</p>
+                    <p><strong>11.4 Efectos de la Terminación:</strong> Tras la terminación, el Cliente dispondrá de 30 días para descargar y exportar sus informes y datos. Transcurrido este período, se eliminarán sus datos y respaldos conforme al DPA, sin perjuicio de los registros que deban conservarse por obligación legal.</p>
                   </div>
                 </section>
 
@@ -225,7 +227,7 @@ export function ContratoSaaSContent() {
                   <h2 className="text-xl font-semibold mb-3">13. Responsabilidades sobre el servicio</h2>
                   <div className="space-y-2 text-muted-foreground">
                     <ul className="list-disc pl-6 space-y-1">
-                      <li>El Cliente es responsable de suministrar información completa y actualizada, revisar los informes de acuerdo con el contexto de su organización y decidir e implementar las acciones correspondientes. Esto no exonera al Proveedor de responder por el funcionamiento de la Plataforma y por la generación de informes conforme a las funcionalidades y al alcance ofrecidos</li>
+                      <li>El Proveedor responde por el funcionamiento de la Plataforma y por la generación de informes conforme a las funcionalidades y al alcance ofrecidos. El Cliente es responsable de suministrar información completa y actualizada, revisar los informes de acuerdo con el contexto de su organización y decidir e implementar las acciones correspondientes</li>
                       <li>Los informes son una herramienta de apoyo y no garantizan por sí solos el cumplimiento legal integral del SG-SST, que también depende de la calidad de los datos y de la implementación efectiva por parte del Cliente. Esta cláusula no excluye responsabilidades que la ley no permita limitar</li>
                     </ul>
                   </div>
@@ -281,7 +283,7 @@ export function ContratoSaaSContent() {
                     <div className="bg-muted p-3 rounded">
                       <p><strong>Asuntos Legales:</strong> <a href="mailto:legal@sst-colombia.com" className="underline hover:text-foreground transition-colors" data-testid="link-email-legal">legal@sst-colombia.com</a></p>
                       <p><strong>Soporte Técnico:</strong> <a href="mailto:soporte@sst-colombia.com" className="underline hover:text-foreground transition-colors" data-testid="link-email-soporte-3">soporte@sst-colombia.com</a></p>
-                      <p><strong>Domicilio:</strong> CL 48 No. 38-45, Medellín, Antioquia, Colombia</p>
+                      <p><strong>Domicilio:</strong> {PROVIDER_LEGAL_ADDRESS}</p>
                     </div>
                   </div>
                 </section>

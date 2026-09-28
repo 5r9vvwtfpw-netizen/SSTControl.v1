@@ -2,9 +2,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Shield } from "lucide-react";
+import { PROVIDER_LEGAL_ADDRESS } from "@shared/legal-contact";
 
 export default function PoliticaPrivacidad() {
-  const lastUpdated = "8 de septiembre de 2026";
+  const lastUpdated = "28 de septiembre de 2026";
 
   return (
     <div className="min-h-screen bg-background">
@@ -81,7 +82,7 @@ export default function PoliticaPrivacidad() {
                       <p className="font-semibold">Datos de Contacto del DPO (Data Protection Officer):</p>
                       <p className="mt-1"><strong>NIT:</strong> 902.036.337-4</p>
                       <p>Oficial de Protección de Datos: <a href="mailto:dpo@sst-colombia.com" className="text-primary hover:underline">dpo@sst-colombia.com</a></p>
-                      <p>Dirección: CL 48 No. 38-45, Medellín, Antioquia, Colombia</p>
+                      <p>Dirección: {PROVIDER_LEGAL_ADDRESS}</p>
                       <p>Teléfono: 300 522 0679</p>
                     </div>
                   </div>
@@ -334,7 +335,7 @@ export default function PoliticaPrivacidad() {
                       <ul className="list-disc pl-6 space-y-1">
                         <li><strong>Trazabilidad completa:</strong> Audit logs de todas las operaciones sobre datos regulados</li>
                         <li><strong>Segregación de datos:</strong> Aislamiento multi-tenant (cada empresa ve solo sus datos)</li>
-                        <li><strong>Backups diarios:</strong> Respaldos automáticos cifrados con retención de 20 años</li>
+                        <li><strong>Backups diarios:</strong> Respaldos automáticos cifrados con retención de hasta 20 años mientras la cuenta permanezca activa. Al terminar el servicio, el Cliente dispone de 30 días para exportar sus informes y datos; después se eliminan, salvo registros sujetos a conservación legal, conforme al DPA</li>
                         <li><strong>Plan de Disaster Recovery:</strong> RTO ≤ 4 horas, RPO ≤ 24 horas</li>
                         <li><strong>Capacitación del personal:</strong> Todo el equipo recibe formación en protección de datos</li>
                         <li><strong>Acuerdos de confidencialidad:</strong> Contratos NDA con empleados y proveedores</li>
@@ -490,7 +491,7 @@ export default function PoliticaPrivacidad() {
                       <p><strong>Oficial de Protección de Datos (DPO):</strong></p>
                       <p className="mt-1">Email: <a href="mailto:dpo@sst-colombia.com" className="text-primary hover:underline">dpo@sst-colombia.com</a></p>
                       <p>Teléfono: 300 522 0679</p>
-                      <p>Dirección: CL 48 No. 38-45, Medellín, Antioquia, Colombia</p>
+                      <p>Dirección: {PROVIDER_LEGAL_ADDRESS}</p>
                       <p>Horario de atención: Lunes a Viernes 8:00-17:00</p>
                     </div>
                     <p className="mt-3"><strong>16.2 Autoridad de Control:</strong></p>
