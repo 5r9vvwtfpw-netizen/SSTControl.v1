@@ -138,7 +138,7 @@ export default function RevisionFirmaContratoSaaS() {
                   <div>
                     <CardTitle className="text-lg">{request.companyName || "Empresa"}{request.companyNit ? ` · NIT ${request.companyNit}` : ""}</CardTitle>
                     <CardDescription>
-                      Solicitud creada {formatDate(request.createdAt)} · Contrato v{request.contractVersion}
+                      Solicitud creada {formatDate(request.createdAt)}
                     </CardDescription>
                   </div>
                   <Badge variant="secondary">Pendiente de revisión</Badge>

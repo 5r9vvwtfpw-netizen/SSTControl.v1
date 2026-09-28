@@ -9,7 +9,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { SAAS_CONTRACT_VERSION } from "@shared/saas-contract";
 
 type SigningRequest = {
   id: string;
@@ -167,7 +166,7 @@ export function SolicitudFirmaContratoSaaS() {
       </CardHeader>
       <CardContent className="space-y-5">
         <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="outline">Versión vigente: {data?.currentVersion || SAAS_CONTRACT_VERSION}</Badge>
+          <Badge variant="outline">Contrato vigente</Badge>
           <a
             href="/contrato-saas"
             target="_blank"
@@ -222,7 +221,6 @@ export function SolicitudFirmaContratoSaaS() {
                   </div>
                   <p className="text-sm text-muted-foreground">
                     {request.capacity === "attorney" ? "Apoderado autorizado" : "Representante legal"}
-                    {" · "}Contrato v{request.contractVersion}
                     {" · "}Solicitud {formatDate(request.createdAt)}
                     {request.signedAt ? ` · Firmado ${formatDate(request.signedAt)}` : ""}
                   </p>
@@ -259,7 +257,7 @@ export function SolicitudFirmaContratoSaaS() {
         {hasCurrentSignedContract ? (
           <Alert className="border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950/20">
             <CheckCircle2 className="h-4 w-4 text-green-600" />
-            <AlertDescription>La plataforma registra un contrato firmado para la versión vigente.</AlertDescription>
+            <AlertDescription>La plataforma registra una firma del contrato vigente.</AlertDescription>
           </Alert>
         ) : hasOpenRequest ? (
           <Alert>
@@ -274,7 +272,7 @@ export function SolicitudFirmaContratoSaaS() {
               <h3 className="font-semibold">Firmar contrato</h3>
               <p className="mt-1 text-sm text-muted-foreground">
                 Representante legal: {data?.representative?.name || "No registrado"} · Identificación: {data?.representative?.identification || "No registrada"}.
-                La imagen que cargues aquí se conservará con esta versión del contrato.
+                La imagen que cargues aquí quedará asociada a este contrato.
               </p>
             </div>
             <label className="block max-w-md space-y-1 text-sm font-medium">
