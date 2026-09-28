@@ -15,6 +15,7 @@ import {
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { SolicitudFirmaContratoSaaS } from "@/components/SolicitudFirmaContratoSaaS";
 
 type Subscription = {
   id: string;
@@ -711,6 +712,9 @@ export default function MiCuenta() {
                 </Button>
               </CardContent>
             </Card>
+          )}
+          {["admin", "superusuario"].includes(user?.role || "") && (
+            <SolicitudFirmaContratoSaaS />
           )}
         </TabsContent>
 
