@@ -4,6 +4,7 @@ import { inflateSync } from "node:zlib";
 import express from "express";
 import type { RequestHandler } from "express";
 import test from "node:test";
+import sharp from "sharp";
 
 const enabled = process.env.RUN_SAAS_SIGNING_DEMO_FUNCTIONAL === "1";
 
@@ -111,28 +112,26 @@ test("flujo de firma aislado de prueba en DEMO-PRUEBA", { skip: !enabled }, asyn
   const baseUrl = `http://127.0.0.1:${address.port}`;
   const call = (path: string, init: RequestInit = {}) => fetch(`${baseUrl}${path}`, init);
 
-  const signerName = company.legal_rep_name || "Representante de prueba DEMO-PRUEBA";
-  const signerId = company.legal_rep_id || "TEST-DEMO-PRUEBA";
-  const form = new FormData();
-  form.set("signerName", signerName);
-  form.set("signerEmail", "firma-demo-prueba@example.invalid");
-  form.set("signerId", signerId);
-  form.set("capacity", "legal_representative");
-  form.set(
-    "proof",
-    new Blob([Buffer.from("%PDF-1.7\n% PRUEBA FUNCIONAL — SIN EFECTO CONTRACTUAL\n")], { type: "application/pdf" }),
-    "soporte-prueba.pdf",
-  );
+  assert.ok(company.legal_rep_name && company.legal_rep_id, "DEMO-PRUEBA necesita datos de representante legal.");
+  const signerName = company.legal_rep_name;
+  const signerId = company.legal_rep_id;
+
+  const attorneyResponse = await call("/api/saas-signing/company", {
+    method: "POST",
+    headers: { "x-test-actor": "companyAdmin", "content-type": "application/json" },
+    body: JSON.stringify({ signerName, signerId, signerEmail: "test@example.invalid", capacity: "attorney" }),
+  });
+  assert.equal(attorneyResponse.status, 400, "Un apoderado no puede iniciar la firma.");
 
   const createdResponse = await call("/api/saas-signing/company", {
     method: "POST",
-    headers: { "x-test-actor": "companyAdmin" },
-    body: form,
+    headers: { "x-test-actor": "companyAdmin", "content-type": "application/json" },
+    body: JSON.stringify({ signerName, signerId, signerEmail: "firma-demo-prueba@example.invalid", capacity: "legal_representative" }),
   });
   assert.equal(createdResponse.status, 201, await createdResponse.clone().text());
   const created = await createdResponse.json() as any;
   const requestId = created.request.id as string;
-  assert.equal(created.request.status, "pending_review");
+  assert.equal(created.request.status, "approved");
   assert.equal(created.request.testOnly, true);
   const frozenCompanyResult = await db.execute(sql`
     SELECT company_name, company_nit FROM saas_contract_signing_requests WHERE id = ${requestId}
@@ -150,15 +149,7 @@ test("flujo de firma aislado de prueba en DEMO-PRUEBA", { skip: !enabled }, asyn
   const reviewResponse = await call("/api/saas-signing/review", {
     headers: { "x-test-actor": "superadmin" },
   });
-  assert.equal(reviewResponse.status, 200);
-  const review = await reviewResponse.json() as any;
-  assert.ok(review.requests.some((request: any) => request.id === requestId));
-
-  const approvalResponse = await call(`/api/saas-signing/review/${requestId}/approve`, {
-    method: "POST",
-    headers: { "x-test-actor": "superadmin" },
-  });
-  assert.equal(approvalResponse.status, 200, await approvalResponse.clone().text());
+  assert.equal(reviewResponse.status, 410, "No queda ninguna cola manual de aprobación.");
 
   const inviteResponse = await call(`/api/saas-signing/invite/${requestId}`);
   assert.equal(inviteResponse.status, 200);
@@ -179,11 +170,16 @@ test("flujo de firma aislado de prueba en DEMO-PRUEBA", { skip: !enabled }, asyn
   const sendCodeBody = await sendCodeResponse.json() as any;
   assert.equal("code" in sendCodeBody, false, "El API público nunca debe devolver el OTP.");
 
-  const signCall = () => call(`/api/saas-signing/invite/${requestId}/sign`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ code: issuedCode, accepted: true }),
-  });
+  const image = await sharp({
+    create: { width: 180, height: 60, channels: 4, background: "#ffffff" },
+  }).png().toBuffer();
+  const signCall = () => {
+    const form = new FormData();
+    form.set("code", issuedCode);
+    form.set("accepted", "true");
+    form.set("signature", new Blob([image], { type: "image/png" }), "firma-prueba.png");
+    return call(`/api/saas-signing/invite/${requestId}/sign`, { method: "POST", body: form });
+  };
   const signatureResponses = await Promise.all([signCall(), signCall()]);
   assert.equal(signatureResponses.filter((response) => response.status === 200).length, 1);
   assert.ok(signatureResponses.every((response) => response.status === 200 || response.status === 404));
@@ -191,6 +187,12 @@ test("flujo de firma aislado de prueba en DEMO-PRUEBA", { skip: !enabled }, asyn
   const signedBody = await signedResponse.json() as any;
   assert.equal(signedBody.signed, true);
   assert.equal(signedBody.status, "test_signed");
+  const imageResult = await db.execute(sql`
+    SELECT signature_image_sha256, signature_image_object_path FROM saas_contract_signatures WHERE request_id = ${requestId}
+  `);
+  const normalizedImage = await sharp(image).rotate().png().toBuffer();
+  assert.equal((imageResult as any).rows[0]?.signature_image_sha256, (await import("../server/services/saas-contract-artifacts")).sha256(normalizedImage));
+  assert.ok((imageResult as any).rows[0]?.signature_image_object_path);
 
   const companyRequestsResponse = await call("/api/saas-signing/company", {
     headers: { "x-test-actor": "companyAdmin" },
@@ -241,6 +243,6 @@ test("flujo de firma aislado de prueba en DEMO-PRUEBA", { skip: !enabled }, asyn
     .replace(/\s/g, "");
   assert.ok(decodedPdfText.includes("PRUEBAFUNCIONAL"));
 
-  // Do not delete request, supporting document, or artifacts. They are test-only,
+  // Do not delete request, signature image, or artifacts. They are test-only,
   // visibly watermarked and kept in the company's reviewable evidence history.
 });

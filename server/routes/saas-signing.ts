@@ -1,6 +1,7 @@
 import type { Express, NextFunction, Request, RequestHandler, Response } from "express";
 import { randomUUID } from "crypto";
 import multer from "multer";
+import sharp from "sharp";
 import { eq, sql } from "drizzle-orm";
 import { SAAS_CONTRACT_VERSION } from "@shared/saas-contract";
 import { companies } from "@shared/schema";
@@ -65,27 +66,27 @@ const defaultMailer: SaasSigningMailer = {
   sendInvitation: sendSaasContractSigningInvitationEmail,
 };
 
-const proofUpload = multer({
+const signatureUpload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024, files: 1, fields: 5 },
+  limits: { fileSize: 1024 * 1024, files: 1, fields: 3 },
   fileFilter: (_req, file, callback) => {
-    const supported = new Set(["application/pdf", "image/png", "image/jpeg", "image/webp"]);
+    const supported = new Set(["image/png", "image/jpeg"]);
     if (!supported.has(file.mimetype)) {
-      callback(new Error("Adjunta el poder o soporte en PDF, PNG, JPEG o WEBP."));
+      callback(new Error("Adjunta la imagen de la firma en PNG o JPG."));
       return;
     }
     callback(null, true);
   },
 });
 
-function safeProofUpload(req: Request, res: Response, next: NextFunction): void {
-  proofUpload.single("proof")(req, res, (error: any) => {
+function safeSignatureUpload(req: Request, res: Response, next: NextFunction): void {
+  signatureUpload.single("signature")(req, res, (error: any) => {
     if (!error) return next();
     if (error.code === "LIMIT_FILE_SIZE") {
-      res.status(413).json({ error: "El soporte de representación no puede superar 5 MB." });
+      res.status(413).json({ error: "La imagen de firma no puede superar 1 MB." });
       return;
     }
-    res.status(400).json({ error: error.message || "No se pudo recibir el soporte de representación." });
+    res.status(400).json({ error: error.message || "No se pudo recibir la imagen de firma." });
   });
 }
 
@@ -200,6 +201,7 @@ function requestPublicShape(row: any) {
     signerName: row.signer_name,
     signerEmail: row.signer_email,
     capacity: row.capacity,
+    signatureRequired: row.signature_required === true,
     contractVersion: row.contract_version,
     signedAt: row.signed_at || null,
     createdAt: row.created_at,
@@ -224,8 +226,8 @@ export function registerSaasSigningRoutes(
       const scoped = await resolveCompany(req);
       if ("status" in scoped) return res.status(scoped.status).json({ error: scoped.error });
       const rows = await db.execute(sql`
-        SELECT r.id, r.status, r.signer_name, r.signer_email, r.capacity, r.contract_version,
-               s.signed_at, r.created_at, r.test_only
+         SELECT r.id, r.status, r.signer_name, r.signer_email, r.capacity, r.contract_version,
+                r.signature_required, s.signed_at, r.created_at, r.test_only
         FROM saas_contract_signing_requests r
         LEFT JOIN saas_contract_signatures s ON s.request_id = r.id
         WHERE r.company_id = ${scoped.companyId}
@@ -241,8 +243,7 @@ export function registerSaasSigningRoutes(
     }
   });
 
-  app.post("/api/saas-signing/company", auth, safeProofUpload, async (req, res) => {
-    let uploadedProofPath: string | null = null;
+  app.post("/api/saas-signing/company", auth, async (req, res) => {
     let uploadedSourcePath: string | null = null;
     try {
       const scoped = await resolveCompany(req);
@@ -257,18 +258,20 @@ export function registerSaasSigningRoutes(
       }
       if (signerEmail.length > 254 ||
         !/^[A-Z0-9.!#$%&'*+/=?^_~-]+@[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?(?:\.[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?)+$/i.test(signerEmail)) {
-        return res.status(400).json({ error: "Ingresa un correo válido del representante o apoderado." });
+        return res.status(400).json({ error: "Ingresa un correo válido del representante legal." });
       }
       if (signerId.length < 4 || signerId.length > 60 || !/^[\p{L}\p{N} .-]+$/u.test(signerId)) {
         return res.status(400).json({ error: "Ingresa el número de identificación del firmante." });
       }
-      if (!capacity) {
-        return res.status(400).json({ error: "La calidad debe ser representante legal o apoderado autorizado." });
+      if (capacity !== "legal_representative") {
+        return res.status(400).json({ error: "Solo el representante legal registrado puede firmar el contrato." });
       }
-      if (!req.file) return res.status(400).json({ error: "Adjunta el soporte de representación requerido." });
-      const verifiedMime = verifyUploadedProofMime(req.file.mimetype, req.file.buffer);
-      if (!verifiedMime) {
-        return res.status(400).json({ error: "El archivo no coincide con un PDF o una imagen PNG, JPEG o WEBP válida." });
+      if (!scoped.company.legalRepName || !scoped.company.legalRepId ||
+        normalizePersonName(scoped.company.legalRepName) !== normalizePersonName(signerName) ||
+        normalizeSignerId(scoped.company.legalRepId) !== normalizeSignerId(signerId)) {
+        return res.status(409).json({
+          error: "El nombre y la identificación deben coincidir con el representante legal registrado en Empresas. Actualiza los datos de la empresa antes de continuar.",
+        });
       }
 
       const pending = await db.execute(sql`
@@ -278,48 +281,61 @@ export function registerSaasSigningRoutes(
         LIMIT 1
       `);
       if ((pending as any).rows.length > 0) {
-        return res.status(409).json({ error: "Esta empresa ya tiene una solicitud de firma en revisión o aprobada." });
+        return res.status(409).json({ error: "Esta empresa ya tiene una invitación de firma en curso." });
       }
 
       const requestId = randomUUID();
-      const proofExtension = verifiedMime === "application/pdf"
-        ? "pdf"
-        : verifiedMime === "image/png" ? "png" : verifiedMime === "image/jpeg" ? "jpg" : "webp";
-      const proofSha256 = sha256(req.file.buffer);
       const sourceHtml = renderCanonicalSaasContractHtml();
       const sourceBuffer = Buffer.from(sourceHtml, "utf8");
       const sourceSha256 = sha256(sourceBuffer);
-      const proofPath = `saas-signing/${scoped.companyId}/${requestId}/authority-${randomUUID()}.${proofExtension}`;
       const sourcePath = `saas-signing/${scoped.companyId}/${requestId}/contract-v${SAAS_CONTRACT_VERSION}-${sourceSha256}.html`;
 
-      uploadedProofPath = await objectStorageService.uploadObject(proofPath, req.file.buffer, verifiedMime)
-        .then(() => `/objects/${proofPath}`);
       uploadedSourcePath = await objectStorageService.uploadObject(sourcePath, sourceBuffer, "text/html; charset=utf-8")
         .then(() => `/objects/${sourcePath}`);
 
+      const invitationUrl = createInviteUrl(requestId);
       const insertResult = await db.execute(sql`
         INSERT INTO saas_contract_signing_requests (
           id, company_id, company_name, company_nit, requested_by_user_id, signer_name, signer_email, signer_id,
-          capacity, contract_version, proof_object_path, proof_mime_type, proof_sha256,
-          source_object_path, source_sha256, status, test_only
+          capacity, contract_version, source_object_path, source_sha256, status, test_only, signature_required
         ) VALUES (
           ${requestId}, ${scoped.companyId}, ${scoped.company.name}, ${scoped.company.nit || ""}, ${(req.user as any).id},
           ${signerName}, ${signerEmail}, ${signerId},
-          ${capacity}, ${SAAS_CONTRACT_VERSION}, ${uploadedProofPath}, ${verifiedMime}, ${proofSha256},
-          ${uploadedSourcePath}, ${sourceSha256}, 'pending_review', ${testOnly}
+          ${capacity}, ${SAAS_CONTRACT_VERSION},
+          ${uploadedSourcePath}, ${sourceSha256}, 'approved', ${testOnly}, true
         )
         RETURNING id, status, signer_name, signer_email, capacity, contract_version, created_at, test_only
+      `);
+      const emailResult = await mailer.sendInvitation({
+        to: signerEmail, signerName, companyName: scoped.company.name,
+        invitationUrl, contractVersion: SAAS_CONTRACT_VERSION,
+      });
+      if (!emailResult.success) {
+        await db.execute(sql`
+          UPDATE saas_contract_signing_requests SET status = 'rejected',
+            rejection_reason = 'No se pudo enviar la invitación; solicita una nueva.',
+            updated_at = now()
+          WHERE id = ${requestId} AND status = 'approved' AND invitation_sent_at IS NULL
+        `);
+        return res.status(502).json({ error: emailResult.error || "No se pudo enviar la invitación de firma." });
+      }
+      await db.execute(sql`
+        UPDATE saas_contract_signing_requests SET invitation_sent_at = now(), updated_at = now()
+        WHERE id = ${requestId} AND status = 'approved'
       `);
       const created = (insertResult as any).rows[0];
       return res.status(201).json({ request: requestPublicShape(created) });
     } catch (error) {
-      if (uploadedProofPath) await objectStorageService.deleteObject(uploadedProofPath).catch(() => undefined);
-      if (uploadedSourcePath) await objectStorageService.deleteObject(uploadedSourcePath).catch(() => undefined);
       if ((error as any)?.code === "23505") {
-        return res.status(409).json({ error: "Esta empresa ya tiene una solicitud de firma en revisión o aprobada." });
+        return res.status(409).json({ error: "Esta empresa ya tiene una invitación de firma en curso." });
       }
       return res.status(500).json({ error: getErrorMessage(error, "No se pudo crear la solicitud de firma.") });
     }
+  });
+
+  // Retired manual review endpoints cannot approve legacy links.
+  app.use("/api/saas-signing/review", auth, superadminAuth, (_req, res) => {
+    res.status(410).json({ error: "La revisión manual fue sustituida por la firma automática del representante legal." });
   });
 
   app.get("/api/saas-signing/review", auth, superadminAuth, async (req, res) => {
@@ -512,6 +528,7 @@ export function registerSaasSigningRoutes(
                r.source_object_path, r.source_sha256, r.company_name
         FROM saas_contract_signing_requests r
         WHERE r.id = ${requestId} AND r.status = 'approved' AND r.test_only = ${testOnly}
+          AND r.capacity = 'legal_representative' AND r.signature_required = true
           AND r.invitation_sent_at IS NOT NULL
           AND NOT EXISTS (SELECT 1 FROM saas_contract_signatures s WHERE s.request_id = r.id)
       `);
@@ -548,7 +565,8 @@ export function registerSaasSigningRoutes(
         const requestResult = await tx.execute(sql`
           SELECT r.id, r.signer_email, r.company_name
           FROM saas_contract_signing_requests r
-          WHERE r.id = ${requestId} AND r.status = 'approved' AND r.test_only = ${testOnly}
+           WHERE r.id = ${requestId} AND r.status = 'approved' AND r.test_only = ${testOnly}
+             AND r.capacity = 'legal_representative' AND r.signature_required = true
             AND r.invitation_sent_at IS NOT NULL
             AND NOT EXISTS (SELECT 1 FROM saas_contract_signatures s WHERE s.request_id = r.id)
           FOR UPDATE OF r
@@ -627,12 +645,27 @@ export function registerSaasSigningRoutes(
     }
   });
 
-  app.post("/api/saas-signing/invite/:id/sign", async (req, res) => {
+  app.post("/api/saas-signing/invite/:id/sign", safeSignatureUpload, async (req, res) => {
     const requestId = getRequestId(req.params.id);
     if (!requestId) return res.status(404).json({ error: "Invitación no disponible." });
     const code = getField(req.body?.code);
-    if (!/^\d{6}$/.test(code) || req.body?.accepted !== true) {
+    if (!/^\d{6}$/.test(code) || req.body?.accepted !== "true") {
       return res.status(400).json({ error: "Ingresa el código de seis dígitos y confirma la aceptación del contrato." });
+    }
+    if (!req.file || !verifyUploadedProofMime(req.file.mimetype, req.file.buffer)) {
+      return res.status(400).json({ error: "Adjunta una imagen PNG o JPG válida de tu firma." });
+    }
+    let signatureImage: Buffer;
+    try {
+      const metadata = await sharp(req.file.buffer, { limitInputPixels: 4_000_000 }).metadata();
+      if (!metadata.width || !metadata.height || metadata.width < 30 || metadata.height < 15 ||
+          metadata.width > 2000 || metadata.height > 2000) {
+        return res.status(400).json({ error: "La imagen de firma debe medir entre 30 × 15 y 2000 × 2000 píxeles." });
+      }
+      signatureImage = await sharp(req.file.buffer, { limitInputPixels: 4_000_000 })
+        .rotate().png().toBuffer();
+    } catch {
+      return res.status(400).json({ error: "La imagen de firma está dañada o no es válida." });
     }
 
     let secret: string;
@@ -645,12 +678,14 @@ export function registerSaasSigningRoutes(
     const ipHash = hashSaasSigningIp(secret, ip);
     let uploadedHtmlPath: string | null = null;
     let uploadedPdfPath: string | null = null;
+    let uploadedImagePath: string | null = null;
     try {
       const result = await db.transaction(async (tx) => {
         const requestResult = await tx.execute(sql`
            SELECT r.*
           FROM saas_contract_signing_requests r
-          WHERE r.id = ${requestId} AND r.status = 'approved' AND r.test_only = ${testOnly}
+           WHERE r.id = ${requestId} AND r.status = 'approved' AND r.test_only = ${testOnly}
+             AND r.capacity = 'legal_representative' AND r.signature_required = true
             AND r.invitation_sent_at IS NOT NULL
             AND NOT EXISTS (SELECT 1 FROM saas_contract_signatures s WHERE s.request_id = r.id)
           FOR UPDATE OF r
@@ -720,6 +755,7 @@ export function registerSaasSigningRoutes(
           ip,
           userAgent: String(req.get("user-agent") || "desconocido").replace(/[\r\n\t]/g, " ").slice(0, 1000),
           testOnly,
+          signatureImage,
         };
         const signedHtml = renderSignedSaasContractHtml(sourceHtml, signerSnapshot);
         const signedHtmlBuffer = Buffer.from(signedHtml, "utf8");
@@ -729,8 +765,12 @@ export function registerSaasSigningRoutes(
         const signedBasePath = `saas-signing/${request.company_id}/${requestId}/signed-${signedAt.getTime()}`;
         const htmlPath = `${signedBasePath}-${signedHtmlHash}.html`;
         const pdfPath = `${signedBasePath}-${signedPdfHash}.pdf`;
+        const imageHash = sha256(signatureImage);
+        const imagePath = `${signedBasePath}-signature-${imageHash}.png`;
 
         try {
+          await objectStorageService.uploadObject(imagePath, signatureImage, "image/png");
+          uploadedImagePath = `/objects/${imagePath}`;
           await objectStorageService.uploadObject(htmlPath, signedHtmlBuffer, "text/html; charset=utf-8");
           uploadedHtmlPath = `/objects/${htmlPath}`;
           await objectStorageService.uploadObject(pdfPath, signedPdf, "application/pdf");
@@ -738,6 +778,8 @@ export function registerSaasSigningRoutes(
         } catch (error) {
           if (uploadedHtmlPath) await objectStorageService.deleteObject(uploadedHtmlPath).catch(() => undefined);
           uploadedHtmlPath = null;
+          if (uploadedImagePath) await objectStorageService.deleteObject(uploadedImagePath).catch(() => undefined);
+          uploadedImagePath = null;
           throw error;
         }
 
@@ -745,11 +787,13 @@ export function registerSaasSigningRoutes(
           INSERT INTO saas_contract_signatures (
             request_id, challenge_id, company_id, signer_name, signer_id, capacity, contract_version,
             source_sha256, signed_html_object_path, signed_html_sha256,
-            signed_pdf_object_path, signed_pdf_sha256, signed_at, signer_ip, signer_user_agent, test_only
+            signed_pdf_object_path, signed_pdf_sha256, signature_image_object_path, signature_image_sha256,
+            signed_at, signer_ip, signer_user_agent, test_only
           ) VALUES (
             ${requestId}, ${challenge.id}, ${request.company_id}, ${request.signer_name}, ${request.signer_id},
             ${request.capacity}, ${request.contract_version}, ${request.source_sha256},
             ${uploadedHtmlPath}, ${signedHtmlHash}, ${uploadedPdfPath}, ${signedPdfHash},
+            ${uploadedImagePath}, ${imageHash},
             ${signedAt}, ${ip.slice(0, 128)}, ${signerSnapshot.userAgent}, ${testOnly}
           )
           ON CONFLICT (request_id) DO NOTHING
@@ -779,6 +823,7 @@ export function registerSaasSigningRoutes(
       if (result.status !== 200) {
         if (uploadedHtmlPath) await objectStorageService.deleteObject(uploadedHtmlPath).catch(() => undefined);
         if (uploadedPdfPath) await objectStorageService.deleteObject(uploadedPdfPath).catch(() => undefined);
+        if (uploadedImagePath) await objectStorageService.deleteObject(uploadedImagePath).catch(() => undefined);
         return res.status(result.status).json({ error: result.error });
       }
       const { status: _httpStatus, ...signatureResult } = result;
@@ -790,6 +835,7 @@ export function registerSaasSigningRoutes(
     } catch (error) {
       if (uploadedHtmlPath) await objectStorageService.deleteObject(uploadedHtmlPath).catch(() => undefined);
       if (uploadedPdfPath) await objectStorageService.deleteObject(uploadedPdfPath).catch(() => undefined);
+      if (uploadedImagePath) await objectStorageService.deleteObject(uploadedImagePath).catch(() => undefined);
       return res.status(503).json({ error: getErrorMessage(error, "No se pudo completar la firma del contrato.") });
     }
   });

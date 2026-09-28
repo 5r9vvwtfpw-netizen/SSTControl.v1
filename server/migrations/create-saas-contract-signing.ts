@@ -44,6 +44,18 @@ export async function createSaasContractSigningTables(): Promise<void> {
       ALTER COLUMN company_name SET NOT NULL;
     ALTER TABLE saas_contract_signing_requests
       ALTER COLUMN company_nit SET NOT NULL;
+    ALTER TABLE saas_contract_signing_requests
+      ALTER COLUMN proof_object_path DROP NOT NULL,
+      ALTER COLUMN proof_mime_type DROP NOT NULL,
+      ALTER COLUMN proof_sha256 DROP NOT NULL;
+    ALTER TABLE saas_contract_signing_requests
+      ADD COLUMN IF NOT EXISTS signature_required BOOLEAN NOT NULL DEFAULT false;
+    -- Preserve old requests as history but revoke unsigned links from the former
+    -- manual-review workflow; they did not require an attached signature.
+    UPDATE saas_contract_signing_requests
+    SET status = 'rejected', rejection_reason = 'Flujo anterior cerrado: solo firma automática del representante legal con imagen de firma.',
+        updated_at = now()
+    WHERE status IN ('pending_review', 'approved') AND signature_required = false;
 
     CREATE INDEX IF NOT EXISTS saas_signing_requests_company_created_idx
       ON saas_contract_signing_requests(company_id, created_at DESC);
@@ -103,6 +115,9 @@ export async function createSaasContractSigningTables(): Promise<void> {
       signer_user_agent TEXT NOT NULL,
       test_only BOOLEAN NOT NULL DEFAULT false
     );
+    ALTER TABLE saas_contract_signatures
+      ADD COLUMN IF NOT EXISTS signature_image_object_path TEXT,
+      ADD COLUMN IF NOT EXISTS signature_image_sha256 TEXT;
     CREATE INDEX IF NOT EXISTS saas_signatures_company_signed_idx
       ON saas_contract_signatures(company_id, signed_at DESC);
   `);

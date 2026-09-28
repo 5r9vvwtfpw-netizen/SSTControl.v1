@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { inflateSync } from "node:zlib";
+import sharp from "sharp";
 import {
   generateSignedSaasContractPdf,
   renderCanonicalSaasContractHtml,
@@ -94,6 +95,9 @@ test("la instantánea SSR conserva el contrato publicado y produce artefactos fi
     ip: "127.0.0.1",
     userAgent: "test-harness",
     testOnly: true,
+    signatureImage: await sharp({
+      create: { width: 180, height: 60, channels: 4, background: "#ffffff" },
+    }).png().toBuffer(),
   };
   const signedHtml = renderSignedSaasContractHtml(source, snapshot);
   assert.ok(signedHtml.includes("PRUEBA FUNCIONAL — SIN EFECTO CONTRACTUAL"));

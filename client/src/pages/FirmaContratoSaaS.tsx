@@ -56,6 +56,7 @@ export default function FirmaContratoSaaS() {
     [],
   );
   const [code, setCode] = useState("");
+  const [signatureFile, setSignatureFile] = useState<File | null>(null);
   const [accepted, setAccepted] = useState(false);
   const [codeSent, setCodeSent] = useState(false);
   const [sendingCode, setSendingCode] = useState(false);
@@ -106,15 +107,18 @@ export default function FirmaContratoSaaS() {
 
   const signContract = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!invitationId || !accepted || !codeSent || !/^\d{6}$/.test(code) || !canSignVersion) return;
+    if (!invitationId || !accepted || !codeSent || !signatureFile || !/^\d{6}$/.test(code) || !canSignVersion) return;
     setSigning(true);
     setActionError("");
     try {
+      const formData = new FormData();
+      formData.append("code", code);
+      formData.append("accepted", "true");
+      formData.append("signature", signatureFile);
       const response = await fetch(`/api/saas-signing/invite/${encodeURIComponent(invitationId)}/sign`, {
         method: "POST",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code, accepted: true }),
+        body: formData,
       });
       const body = await readResponse(response) as SigningResult;
       setResult(body);
@@ -157,7 +161,7 @@ export default function FirmaContratoSaaS() {
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            {error instanceof Error ? error.message : "La invitación no está disponible o no ha sido aprobada."}
+            {error instanceof Error ? error.message : "La invitación no está disponible."}
           </AlertDescription>
         </Alert>
       </div>
@@ -182,7 +186,7 @@ export default function FirmaContratoSaaS() {
           <p><span className="font-medium">Firmante:</span> {invitation.signerName}</p>
           <p>
             <span className="font-medium">Calidad:</span>{" "}
-            {invitation.capacity === "attorney" ? "Apoderado autorizado" : "Representante legal"}
+            Representante legal
           </p>
           <p><span className="font-medium">Versión del contrato:</span> {invitation.contractVersion}</p>
         </CardContent>
@@ -242,7 +246,7 @@ export default function FirmaContratoSaaS() {
                 Verificación y consentimiento
               </CardTitle>
               <CardDescription>
-                Revisa que tus datos y la calidad indicada sean correctos. El código acredita acceso al correo de la invitación, pero no sustituye la revisión de tus facultades.
+                 Comprueba tus datos y adjunta tu firma. El código acredita acceso al correo de la invitación; la imagen por sí sola no comprueba la identidad.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
@@ -260,7 +264,28 @@ export default function FirmaContratoSaaS() {
                 )}
               </div>
 
-              <form onSubmit={signContract} className="space-y-4">
+               <form onSubmit={signContract} className="space-y-4">
+                 <label className="block max-w-sm space-y-1 text-sm font-medium">
+                   Imagen de tu firma (PNG o JPG, máximo 1 MB)
+                   <input
+                     type="file"
+                     required
+                     accept=".png,.jpg,.jpeg,image/png,image/jpeg"
+                     onChange={(event) => {
+                       const file = event.target.files?.[0] || null;
+                       if (file && (!["image/png", "image/jpeg"].includes(file.type) || file.size > 1024 * 1024)) {
+                         setActionError("Adjunta una imagen PNG o JPG de máximo 1 MB.");
+                         setSignatureFile(null);
+                         event.target.value = "";
+                       } else {
+                         setActionError("");
+                         setSignatureFile(file);
+                       }
+                     }}
+                     className="block w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-normal file:mr-4 file:border-0 file:bg-muted file:px-3 file:py-1.5"
+                     data-testid="input-signature-image"
+                   />
+                 </label>
                 <label className="flex items-start gap-3 text-sm leading-relaxed">
                   <input
                     type="checkbox"
@@ -299,7 +324,7 @@ export default function FirmaContratoSaaS() {
 
                 <Button
                   type="submit"
-                  disabled={!accepted || !codeSent || code.length !== 6 || signing || !canSignVersion}
+                   disabled={!accepted || !codeSent || !signatureFile || code.length !== 6 || signing || !canSignVersion}
                   data-testid="button-submit-contract-signature"
                 >
                   {signing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

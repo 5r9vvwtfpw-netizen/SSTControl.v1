@@ -17,6 +17,7 @@ export interface ContractSignerSnapshot {
   ip: string;
   userAgent: string;
   testOnly?: boolean;
+  signatureImage: Buffer;
 }
 
 export function sha256(buffer: Buffer | string): string {
@@ -78,8 +79,10 @@ ${snapshot.testOnly ? `<p style="color:#b91c1c;font-weight:bold">PRUEBA FUNCIONA
 <p><strong>Reto OTP:</strong> ${escapeHtml(snapshot.challengeId)}</p>
 <p><strong>Integridad del contrato presentado:</strong> SHA-256 ${escapeHtml(snapshot.sourceSha256)}</p>
 <p><strong>Registro de la firma:</strong> Código de un solo uso enviado al correo registrado del firmante; dirección IP ${escapeHtml(snapshot.ip)}.</p>
+<p><strong>Imagen de firma adjunta:</strong> SHA-256 ${sha256(snapshot.signatureImage)}</p>
+<img alt="Firma adjunta por el representante legal" src="data:image/png;base64,${snapshot.signatureImage.toString("base64")}" style="display:block;max-width:260px;max-height:110px;object-fit:contain;margin:16px 0">
 <p><strong>Agente de usuario:</strong> ${escapeHtml(snapshot.userAgent)}</p>
-<p>La constancia identifica el método electrónico y la versión del documento aceptada. La calidad y facultad declaradas fueron revisadas en el expediente de autorización.</p>
+<p>La constancia identifica el método electrónico y la versión del documento aceptada. La imagen adjunta y el código no constituyen una validación externa de la identidad o de las facultades del firmante.</p>
 </section></body></html>`;
 }
 
@@ -161,14 +164,22 @@ export async function generateSignedSaasContractPdf(
       ["Dirección IP", snapshot.ip],
       ["Agente de usuario", snapshot.userAgent],
       ["SHA-256 del contrato presentado", snapshot.sourceSha256],
+      ["SHA-256 de la imagen de firma", sha256(snapshot.signatureImage)],
     ];
     for (const [label, value] of details) {
       doc.font("Helvetica-Bold").text(`${label}: `, { continued: true });
       doc.font("Helvetica").text(value, { paragraphGap: 7 });
     }
+    if (doc.y > doc.page.height - 190) doc.addPage();
+    doc.moveDown(0.5);
+    doc.font("Helvetica-Bold").fontSize(10).text("Firma adjunta por el representante legal:");
+    doc.moveDown(0.4);
+    const imageY = doc.y;
+    doc.image(snapshot.signatureImage, 54, imageY, { fit: [240, 90] });
+    doc.y = imageY + 95;
     doc.moveDown();
     doc.fontSize(8).fillColor("#4b5563").text(
-      "La constancia identifica el método electrónico y la versión del documento aceptada. La calidad y facultad declaradas fueron revisadas en el expediente de autorización.",
+      "La constancia identifica el método electrónico y la versión del documento aceptada. La imagen adjunta y el código no constituyen una validación externa de la identidad o de las facultades del firmante.",
       { lineGap: 3 },
     );
     doc.end();
