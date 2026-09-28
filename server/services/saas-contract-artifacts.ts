@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import PDFDocument from "pdfkit";
 import { createHash } from "crypto";
 import { ContratoSaaSContent } from "../../client/src/pages/ContratoSaaS";
+import { renderSaasContractPdf } from "./saas-contract-pdf-layout";
 
 export interface ContractSignerSnapshot {
   signerName: string;
@@ -98,43 +99,16 @@ ${adminUpload
 </section></body></html>`;
 }
 
-function decodeHtmlText(html: string): string {
-  return html
-    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "")
-    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, "")
-    .replace(/<(br|\/p|\/div|\/section|\/h[1-6]|\/tr|\/li)>/gi, "\n")
-    .replace(/<li\b[^>]*>/gi, " • ")
-    .replace(/<\/t[dh]>/gi, " | ")
-    .replace(/<[^>]+>/g, "")
-    .replace(/&nbsp;/gi, " ")
-    .replace(/&amp;/gi, "&")
-    .replace(/&lt;/gi, "<")
-    .replace(/&gt;/gi, ">")
-    .replace(/&quot;/gi, '"')
-    .replace(/&#39;|&apos;/gi, "'")
-    .replace(/&#(\d+);/g, (_match, value: string) => String.fromCodePoint(Number(value)))
-    .replace(/&#x([0-9a-f]+);/gi, (_match, value: string) => String.fromCodePoint(parseInt(value, 16)))
-    .replace(/[ \t]+\n/g, "\n")
-    .replace(/\n[ \t]+/g, "\n")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
-}
-
 export async function generateSignedSaasContractPdf(
   contractHtml: string,
   snapshot: ContractSignerSnapshot,
 ): Promise<Buffer> {
-  const adminUpload = snapshot.signingMethod === "admin_upload";
-  const contractText = decodeHtmlText(contractHtml);
-  if (!contractText.includes("1. Partes del Contrato") || !contractText.includes("17. Contacto")) {
-    throw new Error("El contrato fuente está incompleto y no puede firmarse");
-  }
-
   return new Promise<Buffer>((resolve, reject) => {
     const chunks: Buffer[] = [];
     const doc = new PDFDocument({
       size: "LETTER",
-      margin: 52,
+      margin: 0,
+      bufferPages: true,
       info: {
         Title: `Contrato SaaS — ${snapshot.companyName}`,
         Author: "SST Colombia",
@@ -145,64 +119,12 @@ export async function generateSignedSaasContractPdf(
     doc.on("error", reject);
     doc.on("end", () => resolve(Buffer.concat(chunks)));
 
-    doc.font("Helvetica-Bold").fontSize(18).fillColor("#166534")
-      .text("Contrato de Prestación de Servicios SaaS", { align: "center" });
-    if (snapshot.testOnly) {
-      doc.moveDown(0.4).font("Helvetica-Bold").fontSize(12).fillColor("#b91c1c")
-        .text("PRUEBA FUNCIONAL — SIN EFECTO CONTRACTUAL", { align: "center" });
+    try {
+      renderSaasContractPdf(doc, contractHtml, snapshot, sha256(snapshot.signatureImage));
+      doc.end();
+    } catch (error) {
+      doc.removeAllListeners("data");
+      reject(error);
     }
-    doc.moveDown(0.4);
-    doc.font("Helvetica").fontSize(9).fillColor("#374151")
-      .text(`SHA-256 de la fuente: ${snapshot.sourceSha256}`, { align: "center" });
-    doc.moveDown(1);
-    doc.font("Helvetica").fontSize(9).fillColor("#111827")
-      .text(contractText, { lineGap: 3, paragraphGap: 2, align: "left" });
-    doc.addPage();
-    doc.font("Helvetica-Bold").fontSize(17).fillColor("#166534")
-      .text("Constancia de firma electrónica");
-    if (snapshot.testOnly) {
-      doc.moveDown(0.4).font("Helvetica-Bold").fontSize(12).fillColor("#b91c1c")
-        .text("PRUEBA FUNCIONAL — SIN EFECTO CONTRACTUAL", { align: "center" });
-    }
-    doc.moveDown();
-    doc.font("Helvetica").fontSize(10).fillColor("#111827");
-    const details: Array<[string, string]> = [
-      ["Empresa", `${snapshot.companyName} — NIT ${snapshot.companyNit}`],
-      ["Representante legal indicado", `${snapshot.signerName} — identificación ${snapshot.signerId}`],
-      ["Calidad declarada", snapshot.capacity === "attorney" ? "Apoderado autorizado" : "Representante legal"],
-      ["Fecha y hora (UTC)", snapshot.signedAt.toISOString()],
-      ["Método", adminUpload
-        ? "Imagen de firma aportada por el administrador de la cuenta para este contrato"
-        : "Código de verificación de un solo uso enviado al correo registrado del firmante"],
-      ...(adminUpload
-        ? [
-            ["Acción realizada por", `${snapshot.signedByName || "Administrador"} (usuario ${snapshot.signedByUserId || "no registrado"})`],
-            ["Declaración", "El administrador declaró contar con autorización del representante legal para aceptar este contrato."],
-          ] as Array<[string, string]>
-        : [["Reto OTP", snapshot.challengeId || ""]] as Array<[string, string]>),
-      ["Dirección IP", snapshot.ip],
-      ["Agente de usuario", snapshot.userAgent],
-      ["SHA-256 del contrato presentado", snapshot.sourceSha256],
-      ["SHA-256 de la imagen de firma", sha256(snapshot.signatureImage)],
-    ];
-    for (const [label, value] of details) {
-      doc.font("Helvetica-Bold").text(`${label}: `, { continued: true });
-      doc.font("Helvetica").text(value, { paragraphGap: 7 });
-    }
-    if (doc.y > doc.page.height - 190) doc.addPage();
-    doc.moveDown(0.5);
-    doc.font("Helvetica-Bold").fontSize(10).text("Firma adjunta por el representante legal:");
-    doc.moveDown(0.4);
-    const imageY = doc.y;
-    doc.image(snapshot.signatureImage, 54, imageY, { fit: [240, 90] });
-    doc.y = imageY + 95;
-    doc.moveDown();
-    doc.fontSize(8).fillColor("#4b5563").text(
-      adminUpload
-        ? "La constancia identifica la operación y la versión aceptada. La imagen aportada y la declaración del administrador no verifican externamente la identidad ni la autorización específica del representante legal."
-        : "La constancia identifica el método electrónico y la versión del documento aceptada. La imagen adjunta y el código no constituyen una validación externa de la identidad o de las facultades del firmante.",
-      { lineGap: 3 },
-    );
-    doc.end();
   });
 }
