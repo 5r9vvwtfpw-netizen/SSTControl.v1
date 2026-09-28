@@ -125,18 +125,18 @@ export function SolicitudFirmaContratoSaaS() {
     }
   };
 
-  const downloadSignedPdf = async (request: SigningRequest) => {
-    setDownloadingId(request.id);
+  const downloadSignedPdf = async (request: SigningRequest, kind: "reading-copy" | "original") => {
+    setDownloadingId(`${request.id}:${kind}`);
     try {
       const response = await apiRequest(
         "GET",
-        `/api/saas-signing/company/${encodeURIComponent(request.id)}/pdf`,
+        `/api/saas-signing/company/${encodeURIComponent(request.id)}/${kind === "reading-copy" ? "reading-copy" : "pdf"}`,
       );
       const pdf = await response.blob();
       const url = URL.createObjectURL(pdf);
       const link = document.createElement("a");
       link.href = url;
-      link.download = "Contrato-SaaS.pdf";
+      link.download = kind === "reading-copy" ? "Contrato-SaaS-copia-de-lectura.pdf" : "Contrato-SaaS-original-firmado.pdf";
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -237,18 +237,35 @@ export function SolicitudFirmaContratoSaaS() {
                     </p>
                   )}
                   {canDownload && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => downloadSignedPdf(request)}
-                      disabled={downloadingId === request.id}
-                    >
-                      {downloadingId === request.id
-                        ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        : <Download className="mr-2 h-4 w-4" />}
-                      {isTestOnly ? "Descargar contrato de prueba" : "Descargar contrato firmado"}
-                    </Button>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => downloadSignedPdf(request, "reading-copy")}
+                        disabled={downloadingId !== null}
+                      >
+                        {downloadingId === `${request.id}:reading-copy`
+                          ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          : <Download className="mr-2 h-4 w-4" />}
+                        Descargar copia legible
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => downloadSignedPdf(request, "original")}
+                        disabled={downloadingId !== null}
+                      >
+                        {downloadingId === `${request.id}:original`
+                          ? <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          : <Download className="mr-2 h-4 w-4" />}
+                        {isTestOnly ? "Original de prueba" : "Original firmado"}
+                      </Button>
+                      <p className="w-full text-xs text-muted-foreground">
+                        La copia facilita la lectura; el PDF firmado original permanece sin cambios.
+                      </p>
+                    </div>
                   )}
                 </div>
               );

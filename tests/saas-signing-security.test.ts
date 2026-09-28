@@ -118,4 +118,14 @@ test("la instantánea SSR conserva el contrato publicado y produce artefactos fi
     .toUpperCase()
     .replace(/\s/g, "");
   assert.ok(decodedPdfText.includes("PRUEBAFUNCIONAL"));
+
+  const originalHash = sha256(pdf);
+  const readingCopy = await generateSignedSaasContractPdf(source, {
+    ...snapshot,
+    readingCopy: true,
+    originalPdfSha256: originalHash,
+  });
+  assert.equal(readingCopy.subarray(0, 5).toString("ascii"), "%PDF-");
+  assert.notEqual(sha256(readingCopy), originalHash);
+  assert.equal(sha256(pdf), originalHash, "La copia no debe modificar el PDF firmado original");
 });

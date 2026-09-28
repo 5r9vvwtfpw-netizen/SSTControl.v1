@@ -939,4 +939,77 @@ export function registerSaasSigningRoutes(
       return res.status(500).json({ error: "No se pudo descargar el contrato firmado." });
     }
   });
+
+  // Copia de lectura: se genera desde los objetos archivados y verificados.
+  // El PDF firmado original y sus hashes permanecen inalterados.
+  app.get("/api/saas-signing/company/:id/reading-copy", auth, async (req, res) => {
+    const requestId = getRequestId(req.params.id);
+    if (!requestId) return res.status(400).json({ error: "Identificador de solicitud inválido." });
+    const scoped = await resolveCompany(req);
+    if ("status" in scoped) return res.status(scoped.status).json({ error: scoped.error });
+    try {
+      const result = await db.execute(sql`
+        SELECT r.status, r.test_only, r.source_object_path, r.source_sha256,
+               r.company_name, r.company_nit,
+               s.signer_name, s.signer_id, s.capacity, s.contract_version,
+               s.source_sha256 AS signed_source_sha256, s.challenge_id,
+               s.signed_at, s.signer_ip, s.signer_user_agent,
+               s.signed_pdf_object_path, s.signed_pdf_sha256,
+               s.signature_image_object_path, s.signature_image_sha256
+        FROM saas_contract_signing_requests r
+        JOIN saas_contract_signatures s ON s.request_id = r.id
+        WHERE r.id = ${requestId} AND r.company_id = ${scoped.companyId}
+          AND (
+            (r.status = 'signed' AND r.test_only = false AND s.test_only = false)
+            OR (r.status = 'test_signed' AND r.test_only = true AND s.test_only = true
+                AND ${process.env.NODE_ENV !== "production"})
+          )
+      `);
+      const record = (result as any).rows[0];
+      if (!record) return res.status(404).json({ error: "No se encontró un contrato firmado para esta solicitud." });
+      if (!record.signature_image_object_path || record.source_sha256 !== record.signed_source_sha256) {
+        return res.status(503).json({ error: "Los archivos originales no superan la verificación de integridad." });
+      }
+      const [source, originalPdf, signatureImage] = await Promise.all([
+        objectStorageService.getObjectBuffer(record.source_object_path),
+        objectStorageService.getObjectBuffer(record.signed_pdf_object_path),
+        objectStorageService.getObjectBuffer(record.signature_image_object_path),
+      ]);
+      if (!source || !originalPdf || !signatureImage ||
+          sha256(source) !== record.source_sha256 ||
+          sha256(originalPdf) !== record.signed_pdf_sha256 ||
+          sha256(signatureImage) !== record.signature_image_sha256) {
+        return res.status(503).json({ error: "Los archivos originales no superan la verificación de integridad." });
+      }
+      const snapshot: ContractSignerSnapshot = {
+        companyName: record.company_name,
+        companyNit: record.company_nit,
+        signerName: record.signer_name,
+        signerId: record.signer_id,
+        capacity: record.capacity,
+        contractVersion: record.contract_version,
+        sourceSha256: record.source_sha256,
+        challengeId: record.challenge_id ?? undefined,
+        signingMethod: record.challenge_id ? "email_otp" : "admin_upload",
+        signedAt: new Date(record.signed_at),
+        ip: record.signer_ip,
+        userAgent: record.signer_user_agent,
+        signatureImage,
+        testOnly: record.test_only,
+        readingCopy: true,
+        originalPdfSha256: record.signed_pdf_sha256,
+      };
+      const pdf = await generateSignedSaasContractPdf(source.toString("utf8"), snapshot);
+      res.set({
+        "Content-Type": "application/pdf",
+        "Content-Disposition": 'attachment; filename="contrato-saas-copia-de-lectura.pdf"',
+        "Cache-Control": "private, no-store",
+        "X-Content-Type-Options": "nosniff",
+      });
+      return res.send(pdf);
+    } catch (error) {
+      console.error("[SaaS] No se pudo generar la copia de lectura:", error);
+      return res.status(500).json({ error: "No se pudo generar la copia de lectura del contrato." });
+    }
+  });
 }

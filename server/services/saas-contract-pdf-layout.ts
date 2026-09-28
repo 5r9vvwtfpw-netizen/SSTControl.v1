@@ -28,6 +28,8 @@ export interface ContractPdfSnapshot {
   sourceSha256: string;
   signatureImage: Buffer;
   testOnly?: boolean;
+  readingCopy?: boolean;
+  originalPdfSha256?: string;
 }
 
 type Block = { kind: "paragraph" | "bullet" | "row"; text: string };
@@ -76,29 +78,29 @@ function parseSections(html: string): Section[] {
   return sections;
 }
 
-function drawFrame(doc: PDFKit.PDFDocument) {
+function drawFrame(doc: PDFKit.PDFDocument, readingCopy = false) {
   doc.fillColor(GREEN).rect(LEFT, 34, 24, 3).fill();
   doc.font("Helvetica-Bold").fontSize(8.5).fillColor(INK).text("SST COLOMBIA", LEFT + 33, 30, { lineBreak: false });
   doc.font("Helvetica").fontSize(7.5).fillColor(MUTED)
-    .text("DOCUMENTO CONTRACTUAL", 360, 31, { width: 198, align: "right", lineBreak: false });
+    .text(readingCopy ? "COPIA DE LECTURA" : "DOCUMENTO CONTRACTUAL", 360, 31, { width: 198, align: "right", lineBreak: false });
   doc.strokeColor(RULE).lineWidth(0.7).moveTo(LEFT, 52).lineTo(612 - RIGHT, 52).stroke();
 }
 
 class ContractLayout {
   y = TOP;
-  constructor(readonly doc: PDFKit.PDFDocument) {
-    drawFrame(doc);
+  constructor(readonly doc: PDFKit.PDFDocument, readonly readingCopy = false) {
+    drawFrame(doc, readingCopy);
   }
 
   space(height: number) {
     if (this.y + height <= BOTTOM) return;
     this.doc.addPage();
-    drawFrame(this.doc);
+    drawFrame(this.doc, this.readingCopy);
     this.y = TOP;
   }
 
   text(value: string, options: { size?: number; bold?: boolean; color?: string; indent?: number; gap?: number; lineGap?: number } = {}) {
-    const { size = 9.5, bold = false, color = INK, indent = 0, gap = 8, lineGap = 3 } = options;
+    const { size = 10, bold = false, color = INK, indent = 0, gap = 9, lineGap = 3 } = options;
     const x = LEFT + indent;
     const width = WIDTH - indent;
     this.doc.font(bold ? "Helvetica-Bold" : "Helvetica").fontSize(size);
@@ -113,16 +115,40 @@ class ContractLayout {
     this.y += 11;
     this.doc.strokeColor(RULE).lineWidth(0.6).moveTo(LEFT, this.y).lineTo(LEFT + WIDTH, this.y).stroke();
     this.y += 12;
-    this.text(title, { size: 11, bold: true, color: GREEN, gap: 12, lineGap: 2 });
+    this.text(title, { size: 11.5, bold: true, color: GREEN, gap: 12, lineGap: 2 });
   }
 
   bullet(value: string) {
-    this.doc.font("Helvetica").fontSize(9.5);
+    this.doc.font("Helvetica").fontSize(10);
     const height = this.doc.heightOfString(value, { width: WIDTH - 28, lineGap: 3 });
     this.space(height + 6);
     this.doc.fillColor(GREEN).circle(LEFT + 9, this.y + 6, 1.8).fill();
     this.doc.fillColor(INK).text(value, LEFT + 22, this.y, { width: WIDTH - 28, lineGap: 3 });
     this.y += height + 6;
+  }
+
+  partyHeading(value: string) {
+    this.space(31);
+    this.doc.fillColor(LIGHT).roundedRect(LEFT, this.y, WIDTH, 27, 3).fill();
+    this.doc.font("Helvetica-Bold").fontSize(9.5).fillColor(GREEN)
+      .text(value, LEFT + 12, this.y + 8, { width: WIDTH - 24, lineBreak: false });
+    this.y += 34;
+  }
+
+  partyField(value: string) {
+    const colon = value.indexOf(":");
+    if (colon < 0) return this.text(value);
+    const label = value.slice(0, colon + 1);
+    const detail = value.slice(colon + 1).trim();
+    const fieldWidth = WIDTH - 155;
+    this.doc.font("Helvetica").fontSize(9.8);
+    const height = Math.max(18, this.doc.heightOfString(detail, { width: fieldWidth, lineGap: 2 }) + 6);
+    this.space(height);
+    this.doc.font("Helvetica-Bold").fontSize(9).fillColor(MUTED)
+      .text(label, LEFT + 12, this.y + 2, { width: 135 });
+    this.doc.font("Helvetica").fontSize(9.8).fillColor(INK)
+      .text(detail, LEFT + 155, this.y + 2, { width: fieldWidth, lineGap: 2 });
+    this.y += height;
   }
 
   row(value: string, index: number) {
@@ -155,6 +181,12 @@ function drawCoverHeading(layout: ContractLayout, snapshot: ContractPdfSnapshot,
       .text(effectiveDate, LEFT + 170, layout.y + 23);
   }
   layout.y += 62;
+  if (snapshot.readingCopy) {
+    layout.text(
+      "COPIA DE LECTURA. Documento remaquetado a partir del texto archivado; no reemplaza el PDF firmado original.",
+      { size: 8.5, bold: true, color: MUTED, gap: 10 },
+    );
+  }
   if (snapshot.testOnly) {
     layout.text("PRUEBA FUNCIONAL — SIN EFECTO CONTRACTUAL", { bold: true, size: 10, color: "#A52828", gap: 8 });
   }
@@ -163,10 +195,15 @@ function drawCoverHeading(layout: ContractLayout, snapshot: ContractPdfSnapshot,
 function drawSignaturePage(layout: ContractLayout, snapshot: ContractPdfSnapshot, signatureHash: string) {
   const { doc } = layout;
   doc.addPage();
-  drawFrame(doc);
+  drawFrame(doc, layout.readingCopy);
   layout.y = TOP;
-  layout.text("Constancia de firma electrónica", { size: 17, bold: true, color: GREEN, gap: 7 });
-  layout.text("Registro de aceptación del contrato indicado en las páginas anteriores.", { color: MUTED, gap: 13 });
+  layout.text(snapshot.readingCopy ? "Constancia de la copia de lectura" : "Constancia de firma electrónica", { size: 17, bold: true, color: GREEN, gap: 7 });
+  layout.text(
+    snapshot.readingCopy
+      ? "Esta representación facilita la lectura. El PDF firmado original y su huella de integridad se conservan sin modificaciones y pueden descargarse por separado."
+      : "Registro de aceptación del contrato indicado en las páginas anteriores.",
+    { color: MUTED, gap: 13 },
+  );
   if (snapshot.testOnly) layout.text("PRUEBA FUNCIONAL — SIN EFECTO CONTRACTUAL", { bold: true, color: "#A52828" });
 
   const adminUpload = snapshot.signingMethod === "admin_upload";
@@ -188,12 +225,15 @@ function drawSignaturePage(layout: ContractLayout, snapshot: ContractPdfSnapshot
     ["Agente de usuario", snapshot.userAgent],
   ];
   for (const [label, value] of details) {
+    doc.font("Helvetica-Bold").fontSize(8.4);
+    const labelHeight = doc.heightOfString(label.toUpperCase(), { width: 145, lineGap: 2 });
     doc.font("Helvetica").fontSize(9);
-    const height = Math.max(18, doc.heightOfString(value, { width: WIDTH - 160, lineGap: 2 }) + 9);
+    const valueHeight = doc.heightOfString(value, { width: WIDTH - 160, lineGap: 2 });
+    const height = Math.max(20, labelHeight + 10, valueHeight + 10);
     layout.space(height);
     doc.strokeColor(RULE).lineWidth(0.4).moveTo(LEFT, layout.y + height - 2).lineTo(LEFT + WIDTH, layout.y + height - 2).stroke();
     doc.font("Helvetica-Bold").fontSize(8.4).fillColor(MUTED)
-      .text(label.toUpperCase(), LEFT, layout.y + 3, { width: 145 });
+      .text(label.toUpperCase(), LEFT, layout.y + 3, { width: 145, lineGap: 2 });
     doc.font("Helvetica").fontSize(9).fillColor(INK)
       .text(value, LEFT + 160, layout.y + 3, { width: WIDTH - 160, lineGap: 2 });
     layout.y += height;
@@ -213,6 +253,9 @@ function drawSignaturePage(layout: ContractLayout, snapshot: ContractPdfSnapshot
   );
   layout.text("Integridad documental", { size: 10, bold: true, color: GREEN, gap: 6 });
   layout.text(`SHA-256 del contrato presentado: ${snapshot.sourceSha256}`, { size: 8, color: MUTED, gap: 5 });
+  if (snapshot.readingCopy && snapshot.originalPdfSha256) {
+    layout.text(`SHA-256 del PDF firmado original: ${snapshot.originalPdfSha256}`, { size: 8, color: MUTED, gap: 5 });
+  }
   layout.text(`SHA-256 de la imagen de firma: ${signatureHash}`, { size: 8, color: MUTED, gap: 0 });
 }
 
@@ -224,7 +267,7 @@ export function renderSaasContractPdf(
 ) {
   const sections = parseSections(html);
   const effectiveDate = plainText(html.match(/Fecha de vigencia:\s*([^<]+)/i)?.[1] || "");
-  const layout = new ContractLayout(doc);
+  const layout = new ContractLayout(doc, snapshot.readingCopy);
   drawCoverHeading(layout, snapshot, effectiveDate);
   for (const section of sections) {
     layout.section(section.title);
@@ -232,6 +275,8 @@ export function renderSaasContractPdf(
     for (const block of section.blocks) {
       if (block.kind === "bullet") layout.bullet(block.text);
       else if (block.kind === "row") layout.row(block.text, row++);
+      else if (section.title === "1. Partes del Contrato" && (block.text === "Proveedor:" || block.text === "Cliente:")) layout.partyHeading(block.text);
+      else if (section.title === "1. Partes del Contrato" && block.text.includes(":")) layout.partyField(block.text);
       else layout.text(block.text);
     }
   }
@@ -244,7 +289,7 @@ export function renderSaasContractPdf(
     doc.switchToPage(page);
     doc.strokeColor(RULE).lineWidth(0.7).moveTo(LEFT, 742).lineTo(LEFT + WIDTH, 742).stroke();
     doc.font("Helvetica").fontSize(8).fillColor(MUTED)
-      .text(`SST Colombia  •  Contrato SaaS  •  Versión ${snapshot.contractVersion}`, LEFT, 753, { lineBreak: false });
+      .text(`SST Colombia  •  ${snapshot.readingCopy ? "Copia de lectura" : "Contrato SaaS"}  •  Versión ${snapshot.contractVersion}`, LEFT, 753, { lineBreak: false });
     doc.text(`Página ${page - start + 1} de ${count}`, 450, 753, { width: 108, align: "right", lineBreak: false });
   }
 }

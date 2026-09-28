@@ -22,6 +22,8 @@ export interface ContractSignerSnapshot {
   userAgent: string;
   testOnly?: boolean;
   signatureImage: Buffer;
+  readingCopy?: boolean;
+  originalPdfSha256?: string;
 }
 
 export function sha256(buffer: Buffer | string): string {

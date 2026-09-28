@@ -71,6 +71,7 @@
 - [Profesionales SST y protección del software](profesional-sst-software-focus.md) — el acuerdo debe proteger primero el software, su propiedad intelectual y el conocimiento reservado; los datos sensibles son obligación complementaria.
 - [Responsabilidad por informes SaaS](saas-report-responsibility.md) — el proveedor responde por generar informes conforme al alcance ofrecido; el cliente aporta datos y decide acciones.
 - [Contrato SaaS canónico](saas-contract-canonical-source.md) — el usuario eligió el contrato público como base; no reintroducir condiciones exclusivas del texto de pago sin consultarle.
+- [PDF SaaS firmado y copia de lectura](saas-signed-pdf-integrity.md) — el artefacto firmado es inmutable; mejoras de maquetación de contratos antiguos se ofrecen como copia derivada del texto archivado.
 - [Firma del contrato SaaS](saas-contract-signing-policy.md) — carga propia del contrato por administrador; separada de Empresas y sin invitación, código ni revisión manual.
 - [Alcance de la profesional SST](sst-professional-scope.md) — auditar, investigar y capacitar son compromisos profesionales propuestos, distintos de las funciones del portal.
 - [Informe gerencial y datos sintéticos](management-report-synthetic-data.md) — excluir acciones explícitamente marcadas como pruebas del diagnóstico y separar resultado registrado de cierre verificado.
