@@ -21,6 +21,7 @@
 - [Committee acta signature roles](committee-acta-signature-roles.md) — el bloque de firmas usa Presidente/Secretario, no Principal/Suplente como cargos formales.
 - [Resolución 3461 de 2025 — Comité de Convivencia Laboral](resolucion-3461-2025-ccl.md) — CCL preventivo y confidencial, con plazos y ruta separada para acoso sexual; no aplica al COPASST.
 - [Driver–vehicle assignment policy](driver-vehicle-assignment-policy.md) — relación PESV muchos-a-muchos con vigencia e historial; finalizar no borra y el fallback de flota solo aplica antes de la primera asignación.
+- [PESV en el Portal de Empleados](pesv-portal-driver-visibility.md) — un trabajador no conductor no debe ver el grupo PESV; contratos antiguos o registros inactivos no acreditan que conduzca hoy.
 - [Storage architecture](storage-architecture.md) — uploads use AWS S3; base64 logo routes need encoded-size parser headroom and explicit 413 messages.
 - [Induction resend policy](pesv-induction-send-policy.md) — SST y PESV admiten sesiones repetidas; sus evaluaciones son prediseñadas y no dependen de preguntas configuradas por empresa.
 - [Induction content isolation](induction-content-isolation.md) — el contenido enviado por Capacitaciones no debe aparecer en inducciones, aunque comparta URL o haya quedado en una instantánea.

@@ -16,7 +16,7 @@
 // FRESH BUILD TRIGGER
 import type { Express, Request } from "express";
 import { createServer, type Server } from "http";
-import { eq, and, sql, desc, ne, inArray, ilike, or } from "drizzle-orm";
+import { eq, and, sql, desc, ne, inArray, ilike, or, isNull, lte, gte } from "drizzle-orm";
 import { initializeWebSocket, notifyNewMessage, notifyMessageRead, setSessionParser, broadcastToSupportAgents, getOnlineSupportUserIds } from "./websocket";
 import { setupAuth, getSessionMiddleware, requireAuth as authRequireAuth, requirePermission, requireAnyPermission, requireRole, hashPassword, stripPassword, requireActiveSubscription, revokeRetiredWorkerPortalSessions } from "./auth";
 import { demoReadOnlyMiddleware } from "../plugins/demo-engine/readonly-middleware";
@@ -45647,23 +45647,36 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       }
       if (!workerId) return res.json({ esConductor: false });
 
-      // Nivel 1: registro en tabla drivers (PESV)
+      // Un registro histórico o inactivo no habilita el PESV del portal.
       const [driverRecord] = await db
         .select({ id: schema.drivers.id, nombre: schema.drivers.name })
         .from(schema.drivers)
-        .where(and(eq(schema.drivers.workerId, workerId), eq(schema.drivers.companyId, companyId)))
+        .where(and(
+          eq(schema.drivers.workerId, workerId),
+          eq(schema.drivers.companyId, companyId),
+          eq(schema.drivers.status, "activo"),
+        ))
         .limit(1);
 
       if (driverRecord) {
         return res.json({ esConductor: true, conductorNombre: driverRecord.nombre, origen: 'pesv' });
       }
 
-      // Nivel 2: perfil de cargo o posición del contrato contiene "conductor"
+      // Como respaldo, usar solo un contrato activo y vigente, nunca uno anterior.
+      const todayInColombia = new Intl.DateTimeFormat("sv-SE", {
+        timeZone: "America/Bogota", year: "numeric", month: "2-digit", day: "2-digit"
+      }).format(new Date());
       const [contrato] = await db
         .select({ profileName: schema.jobProfiles.name, position: schema.contracts.position })
         .from(schema.contracts)
         .leftJoin(schema.jobProfiles, eq(schema.contracts.jobProfileId, schema.jobProfiles.id))
-        .where(and(eq(schema.contracts.workerId, workerId), eq(schema.contracts.companyId, companyId)))
+        .where(and(
+          eq(schema.contracts.workerId, workerId),
+          eq(schema.contracts.companyId, companyId),
+          eq(schema.contracts.status, "activo"),
+          lte(schema.contracts.startDate, todayInColombia),
+          or(isNull(schema.contracts.endDate), gte(schema.contracts.endDate, todayInColombia)),
+        ))
         .limit(1);
 
       const esConductorPorCargo = contrato && (

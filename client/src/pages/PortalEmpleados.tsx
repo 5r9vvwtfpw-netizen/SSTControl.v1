@@ -981,26 +981,29 @@ const portalNavGroups = [
 
 function WorkerPortal() {
   const { user } = useAuth();
-  const [location, setLocation] = useLocation();
+  const [, setLocation] = useLocation();
   const search = useSearch();
-  const validPortalSections = new Set(portalNavGroups.flatMap(group => group.items.map(item => item.id)));
+  const { data: conductorStatus } = useQuery<{ esConductor: boolean; conductorNombre?: string }>({
+    queryKey: ["/api/portal/conductor-status"],
+    staleTime: 30 * 1000,
+  });
+  // Ocultar el grupo completo hasta confirmar que el trabajador es conductor.
+  const filteredNavGroups = portalNavGroups.filter(
+    group => group.id !== "pesv" || conductorStatus?.esConductor === true
+  );
+  const validPortalSections = new Set(filteredNavGroups.flatMap(group => group.items.map(item => item.id)));
   const sectionFromUrl = () => {
     const requestedSection = new URLSearchParams(search).get("section");
     return requestedSection && validPortalSections.has(requestedSection) ? requestedSection : "contrato";
   };
-  const [activeSection, setActiveSection] = useState(sectionFromUrl);
+  // La URL también se valida: un enlace directo a PESV no debe montar el contenido.
+  const activeSection = sectionFromUrl();
   const [expandedBottomGroup, setExpandedBottomGroup] = useState<string | null>(null);
 
   const navigateToSection = (section: string) => {
     if (!validPortalSections.has(section)) return;
-    setActiveSection(section);
     setLocation(`/portal-empleados?section=${encodeURIComponent(section)}`);
   };
-
-  useEffect(() => {
-    const requestedSection = sectionFromUrl();
-    setActiveSection(requestedSection);
-  }, [location, search]);
 
   // Tipo para elecciones con fechas
   type EleccionPortal = {
@@ -1044,20 +1047,6 @@ function WorkerPortal() {
   
   const hayEleccionCopasstActiva = esEleccionActiva(eleccionCopasst);
   const hayEleccionConvivenciaActiva = esEleccionActiva(eleccionConvivencia);
-
-  // Detectar si el trabajador es conductor para mostrar encuesta diaria
-  const { data: conductorStatus } = useQuery<{ esConductor: boolean; conductorNombre?: string }>({
-    queryKey: ["/api/portal/conductor-status"],
-    staleTime: 5 * 60 * 1000,
-  });
-
-  // Filtrar items PESV según perfil de conductor
-  const filteredNavGroups = portalNavGroups.map(group => {
-    if (group.id === 'pesv' && !conductorStatus?.esConductor) {
-      return { ...group, items: group.items.filter(i => i.id !== 'encuesta-conductor' && i.id !== 'inspeccion-vehiculo') };
-    }
-    return group;
-  });
 
   // Encontrar el grupo y el item activo para mostrar en el header
   const findActiveInfo = () => {
@@ -1255,7 +1244,7 @@ function WorkerPortal() {
       {/* ===== BOTTOM NAV — solo mobile (sm:hidden) ===== */}
       <div className="fixed bottom-0 left-0 right-0 z-50 sm:hidden">
         {/* Panel expandido con items del grupo seleccionado */}
-        {expandedBottomGroup && (
+        {expandedBottomGroup && filteredNavGroups.some(group => group.id === expandedBottomGroup) && (
           <>
             <div
               className="fixed inset-0 bg-black/30"
