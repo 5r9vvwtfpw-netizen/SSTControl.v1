@@ -83,6 +83,8 @@ export default function EvaluacionesSst() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const evaluationRoute = (id: string) =>
+    `/evaluaciones-sst/${id}${new URLSearchParams(window.location.search).get("estandar") === "3.3.6" ? "?estandar=3.3.6" : ""}`;
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -256,7 +258,7 @@ export default function EvaluacionesSst() {
         description: "La evaluación inicial del SG-SST se ha creado exitosamente",
         className: "bg-yellow-50 border-yellow-200",
       });
-      setLocation(`/evaluaciones-sst/${newEvaluacion.id}`);
+      setLocation(evaluationRoute(newEvaluacion.id));
     },
     onError: (error: Error) => {
       toast({
@@ -912,7 +914,7 @@ export default function EvaluacionesSst() {
                 <Card
                   key={evaluacion.id}
                   className="hover-elevate active-elevate-2 cursor-pointer"
-                  onClick={() => setLocation(`/evaluaciones-sst/${evaluacion.id}`)}
+                  onClick={() => setLocation(evaluationRoute(evaluacion.id))}
                   data-testid={`card-evaluation-${evaluacion.id}`}
                 >
                   <CardHeader>
@@ -961,7 +963,7 @@ export default function EvaluacionesSst() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <Button
                         size="sm"
-                        onClick={(e) => { e.stopPropagation(); setLocation(`/evaluaciones-sst/${evaluacion.id}`); }}
+                        onClick={(e) => { e.stopPropagation(); setLocation(evaluationRoute(evaluacion.id)); }}
                         data-testid={`button-abrir-${evaluacion.id}`}
                       >
                         <ArrowRight className="h-4 w-4 mr-2" />
@@ -1016,7 +1018,7 @@ export default function EvaluacionesSst() {
             <Card
               key={evaluacion.id}
               className="hover-elevate active-elevate-2 cursor-pointer"
-              onClick={() => setLocation(`/evaluaciones-sst/${evaluacion.id}`)}
+              onClick={() => setLocation(evaluationRoute(evaluacion.id))}
               data-testid={`card-evaluation-${evaluacion.id}`}
             >
               <CardHeader>
@@ -1066,7 +1068,7 @@ export default function EvaluacionesSst() {
                 <div className="flex items-center gap-2 flex-wrap">
                   <Button
                     size="sm"
-                    onClick={(e) => { e.stopPropagation(); setLocation(`/evaluaciones-sst/${evaluacion.id}`); }}
+                    onClick={(e) => { e.stopPropagation(); setLocation(evaluationRoute(evaluacion.id)); }}
                     data-testid={`button-abrir-${evaluacion.id}`}
                   >
                     <ArrowRight className="h-4 w-4 mr-2" />

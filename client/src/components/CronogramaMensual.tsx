@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { ChevronLeft, ChevronRight, Check, Clock, AlertTriangle, CheckCircle, ListTodo, HelpCircle, ArrowRight, Edit, Link2 } from "lucide-react";
 import { useCompanyContext } from "@/hooks/use-company-context";
@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import type { ActividadPlanTrabajo } from "@shared/schema";
+import type { ActividadPlanTrabajo, EvaluacionSst } from "@shared/schema";
 
 const MESES = [
   { id: "enero", nombre: "Enero", numero: 1 },
@@ -192,6 +192,15 @@ const ACTIVIDAD_KEYWORD_ROUTES: { keywords: string[]; route: string }[] = [
 
 function getRouteForActividad(actividad: string, programa: string): string | null {
   const actividadLower = actividad.toLowerCase();
+  const actividadNormalizada = actividadLower.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+  // Estas actividades comparten programa y vocabulario, pero tienen destinos distintos.
+  if (actividadNormalizada.startsWith("medicion y analisis del ausentismo")) {
+    return "/evaluaciones-sst?estandar=3.3.6";
+  }
+  if (actividadNormalizada.startsWith("examenes medicos post-incapacidad")) {
+    return "/examenes-medicos";
+  }
   
   // PRIORIDAD 1: Si el programa tiene ruta definida y el nombre contiene keyword del programa, usar la ruta del programa
   // Esto evita conflictos como "Capacitación en uso de EPP" yendo a /entrega-epp en lugar de /capacitaciones
@@ -295,8 +304,12 @@ function actividadAplicaACapitulo(actividad: string, companyChapter: number | nu
 export function CronogramaMensual({ actividades, planId, anio, mesInicial, onEditActividad }: CronogramaMensualProps) {
   const { toast } = useToast();
   const [mesSeleccionado, setMesSeleccionado] = useState(mesInicial || getMesInicial(anio));
-  const { selectedCompany } = useCompanyContext();
+  const { selectedCompany, effectiveCompanyId } = useCompanyContext();
   const companyChapter = selectedCompany?.calculatedChapter ? parseInt(selectedCompany.calculatedChapter) : null;
+  const { data: evaluaciones = [] } = useQuery<EvaluacionSst[]>({
+    queryKey: ["/api/evaluaciones-sst"],
+    enabled: actividades.some(act => getRouteForActividad(act.actividad, act.programa) === "/evaluaciones-sst?estandar=3.3.6"),
+  });
 
   const mesActualIndex = MESES.findIndex(m => m.id === mesSeleccionado);
   const mesInfo = MESES[mesActualIndex];
@@ -401,6 +414,13 @@ export function CronogramaMensual({ actividades, planId, anio, mesInicial, onEdi
     // Guardar el ID del plan de trabajo actual y el mes para poder volver desde el módulo
     localStorage.setItem("lastPlanTrabajoId", planId);
     localStorage.setItem("lastCronogramaMes", mesSeleccionado);
+    if (route === "/evaluaciones-sst?estandar=3.3.6") {
+      const evaluacion = evaluaciones
+        .filter(ev => ev.companyId === effectiveCompanyId && ev.anio === anio)
+        .sort((a, b) => b.mes - a.mes)[0];
+      setLocation(evaluacion ? `/evaluaciones-sst/${evaluacion.id}?estandar=3.3.6` : route);
+      return;
+    }
     setLocation(route);
   };
 

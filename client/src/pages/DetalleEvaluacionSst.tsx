@@ -50,6 +50,7 @@ export default function DetalleEvaluacionSst() {
   const [, setLocation] = useLocation();
   const [selectedComponente, setSelectedComponente] = useState<string | null>(null);
   const [selectedEstandar, setSelectedEstandar] = useState<EstandarSst | null>(null);
+  const [handledDeepLink, setHandledDeepLink] = useState<string | null>(null);
   const [respuestaDialogOpen, setRespuestaDialogOpen] = useState(false);
   const [accionDialogOpen, setAccionDialogOpen] = useState(false);
   const [tipoEmpresaDialogOpen, setTipoEmpresaDialogOpen] = useState(false);
@@ -81,12 +82,12 @@ export default function DetalleEvaluacionSst() {
     queryKey: ["/api/componentes-sst"],
   });
 
-  const { data: estandares = [] } = useQuery<EstandarSst[]>({
+  const { data: estandares = [], isLoading: loadingEstandares } = useQuery<EstandarSst[]>({
     queryKey: ["/api/estandares-sst", evaluacion?.tipoEmpresa],
     enabled: !!evaluacion,
   });
 
-  const { data: respuestas = [] } = useQuery<RespuestaEstandar[]>({
+  const { data: respuestas = [], isLoading: loadingRespuestas } = useQuery<RespuestaEstandar[]>({
     queryKey: ["/api/evaluaciones-sst", id, "respuestas"],
     enabled: !!id,
   });
@@ -497,6 +498,26 @@ export default function DetalleEvaluacionSst() {
     }
     setRespuestaDialogOpen(true);
   };
+
+  useEffect(() => {
+    const target = new URLSearchParams(window.location.search).get("estandar");
+    const link = `${id}:${target}`;
+    if (target !== "3.3.6" || !evaluacion || loadingEstandares || loadingRespuestas ||
+        !componentes.length || handledDeepLink === link) return;
+
+    setHandledDeepLink(link);
+    const estandar = estandares.find(item => item.numeroEstandar === target);
+    if (!estandar) {
+      toast({
+        title: "Estándar no aplicable",
+        description: "El estándar 3.3.6 no forma parte de esta evaluación. Seleccione una evaluación a la que aplique.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setSelectedComponente(estandar.componenteId);
+    handleEstandarClick(estandar);
+  }, [id, evaluacion, estandares, componentes, loadingEstandares, loadingRespuestas, handledDeepLink]);
 
   const getPuntajeMaximoEstandar = (estandar: EstandarSst) => {
     if (!evaluacion) return 0;
