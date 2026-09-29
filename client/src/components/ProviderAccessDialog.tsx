@@ -47,7 +47,7 @@ const ACCESS_REASONS: { value: AccessReason; label: string; description: string 
 interface ProviderAccessDialogProps {
   open: boolean;
   company: Company | null;
-  onConfirm: (reason: AccessReason, description: string, ticketNumber?: string) => void;
+  onConfirm: (reason: AccessReason, description: string, ticketNumber?: string) => Promise<void>;
   onCancel: () => void;
 }
 
@@ -61,22 +61,27 @@ export function ProviderAccessDialog({
   const [description, setDescription] = useState("");
   const [ticketNumber, setTicketNumber] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const handleConfirm = async () => {
     if (!reason || !description.trim()) return;
     
     setIsSubmitting(true);
+    setSubmitError(null);
     try {
       await onConfirm(reason, description.trim(), ticketNumber.trim() || undefined);
       setReason("");
       setDescription("");
       setTicketNumber("");
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "No se pudo registrar el acceso. Intente de nuevo.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleCancel = () => {
+    setSubmitError(null);
     setReason("");
     setDescription("");
     setTicketNumber("");
@@ -109,6 +114,7 @@ export function ProviderAccessDialog({
             </div>
           </div>
         )}
+        {submitError && <p className="text-sm text-destructive" role="alert">{submitError}</p>}
 
         <div className="grid gap-4 py-2">
           <div className="grid gap-2">

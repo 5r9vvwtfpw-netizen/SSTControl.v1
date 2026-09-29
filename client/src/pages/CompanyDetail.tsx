@@ -1,4 +1,5 @@
-import { useParams, useLocation, Link } from "wouter";
+import { useEffect, useRef, useState } from "react";
+import { useParams, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,6 +8,8 @@ import { Building2, ArrowLeft, FileText, TrendingUp } from "lucide-react";
 import { SstStandard } from "@shared/schema";
 import { calculateChapter, getChapterDescription, getChapterStandards } from "@shared/utils";
 import { getCiiuLabel } from "@/lib/ciiu-codes";
+import { useAuth } from "@/hooks/use-auth";
+import { useCompanyContext } from "@/hooks/use-company-context";
 
 interface Company {
   id: string;
@@ -21,14 +24,110 @@ interface Company {
 export default function CompanyDetail() {
   const { id } = useParams();
   const [, setLocation] = useLocation();
+  const { user } = useAuth();
+  const {
+    companies,
+    isLoading: companiesLoading,
+    selectedCompanyId,
+    setSelectedCompanyId,
+    pendingCompanySelection,
+  } = useCompanyContext();
+  const isSuperAdmin = user?.role === "superadmin";
+  const hasAuthorizedCompanyContext = !isSuperAdmin || selectedCompanyId === id;
+  const selectionRequestRef = useRef<string | null>(null);
+  const dialogObservedRef = useRef(false);
+  const [selectionCancelled, setSelectionCancelled] = useState(false);
+
+  useEffect(() => {
+    if (!isSuperAdmin || !id || companiesLoading) return;
+
+    if (selectedCompanyId === id) {
+      selectionRequestRef.current = null;
+      dialogObservedRef.current = false;
+      setSelectionCancelled(false);
+      return;
+    }
+
+    if (!companies.some(companyOption => companyOption.id === id)) return;
+    if (pendingCompanySelection?.id === id) {
+      selectionRequestRef.current = id;
+      dialogObservedRef.current = true;
+      return;
+    }
+
+    if (selectionRequestRef.current !== id) {
+      selectionRequestRef.current = id;
+      dialogObservedRef.current = false;
+      setSelectionCancelled(false);
+      setSelectedCompanyId(id);
+    }
+  }, [
+    isSuperAdmin,
+    id,
+    companiesLoading,
+    companies,
+    selectedCompanyId,
+    pendingCompanySelection,
+    setSelectedCompanyId,
+  ]);
+
+  useEffect(() => {
+    if (
+      isSuperAdmin &&
+      id &&
+      selectionRequestRef.current === id &&
+      dialogObservedRef.current &&
+      selectedCompanyId !== id &&
+      !pendingCompanySelection
+    ) {
+      setSelectionCancelled(true);
+    }
+  }, [isSuperAdmin, id, selectedCompanyId, pendingCompanySelection]);
 
   const { data: company, isLoading: companyLoading } = useQuery<Company>({
     queryKey: ["/api/companies", id],
+    enabled: !!id && hasAuthorizedCompanyContext,
   });
 
   const { data: standards = [], isLoading: standardsLoading } = useQuery<SstStandard[]>({
     queryKey: ["/api/sst-standards"],
+    enabled: hasAuthorizedCompanyContext,
   });
+
+  if (isSuperAdmin && !hasAuthorizedCompanyContext) {
+    const targetCompanyExists = companies.some(companyOption => companyOption.id === id);
+    return (
+      <div className="flex flex-col items-center justify-center h-64 gap-4">
+        <p className="text-muted-foreground text-center" data-testid="text-company-access-status">
+          {selectionCancelled
+            ? "Se canceló la solicitud de acceso a esta empresa."
+            : companiesLoading
+              ? "Cargando empresas..."
+              : targetCompanyExists
+                ? "Esperando la autorización de acceso auditada para mostrar esta empresa..."
+                : "Empresa no encontrada"}
+        </p>
+        {selectionCancelled && targetCompanyExists && id && (
+          <Button
+            variant="outline"
+            onClick={() => {
+              selectionRequestRef.current = id;
+              dialogObservedRef.current = false;
+              setSelectionCancelled(false);
+              setSelectedCompanyId(id);
+            }}
+            data-testid="button-retry-company-access"
+          >
+            Solicitar acceso nuevamente
+          </Button>
+        )}
+        <Button onClick={() => setLocation("/empresas")} data-testid="button-back">
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Volver a Gestión de Empresas
+        </Button>
+      </div>
+    );
+  }
 
   if (companyLoading) {
     return (

@@ -173,13 +173,24 @@ function parseObjectPathHelper(objPath: string): { bucketName: string; objectNam
 
 // Helper function to get effective company ID (same as in routes.ts)
 function getEffectiveCompanyId(req: Request): string | null {
-  const headerCompanyId = req.headers['x-company-id'] as string | undefined;
+  const rawHeaderCompanyId = req.headers['x-company-id'] as string | undefined;
+  const headerCompanyId = rawHeaderCompanyId?.trim() || undefined;
   const isGlobalUser = hasGlobalAccess(req.user!.role);
   
   if (isGlobalUser && headerCompanyId) {
     return headerCompanyId;
   }
+  if (isGlobalUser) {
+    return null;
+  }
   return req.user!.companyId || null;
+}
+
+function hasContradictoryCompanyContext(req: Request, companyId: string, explicitCompanyId?: unknown): boolean {
+  const rawHeaderCompanyId = req.headers['x-company-id'] as string | undefined;
+  const headerCompanyId = rawHeaderCompanyId?.trim() || undefined;
+  return (!!headerCompanyId && headerCompanyId !== companyId) ||
+    (typeof explicitCompanyId === 'string' && !!explicitCompanyId && explicitCompanyId !== companyId);
 }
 
 export function registerLicensedProfessionalsRoutes(app: Express) {
@@ -336,9 +347,16 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
       const { id } = req.params;
       const { companyId } = req.body;
       const user = req.user!;
+      const effectiveCompanyId = getEffectiveCompanyId(req);
       
       if (!companyId) {
         return res.status(400).json({ message: "companyId is required" });
+      }
+      if (!effectiveCompanyId) {
+        return res.status(400).json({ message: "X-Company-Id is required to assign a professional" });
+      }
+      if (hasContradictoryCompanyContext(req, effectiveCompanyId, companyId)) {
+        return res.status(400).json({ message: "Company context does not match the assignment company" });
       }
       
       const [professional] = await db.select()
@@ -443,6 +461,13 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
   app.delete("/api/licensed-professionals/:id/assignments/:companyId", requirePermission("licensed_professionals:assign"), async (req, res) => {
     try {
       const { id, companyId } = req.params;
+      const effectiveCompanyId = getEffectiveCompanyId(req);
+      if (!effectiveCompanyId) {
+        return res.status(400).json({ message: "X-Company-Id is required to remove an assignment" });
+      }
+      if (hasContradictoryCompanyContext(req, effectiveCompanyId, companyId)) {
+        return res.status(400).json({ message: "Company context does not match the assignment company" });
+      }
       
       const [assignment] = await db.select()
         .from(schema.licensedProfessionalAssignments)
@@ -1169,8 +1194,12 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
     try {
       const { companyId } = req.params;
       const user = req.user!;
+      const effectiveCompanyId = getEffectiveCompanyId(req);
       
-      if (user.role !== 'superadmin' && user.companyId !== companyId) {
+      if (!effectiveCompanyId && user.role === 'superadmin') {
+        return res.status(400).json({ message: "X-Company-Id is required to select a company" });
+      }
+      if (companyId !== effectiveCompanyId) {
         return res.status(403).json({ message: "You can only view licensed professionals for your own company" });
       }
       
@@ -1223,6 +1252,16 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
       if (user.role === 'admin' && !user.companyId) {
         return res.status(403).json({ message: "Debes estar asociado a una empresa para ver el directorio" });
       }
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) {
+        return res.status(400).json({ message: "X-Company-Id es requerido para seleccionar una empresa" });
+      }
+      const [selectedCompany] = await db.select({ id: schema.companies.id })
+        .from(schema.companies)
+        .where(eq(schema.companies.id, companyId));
+      if (!selectedCompany) {
+        return res.status(404).json({ message: "Empresa no encontrada" });
+      }
 
       // Get all LSOs with valid license status (vigente)
       console.log('[GET /api/directory/licensed-professionals] Fetching LSOs with vigente license...');
@@ -1246,13 +1285,13 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
 
       // If user has a company, check which LSOs are already assigned
       let assignedLsoIds: string[] = [];
-      if (user.companyId) {
+      if (companyId) {
         const assignments = await db.select({
           userId: schema.licensedProfessionalAssignments.userId,
         })
         .from(schema.licensedProfessionalAssignments)
         .where(and(
-          eq(schema.licensedProfessionalAssignments.companyId, user.companyId),
+          eq(schema.licensedProfessionalAssignments.companyId, companyId),
           eq(schema.licensedProfessionalAssignments.isActive, true)
         ));
         assignedLsoIds = assignments.map(a => a.userId);
@@ -1282,9 +1321,12 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
       if (!['admin', 'superadmin'].includes(user.role)) {
         return res.status(403).json({ message: "Solo administradores pueden solicitar profesionales" });
       }
-      
-      if (!user.companyId) {
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) {
         return res.status(403).json({ message: "Debes estar asociado a una empresa para solicitar un profesional" });
+      }
+      if (hasContradictoryCompanyContext(req, companyId, req.body.companyId)) {
+        return res.status(400).json({ message: "El contexto de empresa no coincide con la empresa de la solicitud" });
       }
 
       // Verify LSO exists, has lso role, and has valid license
@@ -1305,7 +1347,7 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
         .from(schema.licensedProfessionalAssignments)
         .where(and(
           eq(schema.licensedProfessionalAssignments.userId, lsoId),
-          eq(schema.licensedProfessionalAssignments.companyId, user.companyId),
+          eq(schema.licensedProfessionalAssignments.companyId, companyId),
           eq(schema.licensedProfessionalAssignments.isActive, true)
         ));
 
@@ -1316,11 +1358,14 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
       // Get company info
       const [company] = await db.select()
         .from(schema.companies)
-        .where(eq(schema.companies.id, user.companyId));
+        .where(eq(schema.companies.id, companyId));
+      if (!company) {
+        return res.status(404).json({ message: "Empresa no encontrada" });
+      }
 
       // Create internal message to the LSO
       await db.insert(schema.internalMessages).values({
-        companyId: user.companyId,
+        companyId,
         senderId: user.id,
         senderName: user.fullName || user.username,
         senderRole: user.role,
@@ -1353,6 +1398,9 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
       const companyId = getEffectiveCompanyId(req);
       
       if (!companyId) {
+        if (user.role === 'superadmin') {
+          return res.status(400).json({ message: "X-Company-Id es requerido para seleccionar una empresa" });
+        }
         return res.json([]);
       }
       

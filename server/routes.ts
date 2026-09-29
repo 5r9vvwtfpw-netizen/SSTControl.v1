@@ -11620,12 +11620,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/road-safety-trainings/:id/invite-workers", requirePermission("road_safety_trainings:edit"), async (req, res) => {
     try {
       const user = req.user as schema.User;
-      const companyId = user.companyId;
+      const companyId = user.role === "superadmin" ? getEffectiveCompanyId(req) : user.companyId;
       const { id } = req.params;
       const { workerIds } = req.body;
 
       if (!companyId) {
         return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      }
+      if (user.role === "superadmin" && req.body.companyId !== undefined && req.body.companyId !== companyId) {
+        return res.status(400).json({ error: "El companyId no coincide con la empresa seleccionada" });
       }
 
       if (!Array.isArray(workerIds) || workerIds.length === 0) {
@@ -11641,6 +11644,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (!training) {
         return res.status(404).json({ error: "Capacitación no encontrada" });
+      }
+
+      const invitedWorkers = await db
+        .select({ id: workers.id })
+        .from(workers)
+        .where(and(inArray(workers.id, workerIds), eq(workers.companyId, companyId)));
+      if (invitedWorkers.length !== new Set(workerIds).size) {
+        return res.status(404).json({ error: "Uno o más trabajadores no pertenecen a la empresa" });
       }
 
       // Invitar trabajadores
@@ -11713,12 +11724,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/road-safety-trainings/:id/worker-attendees", requireAuth, async (req, res) => {
     try {
       const user = req.user as schema.User;
-      const companyId = user.companyId;
+      const companyId = user.role === "superadmin" ? getEffectiveCompanyId(req) : user.companyId;
       const { id } = req.params;
 
       if (!companyId) {
         return res.status(403).json({ error: "Usuario no asociado a una empresa" });
       }
+
+      const [training] = await db.select({ id: roadSafetyTrainings.id })
+        .from(roadSafetyTrainings)
+        .where(and(eq(roadSafetyTrainings.id, id), eq(roadSafetyTrainings.companyId, companyId)))
+        .limit(1);
+      if (!training) return res.status(404).json({ error: "Capacitación no encontrada" });
 
       const attendees = await db
         .select({
@@ -11732,7 +11749,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
         .from(roadSafetyWorkerAttendees)
         .innerJoin(workers, eq(roadSafetyWorkerAttendees.workerId, workers.id))
-        .where(eq(roadSafetyWorkerAttendees.trainingId, id));
+        .where(and(
+          eq(roadSafetyWorkerAttendees.trainingId, id),
+          eq(workers.companyId, companyId)
+        ));
 
       res.json(attendees.map(a => ({
         id: a.id,
@@ -11753,9 +11773,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/road-safety-trainings/:id/worker-attendees/:workerId", requirePermission("road_safety_trainings:edit"), async (req, res) => {
     try {
       const user = req.user as schema.User;
-      const companyId = user.companyId;
+      const companyId = user.role === "superadmin" ? getEffectiveCompanyId(req) : user.companyId;
       const { id, workerId } = req.params;
       if (!companyId) return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      const [training] = await db.select({ id: roadSafetyTrainings.id })
+        .from(roadSafetyTrainings)
+        .where(and(eq(roadSafetyTrainings.id, id), eq(roadSafetyTrainings.companyId, companyId)))
+        .limit(1);
+      if (!training) return res.status(404).json({ error: "Capacitación no encontrada" });
+      const [worker] = await db.select({ id: workers.id })
+        .from(workers)
+        .where(and(eq(workers.id, workerId), eq(workers.companyId, companyId)))
+        .limit(1);
+      if (!worker) return res.status(404).json({ error: "Trabajador no encontrado" });
       await db.delete(roadSafetyWorkerAttendees)
         .where(and(
           eq(roadSafetyWorkerAttendees.trainingId, id),
@@ -21305,7 +21335,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const user = req.user as any;
-      const companyId = user.companyId;
+      const companyId = user.role === "superadmin" ? getEffectiveCompanyId(req) : user.companyId;
+      if (user.role === "superadmin" && !companyId) {
+        fs.unlinkSync(req.file.path);
+        return res.status(400).json({ error: "Seleccione una empresa antes de cargar archivos de sus procesos" });
+      }
+      if (user.role === "superadmin" && req.body.companyId !== undefined && req.body.companyId !== companyId) {
+        fs.unlinkSync(req.file.path);
+        return res.status(400).json({ error: "El companyId del archivo no coincide con la empresa seleccionada" });
+      }
 
       const objectStorageService = new ObjectStorageService();
       const fileBuffer = fs.readFileSync(req.file.path);
@@ -21366,7 +21404,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       tempFiles.push(req.file.path);
 
       const user = req.user as any;
-      const companyId = user.companyId;
+      const companyId = user.role === "superadmin" ? getEffectiveCompanyId(req) : user.companyId;
+      if (user.role === "superadmin" && !companyId) {
+        cleanupTempFiles();
+        return res.status(400).json({ error: "Seleccione una empresa antes de cargar archivos de sus procesos" });
+      }
+      if (user.role === "superadmin" && req.body.companyId !== undefined && req.body.companyId !== companyId) {
+        cleanupTempFiles();
+        return res.status(400).json({ error: "El companyId del archivo no coincide con la empresa seleccionada" });
+      }
       
       if (!companyId && !['superadmin', 'soporte'].includes(user.role)) {
         cleanupTempFiles();
@@ -40781,12 +40827,14 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   app.get('/api/auditorias-internas', requireAuth, requireAuditoriaPermission("view"), async (req, res) => {
     try {
       const isAdmin = hasGlobalAccess(req.user!.role);
+      const companyId = isAdmin
+        ? (typeof req.headers['x-company-id'] === 'string' ? req.headers['x-company-id'] : undefined)
+        : getEffectiveCompanyId(req);
       
       let auditorias;
-      if (isAdmin) {
+      if (isAdmin && !companyId) {
         auditorias = await storage.getAllAuditoriasInternas();
       } else {
-        const companyId = getEffectiveCompanyId(req);
         if (!companyId) {
           return res.status(403).send("Esta operación requiere pertenecer a una empresa");
         }
@@ -40804,12 +40852,14 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   app.get('/api/auditorias-internas/:id', requireAuth, requireAuditoriaPermission("view"), async (req, res) => {
     try {
       const isAdmin = hasGlobalAccess(req.user!.role);
-      
+      const companyId = isAdmin
+        ? (typeof req.headers['x-company-id'] === 'string' ? req.headers['x-company-id'] : undefined)
+        : getEffectiveCompanyId(req);
+
       let auditoria;
-      if (isAdmin) {
+      if (isAdmin && !companyId) {
         auditoria = await storage.getAuditoriaInternaById(req.params.id);
       } else {
-        const companyId = getEffectiveCompanyId(req);
         if (!companyId) {
           return res.status(403).send("Esta operación requiere pertenecer a una empresa");
         }
@@ -40831,22 +40881,19 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   app.post('/api/auditorias-internas', requireAuth, requireAuditoriaPermission("create"), async (req, res) => {
     try {
       const isAdmin = hasGlobalAccess(req.user!.role);
-      let companyId: string;
-      
+      const companyId = isAdmin
+        ? (typeof req.headers['x-company-id'] === 'string' ? req.headers['x-company-id'] : '')
+        : getEffectiveCompanyId(req);
+      if (!companyId) {
+        return res.status(403).send("Seleccione una empresa activa para crear la auditoría");
+      }
+      if (req.body?.companyId !== undefined && req.body.companyId !== companyId) {
+        return res.status(400).send("El companyId no coincide con la empresa activa");
+      }
       if (isAdmin) {
-        companyId = req.body.companyId;
-        if (!companyId) {
-          return res.status(400).send("Admin debe especificar companyId");
-        }
-        
         const company = await storage.getCompany(companyId);
         if (!company) {
           return res.status(404).send("Empresa no encontrada");
-        }
-      } else {
-        companyId = getEffectiveCompanyId(req)!;
-        if (!companyId) {
-          return res.status(403).send("Esta operación requiere pertenecer a una empresa");
         }
       }
       
@@ -40864,22 +40911,18 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   app.patch('/api/auditorias-internas/:id', requireAuth, requireAuditoriaPermission("edit"), async (req, res) => {
     try {
       const isAdmin = hasGlobalAccess(req.user!.role);
+      const companyId = isAdmin
+        ? (typeof req.headers['x-company-id'] === 'string' ? req.headers['x-company-id'] : '')
+        : getEffectiveCompanyId(req);
+      if (!companyId) {
+        return res.status(403).send("Seleccione una empresa activa para actualizar la auditoría");
+      }
+      if (req.body?.companyId !== undefined && req.body.companyId !== companyId) {
+        return res.status(400).send("El companyId no coincide con la empresa activa");
+      }
       const validatedData = insertAuditoriaInternaSchema.partial().parse(req.body);
       
-      let auditoria;
-      if (isAdmin) {
-        const existing = await storage.getAuditoriaInternaById(req.params.id);
-        if (!existing) {
-          return res.status(404).send("Auditoría interna no encontrada");
-        }
-        auditoria = await storage.updateAuditoriaInterna(req.params.id, validatedData, existing.companyId);
-      } else {
-        const companyId = getEffectiveCompanyId(req);
-        if (!companyId) {
-          return res.status(403).send("Esta operación requiere pertenecer a una empresa");
-        }
-        auditoria = await storage.updateAuditoriaInterna(req.params.id, validatedData, companyId);
-      }
+      const auditoria = await storage.updateAuditoriaInterna(req.params.id, validatedData, companyId);
       
       if (!auditoria) {
         return res.status(404).send("Auditoría interna no encontrada o no pertenece a su empresa");
@@ -40902,10 +40945,16 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       }
 
       const isAdmin = hasGlobalAccess(req.user!.role);
-      const companyId = isAdmin ? undefined : getEffectiveCompanyId(req);
-      const existing = isAdmin
-        ? await storage.getAuditoriaInternaById(req.params.id)
-        : companyId ? await storage.getAuditoriaInterna(req.params.id, companyId) : undefined;
+      const companyId = isAdmin
+        ? (typeof req.headers['x-company-id'] === 'string' ? req.headers['x-company-id'] : '')
+        : getEffectiveCompanyId(req);
+      if (!companyId) {
+        return res.status(403).send("Seleccione una empresa activa para cambiar el estado de la auditoría");
+      }
+      if (req.body?.companyId !== undefined && req.body.companyId !== companyId) {
+        return res.status(400).send("El companyId no coincide con la empresa activa");
+      }
+      const existing = await storage.getAuditoriaInterna(req.params.id, companyId);
 
       if (!existing) {
         return res.status(404).send("Auditoría interna no encontrada o no pertenece a su empresa");
@@ -40978,20 +41027,16 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   app.delete('/api/auditorias-internas/:id', requireAuth, requireAuditoriaPermission("delete"), async (req, res) => {
     try {
       const isAdmin = hasGlobalAccess(req.user!.role);
-      
-      if (isAdmin) {
-        const existing = await storage.getAuditoriaInternaById(req.params.id);
-        if (!existing) {
-          return res.status(404).send("Auditoría interna no encontrada");
-        }
-        await storage.deleteAuditoriaInterna(req.params.id, existing.companyId);
-      } else {
-        const companyId = getEffectiveCompanyId(req);
-        if (!companyId) {
-          return res.status(403).send("Esta operación requiere pertenecer a una empresa");
-        }
-        await storage.deleteAuditoriaInterna(req.params.id, companyId);
+      const companyId = isAdmin
+        ? (typeof req.headers['x-company-id'] === 'string' ? req.headers['x-company-id'] : '')
+        : getEffectiveCompanyId(req);
+      if (!companyId) {
+        return res.status(403).send("Seleccione una empresa activa para eliminar la auditoría");
       }
+      if (req.body?.companyId !== undefined && req.body.companyId !== companyId) {
+        return res.status(400).send("El companyId no coincide con la empresa activa");
+      }
+      await storage.deleteAuditoriaInterna(req.params.id, companyId);
       
       res.status(204).send();
     } catch (error: any) {
@@ -50816,7 +50861,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   app.get("/api/accident-statistics", requireAuth, async (req, res) => {
     try {
       const user = req.user as User;
-      const companyId = req.query.companyId as string || user.companyId;
+      const companyId = user.role === "superadmin"
+        ? getEffectiveCompanyId(req)
+        : (req.query.companyId as string || user.companyId);
       
       if (!companyId) {
         return res.status(400).json({ error: "Company ID is required" });
@@ -50834,7 +50881,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   app.get("/api/accident-statistics/:year", requireAuth, async (req, res) => {
     try {
       const user = req.user as User;
-      const companyId = req.query.companyId as string || user.companyId;
+      const companyId = user.role === "superadmin"
+        ? getEffectiveCompanyId(req)
+        : (req.query.companyId as string || user.companyId);
       const year = parseInt(req.params.year);
       
       if (!companyId) {
@@ -50857,10 +50906,15 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   app.post("/api/accident-statistics", requireAuth, async (req, res) => {
     try {
       const user = req.user as User;
-      const companyId = req.body.companyId || user.companyId;
+      const companyId = user.role === "superadmin"
+        ? getEffectiveCompanyId(req)
+        : (req.body.companyId || user.companyId);
       
       if (!companyId) {
         return res.status(400).json({ error: "Company ID is required" });
+      }
+      if (user.role === "superadmin" && req.body.companyId !== undefined && req.body.companyId !== companyId) {
+        return res.status(400).json({ error: "El companyId no coincide con la empresa seleccionada" });
       }
       
       const statisticsData = {
@@ -50880,6 +50934,22 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   app.patch("/api/accident-statistics/:id", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
+      const user = req.user as User;
+      if (user.role === "superadmin") {
+        const companyId = getEffectiveCompanyId(req);
+        if (!companyId) return res.status(400).json({ error: "Company ID is required" });
+        if (req.body.companyId !== undefined && req.body.companyId !== companyId) {
+          return res.status(400).json({ error: "El companyId no coincide con la empresa seleccionada" });
+        }
+        const [record] = await db.select({ id: schema.accidentStatistics.id })
+          .from(schema.accidentStatistics)
+          .where(and(
+            eq(schema.accidentStatistics.id, id),
+            eq(schema.accidentStatistics.companyId, companyId)
+          ))
+          .limit(1);
+        if (!record) return res.status(404).json({ error: "Registro de estadísticas no encontrado" });
+      }
       const statistics = await storage.updateAccidentStatistics(id, req.body);
       res.json(statistics);
     } catch (error) {
@@ -50892,6 +50962,19 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   app.delete("/api/accident-statistics/:id", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
+      const user = req.user as User;
+      if (user.role === "superadmin") {
+        const companyId = getEffectiveCompanyId(req);
+        if (!companyId) return res.status(400).json({ error: "Company ID is required" });
+        const [record] = await db.select({ id: schema.accidentStatistics.id })
+          .from(schema.accidentStatistics)
+          .where(and(
+            eq(schema.accidentStatistics.id, id),
+            eq(schema.accidentStatistics.companyId, companyId)
+          ))
+          .limit(1);
+        if (!record) return res.status(404).json({ error: "Registro de estadísticas no encontrado" });
+      }
       await storage.deleteAccidentStatistics(id);
       res.status(204).send();
     } catch (error) {
@@ -53648,6 +53731,15 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       
       const userRole = req.user!.role;
       const isAdmin = hasGlobalAccess(userRole) || userRole === 'lso';
+      if (userRole === 'superadmin') {
+        const selectedCompanyId = typeof req.headers['x-company-id'] === 'string' ? req.headers['x-company-id'] : '';
+        if (!selectedCompanyId) {
+          return res.status(403).send("Seleccione una empresa antes de crear la evaluación PESV");
+        }
+        if (req.body.companyId !== selectedCompanyId) {
+          return res.status(400).send("La empresa de la evaluación no coincide con la empresa seleccionada");
+        }
+      }
       
       let companyId: string;
       if (isAdmin) {
@@ -53719,6 +53811,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       if (!existing) {
         return res.status(404).send("Evaluación PESV no encontrada");
       }
+      if (userRole === 'superadmin' && (!req.headers['x-company-id'] || req.headers['x-company-id'] !== existing.companyId || (req.body.companyId && req.body.companyId !== existing.companyId))) {
+        return res.status(403).send("Seleccione la empresa de esta evaluación antes de modificarla");
+      }
       
       if (!isAdmin) {
         if (getEffectiveCompanyId(req) !== existing.companyId) {
@@ -53761,6 +53856,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       
       if (!existing) {
         return res.status(404).send("Evaluación PESV no encontrada");
+      }
+      if (userRole === 'superadmin' && req.headers['x-company-id'] !== existing.companyId) {
+        return res.status(403).send("Seleccione la empresa de esta evaluación antes de eliminarla");
       }
 
       // Admins solo pueden borrar evaluaciones de su propia empresa

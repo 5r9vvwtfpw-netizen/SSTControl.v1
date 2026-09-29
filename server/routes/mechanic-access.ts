@@ -1,4 +1,4 @@
-import type { Express, Request } from "express";
+import type { Express, Request, Response } from "express";
 import { and, desc, eq, gte, isNull, or, sql } from "drizzle-orm";
 import { db } from "../db";
 import { requireAuth, requirePermission } from "../auth";
@@ -21,19 +21,42 @@ function normalizeIdentification(value: string): string {
   return value.replace(/[\s.-]/g, "");
 }
 
-function isCompanyAdministrator(req: Request): boolean {
-  return (req.user?.role === "superusuario" || req.user?.role === "admin") && !!req.user.companyId;
-}
-
-function currentCompanyId(req: Request): string | null {
-  return req.user?.companyId || null;
+async function managementCompanyId(req: Request, res: Response): Promise<string | null> {
+  const user = req.user;
+  if (user?.role === "superadmin") {
+    const selectedCompanyId = req.get("X-Company-Id")?.trim() || null;
+    const queryCompanyId = typeof req.query.companyId === "string" ? req.query.companyId.trim() : null;
+    const bodyCompanyId = typeof req.body?.companyId === "string" ? req.body.companyId.trim() : null;
+    if (!selectedCompanyId) {
+      res.status(400).json({ error: "Selecciona una empresa mediante X-Company-Id para gestionar sus autorizaciones" });
+      return null;
+    }
+    if ([queryCompanyId, bodyCompanyId].some((companyId) => companyId && companyId !== selectedCompanyId)) {
+      res.status(400).json({ error: "El contexto de empresa seleccionado no coincide" });
+      return null;
+    }
+    const [company] = await db.select({ id: schema.companies.id })
+      .from(schema.companies)
+      .where(eq(schema.companies.id, selectedCompanyId))
+      .limit(1);
+    if (!company) {
+      res.status(404).json({ error: "Empresa seleccionada no encontrada" });
+      return null;
+    }
+    return selectedCompanyId;
+  }
+  if ((user?.role === "superusuario" || user?.role === "admin") && user.companyId) {
+    return user.companyId;
+  }
+  res.status(403).json({ error: "Solo el administrador de la empresa puede gestionar autorizaciones" });
+  return null;
 }
 
 export function registerMechanicAccessRoutes(app: Express) {
-  // Solo devuelve autorizaciones de la empresa del administrador autenticado.
+  // Devuelve autorizaciones de la empresa administrada o seleccionada por superadmin.
   app.get("/api/mechanic-access", requirePermission("mechanic_access:manage"), async (req, res) => {
-    if (!isCompanyAdministrator(req)) return res.status(403).json({ error: "Solo el administrador de la empresa puede gestionar autorizaciones" });
-    const companyId = currentCompanyId(req)!;
+    const companyId = await managementCompanyId(req, res);
+    if (!companyId) return;
     const rows = await db
       .select({
         id: schema.mechanicCompanyAccess.id,
@@ -68,7 +91,8 @@ export function registerMechanicAccessRoutes(app: Express) {
 
   // Búsqueda acotada: nunca expone el directorio completo de clientes.
   app.get("/api/mechanic-access/search", requirePermission("mechanic_access:manage"), async (req, res) => {
-    if (!isCompanyAdministrator(req)) return res.status(403).json({ error: "Solo el administrador de la empresa puede buscar técnicos" });
+    const companyId = await managementCompanyId(req, res);
+    if (!companyId) return;
     const cedula = normalizeIdentification(String(req.query.cedula || ""));
     if (!cedula) return res.json([]);
     const rows = await db
@@ -82,15 +106,15 @@ export function registerMechanicAccessRoutes(app: Express) {
       .where(and(
         eq(schema.users.role, "tecnico_mecanico"),
         sql`regexp_replace(coalesce(${schema.users.identificationNumber}, ''), '[[:space:].-]', '', 'g') = ${cedula}`,
-        sql`${schema.users.companyId} <> ${currentCompanyId(req)!}`
+        sql`${schema.users.companyId} <> ${companyId}`
       ))
       .limit(1);
     res.json(rows);
   });
 
   app.post("/api/mechanic-access", requirePermission("mechanic_access:manage"), async (req, res) => {
-    if (!isCompanyAdministrator(req)) return res.status(403).json({ error: "Solo el administrador de la empresa puede autorizar técnicos" });
-    const authorizedCompanyId = currentCompanyId(req)!;
+    const authorizedCompanyId = await managementCompanyId(req, res);
+    if (!authorizedCompanyId) return;
     try {
       const input = accessInputSchema.parse(req.body);
       const [mechanic] = await db.select({
@@ -134,8 +158,8 @@ export function registerMechanicAccessRoutes(app: Express) {
   });
 
   app.patch("/api/mechanic-access/:id/revoke", requirePermission("mechanic_access:manage"), async (req, res) => {
-    if (!isCompanyAdministrator(req)) return res.status(403).json({ error: "Solo el administrador de la empresa puede revocar autorizaciones" });
-    const companyId = currentCompanyId(req)!;
+    const companyId = await managementCompanyId(req, res);
+    if (!companyId) return;
     const [updated] = await db.update(schema.mechanicCompanyAccess)
       .set({ isActive: false, status: "revoked", revokedAt: new Date(), revokedByUserId: req.user!.id })
       .where(and(

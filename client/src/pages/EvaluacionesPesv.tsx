@@ -14,6 +14,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { EvaluacionPesv, insertEvaluacionPesvSchema } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
+import { useCompanyContext } from "@/hooks/use-company-context";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { z } from "zod";
@@ -44,6 +45,11 @@ const createFormSchema = (isAdmin: boolean) => {
 
 export default function EvaluacionesPesv() {
   const { user } = useAuth();
+  const {
+    selectedCompanyId: accessCompanyId,
+    setSelectedCompanyId: requestCompanyAccess,
+    pendingCompanySelection,
+  } = useCompanyContext();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
@@ -53,6 +59,7 @@ export default function EvaluacionesPesv() {
   const [deleteConfirmPhrase, setDeleteConfirmPhrase] = useState("");
   const [deleteConfirmAnio, setDeleteConfirmAnio] = useState("");
   const [selectedVaultCompanyId, setSelectedVaultCompanyId] = useState<string | null>(null);
+  const [pendingVaultCompanyId, setPendingVaultCompanyId] = useState<string | null>(null);
   const [yearFilter, setYearFilter] = useState<string>("todos");
 
   const isSuperAdmin = user?.role === "superadmin";
@@ -69,6 +76,24 @@ export default function EvaluacionesPesv() {
       setSelectedVaultCompanyId(lsoPreselectedCompanyId);
     }
   }, [isLso, lsoPreselectedCompanyId]);
+
+  useEffect(() => {
+    if (!isSuperAdmin) return;
+
+    if (pendingVaultCompanyId && accessCompanyId === pendingVaultCompanyId) {
+      setSelectedVaultCompanyId(pendingVaultCompanyId);
+      setPendingVaultCompanyId(null);
+      setSearchTerm("");
+      setYearFilter("todos");
+    } else if (pendingVaultCompanyId && !pendingCompanySelection && accessCompanyId !== pendingVaultCompanyId) {
+      // The provider access dialog was canceled; stay on the company overview.
+      setPendingVaultCompanyId(null);
+    } else if (selectedVaultCompanyId && accessCompanyId !== selectedVaultCompanyId) {
+      setSelectedVaultCompanyId(null);
+      setSearchTerm("");
+      setYearFilter("todos");
+    }
+  }, [isSuperAdmin, pendingVaultCompanyId, accessCompanyId, pendingCompanySelection, selectedVaultCompanyId]);
 
   const isAdmin = isSuperAdmin || isLso;
   const isVaultMode = isSuperAdmin || isLso;
@@ -98,6 +123,12 @@ export default function EvaluacionesPesv() {
       estado: "",
     },
   });
+
+  useEffect(() => {
+    if (!isSuperAdmin) return;
+    form.setValue("companyId", accessCompanyId || "");
+    if (!accessCompanyId) setDialogOpen(false);
+  }, [isSuperAdmin, accessCompanyId, form]);
 
   const evaluacionesPesvQueryUrl = isLso && lsoPreselectedCompanyId
     ? `/api/evaluaciones-pesv?companyId=${lsoPreselectedCompanyId}`
@@ -174,6 +205,9 @@ export default function EvaluacionesPesv() {
 
   const createMutation = useMutation({
     mutationFn: async (data: z.infer<typeof formSchema>) => {
+      if (isSuperAdmin && (!accessCompanyId || data.companyId !== accessCompanyId)) {
+        throw new Error("Seleccione y autorice el acceso a la empresa antes de crear la evaluación.");
+      }
       const canSelectCompany = user?.role === 'superadmin' || user?.role === 'lso';
       const payload = canSelectCompany && data.companyId 
         ? { ...data, companyId: data.companyId }
@@ -346,13 +380,17 @@ export default function EvaluacionesPesv() {
     );
   }, [companyVaults, searchTerm]);
 
+  const visibleVaultCompanyId = isSuperAdmin
+    ? (accessCompanyId === selectedVaultCompanyId ? selectedVaultCompanyId : null)
+    : selectedVaultCompanyId;
+
   const selectedVault = useMemo(() => {
-    if (!selectedVaultCompanyId) return null;
-    const found = companyVaults.find(v => v.companyId === selectedVaultCompanyId);
+    if (!visibleVaultCompanyId) return null;
+    const found = companyVaults.find(v => v.companyId === visibleVaultCompanyId);
     if (found) return found;
-    const name = companyMap[selectedVaultCompanyId]?.name || selectedVaultCompanyId;
-    return { companyId: selectedVaultCompanyId, companyName: name, evaluaciones: [], latestScore: 0, latestNivel: "basico", years: [] };
-  }, [companyVaults, selectedVaultCompanyId, companyMap]);
+    const name = companyMap[visibleVaultCompanyId]?.name || visibleVaultCompanyId;
+    return { companyId: visibleVaultCompanyId, companyName: name, evaluaciones: [], latestScore: 0, latestNivel: "basico", years: [] };
+  }, [companyVaults, visibleVaultCompanyId, companyMap]);
 
   const vaultEvaluaciones = useMemo(() => {
     if (!selectedVault) return [];
@@ -411,7 +449,7 @@ export default function EvaluacionesPesv() {
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button data-testid="button-create-evaluation">
+            <Button disabled={isSuperAdmin && !accessCompanyId} data-testid="button-create-evaluation">
               <Plus className="h-4 w-4 mr-2" />
               Nueva Evaluación
             </Button>
@@ -480,7 +518,7 @@ export default function EvaluacionesPesv() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Empresa *</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select onValueChange={field.onChange} value={field.value} disabled>
                           <FormControl>
                             <SelectTrigger data-testid="select-company">
                               <SelectValue placeholder="Seleccione empresa" />
@@ -495,7 +533,7 @@ export default function EvaluacionesPesv() {
                           </SelectContent>
                         </Select>
                         <FormDescription>
-                          Seleccione la empresa para la cual se creará la evaluación
+                          Empresa definida por la sesión de acceso auditada.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -626,7 +664,7 @@ export default function EvaluacionesPesv() {
                 <DialogFooter>
                   <Button 
                     type="submit" 
-                    disabled={createMutation.isPending}
+                    disabled={createMutation.isPending || (isSuperAdmin && !accessCompanyId)}
                     data-testid="button-submit-evaluation"
                   >
                     {createMutation.isPending ? "Creando..." : "Crear Evaluación"}
@@ -642,14 +680,14 @@ export default function EvaluacionesPesv() {
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
-            placeholder={isVaultMode && !selectedVaultCompanyId ? "Buscar empresa..." : "Buscar por año, responsable..."}
+            placeholder={isVaultMode && !visibleVaultCompanyId ? "Buscar empresa..." : "Buscar por año, responsable..."}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
             data-testid="input-search"
           />
         </div>
-        {isVaultMode && selectedVaultCompanyId && selectedVault && (
+        {isVaultMode && visibleVaultCompanyId && selectedVault && (
           <Select value={yearFilter} onValueChange={setYearFilter}>
             <SelectTrigger className="w-[140px]" data-testid="select-year-filter">
               <Calendar className="h-4 w-4 mr-2" />
@@ -677,7 +715,7 @@ export default function EvaluacionesPesv() {
             </Card>
           ))}
         </div>
-      ) : isSuperAdmin && !selectedVaultCompanyId && !lsoPreselectedCompanyId ? (
+      ) : isSuperAdmin && !visibleVaultCompanyId && !lsoPreselectedCompanyId ? (
         <>
           {filteredVaults.length === 0 ? (
             <Card>
@@ -707,7 +745,11 @@ export default function EvaluacionesPesv() {
                     <Card
                       key={vault.companyId}
                       className="hover-elevate active-elevate-2 cursor-pointer"
-                      onClick={() => { setSelectedVaultCompanyId(vault.companyId); setSearchTerm(""); setYearFilter("todos"); localStorage.setItem('superadmin_vault_company', vault.companyId); }}
+                      onClick={() => {
+                        setSelectedVaultCompanyId(null);
+                        setPendingVaultCompanyId(vault.companyId);
+                        requestCompanyAccess(vault.companyId);
+                      }}
                       data-testid={`card-vault-${vault.companyId}`}
                     >
                       <CardHeader className="pb-3">
@@ -757,7 +799,7 @@ export default function EvaluacionesPesv() {
             </>
           )}
         </>
-      ) : isVaultMode && selectedVaultCompanyId && selectedVault ? (
+      ) : isVaultMode && visibleVaultCompanyId && selectedVault ? (
         <>
           <div className="flex items-center gap-3">
             <Button

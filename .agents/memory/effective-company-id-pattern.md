@@ -50,3 +50,9 @@ A company vault may display company-scoped records without establishing the supe
 **Why:** A worker vault could show one company's workers using its own read header while module writes used another globally selected company (or none).
 
 **How to apply:** Before entering an operational company vault for edits, confirm access with the existing audit-session flow and wait until the active company matches. Clear stale vault details when access ends or switches.
+
+The audited company selector must reach every request in a module, not only mutations using the shared API helper. Custom fetches for evidence, reports, and multipart uploads often omit the company header.
+
+**Why:** A superadmin could enter a PESV vault through the audited dialog yet still see empty evidence or fail to upload because its detail page bypassed the shared header builder.
+
+**How to apply:** When making tenant-scoped requests outside the shared API helper, send the active context header as well; leave FormData Content-Type to the browser. A failed evidence request must show an error rather than returning an empty list.

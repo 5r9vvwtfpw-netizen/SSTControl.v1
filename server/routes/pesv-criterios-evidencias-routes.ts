@@ -12,6 +12,12 @@ import { requireAuth as authRequireAuth, requirePermission } from '../auth';
 function getEffectiveCompanyId(req: Request): string | null {
   const user = (req as any).user;
   if (!user) return null;
+  if (user.role === 'superadmin') {
+    const headerCompanyId = req.get('X-Company-Id');
+    const queryCompanyId = typeof req.query.companyId === 'string' ? req.query.companyId : null;
+    if (headerCompanyId && queryCompanyId && headerCompanyId !== queryCompanyId) return null;
+    return headerCompanyId || null;
+  }
   const globalRoles = ['superadmin', 'support_admin', 'support_viewer', 'lso'];
   if (globalRoles.includes(user.role) && (req.query.companyId as string)) {
     return req.query.companyId as string;
@@ -34,6 +40,9 @@ export function registerPesvCriteriosEvidenciasRoutes(app: Express) {
     if (!evaluacion) return { allowed: false, error: 'Evaluación no encontrada' };
     const companyId = getEffectiveCompanyId(req);
     const user = (req as any).user;
+    if (user?.role === 'superadmin' && (!companyId || evaluacion.companyId !== companyId)) {
+      return { allowed: false, error: 'Seleccione la empresa de esta evaluación antes de gestionarla' };
+    }
     const globalRoles = ['superadmin', 'support_admin', 'support_viewer', 'lso'];
     if (companyId && !globalRoles.includes(user?.role) && evaluacion.companyId !== companyId) {
       return { allowed: false, error: 'No tiene acceso a esta evaluación' };

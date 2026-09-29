@@ -1,9 +1,10 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/use-auth";
+import { useCompanyContext } from "@/hooks/use-company-context";
 import {
   Dialog,
   DialogContent,
@@ -141,6 +142,12 @@ interface LsoReportArchive {
   lsoUserId?: string | null;
 }
 
+interface PendingAssignmentAction {
+  type: "add" | "remove";
+  professionalId: string;
+  companyId: string;
+}
+
 function LsoClosureEvidence({ lsoUserId }: { lsoUserId: string }) {
   const { toast } = useToast();
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
@@ -197,12 +204,18 @@ function LsoClosureEvidence({ lsoUserId }: { lsoUserId: string }) {
 export default function ProfesionalesLicenciados() {
   const { toast } = useToast();
   const { user: currentUser } = useAuth();
+  const {
+    selectedCompanyId,
+    setSelectedCompanyId,
+    pendingCompanySelection,
+  } = useCompanyContext();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [assignmentsDialogOpen, setAssignmentsDialogOpen] = useState(false);
   const [selectedProfessional, setSelectedProfessional] = useState<LicensedProfessional | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [companyFilter, setCompanyFilter] = useState<string>("all");
   const [selectedCompanyToAdd, setSelectedCompanyToAdd] = useState<string>("");
+  const [pendingAssignmentAction, setPendingAssignmentAction] = useState<PendingAssignmentAction | null>(null);
   const { uploadFile, isUploading: isUploadingSignature } = useUpload();
 
   const [vaultSearchTerm, setVaultSearchTerm] = useState("");
@@ -293,6 +306,9 @@ export default function ProfesionalesLicenciados() {
 
   const addAssignmentMutation = useMutation({
     mutationFn: async ({ professionalId, companyId }: { professionalId: string; companyId: string }) => {
+      if (isSuperadmin && selectedCompanyId !== companyId) {
+        throw new Error("Seleccione y autorice el acceso auditado a la empresa antes de crear la asignación.");
+      }
       return await apiRequest("POST", `/api/licensed-professionals/${professionalId}/assignments`, { companyId });
     },
     onSuccess: () => {
@@ -314,6 +330,9 @@ export default function ProfesionalesLicenciados() {
 
   const removeAssignmentMutation = useMutation({
     mutationFn: async ({ professionalId, companyId }: { professionalId: string; companyId: string }) => {
+      if (isSuperadmin && selectedCompanyId !== companyId) {
+        throw new Error("Seleccione y autorice el acceso auditado a la empresa antes de retirar la asignación.");
+      }
       return await apiRequest("DELETE", `/api/licensed-professionals/${professionalId}/assignments/${companyId}`);
     },
     onSuccess: () => {
@@ -331,6 +350,37 @@ export default function ProfesionalesLicenciados() {
       });
     },
   });
+
+  useEffect(() => {
+    if (!pendingAssignmentAction) return;
+
+    if (selectedCompanyId === pendingAssignmentAction.companyId) {
+      const action = pendingAssignmentAction;
+      setPendingAssignmentAction(null);
+      if (action.type === "add") {
+        addAssignmentMutation.mutate({
+          professionalId: action.professionalId,
+          companyId: action.companyId,
+        });
+      } else {
+        removeAssignmentMutation.mutate({
+          professionalId: action.professionalId,
+          companyId: action.companyId,
+        });
+      }
+      return;
+    }
+
+    if (!pendingCompanySelection || pendingCompanySelection.id !== pendingAssignmentAction.companyId) {
+      setPendingAssignmentAction(null);
+    }
+  }, [
+    pendingAssignmentAction,
+    pendingCompanySelection,
+    selectedCompanyId,
+    addAssignmentMutation,
+    removeAssignmentMutation,
+  ]);
 
   const resetPasswordMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -404,9 +454,30 @@ export default function ProfesionalesLicenciados() {
     updateMutation.mutate({ id: selectedProfessional.id, data });
   };
 
+  const runAssignmentAction = (action: PendingAssignmentAction) => {
+    if (isSuperadmin && selectedCompanyId !== action.companyId) {
+      setPendingAssignmentAction(action);
+      setSelectedCompanyId(action.companyId);
+      return;
+    }
+
+    if (action.type === "add") {
+      addAssignmentMutation.mutate({
+        professionalId: action.professionalId,
+        companyId: action.companyId,
+      });
+    } else {
+      removeAssignmentMutation.mutate({
+        professionalId: action.professionalId,
+        companyId: action.companyId,
+      });
+    }
+  };
+
   const handleAddAssignment = () => {
     if (!selectedProfessional || !selectedCompanyToAdd) return;
-    addAssignmentMutation.mutate({
+    runAssignmentAction({
+      type: "add",
       professionalId: selectedProfessional.id,
       companyId: selectedCompanyToAdd,
     });
@@ -414,7 +485,8 @@ export default function ProfesionalesLicenciados() {
 
   const handleRemoveAssignment = (companyId: string) => {
     if (!selectedProfessional) return;
-    removeAssignmentMutation.mutate({
+    runAssignmentAction({
+      type: "remove",
       professionalId: selectedProfessional.id,
       companyId,
     });
@@ -422,7 +494,8 @@ export default function ProfesionalesLicenciados() {
 
   const handleVaultRemoveAssignment = (companyId: string) => {
     if (!selectedVaultProfessional) return;
-    removeAssignmentMutation.mutate({
+    runAssignmentAction({
+      type: "remove",
       professionalId: selectedVaultProfessional.id,
       companyId,
     });
@@ -481,7 +554,8 @@ export default function ProfesionalesLicenciados() {
 
   const handleVaultAddAssignment = () => {
     if (!selectedVaultProfessional || !selectedCompanyToAdd) return;
-    addAssignmentMutation.mutate({
+    runAssignmentAction({
+      type: "add",
       professionalId: selectedVaultProfessional.id,
       companyId: selectedCompanyToAdd,
     });
@@ -684,6 +758,11 @@ export default function ProfesionalesLicenciados() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {isSuperadmin && (
+              <p className="text-sm text-muted-foreground">
+                Crear o retirar una asignación requiere seleccionar y autorizar el acceso auditado a la empresa correspondiente. Si se solicita una empresa distinta, la operación espera la confirmación.
+              </p>
+            )}
             {activeAssignments.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-4" data-testid="text-vault-no-assignments">
                 No hay empresas asignadas
@@ -707,7 +786,7 @@ export default function ProfesionalesLicenciados() {
                       size="icon"
                       variant="ghost"
                       onClick={() => handleVaultRemoveAssignment(assignment.companyId)}
-                      disabled={removeAssignmentMutation.isPending}
+                      disabled={removeAssignmentMutation.isPending || !!pendingAssignmentAction}
                       data-testid={`button-vault-remove-assignment-${assignment.companyId}`}
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />
@@ -735,7 +814,7 @@ export default function ProfesionalesLicenciados() {
                   </Select>
                   <Button
                     onClick={handleVaultAddAssignment}
-                    disabled={!selectedCompanyToAdd || addAssignmentMutation.isPending}
+                    disabled={!selectedCompanyToAdd || addAssignmentMutation.isPending || !!pendingAssignmentAction}
                     data-testid="button-vault-add-assignment"
                   >
                     {addAssignmentMutation.isPending ? (
@@ -1331,6 +1410,11 @@ export default function ProfesionalesLicenciados() {
           </DialogHeader>
           
           <div className="space-y-4">
+            {isSuperadmin && (
+              <p className="text-sm text-muted-foreground">
+                Crear o retirar una asignación requiere seleccionar y autorizar el acceso auditado a la empresa correspondiente. Si se solicita una empresa distinta, la operación espera la confirmación.
+              </p>
+            )}
             <div className="space-y-2">
               <h4 className="text-sm font-medium">Empresas Asignadas</h4>
               {selectedProfessional?.assignments.filter(a => a.isActive).length === 0 ? (
@@ -1359,7 +1443,7 @@ export default function ProfesionalesLicenciados() {
                             size="icon"
                             variant="ghost"
                             onClick={() => handleRemoveAssignment(assignment.companyId)}
-                            disabled={removeAssignmentMutation.isPending}
+                            disabled={removeAssignmentMutation.isPending || !!pendingAssignmentAction}
                             data-testid={`button-remove-assignment-${assignment.companyId}`}
                           >
                             <Trash2 className="h-4 w-4 text-destructive" />
@@ -1389,7 +1473,7 @@ export default function ProfesionalesLicenciados() {
                   </Select>
                   <Button
                     onClick={handleAddAssignment}
-                    disabled={!selectedCompanyToAdd || addAssignmentMutation.isPending}
+                    disabled={!selectedCompanyToAdd || addAssignmentMutation.isPending || !!pendingAssignmentAction}
                     data-testid="button-add-assignment"
                   >
                     {addAssignmentMutation.isPending ? (

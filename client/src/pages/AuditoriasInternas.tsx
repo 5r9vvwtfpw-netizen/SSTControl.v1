@@ -13,7 +13,7 @@ import { Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AuditoriaInterna, Company, Worker, CopasstActa, insertAuditoriaInternaSchema } from "@shared/schema";
+import { AuditoriaInterna, Worker, CopasstActa, insertAuditoriaInternaSchema } from "@shared/schema";
 import { Switch } from "@/components/ui/switch";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
@@ -74,10 +74,11 @@ const formSchema = insertAuditoriaInternaSchema.extend({
 export default function AuditoriasInternas() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { effectiveCompanyId } = useCompanyContext();
+  const { effectiveCompanyId, selectedCompany } = useCompanyContext();
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const hasGlobalAccessUser = user?.role ? hasGlobalAccess(user.role) : false;
+  const canCreateAudit = !hasGlobalAccessUser || !!effectiveCompanyId;
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -102,11 +103,6 @@ export default function AuditoriasInternas() {
   const { data: auditorias = [], isLoading } = useQuery<AuditoriaInterna[]>({
     queryKey: ["/api/auditorias-internas", effectiveCompanyId],
     queryFn: async () => (await apiRequest("GET", "/api/auditorias-internas")).json(),
-  });
-
-  const { data: companies = [] } = useQuery<Company[]>({
-    queryKey: ["/api/companies"],
-    enabled: hasGlobalAccessUser,
   });
 
   const { data: workers } = useQuery<Worker[]>({
@@ -156,10 +152,22 @@ export default function AuditoriasInternas() {
     }
   }, [dialogOpen]);
 
+  useEffect(() => {
+    if (hasGlobalAccessUser) {
+      form.setValue("companyId", effectiveCompanyId || "");
+    }
+  }, [effectiveCompanyId, form, hasGlobalAccessUser]);
+
   const createMutation = useMutation({
     mutationFn: async (data: z.infer<typeof formSchema>) => {
-      const payload = hasGlobalAccessUser && data.companyId 
-        ? { ...data, companyId: data.companyId }
+      if (hasGlobalAccessUser && !effectiveCompanyId) {
+        throw new Error("Seleccione una empresa en CompanyContext antes de crear la auditoría");
+      }
+      if (hasGlobalAccessUser && data.companyId && data.companyId !== effectiveCompanyId) {
+        throw new Error("La empresa de la auditoría no coincide con la empresa activa");
+      }
+      const payload = hasGlobalAccessUser
+        ? { ...data, companyId: effectiveCompanyId }
         : data;
       const res = await apiRequest("POST", "/api/auditorias-internas", payload);
       return res.json();
@@ -168,6 +176,9 @@ export default function AuditoriasInternas() {
       queryClient.invalidateQueries({ queryKey: ["/api/auditorias-internas"] });
       setDialogOpen(false);
       form.reset();
+      if (hasGlobalAccessUser) {
+        form.setValue("companyId", effectiveCompanyId || "");
+      }
       toast({
         title: "Auditoría creada",
         description: "La auditoría interna se ha creado exitosamente",
@@ -184,6 +195,14 @@ export default function AuditoriasInternas() {
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
+    if (!canCreateAudit) {
+      toast({
+        title: "Seleccione una empresa",
+        description: "Elija una empresa en CompanyContext antes de crear una auditoría.",
+        variant: "destructive",
+      });
+      return;
+    }
     createMutation.mutate(values);
   };
 
@@ -234,6 +253,11 @@ export default function AuditoriasInternas() {
         <div>
           <h1 className="text-3xl font-bold" data-testid="text-page-title">Auditorías Internas SST</h1>
           <p className="text-muted-foreground">ISO 45001:2018 | Resolución 0312/2019</p>
+          {hasGlobalAccessUser && !effectiveCompanyId && (
+            <p className="mt-1 text-sm text-amber-700 dark:text-amber-400">
+              Seleccione una empresa en CompanyContext para crear o modificar auditorías.
+            </p>
+          )}
         </div>
         <AutomationAssistant
           titulo="Auditoría Interna del SG-SST"
@@ -244,7 +268,7 @@ export default function AuditoriasInternas() {
         />
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button size="default" data-testid="button-new-audit">
+            <Button size="default" disabled={!canCreateAudit} data-testid="button-new-audit">
               <Plus className="h-4 w-4 mr-2" />
               Nueva Auditoría
             </Button>
@@ -273,23 +297,15 @@ export default function AuditoriasInternas() {
                   <FormField
                     control={form.control}
                     name="companyId"
-                    render={({ field }) => (
+                    render={() => (
                       <FormItem>
                         <FormLabel>Empresa *</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger data-testid="select-company">
-                              <SelectValue placeholder="Seleccionar empresa" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {companies.map((company) => (
-                              <SelectItem key={company.id} value={company.id}>
-                                {company.name} - {company.nit}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <Input
+                          value={selectedCompany?.name || (effectiveCompanyId ? "Empresa activa" : "Seleccione una empresa en CompanyContext")}
+                          readOnly
+                          disabled
+                          data-testid="select-company"
+                        />
                         <FormMessage />
                       </FormItem>
                     )}
@@ -610,7 +626,7 @@ export default function AuditoriasInternas() {
               {searchTerm ? "No se encontraron resultados para tu búsqueda" : "Comienza creando tu primera auditoría interna"}
             </p>
             {!searchTerm && (
-              <Button onClick={() => setDialogOpen(true)}>
+              <Button onClick={() => setDialogOpen(true)} disabled={!canCreateAudit}>
                 <Plus className="h-4 w-4 mr-2" />
                 Nueva Auditoría
               </Button>

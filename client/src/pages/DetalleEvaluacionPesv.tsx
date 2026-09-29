@@ -19,7 +19,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { EvaluacionPesv, PasoPesv, RespuestaPasoPesv, PesvCriterioVerificacion, PesvEvidenciaDocumento, insertRespuestaPasoPesvSchema } from "@shared/schema";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, buildHeaders, queryClient } from "@/lib/queryClient";
 import { withCompanyContext } from "@/lib/company-context-url";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -97,6 +97,9 @@ interface RespuestaDialogProps {
 
 function RespuestaDialog({ open, onClose, paso, evaluacionId, evaluacion, respuestas, companyChapter, onSaved, toast }: RespuestaDialogProps) {
   const { user } = useAuth();
+  const { selectedCompanyId } = useCompanyContext();
+  const isSuperAdmin = user?.role === "superadmin";
+  const canWriteCompanyScoped = !isSuperAdmin || (!!evaluacion?.companyId && selectedCompanyId === evaluacion.companyId);
   const [formNoAplica, setFormNoAplica] = useState(0);
   const [formCumple, setFormCumple] = useState(0);
   const [autoFilledFields, setAutoFilledFields] = useState<Record<string, boolean>>({});
@@ -118,7 +121,7 @@ function RespuestaDialog({ open, onClose, paso, evaluacionId, evaluacion, respue
       return;
     }
     let cancelled = false;
-    fetch("/api/pesv/comite/verificacion-p01", { credentials: "include" })
+    fetch("/api/pesv/comite/verificacion-p01", { credentials: "include", headers: buildHeaders(false) })
       .then(res => res.ok ? res.json() : null)
       .then(data => { if (!cancelled && data) setAutoVerifP01(data); })
       .catch(() => {});
@@ -142,26 +145,30 @@ function RespuestaDialog({ open, onClose, paso, evaluacionId, evaluacion, respue
     },
   });
 
-  const { data: criteriosDb = [], refetch: refetchCriterios } = useQuery<PesvCriterioVerificacion[]>({
-    queryKey: ["/api/evaluaciones-pesv", evaluacionId, "criterios", activePasoId],
+  const { data: criteriosDb = [], refetch: refetchCriterios, isError: criteriosError, error: criteriosLoadError } = useQuery<PesvCriterioVerificacion[]>({
+    queryKey: ["/api/evaluaciones-pesv", evaluacionId, evaluacion?.companyId, selectedCompanyId, "criterios", activePasoId],
     queryFn: async () => {
-      const res = await fetch(`/api/evaluaciones-pesv/${evaluacionId}/criterios?pasoId=${activePasoId}`, { credentials: "include" });
-      if (!res.ok) return [];
+      const path = `/api/evaluaciones-pesv/${evaluacionId}/criterios?pasoId=${activePasoId}`;
+      const url = evaluacion?.companyId ? withCompanyContext(path, evaluacion.companyId) : path;
+      const res = await fetch(url, { credentials: "include", headers: buildHeaders(false) });
+      if (!res.ok) throw new Error((await res.text()) || `No se pudieron cargar los criterios (${res.status})`);
       return res.json();
     },
-    enabled: !!evaluacionId && !!activePasoId,
+    enabled: !!evaluacionId && !!evaluacion?.companyId && !!activePasoId && (!isSuperAdmin || selectedCompanyId === evaluacion.companyId),
     staleTime: 30000,
     refetchOnWindowFocus: false,
   });
 
-  const { data: evidenciasDb = [], refetch: refetchEvidencias } = useQuery<PesvEvidenciaDocumento[]>({
-    queryKey: ["/api/evaluaciones-pesv", evaluacionId, "evidencias-docs", activePasoId],
+  const { data: evidenciasDb = [], refetch: refetchEvidencias, isError: evidenciasError, error: evidenciasLoadError } = useQuery<PesvEvidenciaDocumento[]>({
+    queryKey: ["/api/evaluaciones-pesv", evaluacionId, evaluacion?.companyId, selectedCompanyId, "evidencias-docs", activePasoId],
     queryFn: async () => {
-      const res = await fetch(`/api/evaluaciones-pesv/${evaluacionId}/evidencias-docs?pasoId=${activePasoId}`, { credentials: "include" });
-      if (!res.ok) return [];
+      const path = `/api/evaluaciones-pesv/${evaluacionId}/evidencias-docs?pasoId=${activePasoId}`;
+      const url = evaluacion?.companyId ? withCompanyContext(path, evaluacion.companyId) : path;
+      const res = await fetch(url, { credentials: "include", headers: buildHeaders(false) });
+      if (!res.ok) throw new Error((await res.text()) || `No se pudieron cargar las evidencias (${res.status})`);
       return res.json();
     },
-    enabled: !!evaluacionId && !!activePasoId,
+    enabled: !!evaluacionId && !!evaluacion?.companyId && !!activePasoId && (!isSuperAdmin || selectedCompanyId === evaluacion.companyId),
     staleTime: 30000,
     refetchOnWindowFocus: false,
   });
@@ -189,21 +196,28 @@ function RespuestaDialog({ open, onClose, paso, evaluacionId, evaluacion, respue
   }, [refetchCriterios, refetchEvidencias]);
 
   const inicializarYCargar = useCallback(async (p: PasoPesvData, evId: string) => {
+    if (!canWriteCompanyScoped) return;
     try {
-      await apiRequest("POST", `/api/evaluaciones-pesv/${evId}/inicializar-criterios`, {
+      const path = `/api/evaluaciones-pesv/${evId}/inicializar-criterios`;
+      await apiRequest("POST", evaluacion?.companyId ? withCompanyContext(path, evaluacion.companyId) : path, {
         pasoId: p.codigo,
         criterios: p.criteriosVerificacion,
         evidencias: p.evidenciasRequeridas,
       });
     } catch {}
     setActivePasoId(p.codigo);
-  }, []);
+  }, [canWriteCompanyScoped, evaluacion?.companyId]);
 
   const handleToggleCriterio = async (idx: number, criterioTexto: string) => {
+    if (!canWriteCompanyScoped) {
+      toast({ title: "Acceso requerido", description: "Seleccione en CompanyContext la empresa de esta evaluación para modificar criterios.", variant: "destructive" });
+      return;
+    }
     const nuevoEstado = !criteriosLocales[idx];
     setCriteriosOverrides(prev => ({ ...prev, [idx]: nuevoEstado }));
     try {
-      await apiRequest("POST", `/api/evaluaciones-pesv/${evaluacionId}/criterios`, {
+      const path = `/api/evaluaciones-pesv/${evaluacionId}/criterios`;
+      await apiRequest("POST", evaluacion?.companyId ? withCompanyContext(path, evaluacion.companyId) : path, {
         pasoId: paso?.codigo,
         criterioIndex: idx,
         criterioTexto,
@@ -216,14 +230,19 @@ function RespuestaDialog({ open, onClose, paso, evaluacionId, evaluacion, respue
   };
 
   const handleFileUpload = async (evidenciaIndex: number, evidenciaTexto: string, file: File) => {
+    if (!canWriteCompanyScoped) {
+      toast({ title: "Acceso requerido", description: "Seleccione en CompanyContext la empresa de esta evaluación para adjuntar evidencias.", variant: "destructive" });
+      return;
+    }
     setUploadingEvidencia(evidenciaIndex);
     try {
       const formData = new FormData();
       formData.append("file", file);
-      const uploadRes = await fetch("/api/upload", { method: "POST", body: formData, credentials: "include" });
+      const uploadRes = await fetch("/api/upload", { method: "POST", body: formData, credentials: "include", headers: buildHeaders(false) });
       if (!uploadRes.ok) throw new Error("Error al subir archivo");
       const { url } = await uploadRes.json();
-      await apiRequest("POST", `/api/evaluaciones-pesv/${evaluacionId}/evidencias-docs`, {
+      const path = `/api/evaluaciones-pesv/${evaluacionId}/evidencias-docs`;
+      await apiRequest("POST", evaluacion?.companyId ? withCompanyContext(path, evaluacion.companyId) : path, {
         pasoId: paso?.codigo,
         evidenciaIndex,
         evidenciaTexto,
@@ -242,8 +261,13 @@ function RespuestaDialog({ open, onClose, paso, evaluacionId, evaluacion, respue
   };
 
   const handleRemoveEvidencia = async (evidenciaId: string) => {
+    if (!canWriteCompanyScoped) {
+      toast({ title: "Acceso requerido", description: "Seleccione en CompanyContext la empresa de esta evaluación para eliminar evidencias.", variant: "destructive" });
+      return;
+    }
     try {
-      await apiRequest("DELETE", `/api/evaluaciones-pesv/${evaluacionId}/evidencias-docs/${evidenciaId}`);
+      const path = `/api/evaluaciones-pesv/${evaluacionId}/evidencias-docs/${evidenciaId}`;
+      await apiRequest("DELETE", evaluacion?.companyId ? withCompanyContext(path, evaluacion.companyId) : path);
       refetchCriteriosYEvidencias();
       toast({ title: "Archivo eliminado", description: "El archivo de evidencia ha sido removido", className: "bg-green-50 border-green-200" });
     } catch {
@@ -253,8 +277,10 @@ function RespuestaDialog({ open, onClose, paso, evaluacionId, evaluacion, respue
 
   const saveRespuestaMutation = useMutation({
     mutationFn: async (data: z.infer<typeof insertRespuestaPasoPesvSchema>) => {
+      if (!canWriteCompanyScoped) throw new Error("Seleccione en CompanyContext la empresa de esta evaluación antes de guardar.");
       const dataWithPasoId = { ...data, pasoId: paso?.codigo || data.pasoId };
-      const res = await apiRequest("POST", `/api/evaluaciones-pesv/${evaluacionId}/respuestas`, dataWithPasoId);
+      const path = `/api/evaluaciones-pesv/${evaluacionId}/respuestas`;
+      const res = await apiRequest("POST", evaluacion?.companyId ? withCompanyContext(path, evaluacion.companyId) : path, dataWithPasoId);
       return res.json();
     },
     onSuccess: async () => {
@@ -269,7 +295,8 @@ function RespuestaDialog({ open, onClose, paso, evaluacionId, evaluacion, respue
         className: "bg-green-50 border-green-200",
       });
       try {
-        await apiRequest("POST", `/api/evaluaciones-pesv/${evaluacionId}/recalcular`, {});
+        const path = `/api/evaluaciones-pesv/${evaluacionId}/recalcular`;
+        await apiRequest("POST", evaluacion?.companyId ? withCompanyContext(path, evaluacion.companyId) : path, {});
         queryClient.invalidateQueries({ queryKey: ["/api/evaluaciones-pesv", evaluacionId] });
       } catch (e) {
         console.warn("Error recalculando puntajes PESV:", e);
@@ -285,7 +312,7 @@ function RespuestaDialog({ open, onClose, paso, evaluacionId, evaluacion, respue
   });
 
   const onSubmitRespuesta = (values: z.infer<typeof insertRespuestaPasoPesvSchema>) => {
-    if (!paso) return;
+    if (!paso || !canWriteCompanyScoped) return;
     saveRespuestaMutation.mutate(values);
   };
 
@@ -295,8 +322,9 @@ function RespuestaDialog({ open, onClose, paso, evaluacionId, evaluacion, respue
       setActivePasoId(null);
       return;
     }
-    if (initializedPasoRef.current === paso.codigo) return;
-    initializedPasoRef.current = paso.codigo;
+    const initializationKey = `${paso.codigo}:${selectedCompanyId || ""}`;
+    if (initializedPasoRef.current === initializationKey) return;
+    initializedPasoRef.current = initializationKey;
 
     setCriteriosOverrides({});
     setActivePasoId(null);
@@ -355,7 +383,7 @@ function RespuestaDialog({ open, onClose, paso, evaluacionId, evaluacion, respue
     if (evaluacionId) {
       inicializarYCargar(paso, evaluacionId);
     }
-  }, [paso?.codigo, open]);
+  }, [paso?.codigo, open, evaluacionId, inicializarYCargar, selectedCompanyId]);
 
   if (!paso) return null;
 
@@ -370,6 +398,24 @@ function RespuestaDialog({ open, onClose, paso, evaluacionId, evaluacion, respue
           <DialogDescription>
             {paso.descripcion}
           </DialogDescription>
+        {isSuperAdmin && !canWriteCompanyScoped && (
+          <Alert className="border-amber-300 bg-amber-50 text-amber-900">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Seleccione en CompanyContext la empresa de esta evaluación para consultar o modificar sus criterios y evidencias.
+            </AlertDescription>
+          </Alert>
+        )}
+        {(criteriosError || evidenciasError) && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              {criteriosError && `Error al cargar criterios: ${criteriosLoadError instanceof Error ? criteriosLoadError.message : "error desconocido"}`}
+              {criteriosError && evidenciasError && " "}
+              {evidenciasError && `Error al cargar evidencias: ${evidenciasLoadError instanceof Error ? evidenciasLoadError.message : "error desconocido"}`}
+            </AlertDescription>
+          </Alert>
+        )}
         </DialogHeader>
 
         {/* PotPa: Panel de espera LSO para pasos P03, P05, P06, V03 */}
@@ -824,7 +870,7 @@ function RespuestaDialog({ open, onClose, paso, evaluacionId, evaluacion, respue
               </Button>
               <Button 
                 type="submit" 
-                disabled={saveRespuestaMutation.isPending}
+                disabled={saveRespuestaMutation.isPending || !canWriteCompanyScoped}
                 data-testid="button-guardar-respuesta"
               >
                 <Save className="h-4 w-4 mr-2" />
@@ -885,7 +931,8 @@ function DetalleEvaluacionPesvInner() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
-  const { companyChapter } = useCompanyContext();
+  const { companyChapter, selectedCompanyId } = useCompanyContext();
+  const isSuperAdmin = user?.role === "superadmin";
   const requestedCompanyId = useMemo(() => {
     if (typeof window === "undefined") return null;
     return new URLSearchParams(window.location.search).get("companyId");
@@ -918,7 +965,7 @@ function DetalleEvaluacionPesvInner() {
       const url = requestedCompanyId
         ? withCompanyContext(baseUrl, requestedCompanyId)
         : baseUrl;
-      const res = await fetch(url, { credentials: "include" });
+      const res = await fetch(url, { credentials: "include", headers: buildHeaders(false) });
       if (!res.ok) {
         const message = await res.text();
         throw new Error(message || "No se pudo cargar la evaluación PESV");
@@ -939,6 +986,7 @@ function DetalleEvaluacionPesvInner() {
       }
     }
   }, [evaluacion?.companyId, user?.role]);
+  const hasAuthorizedCompanyContext = !isSuperAdmin || (!!evaluacion?.companyId && selectedCompanyId === evaluacion.companyId);
 
   const { data: respuestas = [] } = useQuery<RespuestaPasoPesv[]>({
     queryKey: ["/api/evaluaciones-pesv", id, "respuestas", evaluacion?.companyId],
@@ -947,18 +995,18 @@ function DetalleEvaluacionPesvInner() {
       const url = evaluacion?.companyId
         ? withCompanyContext(baseUrl, evaluacion.companyId)
         : baseUrl;
-      const res = await fetch(url, { credentials: "include" });
+      const res = await fetch(url, { credentials: "include", headers: buildHeaders(false) });
       if (!res.ok) throw new Error(await res.text() || "No se pudieron cargar las respuestas PESV");
       return res.json();
     },
-    enabled: !!id && !!evaluacion,
+    enabled: !!id && !!evaluacion && hasAuthorizedCompanyContext,
   });
 
   const { data: pasosDb = [] } = useQuery<PasoPesv[]>({
     queryKey: ["/api/pasos-pesv", evaluacion?.nivel],
     queryFn: async () => {
       if (!evaluacion?.nivel) return [];
-      const res = await fetch(`/api/pasos-pesv?nivel=${evaluacion.nivel}`);
+      const res = await fetch(`/api/pasos-pesv?nivel=${evaluacion.nivel}`, { credentials: "include", headers: buildHeaders(false) });
       if (!res.ok) throw new Error("Error al cargar pasos");
       return res.json();
     },
@@ -984,14 +1032,16 @@ function DetalleEvaluacionPesvInner() {
     };
   }
 
-  const { data: resumenVerificacion = null, isLoading: resumenLoading } = useQuery<VerificacionResumen>({
-    queryKey: ["/api/evaluaciones-pesv", id, "verificacion-resumen"],
+  const { data: resumenVerificacion = null, isLoading: resumenLoading, isError: resumenError, error: resumenLoadError } = useQuery<VerificacionResumen>({
+    queryKey: ["/api/evaluaciones-pesv", id, evaluacion?.companyId, selectedCompanyId, "verificacion-resumen"],
     queryFn: async () => {
-      const res = await fetch(`/api/evaluaciones-pesv/${id}/verificacion-resumen`, { credentials: "include" });
-      if (!res.ok) throw new Error("Error");
+      const path = `/api/evaluaciones-pesv/${id}/verificacion-resumen`;
+      const url = evaluacion?.companyId ? withCompanyContext(path, evaluacion.companyId) : path;
+      const res = await fetch(url, { credentials: "include", headers: buildHeaders(false) });
+      if (!res.ok) throw new Error((await res.text()) || `No se pudo cargar el resumen de verificación (${res.status})`);
       return res.json();
     },
-    enabled: !!id && selectedFase === 'resumen',
+    enabled: !!id && !!evaluacion?.companyId && hasAuthorizedCompanyContext && selectedFase === 'resumen',
     staleTime: 30000,
     refetchOnWindowFocus: false,
   });
@@ -1012,8 +1062,11 @@ function DetalleEvaluacionPesvInner() {
 
   const handleDownloadIso39001Report = async () => {
     try {
-      const response = await fetch(`/api/evaluaciones-pesv/${id}/pdf-iso39001`, {
-        credentials: 'include'
+      const path = `/api/evaluaciones-pesv/${id}/pdf-iso39001`;
+      const requestUrl = evaluacion?.companyId ? withCompanyContext(path, evaluacion.companyId) : path;
+      const response = await fetch(requestUrl, {
+        credentials: 'include',
+        headers: buildHeaders(false),
       });
       if (!response.ok) {
         const contentType = response.headers.get('content-type');
@@ -1048,7 +1101,9 @@ function DetalleEvaluacionPesvInner() {
 
   const recalcularMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", `/api/evaluaciones-pesv/${id}/recalcular`, {});
+      if (!hasAuthorizedCompanyContext) throw new Error("Seleccione en CompanyContext la empresa de esta evaluación antes de modificarla.");
+      const path = `/api/evaluaciones-pesv/${id}/recalcular`;
+      const res = await apiRequest("POST", evaluacion?.companyId ? withCompanyContext(path, evaluacion.companyId) : path, {});
       return res.json();
     },
     onSuccess: () => {
@@ -1071,7 +1126,9 @@ function DetalleEvaluacionPesvInner() {
 
   const generarPlanPesvMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", `/api/evaluaciones-pesv/${id}/generar-plan`, {});
+      if (!hasAuthorizedCompanyContext) throw new Error("Seleccione en CompanyContext la empresa de esta evaluación antes de modificarla.");
+      const path = `/api/evaluaciones-pesv/${id}/generar-plan`;
+      const res = await apiRequest("POST", evaluacion?.companyId ? withCompanyContext(path, evaluacion.companyId) : path, {});
       return res.json();
     },
     onSuccess: (result) => {
@@ -1098,7 +1155,9 @@ function DetalleEvaluacionPesvInner() {
 
   const finalizarEvaluacionMutation = useMutation({
     mutationFn: async (nuevoEstado: string) => {
-      const res = await apiRequest("PATCH", `/api/evaluaciones-pesv/${id}`, { estado: nuevoEstado });
+      if (!hasAuthorizedCompanyContext) throw new Error("Seleccione en CompanyContext la empresa de esta evaluación antes de modificarla.");
+      const path = `/api/evaluaciones-pesv/${id}`;
+      const res = await apiRequest("PATCH", evaluacion?.companyId ? withCompanyContext(path, evaluacion.companyId) : path, { estado: nuevoEstado });
       return res.json();
     },
     onSuccess: (_, nuevoEstado) => {
@@ -1360,7 +1419,7 @@ function DetalleEvaluacionPesvInner() {
           <Button 
             variant="outline" 
             onClick={() => recalcularMutation.mutate()}
-            disabled={recalcularMutation.isPending}
+            disabled={recalcularMutation.isPending || !hasAuthorizedCompanyContext}
             data-testid="button-recalcular"
           >
             <RefreshCcw className={`h-4 w-4 mr-2 ${recalcularMutation.isPending ? 'animate-spin' : ''}`} />
@@ -1369,7 +1428,7 @@ function DetalleEvaluacionPesvInner() {
           <Button
             variant="outline"
             onClick={() => generarPlanPesvMutation.mutate()}
-            disabled={generarPlanPesvMutation.isPending}
+            disabled={generarPlanPesvMutation.isPending || !hasAuthorizedCompanyContext}
             data-testid="button-generar-plan-pesv"
           >
             <Wand2 className="h-4 w-4 mr-2" />
@@ -1386,7 +1445,8 @@ function DetalleEvaluacionPesvInner() {
           <Button 
             variant="default" 
             onClick={() => {
-              window.open(`/api/evaluaciones-pesv/${id}/pdf?tipo=supertransporte`, '_blank');
+              const path = `/api/evaluaciones-pesv/${id}/pdf?tipo=supertransporte`;
+              window.open(evaluacion?.companyId ? withCompanyContext(path, evaluacion.companyId) : path, '_blank');
             }}
             data-testid="button-export-supertransporte"
             className="bg-green-600"
@@ -1400,6 +1460,7 @@ function DetalleEvaluacionPesvInner() {
               onClick={() => setFinalizarDialogOpen(true)}
               data-testid="button-finalizar-evaluacion"
               className="bg-primary"
+              disabled={!hasAuthorizedCompanyContext}
             >
               <CheckCircle2 className="h-4 w-4 mr-2" />
               Finalizar Evaluación
@@ -1410,7 +1471,7 @@ function DetalleEvaluacionPesvInner() {
               <Button 
                 variant="outline"
                 onClick={() => finalizarEvaluacionMutation.mutate("en-progreso")}
-                disabled={finalizarEvaluacionMutation.isPending}
+                disabled={finalizarEvaluacionMutation.isPending || !hasAuthorizedCompanyContext}
                 data-testid="button-reabrir-evaluacion"
               >
                 <RefreshCcw className="h-4 w-4 mr-2" />
@@ -1419,7 +1480,7 @@ function DetalleEvaluacionPesvInner() {
               <Button 
                 variant="default"
                 onClick={() => finalizarEvaluacionMutation.mutate("enviada")}
-                disabled={finalizarEvaluacionMutation.isPending}
+                disabled={finalizarEvaluacionMutation.isPending || !hasAuthorizedCompanyContext}
                 data-testid="button-marcar-enviada"
                 className="bg-blue-600 hover:bg-blue-700"
               >
@@ -1432,7 +1493,7 @@ function DetalleEvaluacionPesvInner() {
             <Button 
               variant="outline"
               onClick={() => finalizarEvaluacionMutation.mutate("en-progreso")}
-              disabled={finalizarEvaluacionMutation.isPending}
+              disabled={finalizarEvaluacionMutation.isPending || !hasAuthorizedCompanyContext}
               data-testid="button-reabrir-evaluacion-enviada"
             >
               <RefreshCcw className="h-4 w-4 mr-2" />
@@ -1441,6 +1502,15 @@ function DetalleEvaluacionPesvInner() {
           )}
         </div>
       </div>
+
+      {isSuperAdmin && !hasAuthorizedCompanyContext && (
+        <Alert className="border-amber-300 bg-amber-50 text-amber-900">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            La empresa seleccionada en CompanyContext debe coincidir con la empresa de esta evaluación para habilitar modificaciones.
+          </AlertDescription>
+        </Alert>
+      )}
 
       <Card data-testid="card-resumen-evaluacion">
         <CardHeader className="pb-2">
@@ -1666,7 +1736,21 @@ function DetalleEvaluacionPesvInner() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {resumenLoading ? (
+              {isSuperAdmin && !hasAuthorizedCompanyContext ? (
+                <Alert className="border-amber-300 bg-amber-50 text-amber-900">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    Seleccione en CompanyContext la empresa de esta evaluación para consultar el resumen de verificación.
+                  </AlertDescription>
+                </Alert>
+              ) : resumenError ? (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    {resumenLoadError instanceof Error ? resumenLoadError.message : "No se pudo cargar el resumen de verificación."}
+                  </AlertDescription>
+                </Alert>
+              ) : resumenLoading ? (
                 <div className="flex items-center justify-center p-8">
                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                 </div>
@@ -1852,7 +1936,7 @@ function DetalleEvaluacionPesvInner() {
               onClick={() => finalizarEvaluacionMutation.mutate("completada")}
               className="bg-primary"
               data-testid="button-confirm-finalizar"
-              disabled={finalizarEvaluacionMutation.isPending}
+              disabled={finalizarEvaluacionMutation.isPending || !hasAuthorizedCompanyContext}
             >
               {finalizarEvaluacionMutation.isPending ? "Finalizando..." : "Sí, Finalizar Evaluación"}
             </AlertDialogAction>
