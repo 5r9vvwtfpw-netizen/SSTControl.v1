@@ -30,6 +30,7 @@
 - [TypeScript cleanup workflow](typescript-cleanup-workflow.md) — las correcciones delegadas deben validarse de inmediato; pueden dejar mejoras parciales pero nunca sustituyen el chequeo global final.
 - [Worker and contract date synchronization](worker-contract-date-sync.md) — workers y contracts duplican fechas laborales; sincronizar solo el contrato activo en ambas direcciones.
 - [Retiro y acceso al Portal de Empleados](worker-portal-retirement-access.md) — el retiro efectivo, no la terminación aislada de un contrato, determina el bloqueo de la cuenta de trabajador.
+- [Borrado seguro de trabajadores](worker-deletion-dependency-policy.md) — solo superadmin puede borrar fichas vinculadas y erróneas; las cascadas indirectas y archivos requieren clasificación previa.
 - [Cobro por alta de trabajador](worker-entry-billing.md) — todo trabajador nuevo se cobra en su ciclo; el retirado deja de sumar desde el siguiente, sin devolución retroactiva.
 - [Conteo de trabajadores en Empresas](company-worker-count-policy.md) — el perfil empresarial no edita el conteo vigente; distinguir declaración inicial y cupo contratado.
 - [Visibilidad del próximo pago](next-payment-visibility.md) — tras un retiro, Mi Cuenta es el lugar para consultar el importe verificado; nunca presentar la tarifa guardada como deuda real.

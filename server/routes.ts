@@ -23,6 +23,12 @@ import { demoReadOnlyMiddleware } from "../plugins/demo-engine/readonly-middlewa
 import { isDemoEnabled } from "../plugins/demo-engine/types";
 import { storage } from "./storage";
 import { db } from "./db";
+import {
+  deleteUnlinkedWorker,
+  executeDeepWorkerDeletion,
+  previewDeepWorkerDeletion,
+  WorkerDeletionError,
+} from "./services/worker-deletion";
 import { users } from "@shared/schema";
 import { getPortalPendingCount } from "./services/portal-pending-count";
 import { getAuditContext } from "./lib/audit-logger";
@@ -4594,164 +4600,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/workers/:id", requirePermission("workers:delete"), async (req, res) => {
-    const userRole = req.user!.role;
-    const isAdmin = hasGlobalAccess(userRole);
-    
-    // Always get the worker first to check for photo cleanup
-    const workerToDelete = await storage.getWorkerById(req.params.id);
-    if (!workerToDelete) {
-      return res.status(404).send("Trabajador no encontrado");
+  app.post("/api/workers/:id/deletion-preview", requirePermission("workers:delete"), async (req, res) => {
+    // This strict check intentionally precedes all worker/relationship reads.
+    if (req.user!.role !== "superadmin") {
+      return res.status(403).json({ error: "Solo superadmin puede consultar una vista previa de eliminación profunda." });
     }
-    
-    let companyId: string;
-    if (isAdmin) {
-      // Admin can delete workers from any company
-      companyId = workerToDelete.companyId;
-    } else {
-      companyId = getEffectiveCompanyId(req) || "";
-      if (!companyId) {
-        return res.status(403).send("Usuario no asociado a una empresa");
-      }
-    }
-    
-    // Audit logging context (Bloque 2: Legal Compliance)
-    const userId = req.user!.id;
-    const auditContext = getAuditContext(req);
-    
+
     try {
-      // Clean up S3 photo before deletion if exists
-      if (workerToDelete.photoUrl) {
-        try {
-          console.log(`[Worker Delete] Cleaning up S3 photo for worker ${req.params.id}: ${workerToDelete.photoUrl}`);
-          await objectStorageService.deleteObjectByUrl(workerToDelete.photoUrl);
-          console.log(`[Worker Delete] Successfully deleted S3 photo for worker ${req.params.id}`);
-        } catch (s3Error) {
-          console.log(`[Worker Delete] Failed to delete S3 photo for worker ${req.params.id}, continuing with deletion:`, s3Error);
-        }
-      }
-      
-      await storage.deleteWorker(req.params.id, companyId, userId, auditContext);
-      res.sendStatus(204);
-    } catch (error: any) {
-      // Handle foreign key constraint violation
-      if (error.code === '23503') {
-        // El error 23503 puede venir de varias tablas: contratos, enfermedades ocupacionales, consentimientos, etc.
-        const constraintName = error.constraint || '';
-        let mensaje = "No se puede eliminar el trabajador porque tiene registros asociados. ";
-        
-        if (constraintName.includes('contract') || constraintName.includes('labor_contracts')) {
-          mensaje += "Primero elimine los contratos del trabajador.";
-        } else if (constraintName.includes('occupational_disease')) {
-          mensaje += "Primero elimine los casos de enfermedades ocupacionales.";
-        } else if (constraintName.includes('consent')) {
-          mensaje += "Primero elimine los registros de consentimiento.";
-        } else if (constraintName.includes('training')) {
-          mensaje += "Primero elimine los registros de capacitación.";
-        } else {
-          mensaje += "Verifique que no tenga contratos, capacitaciones, enfermedades ocupacionales u otros registros vinculados antes de eliminar.";
-        }
-        
-        return res.status(400).send(mensaje);
+      const preview = await previewDeepWorkerDeletion(req.params.id, req.user!.id);
+      return res.json(preview);
+    } catch (error) {
+      if (error instanceof WorkerDeletionError) {
+        return res.status(error.status).json({ error: error.message, code: error.code });
       }
       throw error;
     }
   });
-  // Bulk delete workers for a company (migration correction tool)
-  app.delete("/api/workers/bulk-delete/:companyId", requirePermission("workers:delete"), async (req, res) => {
-    const targetCompanyId = req.params.companyId;
-    const userRole = req.user!.role;
-    const isAdmin = hasGlobalAccess(userRole);
-    const userCompanyId = getEffectiveCompanyId(req);
 
-    // Verify company access
-    if (!isAdmin && userCompanyId !== targetCompanyId) {
-      return res.status(403).json({ error: "No tiene permisos para eliminar trabajadores de esta empresa" });
+  app.delete("/api/workers/:id", requirePermission("workers:delete"), async (req, res) => {
+    const role = req.user!.role;
+    if (role === "superadmin") {
+      return res.status(400).json({
+        error: "Superadmin debe usar la vista previa y confirmación reforzada de eliminación profunda.",
+        code: "DEEP_DELETE_CONFIRMATION_REQUIRED",
+      });
     }
 
-    // Require confirmation code from request body
-    const { confirmationCode, confirmCompanyName } = req.body;
-    if (confirmationCode !== "ELIMINAR-TODOS-LOS-TRABAJADORES") {
-      return res.status(400).json({ error: "Código de confirmación incorrecto. Esta acción requiere confirmación explícita." });
+    const companyId = getEffectiveCompanyId(req);
+    if (!companyId) {
+      return res.status(403).json({ error: "Usuario no asociado a una empresa" });
     }
 
     try {
-      // Get company name for verification
-      const company = await storage.getCompany(targetCompanyId);
-      if (!company) {
-        return res.status(404).json({ error: "Empresa no encontrada" });
-      }
-
-      // Verify company name matches
-      if (confirmCompanyName !== company.name) {
-        return res.status(400).json({ error: "El nombre de la empresa no coincide. Verifique e intente nuevamente." });
-      }
-
-      // Get all workers for the company
-      const workers = await storage.getWorkers(targetCompanyId);
-      if (workers.length === 0) {
-        return res.status(400).json({ error: "No hay trabajadores para eliminar en esta empresa" });
-      }
-
-      const userId = req.user!.id;
-      const auditContext = getAuditContext(req);
-      let deleted = 0;
-      let errors: string[] = [];
-
-      // Delete each worker
-      for (const worker of workers) {
-        try {
-          // Clean up S3 photo before deletion if exists
-          if (worker.photoUrl) {
-            try {
-              console.log(`[Bulk Worker Delete] Cleaning up S3 photo for worker ${worker.id}: ${worker.photoUrl}`);
-              await objectStorageService.deleteObjectByUrl(worker.photoUrl);
-              console.log(`[Bulk Worker Delete] Successfully deleted S3 photo for worker ${worker.id}`);
-            } catch (s3Error) {
-              console.log(`[Bulk Worker Delete] Failed to delete S3 photo for worker ${worker.id}, continuing with deletion:`, s3Error);
-            }
-          }
-          
-          await storage.deleteWorker(worker.id, targetCompanyId, userId, auditContext);
-          deleted++;
-        } catch (error: any) {
-          if (error.code === '23503') {
-            errors.push(`Trabajador ${worker.id}: Tiene registros asociados (contratos, capacitaciones, etc.)`);
-          } else {
-            errors.push(`Trabajador ${worker.id}: Error desconocido`);
-          }
-        }
-      }
-
-      // Log this critical action
-      console.log("[Bulk Worker Delete] Critical action:", {
-        action: "bulk_delete_workers",
-        companyId: targetCompanyId,
-        companyName: company.name,
-        userId,
-        totalWorkers: workers.length,
-        deleted,
-        errors: errors.length,
-      }, `Eliminación masiva de trabajadores: ${deleted}/${workers.length} eliminados`);
-
-      if (errors.length > 0) {
-        return res.status(207).json({
-          message: `Se eliminaron ${deleted} de ${workers.length} trabajadores`,
-          deleted,
-          total: workers.length,
-          errors,
-        });
-      }
-
-      res.json({
-        message: `Se eliminaron exitosamente los ${deleted} trabajadores`,
-        deleted,
-        total: workers.length,
+      const result = await deleteUnlinkedWorker({
+        workerId: req.params.id,
+        companyId,
+        actorId: req.user!.id,
       });
-    } catch (error: any) {
-      console.error("Error en eliminación masiva de trabajadores:", error.message);
-      res.status(500).json({ error: "Error al eliminar trabajadores: " + error.message });
+      return res.json(result);
+    } catch (error) {
+      if (error instanceof WorkerDeletionError) {
+        return res.status(error.status).json({ error: error.message, code: error.code });
+      }
+      throw error;
     }
+  });
+
+  app.post("/api/workers/:id/deletion-confirm", requirePermission("workers:delete"), async (req, res) => {
+    // This strict check intentionally precedes token parsing and all DB reads/writes.
+    if (req.user!.role !== "superadmin") {
+      return res.status(403).json({ error: "Solo superadmin puede confirmar una eliminación profunda." });
+    }
+
+    try {
+      const result = await executeDeepWorkerDeletion({
+        workerId: req.params.id,
+        actorId: req.user!.id,
+        previewToken: req.body?.previewToken,
+        confirmName: req.body?.confirmName,
+        confirmIdentificationNumber: req.body?.confirmIdentificationNumber,
+        confirmErroneousRecord: req.body?.confirmErroneousRecord,
+      });
+      return res.json(result);
+    } catch (error) {
+      if (error instanceof WorkerDeletionError) {
+        return res.status(error.status).json({ error: error.message, code: error.code });
+      }
+      throw error;
+    }
+  });
+  // Disabled: the previous endpoint performed non-atomic partial cascades.
+  app.delete("/api/workers/bulk-delete/:companyId", (_req, res) => {
+    return res.status(410).json({
+      error: "La eliminación masiva de trabajadores está deshabilitada.",
+      code: "BULK_WORKER_DELETE_DISABLED",
+    });
   });
 
 

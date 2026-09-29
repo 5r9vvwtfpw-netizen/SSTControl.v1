@@ -9,12 +9,12 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Plus, Search, Download, AlertCircle, CheckCircle2, Eye, CreditCard, FileText, Upload, User, Trash2, AlertTriangle, Building2, ChevronRight, ArrowLeft, Users } from "lucide-react";
+import { Plus, Search, Download, AlertCircle, CheckCircle2, Eye, CreditCard, FileText, Upload, User, AlertTriangle, Building2, ChevronRight, ArrowLeft, Users } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Worker, insertWorkerSchema, Company, Contract, insertContractSchema, JobProfile } from "@shared/schema";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, buildHeaders, queryClient } from "@/lib/queryClient";
 import { contractTypeLabels } from "@shared/arl-rates";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/use-auth";
@@ -24,7 +24,7 @@ import { PREDEFINED_PROFILES } from "@/data/perfiles-cargo-predefinidos";
 import { Link } from "wouter";
 import { Checkbox } from "@/components/ui/checkbox";
 import { formatDateShort, formatCurrency, getTodayDateString } from "@/lib/utils/formatters";
-import { hasCompanyAdminAccess, hasGlobalAccess, canWrite } from "@shared/permissions";
+import { hasCompanyAdminAccess, hasGlobalAccess, canWrite, hasPermission } from "@shared/permissions";
 import { AutomationAssistant } from "@/components/AutomationAssistant";
 import { BackToEvaluationButton } from "@/components/BackToEvaluationButton";
 import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
@@ -59,6 +59,42 @@ const normativaTrabajadores = [
   }
 ];
 
+type WorkerDeletionPreview = {
+  worker: {
+    id: string;
+    name: string;
+    identificationNumber: string;
+  };
+  companyName: string;
+  expiresAt: string;
+  previewToken: string;
+  photoPresent: boolean;
+  relationships: Array<{
+    table: string;
+    count: number;
+    disposition: string;
+  }>;
+};
+
+type DeletionRequestError = Error & { status?: number };
+
+async function requestWorkerDeletionJson<T>(url: string, method: string, body?: unknown): Promise<T> {
+  const response = await fetch(url, {
+    method,
+    headers: buildHeaders(body !== undefined),
+    body: body === undefined ? undefined : JSON.stringify(body),
+    credentials: "include",
+  });
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) {
+    const message = payload?.error || payload?.message || response.statusText || "No se pudo completar la solicitud.";
+    const error = new Error(message) as DeletionRequestError;
+    error.status = response.status;
+    throw error;
+  }
+  return payload as T;
+}
+
 // Constantes de metadata para consentimientos Habeas Data (Ley 1581/2012)
 const CONSENT_METADATA = {
   policyVersion: "1.0",
@@ -86,6 +122,8 @@ export default function Trabajadores() {
 
   // For admin: company selection filter
   const isAdmin = user?.role ? canWrite(user.role, 'workers') : false;
+  const canDeleteWorkers = user?.role ? hasPermission(user.role, "workers:delete") : false;
+  const isSuperadminUser = user?.role === "superadmin";
   // hasGlobalAccess = true only for superadmin/soporte (can see all companies)
   const hasGlobalCompanyAccess = user?.role ? hasGlobalAccess(user.role) : false;
   // isSuperadmin = true only for superadmin/soporte (can select any company when creating workers)
@@ -113,16 +151,15 @@ export default function Trabajadores() {
     errors: Array<{ row: number; error: string }>;
   } | null>(null);
   
-  // Estados para eliminación masiva de trabajadores
-  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
-  const [bulkDeleteConfirmCode, setBulkDeleteConfirmCode] = useState("");
-  const [bulkDeleteCompanyName, setBulkDeleteCompanyName] = useState("");
-  const [bulkDeleteResults, setBulkDeleteResults] = useState<{
-    message: string;
-    deleted: number;
-    total: number;
-    errors?: string[];
-  } | null>(null);
+  // Eliminación individual segura: primero carga una vista previa del servidor.
+  const [workerPendingDeletion, setWorkerPendingDeletion] = useState<Worker | null>(null);
+  const [workerDeletionDialogOpen, setWorkerDeletionDialogOpen] = useState(false);
+  const [workerDeletionPreview, setWorkerDeletionPreview] = useState<WorkerDeletionPreview | null>(null);
+  const [workerDeletionPreviewError, setWorkerDeletionPreviewError] = useState<string | null>(null);
+  const [workerDeletionConfirmName, setWorkerDeletionConfirmName] = useState("");
+  const [workerDeletionConfirmIdentification, setWorkerDeletionConfirmIdentification] = useState("");
+  const [workerDeletionErroneousConfirmed, setWorkerDeletionErroneousConfirmed] = useState(false);
+  const [workersBlockedFromCompanyDelete, setWorkersBlockedFromCompanyDelete] = useState<Set<string>>(() => new Set());
   
   const [formData, setFormData] = useState<{
     companyId: string;
@@ -600,31 +637,107 @@ export default function Trabajadores() {
     },
   });
 
-  const deleteWorkerMutation = useMutation({
-    mutationFn: async (id: string) => {
-      await apiRequest("DELETE", `/api/workers/${id}`);
+  const workerDeletionPreviewMutation = useMutation({
+    mutationFn: async (id: string) =>
+      requestWorkerDeletionJson<WorkerDeletionPreview>(`/api/workers/${id}/deletion-preview`, "POST"),
+    onSuccess: (preview) => {
+      setWorkerDeletionPreview(preview);
+      setWorkerDeletionPreviewError(null);
     },
-    onSuccess: () => {
+    onError: (error: DeletionRequestError) => {
+      if (error.status === 409) {
+        setWorkerDeletionDialogOpen(false);
+        setWorkerPendingDeletion(null);
+        setWorkerDeletionPreview(null);
+        setWorkerDeletionConfirmName("");
+        setWorkerDeletionConfirmIdentification("");
+        toast({
+          title: "La información cambió",
+          description: "No se pudo generar la vista previa. Actualice la lista e intente de nuevo.",
+          variant: "destructive",
+        });
+        return;
+      }
+      setWorkerDeletionPreviewError(error.message);
+    },
+  });
+
+  const deleteWorkerMutation = useMutation({
+    mutationFn: async ({
+      id,
+      mode,
+      confirmationName,
+      confirmationIdentification,
+      previewToken,
+      confirmErroneousRecord,
+    }: {
+      id: string;
+      mode: "standard" | "deep";
+      confirmationName?: string;
+      confirmationIdentification?: string;
+      previewToken?: string;
+      confirmErroneousRecord?: boolean;
+    }) => mode === "deep"
+      ? requestWorkerDeletionJson<{ complete: boolean; photoCleanup: { status: string } }>(`/api/workers/${id}/deletion-confirm`, "POST", {
+          confirmName: confirmationName,
+          confirmIdentificationNumber: confirmationIdentification,
+          previewToken,
+          confirmErroneousRecord,
+        })
+      : requestWorkerDeletionJson<{ complete: boolean; photoCleanup: { status: string } }>(`/api/workers/${id}`, "DELETE"),
+    onSuccess: (result, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/workers"] });
       queryClient.invalidateQueries({ queryKey: ["/api/companies"] });
       queryClient.invalidateQueries({ queryKey: ["/api/epayco/pse/cotizacion"] });
-      toast({
+      setWorkerDeletionDialogOpen(false);
+      setWorkerPendingDeletion(null);
+      setWorkerDeletionPreview(null);
+      setWorkerDeletionPreviewError(null);
+      setWorkerDeletionConfirmName("");
+      setWorkerDeletionConfirmIdentification("");
+      setWorkerDeletionErroneousConfirmed(false);
+      toast(result.complete ? {
         title: "Trabajador eliminado",
-        description: "El trabajador se ha eliminado exitosamente",
+        description: variables.mode === "deep"
+          ? "La ficha y sus registros vinculados se procesaron. Se conserva la auditoría de la eliminación."
+          : "El trabajador sin registros vinculados se eliminó exitosamente.",
         className: "bg-yellow-50 border-yellow-200",
+      } : {
+        title: "Eliminación incompleta de archivo",
+        description: result.photoCleanup.status === "retained_shared"
+          ? "La ficha se eliminó, pero la fotografía se conservó porque otro trabajador la utiliza. No repita la eliminación."
+          : "La ficha se eliminó, pero no se pudo borrar su fotografía. Solicite revisión técnica; no repita la eliminación.",
+        variant: "destructive",
       });
     },
-    onError: (error: Error) => {
-      // Extract message without status code prefix
-      let message = error.message;
-      if (message.includes("contratos asociados")) {
-        message = "No se puede eliminar el trabajador porque tiene contratos asociados. Primero elimine los contratos del trabajador.";
-      } else if (message.startsWith("400:") || message.startsWith("403:") || message.startsWith("404:")) {
-        message = message.substring(message.indexOf(":") + 1).trim();
+    onError: (error: DeletionRequestError, variables) => {
+      if (error.status === 409) {
+        if (variables?.mode === "standard") {
+          setWorkersBlockedFromCompanyDelete((current) => new Set(current).add(variables.id));
+          toast({
+            title: "El trabajador tiene registros vinculados",
+            description: "El acceso de empresa solo permite eliminar trabajadores sin relaciones con otros procesos. Solicite a un superadministrador que revise la eliminación profunda.",
+            variant: "destructive",
+          });
+        } else {
+          setWorkerDeletionDialogOpen(false);
+          setWorkerPendingDeletion(null);
+          setWorkerDeletionPreview(null);
+          setWorkerDeletionPreviewError(null);
+          setWorkerDeletionConfirmName("");
+          setWorkerDeletionConfirmIdentification("");
+          queryClient.invalidateQueries({ queryKey: ["/api/workers"] });
+          toast({
+            title: "La vista previa venció o cambió",
+            description: "No se eliminó ningún registro. Vuelva a abrir la eliminación para revisar los datos actualizados.",
+            variant: "destructive",
+          });
+        }
+        return;
       }
       toast({
         title: "No se puede eliminar",
-        description: message,
+        description: error.message,
         variant: "destructive",
       });
     },
@@ -684,41 +797,6 @@ export default function Trabajadores() {
   });
 
   // Mutación para eliminación masiva de trabajadores
-  const bulkDeleteMutation = useMutation({
-    mutationFn: async ({ companyId, confirmationCode, confirmCompanyName }: { companyId: string; confirmationCode: string; confirmCompanyName: string }) => {
-      const res = await apiRequest("DELETE", `/api/workers/bulk-delete/${companyId}`, {
-        confirmationCode,
-        confirmCompanyName,
-      });
-      return res.json();
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/workers"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/contracts"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/companies"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/epayco/pse/cotizacion"] });
-      setBulkDeleteResults(data);
-      setBulkDeleteConfirmCode("");
-      setBulkDeleteCompanyName("");
-      toast({
-        title: "Eliminación masiva completada",
-        description: `Se eliminaron ${data.deleted} de ${data.total} trabajadores`,
-        className: "bg-yellow-50 border-yellow-200",
-      });
-    },
-    onError: (error: Error) => {
-      let message = error.message;
-      if (message.startsWith("400:") || message.startsWith("403:") || message.startsWith("404:")) {
-        message = message.substring(message.indexOf(":") + 1).trim();
-      }
-      toast({
-        title: "Error en eliminación masiva",
-        description: message,
-        variant: "destructive",
-      });
-    },
-  });
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingWorker && formData.status === "retirado") {
@@ -961,10 +1039,57 @@ export default function Trabajadores() {
   };
 
   const handleDelete = (id: string) => {
-    if (window.confirm("¿Está seguro de eliminar este trabajador?")) {
-      deleteWorkerMutation.mutate(id);
+    const worker = workers.find((candidate) => candidate.id === id);
+    if (!worker || !canDeleteWorkers) return;
+    if (!isSuperadminUser) {
+      if (window.confirm(`¿Eliminar a ${worker.name}? Esta opción solo está disponible si no tiene registros vinculados a otros procesos.`)) {
+        deleteWorkerMutation.mutate({ id, mode: "standard" });
+      }
+      return;
     }
+    setWorkerPendingDeletion(worker);
+    setWorkerDeletionPreview(null);
+    setWorkerDeletionPreviewError(null);
+    setWorkerDeletionConfirmName("");
+    setWorkerDeletionConfirmIdentification("");
+    setWorkerDeletionErroneousConfirmed(false);
+    setWorkerDeletionDialogOpen(true);
+    workerDeletionPreviewMutation.mutate(id);
   };
+
+  const resetWorkerDeletionDialog = () => {
+    setWorkerDeletionDialogOpen(false);
+    setWorkerPendingDeletion(null);
+    setWorkerDeletionPreview(null);
+    setWorkerDeletionPreviewError(null);
+    setWorkerDeletionConfirmName("");
+    setWorkerDeletionConfirmIdentification("");
+    setWorkerDeletionErroneousConfirmed(false);
+  };
+
+  const handleConfirmWorkerDeletion = () => {
+    if (!workerPendingDeletion || !workerDeletionPreview?.previewToken) return;
+    if (
+      !workerDeletionErroneousConfirmed ||
+      workerDeletionConfirmName.trim() !== workerDeletionPreview.worker.name ||
+      workerDeletionConfirmIdentification.trim() !== workerDeletionPreview.worker.identificationNumber
+    ) {
+      return;
+    }
+    deleteWorkerMutation.mutate({
+      id: workerPendingDeletion.id,
+      mode: "deep",
+      confirmationName: workerDeletionConfirmName.trim(),
+      confirmationIdentification: workerDeletionConfirmIdentification.trim(),
+      previewToken: workerDeletionPreview.previewToken,
+      confirmErroneousRecord: true,
+    });
+  };
+
+  const workerDeletionName = workerDeletionPreview?.worker.name ?? workerPendingDeletion?.name ?? "";
+  const workerDeletionIdentification =
+    workerDeletionPreview?.worker.identificationNumber ?? workerPendingDeletion?.identificationNumber ?? "";
+  const workerDeletionRelationships = workerDeletionPreview?.relationships ?? [];
 
   const handleOpenDialog = () => {
     setEditingWorker(null);
@@ -1275,6 +1400,142 @@ export default function Trabajadores() {
           <BackToCronogramaButton />
         </div>
       </div>
+      <Dialog
+        open={isSuperadminUser && workerDeletionDialogOpen}
+        onOpenChange={(open) => {
+          if (!open) resetWorkerDeletionDialog();
+          else if (isSuperadminUser) setWorkerDeletionDialogOpen(true);
+        }}
+      >
+        <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              Eliminación profunda de trabajador
+            </DialogTitle>
+            <DialogDescription>
+              Vista previa de todos los registros vinculados. Esta acción es irreversible y solo está disponible para superadministradores.
+            </DialogDescription>
+          </DialogHeader>
+
+          {workerPendingDeletion && (
+            <div className="space-y-4">
+              <div className="rounded-md border p-3 text-sm">
+                <p><span className="font-medium">Trabajador:</span> {workerDeletionName}</p>
+                <p><span className="font-medium">Identificación:</span> {workerDeletionIdentification}</p>
+                {workerDeletionPreview?.companyName && (
+                  <p><span className="font-medium">Empresa:</span> {workerDeletionPreview.companyName}</p>
+                )}
+              </div>
+
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  Se eliminarán permanentemente la ficha y registros vinculados, incluidas evidencias médicas y SST. Algunas relaciones se desvinculan; se conserva la auditoría. No se puede deshacer.
+                </AlertDescription>
+              </Alert>
+              {workerDeletionPreview?.photoPresent && (
+                <p className="text-sm">La fotografía del trabajador se borrará después de confirmar la eliminación en la base de datos.</p>
+              )}
+
+              {workerDeletionPreviewMutation.isPending && (
+                <p className="text-sm text-muted-foreground" role="status">Consultando registros relacionados…</p>
+              )}
+              {workerDeletionPreviewError && (
+                <Alert variant="destructive">
+                  <AlertDescription>{workerDeletionPreviewError}</AlertDescription>
+                </Alert>
+              )}
+              {workerDeletionPreview && (
+                <>
+                  <section className="space-y-2" aria-label="Registros que se eliminarán">
+                    <h3 className="font-medium">Relaciones directas afectadas</h3>
+                    {workerDeletionRelationships.length > 0 ? (
+                      <ul className="max-h-48 space-y-1 overflow-y-auto rounded-md border p-3 text-sm">
+                        {workerDeletionRelationships.map((relationship) => (
+                          <li key={`${relationship.table}-${relationship.disposition}`} className="flex items-center justify-between gap-4">
+                            <span className="capitalize">{relationship.table.replace(/_/g, " ")}</span>
+                            <span className="shrink-0 font-medium">
+                              {relationship.count} · {relationship.disposition.replace(/_/g, " ")}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="rounded-md border p-3 text-sm text-muted-foreground">
+                        No se encontraron relaciones adicionales. Se eliminará la ficha del trabajador.
+                      </p>
+                    )}
+                  </section>
+
+                  <div className="space-y-3 border-t pt-4">
+                    <div className="flex items-start gap-2">
+                      <Checkbox
+                        id="worker-delete-erroneous"
+                        checked={workerDeletionErroneousConfirmed}
+                        onCheckedChange={(checked) => setWorkerDeletionErroneousConfirmed(checked === true)}
+                      />
+                      <Label htmlFor="worker-delete-erroneous" className="leading-snug">
+                        Confirmo que esta ficha y las evidencias vinculadas se crearon por error y no corresponden a registros reales que deban conservarse.
+                      </Label>
+                    </div>
+                    <p className="text-sm font-medium">
+                      Para confirmar, escriba exactamente el nombre y el número de identificación:
+                    </p>
+                    <div className="space-y-2">
+                      <Label htmlFor="worker-delete-confirm-name">{workerDeletionName}</Label>
+                      <Input
+                        id="worker-delete-confirm-name"
+                        value={workerDeletionConfirmName}
+                        onChange={(event) => setWorkerDeletionConfirmName(event.target.value)}
+                        autoComplete="off"
+                        data-testid="input-worker-delete-confirm-name"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="worker-delete-confirm-identification">{workerDeletionIdentification}</Label>
+                      <Input
+                        id="worker-delete-confirm-identification"
+                        value={workerDeletionConfirmIdentification}
+                        onChange={(event) => setWorkerDeletionConfirmIdentification(event.target.value)}
+                        inputMode="numeric"
+                        autoComplete="off"
+                        data-testid="input-worker-delete-confirm-identification"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={resetWorkerDeletionDialog}
+              disabled={deleteWorkerMutation.isPending}
+              data-testid="button-cancel-worker-delete"
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmWorkerDeletion}
+              disabled={
+                !workerDeletionPreview?.previewToken ||
+                workerDeletionPreviewMutation.isPending ||
+                deleteWorkerMutation.isPending ||
+                !workerDeletionErroneousConfirmed ||
+                workerDeletionConfirmName.trim() !== workerDeletionPreview?.worker.name ||
+                workerDeletionConfirmIdentification.trim() !== workerDeletionPreview?.worker.identificationNumber
+              }
+              data-testid="button-confirm-worker-delete"
+            >
+              {deleteWorkerMutation.isPending ? "Eliminando…" : "Eliminar permanentemente"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold" data-testid="text-page-title">Trabajadores</h1>
@@ -1426,193 +1687,6 @@ export default function Trabajadores() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-            
-            {/* Botón de eliminación masiva - Solo visible con empresa seleccionada */}
-            {effectiveCompanyId && effectiveCompanyId !== "all" && (() => {
-              const selectedCompany = companies.find(c => c.id === effectiveCompanyId);
-              const workersInCompany = workers.filter(w => w.companyId === effectiveCompanyId);
-              const workerCount = workersInCompany.length;
-              
-              return (
-                <Dialog 
-                  open={bulkDeleteDialogOpen} 
-                  onOpenChange={(open) => {
-                    setBulkDeleteDialogOpen(open);
-                    if (!open) {
-                      setBulkDeleteConfirmCode("");
-                      setBulkDeleteCompanyName("");
-                      setBulkDeleteResults(null);
-                    }
-                  }}
-                >
-                  <DialogTrigger asChild>
-                    <Button 
-                      variant="destructive" 
-                      className="bg-red-600 hover:bg-red-700"
-                      data-testid="button-bulk-delete"
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      <AlertTriangle className="h-4 w-4 mr-1" />
-                      Eliminar Todos
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-                    {/* Header con fondo rojo de alerta */}
-                    <div className="bg-red-600 -m-6 mb-4 p-6 rounded-t-lg">
-                      <DialogHeader>
-                        <DialogTitle className="text-white flex items-center gap-2 text-xl">
-                          <AlertTriangle className="h-6 w-6" />
-                          ¡ADVERTENCIA! ACCIÓN IRREVERSIBLE
-                        </DialogTitle>
-                        <DialogDescription className="text-red-100">
-                          Esta operación eliminará PERMANENTEMENTE todos los trabajadores de esta empresa
-                        </DialogDescription>
-                      </DialogHeader>
-                    </div>
-                    
-                    {bulkDeleteResults ? (
-                      <div className="space-y-4">
-                        <Alert className={bulkDeleteResults.errors && bulkDeleteResults.errors.length > 0 ? "border-yellow-500 bg-yellow-50" : "border-green-500 bg-green-50"}>
-                          <CheckCircle2 className="h-4 w-4" />
-                          <AlertDescription>
-                            <div className="space-y-2">
-                              <p className="font-bold text-lg">{bulkDeleteResults.message}</p>
-                              <p>Trabajadores eliminados: <span className="font-bold">{bulkDeleteResults.deleted}</span> de {bulkDeleteResults.total}</p>
-                              {bulkDeleteResults.errors && bulkDeleteResults.errors.length > 0 && (
-                                <div className="mt-2">
-                                  <p className="text-yellow-700 font-medium">Errores encontrados:</p>
-                                  <ul className="text-sm text-yellow-600 list-disc pl-4 max-h-24 overflow-y-auto">
-                                    {bulkDeleteResults.errors.map((err, idx) => (
-                                      <li key={idx}>{err}</li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              )}
-                            </div>
-                          </AlertDescription>
-                        </Alert>
-                        <DialogFooter>
-                          <Button 
-                            onClick={() => {
-                              setBulkDeleteDialogOpen(false);
-                              setBulkDeleteResults(null);
-                            }}
-                            data-testid="button-close-bulk-delete"
-                          >
-                            Cerrar
-                          </Button>
-                        </DialogFooter>
-                      </div>
-                    ) : (
-                      <div className="space-y-6">
-                        {/* Alertas visuales */}
-                        <div className="space-y-3">
-                          <Alert variant="destructive" className="border-red-500 bg-red-50">
-                            <AlertTriangle className="h-4 w-4" />
-                            <AlertDescription className="text-red-800">
-                              <strong>¡ATENCIÓN!</strong> Esta acción NO se puede deshacer. Todos los datos de los trabajadores se perderán permanentemente.
-                            </AlertDescription>
-                          </Alert>
-                          
-                          <div className="bg-amber-50 border border-amber-300 rounded-lg p-4">
-                            <div className="flex items-start gap-3">
-                              <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
-                              <div>
-                                <p className="font-semibold text-amber-800">Empresa seleccionada:</p>
-                                <p className="text-lg font-bold text-amber-900">{selectedCompany?.name || "No seleccionada"}</p>
-                                <p className="text-amber-700 mt-1">
-                                  Se eliminarán <span className="font-bold text-red-600 text-xl">{workerCount}</span> trabajadores
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        {/* Campos de confirmación */}
-                        <div className="space-y-4 border-t pt-4">
-                          <p className="text-sm text-muted-foreground font-medium">
-                            Para confirmar esta operación, complete los siguientes campos exactamente:
-                          </p>
-                          
-                          <div className="space-y-2">
-                            <Label htmlFor="bulkDeleteCode" className="text-red-700 font-semibold">
-                              Escriba exactamente: ELIMINAR-TODOS-LOS-TRABAJADORES
-                            </Label>
-                            <Input
-                              id="bulkDeleteCode"
-                              value={bulkDeleteConfirmCode}
-                              onChange={(e) => setBulkDeleteConfirmCode(e.target.value)}
-                              placeholder="ELIMINAR-TODOS-LOS-TRABAJADORES"
-                              className={bulkDeleteConfirmCode === "ELIMINAR-TODOS-LOS-TRABAJADORES" ? "border-green-500 bg-green-50" : "border-red-300"}
-                              data-testid="input-bulk-delete-code"
-                            />
-                            {bulkDeleteConfirmCode && bulkDeleteConfirmCode !== "ELIMINAR-TODOS-LOS-TRABAJADORES" && (
-                              <p className="text-xs text-red-500">El código no coincide</p>
-                            )}
-                          </div>
-                          
-                          <div className="space-y-2">
-                            <Label htmlFor="bulkDeleteCompanyName" className="text-red-700 font-semibold">
-                              Escriba el nombre exacto de la empresa: {selectedCompany?.name}
-                            </Label>
-                            <Input
-                              id="bulkDeleteCompanyName"
-                              value={bulkDeleteCompanyName}
-                              onChange={(e) => setBulkDeleteCompanyName(e.target.value)}
-                              placeholder={selectedCompany?.name || "Nombre de la empresa"}
-                              className={bulkDeleteCompanyName === selectedCompany?.name ? "border-green-500 bg-green-50" : "border-red-300"}
-                              data-testid="input-bulk-delete-company-name"
-                            />
-                            {bulkDeleteCompanyName && bulkDeleteCompanyName !== selectedCompany?.name && (
-                              <p className="text-xs text-red-500">El nombre de la empresa no coincide</p>
-                            )}
-                          </div>
-                        </div>
-                        
-                        <DialogFooter className="flex flex-col sm:flex-row gap-2">
-                          <Button
-                            variant="outline"
-                            onClick={() => setBulkDeleteDialogOpen(false)}
-                            data-testid="button-cancel-bulk-delete"
-                          >
-                            Cancelar
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            className="bg-red-600 hover:bg-red-700"
-                            disabled={
-                              bulkDeleteConfirmCode !== "ELIMINAR-TODOS-LOS-TRABAJADORES" ||
-                              bulkDeleteCompanyName !== selectedCompany?.name ||
-                              bulkDeleteMutation.isPending ||
-                              workerCount === 0
-                            }
-                            onClick={() => {
-                              if (effectiveCompanyId && selectedCompany) {
-                                bulkDeleteMutation.mutate({
-                                  companyId: effectiveCompanyId,
-                                  confirmationCode: bulkDeleteConfirmCode,
-                                  confirmCompanyName: bulkDeleteCompanyName,
-                                });
-                              }
-                            }}
-                            data-testid="button-confirm-bulk-delete"
-                          >
-                            {bulkDeleteMutation.isPending ? (
-                              "Eliminando..."
-                            ) : (
-                              <>
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Eliminar Permanentemente {workerCount} Trabajadores
-                              </>
-                            )}
-                          </Button>
-                        </DialogFooter>
-                      </div>
-                    )}
-                  </DialogContent>
-                </Dialog>
-              );
-            })()}
             
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
@@ -3041,7 +3115,7 @@ export default function Trabajadores() {
                       contractStatus={getContractStatus(worker.id)}
                       sedeName={worker.sedeId ? sedeMap[worker.sedeId] : undefined}
                       onEdit={isAdmin ? () => handleEdit(worker) : undefined}
-                      onDelete={isAdmin ? () => handleDelete(worker.id) : undefined}
+                      onDelete={canDeleteWorkers && (isSuperadminUser || !workersBlockedFromCompanyDelete.has(worker.id)) ? () => handleDelete(worker.id) : undefined}
                       onCreatePortalAccess={isAdmin && worker.email && !workerUserId ? () => createPortalAccessMutation.mutate(worker.id) : undefined}
                       onResendPortalCredentials={isAdmin && worker.email && !!workerUserId ? () => resendPortalCredentialsMutation.mutate(worker.id) : undefined}
                     />
