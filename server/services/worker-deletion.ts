@@ -283,29 +283,25 @@ async function loadReferenceRows(
 ): Promise<ReferenceCount> {
   const { predicate, values } = buildReferencePredicate(reference, worker);
   const tableName = `${quoteIdentifier(reference.schemaName)}.${quoteIdentifier(reference.tableName)}`;
-  const companyPredicate = reference.hasCompanyId
-    ? `AND ${quoteIdentifier("company_id")} = $${values.length + 1}`
-    : "";
-  const crossTenantPredicate = reference.hasCompanyId
-    ? `AND ${quoteIdentifier("company_id")} IS DISTINCT FROM $${values.length + 1}`
-    : "";
-  const rowsResult = await client.query<{ row_json: unknown }>(
-    `SELECT to_jsonb(reference_row) AS row_json
+  // Read each relation once; splitting the result in the same snapshot avoids
+  // a second database round trip per FK while still detecting cross-tenant rows.
+  const rowsResult = await client.query<{ row_json: unknown; company_id: string | null }>(
+    `SELECT to_jsonb(reference_row) AS row_json${reference.hasCompanyId ? ", reference_row.company_id" : ""}
        FROM ${tableName} AS reference_row
-      WHERE ${predicate} ${companyPredicate}
+      WHERE ${predicate}
       ORDER BY to_jsonb(reference_row)::text`,
-    reference.hasCompanyId ? [...values, companyId] : values,
+    values,
   );
-  const crossTenantResult = reference.hasCompanyId
-    ? await client.query<{ count: string }>(
-      `SELECT count(*)::text AS count FROM ${tableName}
-        WHERE ${predicate} ${crossTenantPredicate}`,
-      [...values, companyId],
-    )
-    : { rows: [{ count: "0" }] };
 
   const hash = createHash("sha256");
+  let count = 0;
+  let crossTenantCount = 0;
   for (const row of rowsResult.rows) {
+    if (reference.hasCompanyId && row.company_id !== companyId) {
+      crossTenantCount++;
+      continue;
+    }
+    count++;
     // Database cascades cannot remove stored objects. Reject rather than
     // silently orphan a linked document or evidence file.
     if (containsExternalObjectReference(row.row_json)) {
@@ -319,7 +315,6 @@ async function loadReferenceRows(
     hash.update("\n");
   }
 
-  const count = rowsResult.rows.length;
   const disposition =
     reference.deleteAction === "c"
       ? "cascade"
@@ -330,7 +325,7 @@ async function loadReferenceRows(
   return {
     ...reference,
     count,
-    crossTenantCount: Number(crossTenantResult.rows[0]?.count ?? 0),
+    crossTenantCount,
     rowSetHash: hash.digest("hex"),
     disposition,
   };

@@ -18,6 +18,7 @@ import { apiRequest, buildHeaders, queryClient } from "@/lib/queryClient";
 import { contractTypeLabels } from "@shared/arl-rates";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/use-auth";
+import { useCompanyContext } from "@/hooks/use-company-context";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { PREDEFINED_PROFILES } from "@/data/perfiles-cargo-predefinidos";
@@ -112,6 +113,11 @@ const CONSENT_METADATA = {
 
 export default function Trabajadores() {
   const { user } = useAuth();
+  const {
+    selectedCompanyId: accessCompanyId,
+    setSelectedCompanyId: requestCompanyAccess,
+    pendingCompanySelection,
+  } = useCompanyContext();
   const { toast} = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -130,11 +136,30 @@ export default function Trabajadores() {
   const isSuperadmin = user?.role ? hasGlobalAccess(user.role) : false;
   const [selectedCompanyId, setSelectedCompanyId] = useState<string>("all");
   const [selectedVaultCompanyId, setSelectedVaultCompanyId] = useState<string | null>(null);
+  const [pendingVaultCompanyId, setPendingVaultCompanyId] = useState<string | null>(null);
   
   // Effective company ID for filtering: global admins use selectedCompanyId, others use their own companyId
   const effectiveCompanyId = hasGlobalCompanyAccess 
     ? (selectedVaultCompanyId || selectedCompanyId) 
     : (user?.companyId || "");
+
+  // Una bóveda muestra datos de la empresa, pero escribir requiere la sesión
+  // de acceso auditada que provee el selector global.
+  useEffect(() => {
+    if (pendingVaultCompanyId && accessCompanyId === pendingVaultCompanyId) {
+      setSelectedVaultCompanyId(pendingVaultCompanyId);
+      setPendingVaultCompanyId(null);
+      setSearchTerm("");
+    } else if (pendingVaultCompanyId && !pendingCompanySelection) {
+      setPendingVaultCompanyId(null);
+    }
+  }, [pendingVaultCompanyId, accessCompanyId, pendingCompanySelection]);
+
+  useEffect(() => {
+    if (hasGlobalCompanyAccess && selectedVaultCompanyId && accessCompanyId !== selectedVaultCompanyId) {
+      setSelectedVaultCompanyId(null);
+    }
+  }, [hasGlobalCompanyAccess, selectedVaultCompanyId, accessCompanyId]);
   
   // Filtros para informes
   const [filterCedula, setFilterCedula] = useState("");
@@ -1439,7 +1464,9 @@ export default function Trabajadores() {
               )}
 
               {workerDeletionPreviewMutation.isPending && (
-                <p className="text-sm text-muted-foreground" role="status">Consultando registros relacionados…</p>
+                <p className="text-sm text-muted-foreground" role="status">
+                  Consultando registros relacionados… La revisión de todas las evidencias puede tardar unos 30 segundos. Espere a que aparezca la vista previa antes de confirmar.
+                </p>
               )}
               {workerDeletionPreviewError && (
                 <Alert variant="destructive">
@@ -3007,8 +3034,13 @@ export default function Trabajadores() {
                       key={vault.companyId}
                       className="hover-elevate cursor-pointer transition-colors"
                       onClick={() => {
-                        setSelectedVaultCompanyId(vault.companyId);
-                        setSearchTerm("");
+                        if (accessCompanyId === vault.companyId) {
+                          setSelectedVaultCompanyId(vault.companyId);
+                          setSearchTerm("");
+                        } else {
+                          setPendingVaultCompanyId(vault.companyId);
+                          requestCompanyAccess(vault.companyId);
+                        }
                       }}
                       data-testid={`vault-company-${vault.companyId}`}
                     >

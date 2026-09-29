@@ -44,3 +44,9 @@ Global-role navigation must also avoid company-only feature checks when no compa
 **Why:** The vehicle-management menu used `/api/company/current` to decide whether PESV existed, so the superadmin could not see vehicles registered by client companies even though the data and route permissions were valid.
 
 **How to apply:** For global roles, show the module and enable the all-companies query without a selected company; when a company context exists, keep the normal scoped query and feature checks.
+
+A company vault may display company-scoped records without establishing the superadmin's audited provider-access session. Do not treat a local vault selection as authority for writes.
+
+**Why:** A worker vault could show one company's workers using its own read header while module writes used another globally selected company (or none).
+
+**How to apply:** Before entering an operational company vault for edits, confirm access with the existing audit-session flow and wait until the active company matches. Clear stale vault details when access ends or switches.
