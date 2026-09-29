@@ -7,6 +7,7 @@ import { calculateChapter } from "@shared/utils";
 import { logAuditEvent, type AuditContext } from './lib/audit-logger';
 import logger from './lib/logger';
 import { validateInvoiceData, validateCompanyForBilling, validateSubscriptionForBilling } from './lib/billing-validator';
+import { aggregateBillingRevenueByMonth } from './lib/billing-revenue-metrics';
 import type {
   Company,
   InsertCompany,
@@ -13011,7 +13012,15 @@ export class DbStorage implements IStorage {
       .from(schema.paymentTransactions)
       .where(eq(schema.paymentTransactions.status, 'APPROVED'));
 
-    const totalRevenue = transactions.reduce((sum, t) => sum + t.amount, 0);
+    // ePayco PSE payments are stored separately from Wompi's payment_transactions.
+    // Count only PSE transactions that were confirmed and verified by the provider.
+    const epaycoRevenueResult = await db.execute(sql`
+      SELECT COALESCE(SUM(amount), 0)::bigint AS total
+      FROM epayco_pse_transactions
+      WHERE status = 'APPROVED' AND currency = 'COP'
+    `);
+    const epaycoRevenue = Number((epaycoRevenueResult.rows[0] as any)?.total || 0);
+    const totalRevenue = transactions.reduce((sum, t) => sum + t.amount, 0) + epaycoRevenue;
 
     // Simple churn rate: canceled in last 30 days / total active 30 days ago
     const thirtyDaysAgo = new Date();
@@ -13137,33 +13146,22 @@ export class DbStorage implements IStorage {
         )
       );
 
-    // Group by month
-    const monthlyData: { [key: string]: { revenue: number; subscriptions: Set<string> } } = {};
+    // PSE uses a separate gateway table; merge its verified COP payments so
+    // the revenue chart reflects payments approved through either provider.
+    const epaycoResult = await db.execute(sql`
+      SELECT subscription_id AS "subscriptionId", amount, created_at AS "createdAt"
+      FROM epayco_pse_transactions
+      WHERE status = 'APPROVED'
+        AND currency = 'COP'
+        AND created_at >= ${startDate.toISOString()}
+    `);
+    const epaycoTransactions = epaycoResult.rows as Array<{
+      subscriptionId: string | null;
+      amount: number | string;
+      createdAt: Date | string;
+    }>;
 
-    transactions.forEach(t => {
-      const date = new Date(t.createdAt);
-      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      
-      if (!monthlyData[monthKey]) {
-        monthlyData[monthKey] = { revenue: 0, subscriptions: new Set() };
-      }
-      
-      monthlyData[monthKey].revenue += t.amount;
-      if (t.subscriptionId) {
-        monthlyData[monthKey].subscriptions.add(t.subscriptionId);
-      }
-    });
-
-    // Convert to array and format
-    const result = Object.entries(monthlyData)
-      .map(([month, data]) => ({
-        month,
-        revenue: data.revenue,
-        subscriptions: data.subscriptions.size
-      }))
-      .sort((a, b) => a.month.localeCompare(b.month));
-
-    return result;
+    return aggregateBillingRevenueByMonth([...transactions, ...epaycoTransactions]);
   }
 
   // ============================================================================
