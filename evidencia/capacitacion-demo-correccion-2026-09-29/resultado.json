@@ -1,0 +1,33 @@
+{
+  "company": "DEMO-PRUEBA",
+  "environment": "desarrollo",
+  "trainingTitle": "PRUEBA FUNCIONAL - Invitación al Portal de Empleados - 4c5ba12a",
+  "trainingDate": "2026-10-06",
+  "stages": {
+    "authentication": "Dos cuentas temporales iniciaron sesión, una como administrador y otra como trabajador.",
+    "before": "La capacitación no figuraba en el portal antes de asignar al trabajador.",
+    "created": "Capacitación programada creada en DEMO-PRUEBA.",
+    "adminConfirmation": "La interfaz mostró «Inscripción guardada», un inscrito y un aviso interno creado al pulsar Agregar.",
+    "enrollment": "La API guardó exactamente un asistente en la capacitación.",
+    "internalNotice": "Se creó un aviso interno no leído para la cuenta de trabajador vinculada (no equivale a acuse de entrega externo).",
+    "aggregatedCount": "La API agregada devolvió 1 asistente para la capacitación.",
+    "onClose": "Al cerrar, la tarjeta mostró «1/1 asistentes» y siguió visible el resumen de una inscripción guardada y un aviso interno creado. Cerrar no envió nada adicional.",
+    "portalArrival": "La API del trabajador recibió la misma capacitación en estado «invitado».",
+    "portalView": "El portal renderizó la capacitación y la etiqueta «Invitado» para el trabajador.",
+    "workerConfirmation": "El trabajador pulsó Confirmar; el portal mostró «Confirmado» y el mensaje de asistencia confirmada.",
+    "adminConfirmed": "Al volver a abrir asistentes, el administrador vio «Sí» en la columna Confirmó."
+  },
+  "screenshots": [
+    "01-administrador-agregar.png",
+    "02-administrador-tarjeta-cerrada.png",
+    "03-portal-trabajador-invitado.png",
+    "04-portal-trabajador-confirmado.png",
+    "05-administrador-confirmado.png"
+  ],
+  "resumed": true,
+  "trainingId": "70c02ce2-5368-4690-9313-11f7be6f55de",
+  "attendeeId": "a57d2001-367b-4d93-b02d-2f89463a395d",
+  "noticeId": "587b721c-3046-4b30-9aaf-78be854d7370",
+  "technicalAccountsRemoved": true,
+  "result": "COMPLETADA"
+}

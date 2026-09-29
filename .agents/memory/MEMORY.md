@@ -47,6 +47,7 @@
 - [Application version source](application-version-source.md) — la versión visible y los metadatos web consumen una sola fuente; no escribir números de versión dentro de componentes.
 - [SST and PESV designation acts](sst-pesv-designation-acts.md) — son documentos distintos; el portal LSO debe mostrar y firmar ambos sin reutilizar títulos ni normativa.
 - [Training confirmation scope](training-confirmation-scope.md) — Confirmar en el Portal de Empleados solo confirma una capacitación programada; nunca depende de inducciones SST/PESV.
+- [Evidencia de invitaciones a capacitación](training-invitation-evidence.md) — inscripción, aviso interno creado y entrega externa son hechos distintos; mostrar cada resultado sin prometer entrega.
 - [Employee portal pending badge](employee-portal-pending-badge.md) — campana, PWA y Web Push cuentan obligaciones accionables del portal; Mensajes Internos nunca suma para trabajadores.
 - [Worker acknowledgment instead of signature](worker-acknowledgment-policy.md) — inducciones y futuras actas de comités usan confirmación de lectura del empleado, no firma manuscrita en el portal.
 - [EPP delivery act grouping](epp-delivery-act-grouping.md) — un acta agrupa varias filas EPP; editar debe conservar IDs y metadatos de auditoría de cada elemento.

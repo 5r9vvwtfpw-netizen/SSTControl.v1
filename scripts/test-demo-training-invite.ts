@@ -35,7 +35,7 @@ if (resumeId && (resumedRows.length !== 1 || resumedRows[0].companyId !== compan
   throw new Error("La capacitación a retomar no pertenece a la prueba DEMO-PRUEBA");
 }
 const title = resumedRows[0]?.title ?? `PRUEBA FUNCIONAL - Invitación al Portal de Empleados - ${suffix}`;
-const outputDir = "evidencia/capacitacion-demo-2026-09-29";
+const outputDir = process.env.TRAINING_EVIDENCE_DIR || "evidencia/capacitacion-demo-2026-09-29";
 await mkdir(outputDir, { recursive: true });
 const baseURL = process.env.REPLIT_DEV_DOMAIN
   ? `https://${process.env.REPLIT_DEV_DOMAIN}`
@@ -152,19 +152,35 @@ try {
   stages.created = "Capacitación programada creada en DEMO-PRUEBA.";
 
   const adminPage = await adminContext.newPage();
-  await adminPage.goto("/capacitaciones", { waitUntil: "domcontentloaded" });
-  await adminPage.getByTestId("input-search-trainings").waitFor({ timeout: 60000 });
+  await adminPage.goto("/capacitaciones", { waitUntil: "commit", timeout: 90000 });
+  await adminPage.getByTestId("input-search-trainings").waitFor({ timeout: 90000 });
   await adminPage.getByTestId("input-search-trainings").fill(title);
   const trainingCard = adminPage.getByTestId(`card-training-${training.id}`);
   await trainingCard.waitFor({ timeout: 60000 });
   await trainingCard.getByTestId(`button-manage-attendees-${training.id}`).click();
-  if (!resumeId) {
+  const existingResponse = await adminContext.request.get(`/api/trainings/${training.id}/attendees`);
+  await assertResponse(existingResponse, "Asistentes antes de continuar");
+  const existingAttendees = await existingResponse.json() as Array<{ workerId: string }>;
+  const needsAddition = !existingAttendees.some((item) => item.workerId === worker.id);
+  if (needsAddition) {
     await adminPage.getByTestId("select-worker-attendee").click();
     await adminPage.getByRole("option").filter({ hasText: worker.identificationNumber }).click();
-    await adminPage.getByTestId("button-add-attendee").click();
-    await adminPage.getByText("Trabajador agregado", { exact: true }).waitFor({ timeout: 30000 });
+    const [addResponse] = await Promise.all([
+      adminPage.waitForResponse((response) =>
+        response.request().method() === "POST" &&
+        response.url().endsWith(`/api/trainings/${training.id}/attendees`)),
+      adminPage.getByTestId("button-add-attendee").click(),
+    ]);
+    await assertResponse(addResponse, "Agregar asistente desde la interfaz");
+    const added = await addResponse.json() as { noticeSummary: { created: number; noAccount: number; failed: number } };
+    if (added.noticeSummary.created !== 1 || added.noticeSummary.noAccount !== 0 || added.noticeSummary.failed !== 0) {
+      throw new Error("La respuesta no distingue correctamente la inscripción y el aviso interno");
+    }
+    await adminPage.getByText("Inscripción guardada", { exact: true }).waitFor({ timeout: 30000 });
     await adminPage.getByText("Trabajadores Inscritos (1)").waitFor({ timeout: 30000 });
-    stages.adminConfirmation = "La interfaz mostró «Trabajador agregado» y «Trabajadores Inscritos (1)» al pulsar Agregar.";
+    await adminPage.getByTestId("attendee-invitation-result")
+      .getByText(/Inscripciones guardadas: 1\. Avisos internos creados: 1\./).waitFor();
+    stages.adminConfirmation = "La interfaz mostró «Inscripción guardada», un inscrito y un aviso interno creado al pulsar Agregar.";
     await adminPage.locator('[data-testid^="text-attendee-name-"], [data-testid^="text-attendee-document-"]')
       .evaluateAll((elements) => elements.forEach((element) => (element as HTMLElement).style.filter = "blur(9px)"));
     await capture(adminPage, "01-administrador-agregar.png");
@@ -180,7 +196,7 @@ try {
   summary.attendeeId = attendee.id;
   stages.enrollment = "La API guardó exactamente un asistente en la capacitación.";
 
-  if (!resumeId) {
+  if (needsAddition) {
     const invitations = await db.select({
       id: internalMessages.id,
       receiverId: internalMessages.receiverId,
@@ -198,9 +214,20 @@ try {
     stages.internalNotice = "El aviso interno se verificó durante el primer intento; se retiró junto con las cuentas técnicas de esa sesión.";
   }
 
+  const countsResponse = await adminContext.request.get("/api/trainings/attendees-counts");
+  await assertResponse(countsResponse, "Contador agregado de asistentes");
+  const counts = await countsResponse.json() as Record<string, number>;
+  if (counts[training.id] !== 1) throw new Error("El contador agregado no muestra un asistente");
+  stages.aggregatedCount = "La API agregada devolvió 1 asistente para la capacitación.";
+
   await adminPage.getByTestId("button-close-attendees-dialog").click();
+  await trainingCard.getByText("1/1 asistentes").waitFor({ timeout: 30000 });
+  if (needsAddition) {
+    await adminPage.getByTestId("training-invitation-summary")
+      .getByText(/Inscripciones guardadas: 1\. Avisos internos creados: 1\./).waitFor();
+  }
   const countText = (await trainingCard.innerText()).match(/\d+\/\d+ asistentes/)?.[0] ?? "sin contador";
-  stages.onClose = `Cerrar solo cerró la ventana; no apareció confirmación adicional de envío. El contador de la tarjeta mostraba «${countText}» al tomar la captura, aunque la ventana y la API registraban un inscrito.`;
+  stages.onClose = `Al cerrar, la tarjeta mostró «${countText}»${needsAddition ? " y siguió visible el resumen de una inscripción guardada y un aviso interno creado" : ""}. Cerrar no envió nada adicional.`;
   await capture(adminPage, "02-administrador-tarjeta-cerrada.png");
 
   const portalResponse = await workerContext.request.get("/api/portal/mis-capacitaciones");
@@ -215,11 +242,14 @@ try {
   stages.portalArrival = "La API del trabajador recibió la misma capacitación en estado «invitado».";
 
   const workerPage = await workerContext.newPage();
-  await workerPage.goto("/portal-empleados?section=capacitaciones", { waitUntil: "domcontentloaded" });
+  await workerPage.goto("/portal-empleados?section=capacitaciones", { waitUntil: "commit", timeout: 90000 });
   const portalCard = workerPage.getByTestId(`card-capacitacion-${attendee.id}`);
   await portalCard.waitFor({ timeout: 60000 });
   await portalCard.getByTestId(`badge-estado-${attendee.id}`).getByText("Invitado").waitFor();
+  const cookieDismiss = workerPage.getByRole("button", { name: "Solo esenciales", exact: true });
+  if (await cookieDismiss.isVisible()) await cookieDismiss.click();
   await portalCard.scrollIntoViewIfNeeded();
+  await workerPage.evaluate(() => window.scrollBy(0, 160));
   stages.portalView = "El portal renderizó la capacitación y la etiqueta «Invitado» para el trabajador.";
   await capture(workerPage, "03-portal-trabajador-invitado.png");
 
@@ -232,7 +262,8 @@ try {
   const [confirmed] = await db.select({ confirmed: trainingAttendees.confirmed })
     .from(trainingAttendees).where(eq(trainingAttendees.id, attendee.id));
   if (confirmed?.confirmed !== 1) throw new Error("El estado de confirmación no se guardó");
-  await adminPage.reload({ waitUntil: "domcontentloaded" });
+  await adminPage.reload({ waitUntil: "commit", timeout: 90000 });
+  await adminPage.getByTestId("input-search-trainings").waitFor({ timeout: 90000 });
   await adminPage.getByTestId("input-search-trainings").fill(title);
   await adminPage.getByTestId(`button-manage-attendees-${training.id}`).click();
   await adminPage.getByTestId(`text-attendee-confirmed-${attendee.id}`).getByText("Sí").waitFor({ timeout: 30000 });
@@ -258,6 +289,7 @@ try {
   }
   summary.technicalAccountsRemoved = !summary.cleanupError;
   summary.result = failed ? "INCOMPLETA" : "COMPLETADA";
+  screenshots.splice(0, screenshots.length, ...new Set(screenshots));
   const imageHtml = (await Promise.all(screenshots.map(async (name, index) => {
     const image = await readFile(`${outputDir}/${name}`);
     return `<figure><img src="data:image/png;base64,${image.toString("base64")}" alt="Paso ${index + 1}: ${name}"><figcaption>${name}</figcaption></figure>`;

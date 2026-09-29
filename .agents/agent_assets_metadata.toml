@@ -643,3 +643,45 @@ mtime_ms = 1790680914779
 storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/60182b06-f002-4d16-973d-05e5ad99fe00/485a136e-fd0d-4bc2-84a2-a941c6ea9f0f"
 storage_version_token = "1790680957441820"
 content_type = "image/png"
+
+[[outputs]]
+id = "8wJRJLoext5IZLhEjynw4"
+uri = "file://evidencia/capacitacion-demo-correccion-2026-09-29/informe.html"
+type = "html"
+title = "Evidencia de la corrección — capacitación DEMO-PRUEBA"
+description = "Prueba de desarrollo: inscripción y aviso interno diferenciados, contador 1/1, invitación en el portal y confirmación del trabajador."
+logical_id = "c51ed7fe-2cd5-45a0-972b-df7ea275e271"
+content_hash = "sha256:6058cd521500b54a56b52d023976d1b3095bbd7218d7a16905eb7c1618a8abf9"
+size = 1107961
+mtime_ms = 1790681542008
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/c51ed7fe-2cd5-45a0-972b-df7ea275e271/c000c9a7-ec5f-4f0f-95c5-0d2ee94d8dc0"
+storage_version_token = "1790681836269562"
+content_type = "text/html"
+
+[[outputs]]
+id = "HuHk2pHmIrkTwxtFIgkj9"
+uri = "file://evidencia/capacitacion-demo-correccion-2026-09-29/01-administrador-agregar.png"
+type = "image"
+title = "Resultado al agregar al trabajador"
+description = "La ventana muestra una inscripción guardada y un aviso interno creado por separado."
+logical_id = "521cc9f4-0d3a-494f-b113-fd63da5160e3"
+content_hash = "sha256:8cfe715eab4a879877d2dbcd3843854a4894c5462eefa39bd6c5d3ef1f73fc24"
+size = 149390
+mtime_ms = 1790681522812
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/521cc9f4-0d3a-494f-b113-fd63da5160e3/f937138c-f8b2-4334-b7d7-06b20c1cfc8f"
+storage_version_token = "1790681837417204"
+content_type = "image/png"
+
+[[outputs]]
+id = "RMRtaHZFyFytg47xF_jmh"
+uri = "file://evidencia/capacitacion-demo-correccion-2026-09-29/03-portal-trabajador-invitado.png"
+type = "image"
+title = "Invitación visible en el Portal de Empleados"
+description = "Captura de la capacitación de prueba con estado Invitado antes de confirmar."
+logical_id = "c5a60149-f0b4-44bd-8757-d80c735c0ee4"
+content_hash = "sha256:cd7ddb8c97b2fc311284121998ded53da752f7c6e07007d0afaa4e98b563bad0"
+size = 116699
+mtime_ms = 1790681529068
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/c5a60149-f0b4-44bd-8757-d80c735c0ee4/c2ab8972-d0ed-4e11-8455-a70e2c32bea5"
+storage_version_token = "1790681838040903"
+content_type = "image/png"

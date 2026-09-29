@@ -7647,6 +7647,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return res.status(403).send("Usuario no asociado a una empresa");
   });
 
+  app.get("/api/trainings/attendees-counts", requirePermission("trainings:view"), async (req, res) => {
+    try {
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId && !hasGlobalAccess(req.user!.role)) {
+        return res.status(403).send("Usuario no asociado a una empresa");
+      }
+
+      const counts = await db.select({
+        trainingId: schema.trainingAttendees.trainingId,
+        count: sql<number>`count(*)::int`,
+      })
+        .from(schema.trainingAttendees)
+        .innerJoin(schema.trainings, eq(schema.trainingAttendees.trainingId, schema.trainings.id))
+        .where(companyId ? eq(schema.trainings.companyId, companyId) : undefined)
+        .groupBy(schema.trainingAttendees.trainingId);
+
+      res.json(Object.fromEntries(counts.map(({ trainingId, count }) => [trainingId, Number(count)])));
+    } catch (error) {
+      console.error("Error al contar asistentes de capacitaciones:", error);
+      res.status(500).send("No se pudieron consultar los asistentes");
+    }
+  });
+
   app.post("/api/trainings", requirePermission("trainings:create"), async (req, res) => {
     try {
       const userCompanyId = getEffectiveCompanyId(req);
@@ -7904,6 +7927,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  type TrainingNoticeStatus = "created" | "noAccount" | "failed";
+  const createTrainingInvitationNotice = async (
+    req: Request,
+    training: typeof schema.trainings.$inferSelect,
+    worker: typeof schema.workers.$inferSelect,
+  ): Promise<TrainingNoticeStatus> => {
+    try {
+      const accountFields = {
+        id: schema.users.id,
+        username: schema.users.username,
+        fullName: schema.users.fullName,
+        role: schema.users.role,
+        workerId: schema.users.workerId,
+      };
+      const [linkedAccount] = await db.select(accountFields).from(schema.users)
+        .where(and(
+          eq(schema.users.workerId, worker.id),
+          eq(schema.users.companyId, training.companyId),
+          eq(schema.users.role, "trabajador"),
+        ))
+        .limit(1);
+      let workerUser = linkedAccount;
+      if (!workerUser && worker.email) {
+        const [emailAccount] = await db.select(accountFields).from(schema.users)
+          .where(and(
+            eq(schema.users.email, worker.email),
+            eq(schema.users.companyId, training.companyId),
+            eq(schema.users.role, "trabajador"),
+          ))
+          .limit(1);
+        if (emailAccount && (!emailAccount.workerId || emailAccount.workerId === worker.id)) {
+          workerUser = emailAccount;
+        }
+      }
+      if (!workerUser) return "noAccount";
+
+      const fechaStr = training.date
+        ? new Date(training.date).toLocaleDateString("es-CO", { weekday: "long", year: "numeric", month: "long", day: "numeric" })
+        : "Fecha por confirmar";
+      const message = await storage.createInternalMessage({
+        companyId: training.companyId,
+        senderId: req.user!.id,
+        senderName: req.user!.fullName || req.user!.username,
+        senderRole: req.user!.role,
+        receiverId: workerUser.id,
+        receiverName: workerUser.fullName || workerUser.username,
+        receiverRole: workerUser.role,
+        subject: `Invitación a capacitación: ${training.title || "Capacitación programada"}`,
+        content: `Has sido invitado(a) a la capacitación "${training.title || "Capacitación programada"}" programada para el ${fechaStr}. Por favor confirma tu asistencia desde el Portal de Empleados.`,
+        priority: "normal",
+        status: "unread",
+        relatedEntity: "training",
+        relatedEntityId: training.id,
+      });
+      try {
+        notifyNewMessage(workerUser.id, req.user!.id, message.id);
+      } catch (error) {
+        console.error("[Training Notification] Error notifying connected worker:", error);
+      }
+      return "created";
+    } catch (error) {
+      console.error("[Training Notification] Error creating internal notice:", error);
+      return "failed";
+    }
+  };
+
   app.post("/api/trainings/:trainingId/attendees", requirePermission("trainings:edit"), async (req, res) => {
     try {
       const userCompanyId = getEffectiveCompanyId(req);
@@ -7945,33 +8034,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         attended: 0,
       }, effectiveCompanyId!);
 
-      try {
-        const workerUser = await storage.getUserByWorkerId(workerId);
-        if (workerUser) {
-          const fechaStr = training.date ? new Date(training.date).toLocaleDateString('es-CO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'Fecha por confirmar';
-          const msg = await storage.createInternalMessage({
-            companyId: training.companyId,
-            senderId: req.user!.id,
-            senderName: req.user!.fullName || req.user!.username,
-            senderRole: req.user!.role,
-            receiverId: workerUser.id,
-            receiverName: workerUser.fullName || workerUser.username,
-            receiverRole: workerUser.role,
-            subject: `Invitación a capacitación: ${training.title || 'Capacitación programada'}`,
-            content: `Has sido invitado(a) a la capacitación "${training.title || 'Capacitación programada'}" programada para el ${fechaStr}. Por favor confirma tu asistencia desde el Portal de Empleados.`,
-            priority: 'normal',
-            status: 'unread',
-            relatedEntity: 'training',
-            relatedEntityId: trainingId,
-          });
-          notifyNewMessage(workerUser.id, req.user!.id, msg.id);
-          console.log(`[Training Notification] Sent to worker user ${workerUser.id} for training ${trainingId}`);
-        }
-      } catch (notifErr: any) {
-        console.error('[Training Notification] Error sending notification:', notifErr.message);
-      }
-      
-      res.json(attendee);
+      const noticeStatus = await createTrainingInvitationNotice(req, training, worker);
+      res.json({
+        ...attendee,
+        noticeSummary: {
+          created: noticeStatus === "created" ? 1 : 0,
+          noAccount: noticeStatus === "noAccount" ? 1 : 0,
+          failed: noticeStatus === "failed" ? 1 : 0,
+        },
+      });
     } catch (error: any) {
       console.error('Error adding training attendee:', error);
       res.status(500).send(error.message);
@@ -8007,39 +8078,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       let agregados = 0;
       let omitidos = 0;
+      const noticeSummary = { created: 0, noAccount: 0, failed: 0 };
 
       for (const worker of targets) {
         if (existingIds.has(worker.id)) { omitidos++; continue; }
         await storage.addTrainingAttendee({ trainingId, workerId: worker.id, attended: 0 }, effectiveCompanyId);
         agregados++;
-        // Notificación interna
-        try {
-          const workerUser = await storage.getUserByWorkerId(worker.id);
-          if (workerUser) {
-            const fechaStr = training.date
-              ? new Date(training.date).toLocaleDateString('es-CO', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
-              : 'Fecha por confirmar';
-            const msg = await storage.createInternalMessage({
-              companyId: effectiveCompanyId,
-              senderId: req.user!.id,
-              senderName: req.user!.fullName || req.user!.username,
-              senderRole: req.user!.role,
-              receiverId: workerUser.id,
-              receiverName: workerUser.fullName || workerUser.username,
-              receiverRole: workerUser.role,
-              subject: `Invitación a capacitación: ${training.title || 'Capacitación programada'}`,
-              content: `Has sido invitado(a) a la capacitación "${training.title || 'Capacitación programada'}" programada para el ${fechaStr}. Por favor confirma tu asistencia desde el Portal de Empleados.`,
-              priority: 'normal',
-              status: 'unread',
-              relatedEntity: 'training',
-              relatedEntityId: trainingId,
-            });
-            notifyNewMessage(workerUser.id, req.user!.id, msg.id);
-          }
-        } catch { /* notificación no crítica */ }
+        const noticeStatus = await createTrainingInvitationNotice(req, training, worker);
+        noticeSummary[noticeStatus]++;
       }
 
-      res.json({ agregados, omitidos, total: targets.length });
+      res.json({ agregados, omitidos, total: targets.length, noticeSummary });
     } catch (error: any) {
       console.error('Error bulk-adding attendees:', error);
       res.status(500).send(error.message);

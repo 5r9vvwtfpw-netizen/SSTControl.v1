@@ -69,6 +69,36 @@ interface TrainingAttendee {
   confirmed?: boolean;
 }
 
+interface TrainingNoticeSummary {
+  created: number;
+  noAccount: number;
+  failed: number;
+}
+
+interface TrainingInvitationSummary {
+  trainingTitle: string;
+  enrolled: number;
+  skipped: number;
+  notice: TrainingNoticeSummary;
+}
+
+function invitationSummaryText(summary: TrainingInvitationSummary): string {
+  const details = [
+    `Inscripciones guardadas: ${summary.enrolled}.`,
+    `Avisos internos creados: ${summary.notice.created}.`,
+  ];
+  if (summary.notice.noAccount) {
+    details.push(`Sin cuenta de trabajador vinculada: ${summary.notice.noAccount}.`);
+  }
+  if (summary.notice.failed) {
+    details.push(`Avisos internos que no se pudieron crear: ${summary.notice.failed}.`);
+  }
+  if (summary.skipped) {
+    details.push(`Ya inscritos, sin nuevo aviso: ${summary.skipped}.`);
+  }
+  return details.join(" ");
+}
+
 /** Normaliza valores antiguos o incompletos al abrir una capacitación existente. */
 function normalizeTime(val: string): string {
   if (!val) return "";
@@ -87,6 +117,7 @@ export default function Capacitaciones() {
   const [selectedPredefCapacitacion, setSelectedPredefCapacitacion] = useState<string>("");
   const [asistentesDialogOpen, setAsistentesDialogOpen] = useState(false);
   const [selectedTraining, setSelectedTraining] = useState<Training | null>(null);
+  const [lastInvitation, setLastInvitation] = useState<TrainingInvitationSummary | null>(null);
   const isAdmin = user?.role ? canWrite(user.role, 'trainings') : false;
 
   const [formData, setFormData] = useState({
@@ -135,28 +166,12 @@ export default function Capacitaciones() {
     queryKey: ["/api/workers"],
   });
 
-  const { data: allAttendeesCounts = {} } = useQuery<Record<string, number>>({
+  const {
+    data: allAttendeesCounts = {},
+    isLoading: countsLoading,
+    isError: countsError,
+  } = useQuery<Record<string, number>>({
     queryKey: ["/api/trainings/attendees-counts"],
-    queryFn: async () => {
-      const counts: Record<string, number> = {};
-      for (const training of trainings) {
-        try {
-          const res = await fetch(`/api/trainings/${training.id}/attendees`, {
-            credentials: 'include',
-          });
-          if (res.ok) {
-            const attendees = await res.json();
-            counts[training.id] = attendees.length;
-          } else {
-            counts[training.id] = 0;
-          }
-        } catch {
-          counts[training.id] = 0;
-        }
-      }
-      return counts;
-    },
-    enabled: trainings.length > 0,
   });
 
   const handleAutoFillFromPredefinido = (codigo: string) => {
@@ -857,6 +872,22 @@ export default function Capacitaciones() {
         compact={true}
       />
 
+      {lastInvitation && (
+        <div
+          role="status"
+          data-testid="training-invitation-summary"
+          className={`rounded-md border p-4 text-sm ${
+            lastInvitation.notice.noAccount || lastInvitation.notice.failed
+              ? "border-amber-200 bg-amber-50 text-amber-950"
+              : "border-green-200 bg-green-50 text-green-950"
+          }`}
+        >
+          <p className="font-semibold">Resultado de la asignación · {lastInvitation.trainingTitle}</p>
+          <p>{invitationSummaryText(lastInvitation)}</p>
+          <p className="mt-1 text-xs">Esto confirma inscripciones y avisos internos creados, no la entrega de correos o notificaciones push.</p>
+        </div>
+      )}
+
       <div className="flex flex-wrap gap-4">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -899,7 +930,8 @@ export default function Capacitaciones() {
               id={training.id}
               title={training.title}
               date={formatDate(training.date)}
-              attendees={allAttendeesCounts[training.id] || 0}
+              attendees={countsLoading || countsError ? undefined : allAttendeesCounts[training.id] ?? 0}
+              countError={countsError}
               totalWorkers={training.totalWorkers}
               status={training.status as "programada" | "completada" | "en-curso" | "cancelada"}
               onEdit={handleEditClick}
@@ -920,6 +952,7 @@ export default function Capacitaciones() {
           }}
           training={selectedTraining}
           workers={workers}
+          onResult={setLastInvitation}
         />
       )}
     </div>
@@ -931,12 +964,14 @@ interface AsistentesDialogProps {
   onClose: () => void;
   training: Training;
   workers: Worker[];
+  onResult: (summary: TrainingInvitationSummary | null) => void;
 }
 
-function AsistentesDialog({ isOpen, onClose, training, workers }: AsistentesDialogProps) {
+function AsistentesDialog({ isOpen, onClose, training, workers, onResult }: AsistentesDialogProps) {
   const { toast } = useToast();
   const [selectedWorkerId, setSelectedWorkerId] = useState("");
   const [selectedCargo, setSelectedCargo] = useState("");
+  const [lastInvitation, setLastInvitation] = useState<TrainingInvitationSummary | null>(null);
 
   const { data: attendees = [], isLoading } = useQuery<TrainingAttendee[]>({
     queryKey: ["/api/trainings", training.id, "attendees"],
@@ -950,19 +985,44 @@ function AsistentesDialog({ isOpen, onClose, training, workers }: AsistentesDial
     enabled: isOpen,
   });
 
+  const updateAttendeeCount = (delta: number) => {
+    queryClient.setQueryData<Record<string, number>>(
+      ["/api/trainings/attendees-counts"],
+      (previous) => ({
+        ...previous,
+        [training.id]: Math.max(0, (previous?.[training.id] ?? attendees.length) + delta),
+      }),
+    );
+    queryClient.invalidateQueries({ queryKey: ["/api/trainings/attendees-counts"] });
+  };
+
+  const showInvitationResult = (summary: TrainingInvitationSummary) => {
+    setLastInvitation(summary);
+    onResult(summary);
+    toast({
+      title: summary.enrolled > 0 ? "Inscripción guardada" : "Sin nuevas inscripciones",
+      description: invitationSummaryText(summary),
+      className: summary.notice.noAccount || summary.notice.failed
+        ? "bg-amber-50 border-amber-200"
+        : "bg-green-50 border-green-200",
+    });
+  };
+
   const addAttendeeMutation = useMutation({
     mutationFn: async (workerId: string) => {
-      return await apiRequest("POST", `/api/trainings/${training.id}/attendees`, {
+      const res = await apiRequest("POST", `/api/trainings/${training.id}/attendees`, {
         workerId,
       });
+      return await res.json() as TrainingAttendee & { noticeSummary: TrainingNoticeSummary };
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      updateAttendeeCount(1);
       queryClient.invalidateQueries({ queryKey: ["/api/trainings", training.id, "attendees"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/trainings/attendees-counts"] });
-      toast({
-        title: "Trabajador agregado",
-        description: "El trabajador ha sido agregado a la capacitación",
-        className: "bg-green-50 border-green-200",
+      showInvitationResult({
+        trainingTitle: training.title,
+        enrolled: 1,
+        skipped: 0,
+        notice: data.noticeSummary,
       });
       setSelectedWorkerId("");
     },
@@ -980,8 +1040,10 @@ function AsistentesDialog({ isOpen, onClose, training, workers }: AsistentesDial
       return await apiRequest("DELETE", `/api/trainings/${training.id}/attendees/${workerId}`);
     },
     onSuccess: () => {
+      updateAttendeeCount(-1);
       queryClient.invalidateQueries({ queryKey: ["/api/trainings", training.id, "attendees"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/trainings/attendees-counts"] });
+      setLastInvitation(null);
+      onResult(null);
       toast({
         title: "Asistente eliminado",
         description: "El trabajador ha sido removido de la capacitación",
@@ -999,16 +1061,21 @@ function AsistentesDialog({ isOpen, onClose, training, workers }: AsistentesDial
 
   const addBulkMutation = useMutation({
     mutationFn: async (payload: { workerIds?: string[]; cargo?: string }) => {
-      return await apiRequest("POST", `/api/trainings/${training.id}/attendees/bulk`, payload);
+      const res = await apiRequest("POST", `/api/trainings/${training.id}/attendees/bulk`, payload);
+      return await res.json() as {
+        agregados: number;
+        omitidos: number;
+        noticeSummary: TrainingNoticeSummary;
+      };
     },
-    onSuccess: async (res: any) => {
-      const data = await res.json().catch(() => ({}));
+    onSuccess: (data) => {
+      updateAttendeeCount(data.agregados);
       queryClient.invalidateQueries({ queryKey: ["/api/trainings", training.id, "attendees"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/trainings/attendees-counts"] });
-      toast({
-        title: "✅ Trabajadores agregados",
-        description: `${data.agregados ?? 0} agregados, ${data.omitidos ?? 0} ya estaban inscritos.`,
-        className: "bg-green-50 border-green-200",
+      showInvitationResult({
+        trainingTitle: training.title,
+        enrolled: data.agregados,
+        skipped: data.omitidos,
+        notice: data.noticeSummary,
       });
       setSelectedCargo("");
     },
@@ -1047,7 +1114,7 @@ function AsistentesDialog({ isOpen, onClose, training, workers }: AsistentesDial
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -1085,7 +1152,7 @@ function AsistentesDialog({ isOpen, onClose, training, workers }: AsistentesDial
             </div>
             <Button
               onClick={handleAddAttendee}
-              disabled={!selectedWorkerId || addAttendeeMutation.isPending}
+              disabled={!selectedWorkerId || addAttendeeMutation.isPending || addBulkMutation.isPending}
               className="gap-1"
               data-testid="button-add-attendee"
             >
@@ -1113,7 +1180,7 @@ function AsistentesDialog({ isOpen, onClose, training, workers }: AsistentesDial
                 <Button
                   variant="outline"
                   size="sm"
-                  disabled={!selectedCargo || addBulkMutation.isPending}
+                  disabled={!selectedCargo || addBulkMutation.isPending || addAttendeeMutation.isPending}
                   onClick={() => addBulkMutation.mutate({ cargo: selectedCargo })}
                   data-testid="button-agregar-por-cargo"
                   className="gap-1"
@@ -1130,7 +1197,7 @@ function AsistentesDialog({ isOpen, onClose, training, workers }: AsistentesDial
                 <Button
                   variant="outline"
                   size="sm"
-                  disabled={addBulkMutation.isPending}
+                  disabled={addBulkMutation.isPending || addAttendeeMutation.isPending}
                   onClick={() => addBulkMutation.mutate({ workerIds: availableWorkers.map(w => w.id) })}
                   data-testid="button-agregar-todos"
                   className="gap-1"
@@ -1139,6 +1206,22 @@ function AsistentesDialog({ isOpen, onClose, training, workers }: AsistentesDial
                   Agregar todos ({availableWorkers.length})
                 </Button>
               </div>
+            </div>
+          )}
+
+          {lastInvitation && (
+            <div
+              role="status"
+              data-testid="attendee-invitation-result"
+              className={`rounded-md border p-3 text-sm ${
+                lastInvitation.notice.noAccount || lastInvitation.notice.failed
+                  ? "border-amber-200 bg-amber-50 text-amber-950"
+                  : "border-green-200 bg-green-50 text-green-950"
+              }`}
+            >
+              <p className="font-semibold">Resultado de la asignación</p>
+              <p>{invitationSummaryText(lastInvitation)}</p>
+              <p className="mt-1 text-xs">Aviso interno creado no significa correo, push o lectura confirmada.</p>
             </div>
           )}
 

@@ -7,7 +7,8 @@ interface TrainingCardProps {
   id: string;
   title: string;
   date: string;
-  attendees: number;
+  attendees: number | undefined;
+  countError?: boolean;
   totalWorkers: number;
   status: "programada" | "completada" | "en-curso" | "cancelada";
   onEdit?: (id: string) => void;
@@ -24,10 +25,10 @@ const statusConfig = {
   cancelada: { label: "Cancelada", variant: "destructive" as const },
 };
 
-export function TrainingCard({ id, title, date, attendees, totalWorkers, status, onEdit, onManageAttendees, canEdit, canPrint, pdfUrl }: TrainingCardProps) {
+export function TrainingCard({ id, title, date, attendees, countError, totalWorkers, status, onEdit, onManageAttendees, canEdit, canPrint, pdfUrl }: TrainingCardProps) {
   // Corregir división por cero y mostrar 100% cuando está completada
   // Limitar a máximo 100% para evitar desbordamiento visual
-  const rawPercentage = totalWorkers > 0 
+  const rawPercentage = attendees === undefined ? 0 : totalWorkers > 0
     ? Math.round((attendees / totalWorkers) * 100) 
     : (status === "completada" ? 100 : 0);
   const percentage = Math.min(rawPercentage, 100);
@@ -80,10 +81,12 @@ export function TrainingCard({ id, title, date, attendees, totalWorkers, status,
           </div>
           <div className="flex items-center gap-1">
             <Users className="h-4 w-4" />
-            <span>{attendees}/{totalWorkers} asistentes</span>
+            <span>{attendees === undefined
+              ? countError ? "No se pudo cargar el conteo" : "Cargando asistentes..."
+              : `${attendees}/${totalWorkers} asistentes`}</span>
           </div>
         </div>
-        {status === "completada" && (
+        {status === "completada" && attendees !== undefined && (
           <div className="flex items-center gap-2">
             <div className="h-2 flex-1 rounded-full bg-muted overflow-hidden">
               <div
