@@ -601,3 +601,45 @@ mtime_ms = 1790407341814
 storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/00e5ae9b-6cf6-4645-9f64-da5b929464b0/4dcdc9eb-2375-40ba-b438-5bd15b911793"
 storage_version_token = "1790407389568104"
 content_type = "text/html"
+
+[[outputs]]
+id = "-2pAofOtOMYasNab6Dm_p"
+uri = "file://evidencia/capacitacion-demo-2026-09-29/informe.html"
+type = "html"
+title = "Informe de prueba funcional — capacitación DEMO-PRUEBA"
+description = "Pasos verificados, resultados y capturas del administrador y del Portal de Empleados."
+logical_id = "5b1dad0c-f82b-4482-a20b-3419a6baad5a"
+content_hash = "sha256:3c4bd9f7eba3947b567859909ffb3dec8f0dbf2cdfe70d1ad445b4ef4604dea2"
+size = 908612
+mtime_ms = 1790680817132
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/5b1dad0c-f82b-4482-a20b-3419a6baad5a/869d5e19-9a00-418d-9537-0d2ff954a266"
+storage_version_token = "1790680955127644"
+content_type = "text/html"
+
+[[outputs]]
+id = "Z6stbJSdPaQtpFwtGsNEK"
+uri = "file://evidencia/capacitacion-demo-2026-09-29/01-administrador-agregar.png"
+type = "image"
+title = "Confirmación al agregar trabajador"
+description = "Captura real del aviso «Trabajador agregado» y un inscrito en la capacitación; datos personales difuminados."
+logical_id = "947ba5f8-4416-4c88-b858-f83cf57cacdd"
+content_hash = "sha256:59dc90a37260fbc3375e570e487266178e354f5500ebcdbf95ab721da04b1b2b"
+size = 140633
+mtime_ms = 1790680698244
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/947ba5f8-4416-4c88-b858-f83cf57cacdd/00ff9e14-1197-4fd7-80c0-647a235a953d"
+storage_version_token = "1790680956743828"
+content_type = "image/png"
+
+[[outputs]]
+id = "9ajmExFaIXA7006bR_KkY"
+uri = "file://evidencia/capacitacion-demo-2026-09-29/04-portal-confirmacion-detalle.png"
+type = "image"
+title = "Capacitación recibida en el Portal de Empleados"
+description = "Vista real de la capacitación de prueba ya confirmada por el trabajador."
+logical_id = "60182b06-f002-4d16-973d-05e5ad99fe00"
+content_hash = "sha256:1fadc44e0088194ac112b4a0f4855a22de09322e2a8a3c2244216536f567eb48"
+size = 28564
+mtime_ms = 1790680914779
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/60182b06-f002-4d16-973d-05e5ad99fe00/485a136e-fd0d-4bc2-84a2-a941c6ea9f0f"
+storage_version_token = "1790680957441820"
+content_type = "image/png"
