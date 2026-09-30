@@ -1,3 +1,5 @@
+import { SECTORIAL_PROFILES } from "./perfiles-cargo-sectoriales";
+
 export type PredefProfile = {
   name: string;
   department: string;
@@ -1399,4 +1401,5 @@ export const PREDEFINED_PROFILES: Record<string, PredefProfile> = {
     requiredExams: ["Examen médico marítimo", "Evaluación visual", "Audiometría", "Evaluación psicológica"],
     requiredTrainings: ["Navegación", "Supervivencia en el mar", "Contraincendios", "Primeros auxilios marítimos"],
   },
+  ...SECTORIAL_PROFILES,
 };

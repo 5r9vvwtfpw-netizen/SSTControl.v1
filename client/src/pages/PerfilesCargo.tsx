@@ -8,6 +8,7 @@ import type { JobProfile, Company, Worker } from "@shared/schema";
 import { insertJobProfileSchema } from "@shared/schema";
 import { getArlRate, examFrequencyByRisk } from "@shared/arl-rates";
 import { PREDEFINED_PROFILES } from "@/data/perfiles-cargo-predefinidos";
+import { getSuggestedProfileNamesForCiiu } from "@/data/ciiu-profile-suggestions";
 import { ArrayInput } from "@/components/shared/ArrayInput";
 import { hasCompanyAdminAccess, hasGlobalAccess, canWrite } from "@shared/permissions";
 import type { z } from "zod";
@@ -33,7 +34,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -80,6 +81,16 @@ export default function PerfilesCargo() {
   const { data: companies = [] } = useQuery<Company[]>({
     queryKey: ["/api/companies"],
   });
+  const templateCompany = companies.find(company =>
+    company.id === (hasGlobalCompanyAccess ? formData.companyId : user?.companyId)
+  );
+  const suggestedProfileNames = getSuggestedProfileNamesForCiiu([
+    templateCompany?.ciiuCode, templateCompany?.ciiuCode2,
+    templateCompany?.ciiuCode3, templateCompany?.ciiuCode4,
+  ]);
+  const otherProfileNames = Object.keys(PREDEFINED_PROFILES)
+    .filter(name => !suggestedProfileNames.includes(name))
+    .sort((a, b) => a.localeCompare(b, "es"));
 
   const { data: workers = [] } = useQuery<Worker[]>({
     queryKey: ["/api/workers"],
@@ -719,13 +730,28 @@ export default function PerfilesCargo() {
                       <SelectItem value="__custom__">
                         ✏️ Cargo Personalizado (ingrese manualmente)
                       </SelectItem>
-                      {Object.keys(PREDEFINED_PROFILES).sort().map((profileName) => (
-                        <SelectItem key={profileName} value={profileName}>
-                          {profileName}
-                        </SelectItem>
-                      ))}
+                      {suggestedProfileNames.length > 0 && (
+                        <SelectGroup>
+                          <SelectLabel>Sugeridos por CIIU de la empresa</SelectLabel>
+                          {suggestedProfileNames.map(name => (
+                            <SelectItem key={name} value={name}>{name}</SelectItem>
+                          ))}
+                        </SelectGroup>
+                      )}
+                      {suggestedProfileNames.length > 0 && <SelectSeparator />}
+                      <SelectGroup>
+                        <SelectLabel>{suggestedProfileNames.length > 0 ? "Todos los demás cargos" : "Todos los cargos"}</SelectLabel>
+                        {otherProfileNames.map(name => (
+                          <SelectItem key={name} value={name}>{name}</SelectItem>
+                        ))}
+                      </SelectGroup>
                     </SelectContent>
                   </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Las sugerencias se basan en las divisiones de los CIIU registrados. CIIU clasifica actividades, no cargos:
+                    confirme las funciones, la clase ARL de la empresa, los peligros, los exámenes y el EPP antes de guardar.
+                    Puede elegir cualquier otro cargo o escribir uno propio.
+                  </p>
                   {(formData.name === "" || !(formData.name in PREDEFINED_PROFILES)) && (
                     <div className="mt-2">
                       <Input
