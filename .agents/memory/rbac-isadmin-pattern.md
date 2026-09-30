@@ -10,12 +10,15 @@ const isAdmin = user?.role ? canWrite(user.role, 'RESOURCE_NAME') : false;
 ```
 Never use `hasCompanyAdminAccess` directly for `isAdmin` — it only covers superadmin/superusuario/admin/responsable_sst and blocks all other operational roles.
 
+For an administrative panel tied to a fine-grained permission, derive visibility from `hasPermission` or `getRolePermissions`, not a hard-coded role allowlist.
+
 **Why:** `hasCompanyAdminAccess` was the original guard but it blocked coordinador_sst, supervisores, and all other operational roles from creating/editing records in their own modules. Replaced with role-specific `canWrite(role, resource)` checks across ~30 pages.
 
 **How to apply:**
 - Import `canWrite` from `@shared/permissions`
 - Pick the resource string that matches the page's domain (see list below)
 - Replace all inline `hasCompanyAdminAccess(user.role)` JSX calls with `isAdmin`
+- For permission-managed admin panels, use the permission matrix directly; a hard-coded staff-role list can omit superadmin even when its role has that permission.
 
 ## Resource mapping (page → resource)
 - Trabajadores → `workers`

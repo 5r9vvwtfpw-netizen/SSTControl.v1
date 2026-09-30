@@ -685,3 +685,31 @@ mtime_ms = 1790681529068
 storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/c5a60149-f0b4-44bd-8757-d80c735c0ee4/c2ab8972-d0ed-4e11-8455-a70e2c32bea5"
 storage_version_token = "1790681838040903"
 content_type = "image/png"
+
+[[outputs]]
+id = "eVOAfgPwgmy4dKEqTB7dW"
+uri = "file://evidencias/prueba-superadmin-2026-09-30/informe.html"
+type = "html"
+title = "Informe de prueba funcional — Superadmin"
+description = "Informe autocontenido con capturas, comprobaciones y resultados de 42 rutas en desarrollo."
+logical_id = "a2212e2e-977e-4a06-96cd-30b6fa283141"
+content_hash = "sha256:6451a53d1e2fdd38f191775d070bc0666d6d85ee80cf3621fe3625cc4ceab0a7"
+size = 612986
+mtime_ms = 1790754341487
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/a2212e2e-977e-4a06-96cd-30b6fa283141/7759d62e-090a-4e15-a3ab-bc5b75af7015"
+storage_version_token = "1790754358942561"
+content_type = "text/html"
+
+[[outputs]]
+id = "ZZNaK4-vZHKjgOivYveH5"
+uri = "file://evidencias/prueba-superadmin-2026-09-30/results.json"
+type = "unspecified"
+title = "Resultados detallados — Superadmin"
+description = "Resultados estructurados por ruta y verificaciones funcionales específicas."
+logical_id = "2fe3c63b-60e2-42fb-9bba-2d9d56f8875e"
+content_hash = "sha256:a01f24f77a73855f0b01a928a6e11401414f411763d549556c8ce3b4bde2b5eb"
+size = 9283
+mtime_ms = 1790754341275
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/2fe3c63b-60e2-42fb-9bba-2d9d56f8875e/a7604b1b-4021-4330-9145-e13b28d5253c"
+storage_version_token = "1790754359726548"
+content_type = "application/octet-stream"

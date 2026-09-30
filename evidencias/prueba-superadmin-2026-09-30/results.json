@@ -1,0 +1,342 @@
+{
+  "date": "2026-09-30",
+  "environment": "development",
+  "role": "superadmin",
+  "fixture": "DEMO-PRUEBA",
+  "auditSessionCreated": true,
+  "auditSessionClosed": true,
+  "sideEffects": "Se conserva únicamente el registro de acceso auditado. Se probaron rutas/vistas y consultas de lectura; no se enviaron formularios ni se hicieron altas, cambios o borrados de datos de negocio.",
+  "routeCount": 42,
+  "results": [
+    {
+      "route": "/empresas",
+      "label": "Empresas",
+      "title": "Gestión de Empresas",
+      "status": "PASS",
+      "note": ""
+    },
+    {
+      "route": "/usuarios",
+      "label": "Usuarios",
+      "title": "Gestión de Usuarios",
+      "status": "PASS",
+      "note": ""
+    },
+    {
+      "route": "/portal-empleados",
+      "label": "Portal de Empleados",
+      "title": "Gestión del Portal de Empleados",
+      "status": "PASS",
+      "note": ""
+    },
+    {
+      "route": "/dashboard-facturacion",
+      "label": "Panel de Facturación",
+      "title": "Panel de Facturación",
+      "status": "PASS",
+      "note": ""
+    },
+    {
+      "route": "/admin-promociones",
+      "label": "Promociones",
+      "title": "Promociones y Referidos",
+      "status": "PASS",
+      "note": ""
+    },
+    {
+      "route": "/mi-cuenta",
+      "label": "Mi Cuenta",
+      "title": "Mi Cuenta",
+      "status": "PASS",
+      "note": ""
+    },
+    {
+      "route": "/admin-tickets",
+      "label": "Gestión de Tickets (Admin)",
+      "title": "Panel de Administración de Tickets",
+      "status": "PASS",
+      "note": ""
+    },
+    {
+      "route": "/admin-usuarios-soporte",
+      "label": "Usuarios de Soporte",
+      "title": "Gestión de Personal de Soporte",
+      "status": "PASS",
+      "note": ""
+    },
+    {
+      "route": "/documentos-legales",
+      "label": "Documentos Legales",
+      "title": "Documentos Legales",
+      "status": "PASS",
+      "note": ""
+    },
+    {
+      "route": "/admin-videos-ayuda",
+      "label": "Videos de Ayuda",
+      "title": "Videos de Ayuda por Módulo",
+      "status": "PASS",
+      "note": ""
+    },
+    {
+      "route": "/mensajes-internos",
+      "label": "Mensajes Internos",
+      "title": "Mensajes Internos",
+      "status": "PASS",
+      "note": "La vista usa H2 como encabezado y carga correctamente."
+    },
+    {
+      "route": "/tickets-soporte",
+      "label": "Tickets de Soporte",
+      "title": "Tickets de Soporte",
+      "status": "PASS",
+      "note": ""
+    },
+    {
+      "route": "/videos-ayuda",
+      "label": "Videos de Ayuda",
+      "title": "Biblioteca de Videos de Ayuda",
+      "status": "PASS",
+      "note": ""
+    },
+    {
+      "route": "/trabajadores",
+      "label": "Trabajadores",
+      "title": "Trabajadores",
+      "status": "PASS",
+      "note": ""
+    },
+    {
+      "route": "/sedes",
+      "label": "Sedes y Plantas",
+      "title": "Sedes y Plantas",
+      "status": "PASS",
+      "note": ""
+    },
+    {
+      "route": "/perfiles-cargo",
+      "label": "Perfiles de Cargo",
+      "title": "Perfiles de Cargo",
+      "status": "PASS",
+      "note": ""
+    },
+    {
+      "route": "/evaluaciones-sst",
+      "label": "Evaluación Inicial",
+      "title": "Evaluación Inicial del SG-SST",
+      "status": "PASS",
+      "note": ""
+    },
+    {
+      "route": "/organigrama-sst",
+      "label": "Organigrama SST",
+      "title": "Organigrama del SG-SST",
+      "status": "PASS",
+      "note": ""
+    },
+    {
+      "route": "/dashboard-hacer",
+      "label": "Panel HACER - Controles",
+      "title": "Panel HACER",
+      "status": "PASS",
+      "note": ""
+    },
+    {
+      "route": "/dashboard-verificar",
+      "label": "Panel VERIFICAR - Indicadores",
+      "title": "Panel VERIFICAR",
+      "status": "PASS",
+      "note": ""
+    },
+    {
+      "route": "/informes",
+      "label": "Informes y Reportes",
+      "title": "Informes y Reportes",
+      "status": "PASS",
+      "note": ""
+    },
+    {
+      "route": "/dashboard-actuar",
+      "label": "Panel ACTUAR - Eficacia",
+      "title": "Panel ACTUAR",
+      "status": "PASS",
+      "note": ""
+    },
+    {
+      "route": "/pesv",
+      "label": "Panel de Control",
+      "title": "Plan Estratégico de Seguridad Vial (PESV)",
+      "status": "PASS",
+      "note": ""
+    },
+    {
+      "route": "/pesv/evaluaciones",
+      "label": "Evaluaciones PESV",
+      "title": "Evaluaciones PESV",
+      "status": "PASS",
+      "note": ""
+    },
+    {
+      "route": "/profesionales-licenciados",
+      "label": "Profesionales licenciados",
+      "title": "Profesionales Licenciados en Salud Ocupacional",
+      "status": "PASS",
+      "note": ""
+    },
+    {
+      "route": "/invitaciones-mecanico",
+      "label": "Autorizaciones de técnicos mecánicos",
+      "title": "Bandeja exclusiva del técnico",
+      "status": "N/A",
+      "note": "El superadmin administra autorizaciones desde Usuarios; esta vista permite aceptar/rechazar como técnico."
+    },
+    {
+      "route": "/auditorias-internas",
+      "label": "Auditorías SST",
+      "title": "Auditorías Internas SST",
+      "status": "PASS",
+      "note": ""
+    },
+    {
+      "route": "/iperc",
+      "label": "Matriz IPERC",
+      "title": "IPERC - Identificación de Peligros y Evaluación de Riesgos",
+      "status": "PASS",
+      "note": ""
+    },
+    {
+      "route": "/plan-emergencias",
+      "label": "Plan de emergencias",
+      "title": "Plan de Emergencias",
+      "status": "PASS",
+      "note": ""
+    },
+    {
+      "route": "/accidentes",
+      "label": "Accidentes e incidentes",
+      "title": "Accidentes e Incidentes",
+      "status": "PASS",
+      "note": ""
+    },
+    {
+      "route": "/capacitaciones",
+      "label": "Capacitaciones",
+      "title": "Capacitaciones",
+      "status": "PASS",
+      "note": ""
+    },
+    {
+      "route": "/inspecciones",
+      "label": "Inspecciones",
+      "title": "Inspecciones de Seguridad",
+      "status": "PASS",
+      "note": ""
+    },
+    {
+      "route": "/estandares-sst",
+      "label": "Estándares SST",
+      "title": "Estándares Mínimos SST",
+      "status": "PASS",
+      "note": ""
+    },
+    {
+      "route": "/pesv/vehiculos",
+      "label": "Vehículos PESV",
+      "title": "Vehículos PESV",
+      "status": "PASS",
+      "note": ""
+    },
+    {
+      "route": "/pesv/conductores",
+      "label": "Conductores PESV",
+      "title": "Conductores PESV",
+      "status": "PASS",
+      "note": ""
+    },
+    {
+      "route": "/pesv/inspecciones",
+      "label": "Inspecciones PESV",
+      "title": "Inspecciones Preoperacionales",
+      "status": "PASS",
+      "note": ""
+    },
+    {
+      "route": "/pesv/siniestros",
+      "label": "Siniestros PESV",
+      "title": "Siniestros Viales",
+      "status": "PASS",
+      "note": ""
+    },
+    {
+      "route": "/pesv/capacitaciones",
+      "label": "Capacitaciones PESV",
+      "title": "Capacitaciones de Seguridad Vial",
+      "status": "PASS",
+      "note": ""
+    },
+    {
+      "route": "/pesv/auditorias",
+      "label": "Auditorías PESV",
+      "title": "Auditorías PESV",
+      "status": "PASS",
+      "note": ""
+    },
+    {
+      "route": "/admin-login-activity",
+      "label": "Actividad de acceso",
+      "title": "Actividad de Login",
+      "status": "PASS",
+      "note": ""
+    },
+    {
+      "route": "/admin-portales",
+      "label": "Administración de portales",
+      "title": "Administracion de Portales",
+      "status": "PASS",
+      "note": ""
+    },
+    {
+      "route": "/dashboard",
+      "label": "Dashboard",
+      "title": "Panel de Control",
+      "status": "PASS",
+      "note": ""
+    }
+  ],
+  "pageErrors": [],
+  "apiFailures": [],
+  "screenshots": [
+    "01-solicitud-acceso.jpg",
+    "02-sesion-auditada.jpg",
+    "03-menu-superadmin.jpg",
+    "04-autorizaciones-tecnicos-superadmin.jpg",
+    "modulo-informes.jpg",
+    "modulo-pesv.jpg"
+  ],
+  "functionalChecks": [
+    {
+      "name": "Panel de autorizaciones mecánicas disponible para superadmin",
+      "status": "PASS",
+      "details": "panel=true; tabla=true; API ligada a empresa activa=true; errores API 5xx=0"
+    },
+    {
+      "name": "Formulario exige seleccionar el técnico antes de enviar",
+      "status": "PASS",
+      "details": "botón_enviar_disabled=true; no se envió ninguna invitación"
+    },
+    {
+      "name": "Bandeja de aceptación de invitaciones reservada al técnico",
+      "status": "PASS",
+      "details": "La vista para aceptar o rechazar invitaciones solo corresponde a técnico mecánico; la administración está en Usuarios."
+    }
+  ],
+  "expectedAccessRestrictions": [
+    {
+      "route": "/invitaciones-mecanico",
+      "status": "N/A",
+      "note": "Página reservada al técnico para aceptar o rechazar invitaciones; la administración del superadmin está en /usuarios."
+    }
+  ],
+  "codeChange": "La visibilidad del panel de autorizaciones en Usuarios ahora sigue el permiso mechanic_access:manage del rol. Se confirmó que el superadmin puede abrir la gestión; no se envió ninguna invitación.",
+  "transientEnvironmentNote": "El primer intento registró un socket hang up de Neon y una excepción del cliente WebSocket. Se reinició el workflow y la pasada final no reprodujo el incidente; los recorridos finales tuvieron 0 errores JavaScript y 0 respuestas API 5xx."
+}

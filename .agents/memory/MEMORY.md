@@ -2,7 +2,7 @@
 - [PDFKit page numbering](pdfkit-page-numbering.md) — la paginación al borde inferior puede crear páginas fantasma; ubicar el texto en una franja segura y comprobar el conteo final.
 - [Seed onConflictDoNothing pattern](seed-onconflict-pattern.md) — onConflictDoNothing leaves stale puntajeTipo1=null in prod; fixed with explicit UPDATE loop in sst-seed.ts for all 10 tipo1 standards.
 - [ISO 9001 e ISO 14001 roadmap](iso-9001-14001-roadmap.md) — pendiente de implementar; documentado en docs/ROADMAP_ISO_9001_14001.md con módulos, estimaciones y orden sugerido.
-- [RBAC isAdmin pattern](rbac-isadmin-pattern.md) — all page-level write guards use canWrite(role, resource) not hasCompanyAdminAccess; responsable_sst added to hasCompanyAdminAccess for legacy paths.
+- [RBAC isAdmin pattern](rbac-isadmin-pattern.md) — use resource permissions for writes and the permission matrix for admin-panel visibility; avoid role allowlists that omit granted roles.
 - [RBAC backend routes missing permissions](rbac-backend-missing-perms.md) — 10 mutating routes in routes.ts used requireAuth-only; fixed to use requirePermission. Pattern to watch: any new POST/PATCH/DELETE must not rely on requireAuth alone.
 - [Chatbot knowledge base must mirror real form fields](chatbot-knowledge-base-accuracy.md) — describing standards generically makes the AI assistant vague; copy exact form field names/dropdown options into APP_KNOWLEDGE_BASE.
 - [Production DB tool vs AWS RDS](production-db-tool-vs-aws-rds.md) — the production database skill's executeSql hits the wrong DB for this app; query real AWS RDS prod via a bash-run pg script instead.

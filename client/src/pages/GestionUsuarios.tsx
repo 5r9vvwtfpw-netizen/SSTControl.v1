@@ -341,8 +341,9 @@ export default function GestionUsuarios() {
   });
 
   const hasGlobalCompanyAccess = currentUser?.role ? hasGlobalAccess(currentUser.role) : false;
-  const canManageMechanicAccess = (currentUser?.role === "superusuario" || currentUser?.role === "admin") &&
-    getRolePermissions(currentUser.role).includes("mechanic_access:manage");
+  const canManageMechanicAccess = currentUser?.role
+    ? getRolePermissions(currentUser.role).includes("mechanic_access:manage")
+    : false;
 
   const companyMap = useMemo(() => {
     const map: Record<string, string> = {};
