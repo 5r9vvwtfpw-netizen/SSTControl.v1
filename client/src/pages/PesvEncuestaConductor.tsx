@@ -21,7 +21,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useCompanyContext } from "@/hooks/use-company-context";
 import { PesvEncuestaConductor as EncuestaType, Driver } from "@shared/schema";
 import { getTodayDateString } from "@/lib/utils/formatters";
-import { hasGlobalAccess } from "@shared/permissions";
+import { hasGlobalAccess, hasPermission } from "@shared/permissions";
 
 const ESTADO_OPTIONS = [
   { value: "bueno", label: "Bueno" },
@@ -96,6 +96,7 @@ export default function PesvEncuestaConductor() {
   const { selectedCompany } = useCompanyContext();
   const { toast } = useToast();
   const isAdmin = user?.role ? hasGlobalAccess(user.role) : false;
+  const canDeleteEncuestas = user?.role ? hasPermission(user.role, "vehicles:delete") : false;
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -181,6 +182,7 @@ export default function PesvEncuestaConductor() {
   };
 
   const noAptoCount = encuestas.filter(e => e.resultado === "no_apto").length;
+  const encuestaToDelete = encuestas.find(e => e.id === deleteId);
   const aptoPct = encuestas.length > 0
     ? Math.round((encuestas.filter(e => e.resultado === "apto").length / encuestas.length) * 100)
     : 0;
@@ -316,6 +318,19 @@ export default function PesvEncuestaConductor() {
                         >
                           <FileDown className="w-4 h-4 text-blue-600" />
                         </Button>
+                        {canDeleteEncuestas && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => setDeleteId(enc.id)}
+                            data-testid={`button-delete-encuesta-${enc.id}`}
+                            title="Eliminar encuesta"
+                            aria-label={`Eliminar encuesta de ${enc.conductorNombre}`}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -702,7 +717,12 @@ export default function PesvEncuestaConductor() {
           <DialogHeader>
             <DialogTitle>Eliminar encuesta</DialogTitle>
           </DialogHeader>
-          <p className="text-muted-foreground text-sm">¿Está seguro de que desea eliminar este registro? Esta acción no se puede deshacer.</p>
+          <p className="text-muted-foreground text-sm">
+            ¿Está seguro de que desea eliminar la encuesta
+            {encuestaToDelete && (
+              <> de <strong>{encuestaToDelete.conductorNombre}</strong> del <strong>{encuestaToDelete.fechaRegistro}</strong></>
+            )}? Esta acción no se puede deshacer.
+          </p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteId(null)} data-testid="button-cancel-delete">
               Cancelar

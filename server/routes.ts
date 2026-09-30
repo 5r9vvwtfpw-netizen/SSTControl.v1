@@ -59796,7 +59796,14 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
   app.delete("/api/pesv/encuestas-conductor/:id", requirePermission("vehicles:delete"), async (req, res) => {
     try {
-      await db.execute(sql`DELETE FROM pesv_encuestas_conductor WHERE id = ${req.params.id}`);
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(403).json({ error: "Usuario no asociado a una empresa" });
+      const result = await db.execute(sql`
+        DELETE FROM pesv_encuestas_conductor
+        WHERE id = ${req.params.id} AND company_id = ${companyId}
+        RETURNING id
+      `);
+      if (!result.rows.length) return res.status(404).json({ error: "Encuesta no encontrada" });
       res.json({ success: true });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
