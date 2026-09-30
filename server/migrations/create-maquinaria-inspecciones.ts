@@ -1,7 +1,7 @@
 import { db } from "../db";
 import { sql } from "drizzle-orm";
 
-/** Crea y sincroniza las tablas de maquinaria de forma segura para instalaciones existentes. */
+/** Crea las tablas de maquinaria de forma segura para instalaciones existentes. */
 export async function createMaquinariaInspecciones() {
   await db.execute(sql`
     CREATE TABLE IF NOT EXISTS maquinaria_inspecciones (
@@ -23,23 +23,6 @@ export async function createMaquinariaInspecciones() {
       CONSTRAINT maquinaria_inspecciones_equipo_fecha_turno_uk
         UNIQUE (company_id, equipment_id, inspection_date, shift)
     )
-  `);
-  await db.execute(sql`
-    DO $$
-    BEGIN
-      IF EXISTS (
-        SELECT 1
-        FROM information_schema.columns
-        WHERE table_schema = current_schema()
-          AND table_name = 'maquinaria_inspecciones'
-          AND column_name = 'engine_hours'
-          AND data_type <> 'numeric'
-      ) THEN
-        ALTER TABLE maquinaria_inspecciones
-          ALTER COLUMN engine_hours TYPE numeric
-          USING engine_hours::numeric;
-      END IF;
-    END $$
   `);
   await db.execute(sql`
     CREATE TABLE IF NOT EXISTS maquinaria_inspeccion_respuestas (
