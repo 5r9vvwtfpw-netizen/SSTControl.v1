@@ -1,7 +1,7 @@
 import { db } from "../db";
 import { sql } from "drizzle-orm";
 
-/** Crea las tablas de maquinaria de forma segura para instalaciones existentes. */
+/** Crea y sincroniza las tablas de maquinaria de forma segura para instalaciones existentes. */
 export async function createMaquinariaInspecciones() {
   await db.execute(sql`
     CREATE TABLE IF NOT EXISTS maquinaria_inspecciones (
@@ -12,7 +12,7 @@ export async function createMaquinariaInspecciones() {
       assignment_id varchar NOT NULL REFERENCES driver_vehicle_assignments(id),
       inspection_date date NOT NULL,
       shift text NOT NULL,
-      engine_hours integer NOT NULL CHECK (engine_hours >= 0),
+      engine_hours numeric NOT NULL CHECK (engine_hours >= 0),
       work_front text,
       result text NOT NULL CHECK (result IN ('apta','no_apta')),
       checklist_version text NOT NULL DEFAULT 'maquinaria-amarilla-v1',
@@ -23,6 +23,23 @@ export async function createMaquinariaInspecciones() {
       CONSTRAINT maquinaria_inspecciones_equipo_fecha_turno_uk
         UNIQUE (company_id, equipment_id, inspection_date, shift)
     )
+  `);
+  await db.execute(sql`
+    DO $$
+    BEGIN
+      IF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = current_schema()
+          AND table_name = 'maquinaria_inspecciones'
+          AND column_name = 'engine_hours'
+          AND data_type <> 'numeric'
+      ) THEN
+        ALTER TABLE maquinaria_inspecciones
+          ALTER COLUMN engine_hours TYPE numeric
+          USING engine_hours::numeric;
+      END IF;
+    END $$
   `);
   await db.execute(sql`
     CREATE TABLE IF NOT EXISTS maquinaria_inspeccion_respuestas (

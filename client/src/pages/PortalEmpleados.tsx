@@ -6028,10 +6028,12 @@ function InspeccionMaquinariaPortalTab() {
   const { data, isLoading } = useQuery<{ equipos: MaquinariaEquipo[] }>({ queryKey: ["/api/portal/mis-maquinaria"] });
   const { data: history, isLoading: historyLoading } = useQuery<{ inspecciones: any[] }>({ queryKey: ["/api/portal/mis-inspecciones-maquinaria"] });
   const equipos = data?.equipos ?? [];
+  const engineHoursValue = engineHours.trim() === "" ? Number.NaN : Number(engineHours);
+  const isEngineHoursValid = Number.isFinite(engineHoursValue) && engineHoursValue >= 0;
   const mutation = useMutation({
     mutationFn: () => apiRequest("POST", "/api/portal/inspeccion-maquinaria", {
       assignmentId: equipos.find(e => e.id === equipmentId)?.assignmentId, inspectionDate: today,
-      shift, engineHours: Number(engineHours), workFront, observations, answers,
+      shift, engineHours: engineHoursValue, workFront, observations, answers,
     }),
     onSuccess: async (r) => {
       const body = await r.json();
@@ -6055,7 +6057,7 @@ function InspeccionMaquinariaPortalTab() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div><Label>Fecha</Label><Input value={today} readOnly /></div>
           <div><Label>Turno</Label><Select value={shift} onValueChange={setShift}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="diurno">Diurno</SelectItem><SelectItem value="nocturno">Nocturno</SelectItem><SelectItem value="otro">Otro</SelectItem></SelectContent></Select></div>
-          <div><Label>Horómetro *</Label><Input type="number" min="0" value={engineHours} onChange={e => setEngineHours(e.target.value)} /></div>
+          <div><Label>Horómetro *</Label><Input type="number" min="0" step="any" inputMode="decimal" value={engineHours} onChange={e => setEngineHours(e.target.value)} /></div>
         </div>
         <div><Label>Frente de trabajo</Label><Input value={workFront} onChange={e => setWorkFront(e.target.value)} placeholder="Obra, frente o ubicación" /></div>
         {MAQUINARIA_SECCIONES.map(([key, label]) => <div key={key} className="rounded-md border p-3 space-y-2">
@@ -6065,7 +6067,7 @@ function InspeccionMaquinariaPortalTab() {
           {answers[key].value === "falla" && <Input placeholder="Comentario obligatorio de la falla" value={answers[key].comment} onChange={e => setAnswers(a => ({ ...a, [key]: { ...a[key], comment: e.target.value } }))} />}
         </div>)}
         <div><Label>Observaciones</Label><Textarea value={observations} onChange={e => setObservations(e.target.value)} /></div>
-        <Button className="w-full" disabled={!equipmentId || !engineHours || todayDone || mutation.isPending} onClick={() => mutation.mutate()}>
+        <Button className="w-full" disabled={!equipmentId || !isEngineHoursValid || todayDone || mutation.isPending} onClick={() => mutation.mutate()}>
           {todayDone ? "Inspección ya registrada para este turno" : mutation.isPending ? "Guardando..." : "Registrar inspección"}
         </Button>
       </CardContent>

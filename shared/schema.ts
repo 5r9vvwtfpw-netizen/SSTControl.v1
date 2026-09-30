@@ -1161,7 +1161,7 @@ export const maquinariaInspecciones = pgTable("maquinaria_inspecciones", {
   assignmentId: varchar("assignment_id").notNull().references(() => driverVehicleAssignments.id),
   inspectionDate: date("inspection_date").notNull(),
   shift: text("shift").notNull(),
-  engineHours: integer("engine_hours").notNull(),
+  engineHours: numeric("engine_hours").notNull(),
   workFront: text("work_front"),
   result: text("result").notNull(), // apta | no_apta
   checklistVersion: text("checklist_version").notNull().default("maquinaria-amarilla-v1"),

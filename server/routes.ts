@@ -45972,8 +45972,15 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         : user.email ? await storage.getWorkerByEmail(user.email, user.companyId) : undefined;
       if (!worker) return res.status(403).json({ error: "Trabajador no encontrado" });
       const { assignmentId, inspectionDate, shift, engineHours, workFront, observations, evidenceUrls, answers } = req.body;
-      if (!assignmentId || !inspectionDate || !shift || !Number.isInteger(Number(engineHours)) || Number(engineHours) < 0)
-        return res.status(400).json({ error: "Equipo, fecha, turno y horómetro son obligatorios" });
+      const engineHoursValue = typeof engineHours === "number"
+        ? engineHours
+        : typeof engineHours === "string" && engineHours.trim() !== ""
+          ? Number(engineHours)
+          : Number.NaN;
+      if (!assignmentId || !inspectionDate || !shift)
+        return res.status(400).json({ error: "Equipo, fecha y turno son obligatorios" });
+      if (!Number.isFinite(engineHoursValue) || engineHoursValue < 0)
+        return res.status(400).json({ error: "El horómetro es obligatorio y debe ser un número igual o mayor a cero" });
       if (!["diurno", "nocturno", "otro"].includes(shift))
         return res.status(400).json({ error: "El turno seleccionado no es válido" });
       const todayBogota = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Bogota", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
@@ -46004,7 +46011,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         const inserted = await tx.execute(sql`
           INSERT INTO maquinaria_inspecciones
             (company_id, worker_id, equipment_id, assignment_id, inspection_date, shift, engine_hours, work_front, result, checklist_version, answers, observations, evidence_urls)
-          VALUES (${user.companyId}, ${worker.id}, ${assignment[0].equipmentId}, ${assignmentId}, ${inspectionDate}::date, ${shift}, ${Number(engineHours)}, ${workFront || null}, ${result}, 'maquinaria-amarilla-v1', ${JSON.stringify(normalizedAnswers)}::jsonb, ${observations || null}, ARRAY(SELECT jsonb_array_elements_text(${JSON.stringify(normalizedEvidenceUrls)}::jsonb)))
+          VALUES (${user.companyId}, ${worker.id}, ${assignment[0].equipmentId}, ${assignmentId}, ${inspectionDate}::date, ${shift}, ${engineHoursValue}, ${workFront || null}, ${result}, 'maquinaria-amarilla-v1', ${JSON.stringify(normalizedAnswers)}::jsonb, ${observations || null}, ARRAY(SELECT jsonb_array_elements_text(${JSON.stringify(normalizedEvidenceUrls)}::jsonb)))
           RETURNING *
         `);
         const inspection = (inserted as any).rows?.[0];
