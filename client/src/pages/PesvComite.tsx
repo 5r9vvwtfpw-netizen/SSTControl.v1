@@ -13,7 +13,7 @@ import { Plus, Pencil, Trash2, ArrowLeft, Users, FileText, FileDown, Stamp, Cale
 import { useState } from "react";
 import { getTodayDateString } from "@/lib/utils/formatters";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { ComiteIntegrantePesv, ActaComitePesv, Worker, ActoAdministrativoPesv, CronogramaReunionPesv, ResponsibleDesignation } from "@shared/schema";
+import { ComiteIntegrantePesv, ActaComitePesv, Worker, ActoAdministrativoPesv, CronogramaReunionPesv, ResponsibleDesignation, Company } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -481,9 +481,11 @@ function IntegrantesTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
 function ActoAdministrativoTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<ActoAdministrativoPesv | null>(null);
+  const [selectedSigner, setSelectedSigner] = useState("");
+  const [manualCargo, setManualCargo] = useState(false);
   const [form, setForm] = useState({
     tipoDocumento: "Resolución", numeroDocumento: "", fechaExpedicion: getTodayDateString(),
-    fechaVigencia: "", firmadoPor: "", cargoFirmante: "Representante Legal",
+    fechaVigencia: "", firmadoPor: "", cargoFirmante: "",
     objetoConformacion: "Conformar el equipo de trabajo para el diseño, implementación y seguimiento del Plan Estratégico de Seguridad Vial (PESV) de la organización, en cumplimiento de la Resolución 40595 de 2022 del Ministerio de Transporte.",
     considerandos: "Que la Ley 1503 de 2011 establece la obligación de adoptar políticas de seguridad vial.\nQue la Resolución 40595 de 2022 del Ministerio de Transporte establece la metodología para el diseño e implementación del PESV.\nQue el Artículo 5 de dicha resolución establece la obligación de conformar un equipo de trabajo para el PESV.",
     articulado: "", estado: "vigente", observaciones: ""
@@ -497,11 +499,32 @@ function ActoAdministrativoTab({ isAdmin, toast }: { isAdmin: boolean; toast: an
     queryKey: ["/api/pesv/comite/integrantes"],
   });
 
+  const { data: company } = useQuery<Company>({
+    queryKey: ["/api/company/current"],
+    enabled: isAdmin,
+  });
+
+  const signerOptions = [
+    ...(company?.legalRepName?.trim()
+      ? [{ id: "legal", name: company.legalRepName.trim(), cargo: company.legalRepPosition?.trim() || "Representante Legal" }]
+      : []),
+    ...integrantes
+      .filter(i => i.estado === "activo" && i.nombre.trim())
+      .map(i => ({ id: `integrante:${i.id}`, name: i.nombre.trim(), cargo: i.cargo?.trim() || "" })),
+  ];
+  const cargoOptions = [...new Set([
+    "Representante Legal",
+    company?.legalRepPosition?.trim(),
+    ...integrantes.filter(i => i.estado === "activo").map(i => i.cargo?.trim()),
+  ].filter((cargo): cargo is string => !!cargo))].sort((a, b) => a.localeCompare(b, "es"));
+
   const resetForm = () => {
     setEditing(null);
+    setSelectedSigner("");
+    setManualCargo(false);
     setForm({
       tipoDocumento: "Resolución", numeroDocumento: "", fechaExpedicion: getTodayDateString(),
-      fechaVigencia: "", firmadoPor: "", cargoFirmante: "Representante Legal",
+      fechaVigencia: "", firmadoPor: "", cargoFirmante: "",
       objetoConformacion: "Conformar el equipo de trabajo para el diseño, implementación y seguimiento del Plan Estratégico de Seguridad Vial (PESV) de la organización, en cumplimiento de la Resolución 40595 de 2022 del Ministerio de Transporte.",
       considerandos: "Que la Ley 1503 de 2011 establece la obligación de adoptar políticas de seguridad vial.\nQue la Resolución 40595 de 2022 del Ministerio de Transporte establece la metodología para el diseño e implementación del PESV.\nQue el Artículo 5 de dicha resolución establece la obligación de conformar un equipo de trabajo para el PESV.",
       articulado: "", estado: "vigente", observaciones: ""
@@ -528,18 +551,24 @@ function ActoAdministrativoTab({ isAdmin, toast }: { isAdmin: boolean; toast: an
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!form.firmadoPor.trim() || !form.cargoFirmante.trim()) {
+      toast({ title: "Seleccione o escriba el firmante y su cargo", variant: "destructive" });
+      return;
+    }
     const integrantesActivos = integrantes.filter(i => i.estado === "activo");
     let articulado = form.articulado;
     if (!articulado && integrantesActivos.length > 0) {
       articulado = `ARTÍCULO PRIMERO: Conformar el equipo de trabajo del Plan Estratégico de Seguridad Vial (PESV) integrado por:\n\n${integrantesActivos.map((ig, idx) => `${idx + 1}. ${ig.nombre} - ${ig.cargo} (${ROLES_COMITE[ig.rol as RolComite] || ig.rol})`).join("\n")}\n\nARTÍCULO SEGUNDO: El equipo de trabajo tendrá las funciones establecidas en el Artículo 5 de la Resolución 40595 de 2022.\n\nARTÍCULO TERCERO: La presente resolución rige a partir de la fecha de su expedición.`;
     }
-    const data = { ...form, articulado, fechaVigencia: form.fechaVigencia || null, observaciones: form.observaciones || null, considerandos: form.considerandos || null };
+    const data = { ...form, firmadoPor: form.firmadoPor.trim(), cargoFirmante: form.cargoFirmante.trim(), articulado, fechaVigencia: form.fechaVigencia || null, observaciones: form.observaciones || null, considerandos: form.considerandos || null };
     if (editing) updateMutation.mutate({ id: editing.id, data });
     else createMutation.mutate(data);
   };
 
   const handleEdit = (a: ActoAdministrativoPesv) => {
     setEditing(a);
+    setSelectedSigner(signerOptions.find(option => option.name === a.firmadoPor && option.cargo === a.cargoFirmante)?.id || "__manual__");
+    setManualCargo(!cargoOptions.includes(a.cargoFirmante));
     setForm({
       tipoDocumento: a.tipoDocumento, numeroDocumento: a.numeroDocumento,
       fechaExpedicion: a.fechaExpedicion, fechaVigencia: a.fechaVigencia || "",
@@ -605,13 +634,47 @@ function ActoAdministrativoTab({ isAdmin, toast }: { isAdmin: boolean; toast: an
                   </div>
                   <div className="space-y-2">
                     <Label>Firmado por *</Label>
-                    <Input value={form.firmadoPor} onChange={e => setForm({ ...form, firmadoPor: e.target.value })} required placeholder="Nombre del firmante" data-testid="input-firmado-por" />
+                    <Select value={selectedSigner} onValueChange={id => {
+                      setSelectedSigner(id);
+                      const signer = signerOptions.find(option => option.id === id);
+                      if (signer) {
+                        setForm(prev => ({ ...prev, firmadoPor: signer.name, cargoFirmante: signer.cargo }));
+                        setManualCargo(!signer.cargo);
+                      } else {
+                        setForm(prev => ({ ...prev, firmadoPor: "", cargoFirmante: "" }));
+                        setManualCargo(false);
+                      }
+                    }}>
+                      <SelectTrigger data-testid="select-firmado-por"><SelectValue placeholder="Seleccione el firmante" /></SelectTrigger>
+                      <SelectContent>
+                        {signerOptions.map(option => (
+                          <SelectItem key={option.id} value={option.id}>{option.name} — {option.cargo || "Cargo sin registrar"}</SelectItem>
+                        ))}
+                        <SelectItem value="__manual__">Otra persona autorizada</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {selectedSigner === "__manual__" && (
+                      <Input value={form.firmadoPor} onChange={e => setForm({ ...form, firmadoPor: e.target.value })} required placeholder="Nombre completo del firmante" data-testid="input-firmado-por" />
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label>Cargo del Firmante *</Label>
-                    <Input value={form.cargoFirmante} onChange={e => setForm({ ...form, cargoFirmante: e.target.value })} required data-testid="input-cargo-firmante" />
+                    <Select value={manualCargo ? "__manual__" : form.cargoFirmante} onValueChange={cargo => {
+                      setManualCargo(cargo === "__manual__");
+                      setForm(prev => ({ ...prev, cargoFirmante: cargo === "__manual__" ? "" : cargo }));
+                    }}>
+                      <SelectTrigger data-testid="select-cargo-firmante"><SelectValue placeholder="Seleccione el cargo" /></SelectTrigger>
+                      <SelectContent>
+                        {cargoOptions.map(cargo => <SelectItem key={cargo} value={cargo}>{cargo}</SelectItem>)}
+                        <SelectItem value="__manual__">Otro cargo</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {manualCargo && (
+                      <Input value={form.cargoFirmante} onChange={e => setForm({ ...form, cargoFirmante: e.target.value })} required placeholder="Escriba el cargo" data-testid="input-cargo-firmante" />
+                    )}
                   </div>
                 </div>
+                <p className="text-xs text-muted-foreground">Seleccione una persona facultada para firmar el acto. Los nombres y cargos provienen de Empresas y de los integrantes activos del equipo PESV.</p>
                 <div className="space-y-2">
                   <Label>Objeto de la Conformación *</Label>
                   <Textarea value={form.objetoConformacion} onChange={e => setForm({ ...form, objetoConformacion: e.target.value })} required rows={3} data-testid="textarea-objeto" />
