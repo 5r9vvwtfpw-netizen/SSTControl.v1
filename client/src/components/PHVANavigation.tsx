@@ -79,6 +79,7 @@ const phvaMenus: Record<PHVASection, MenuGroup[]> = {
         { label: "Propuesta Comercial", path: "/propuesta-comercial" },
         { label: "Cotización Transición SST/PESV", path: "/cotizacion-transicion" },
         { label: "Informe Ejecutivo", path: "/informe-ejecutivo" },
+        { label: "Presentación SG-SST", path: "/presentacion-sgsst" },
         { label: "Alianza Consultores SST", path: "/alianza-consultores-sst" },
         { label: "Confidencialidad Asistentes", path: "/confidencialidad-asistentes" },
         { label: "Confidencialidad Profesionales SST", path: "/confidencialidad-profesionales-sst" },

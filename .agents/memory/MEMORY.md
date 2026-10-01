@@ -93,3 +93,4 @@
 - [Municipios homónimos de Colombia](colombia-location-identity.md) — DIVIPOLA distingue localidades por departamento; el nombre municipal por sí solo no identifica siempre la ubicación.
 - [Desbloqueo y aviso de inducción](welcome-unlock-induction.md) — reactivar una empresa debe ocultar la bienvenida sin atribuirle una inducción completada.
 - [Evidencia contractual para pagos](payment-contract-evidence.md) — la firma SaaS real vigente y la aceptación histórica habilitan pagos; no exigir un consentimiento duplicado por una marca vacía.
+- [ABI de bibliotecas nativas en Nix](nix-native-library-abi.md) — conviven runtimes de 32 y 64 bits; comprobar ELF antes de seleccionar una biblioteca para Python.

@@ -54,6 +54,7 @@ import { registerCompanySedesRoutes } from "./routes/company-sedes";
 import { registerMissingSstReportsRoutes } from "./routes/missing-sst-reports";
 import { registerPropuestaComercialRoutes } from "./routes/propuesta-comercial";
 import { registerInformeEjecutivoRoutes } from "./routes/informe-ejecutivo";
+import { registerPresentacionSgsstRoutes } from "./routes/presentacion-sgsst";
 import { registerCotizacionTransicionRoutes } from "./routes/cotizacion-transicion";
 import { registerAlianzaConsultoresRoutes } from "./routes/alianza-consultores";
 import { registerConfidencialidadAsistentesRoutes } from "./routes/confidencialidad-asistentes";
@@ -53555,6 +53556,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   registerCompanySedesRoutes(app);
   registerPropuestaComercialRoutes(app);
   registerInformeEjecutivoRoutes(app);
+  registerPresentacionSgsstRoutes(app);
   registerCotizacionTransicionRoutes(app);
   registerAlianzaConsultoresRoutes(app);
   registerConfidencialidadAsistentesRoutes(app);

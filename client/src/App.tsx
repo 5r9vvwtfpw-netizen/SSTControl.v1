@@ -200,6 +200,7 @@ import AdminPromociones from "@/pages/AdminPromociones";
 import PropuestaComercial from "@/pages/PropuestaComercial";
 import CotizacionTransicion from "@/pages/CotizacionTransicion";
 import InformeEjecutivo from "@/pages/InformeEjecutivo";
+import PresentacionSgsst from "@/pages/PresentacionSgsst";
 import AdminPortales from "@/pages/AdminPortales";
 import AdminLoginActivity from "@/pages/AdminLoginActivity";
 import CompanySedes from "@/pages/CompanySedes";
@@ -397,6 +398,7 @@ function Router() {
       <ProtectedRoute path="/propuesta-comercial" component={PropuestaComercial} />
       <ProtectedRoute path="/cotizacion-transicion" component={CotizacionTransicion} />
       <ProtectedRoute path="/informe-ejecutivo" component={InformeEjecutivo} />
+      <ProtectedRoute path="/presentacion-sgsst" component={PresentacionSgsst} />
       <ProtectedRoute path="/admin-portales" component={AdminPortales} />
       <ProtectedRoute path="/admin-login-activity" component={AdminLoginActivity} />
       <ProtectedRoute path="/sedes" component={CompanySedes} />
