@@ -7,7 +7,7 @@
 
 import crypto from "crypto";
 import { isIP } from "net";
-import type { Express, Request } from "express";
+import type { Express, Request, Response } from "express";
 import rateLimit from "express-rate-limit";
 import { sql } from "drizzle-orm";
 import { z } from "zod";
@@ -17,7 +17,7 @@ import { db } from "../db";
 import logger from "../lib/logger";
 import { paymentOperationLimiter } from "../middleware/rate-limit";
 import { getSubscriptionStatus } from "../middleware/subscription-check";
-import { userRoleEnum } from "@shared/schema";
+import { userRoleEnum, type Subscription } from "@shared/schema";
 import {
   createEpaycoPseTransaction,
   EpaycoPseRejectedError,
@@ -40,6 +40,7 @@ import {
   workerPricingSnapshotMatchesQuote,
 } from "../services/company-worker-pricing";
 import { assertWorkerPricingSchemaReady } from "../services/worker-pricing-schema-state";
+import { hasAcceptedPaymentContract } from "../services/payment-contract-acceptance";
 
 const paymentLinkReadLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -47,6 +48,20 @@ const paymentLinkReadLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
+
+async function requireAcceptedPaymentContract(subscription: Subscription, res: Response): Promise<boolean> {
+  try {
+    if (await hasAcceptedPaymentContract(subscription)) return true;
+    res.status(403).json({
+      error: "Debe aceptar el contrato antes de continuar con el pago.",
+      redirectTo: "/checkout",
+    });
+  } catch (error: any) {
+    logger.error({ companyId: subscription.companyId, error: error.message }, "[ePayco] No se pudo verificar aceptación del contrato");
+    res.status(503).json({ error: "No se pudo verificar el contrato. Intente nuevamente; no se inició ningún cobro." });
+  }
+  return false;
+}
 
 function requireWorkerPricingSchema(_req: any, res: any, next: any) {
   try {
@@ -694,12 +709,7 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
 
     const subscription = await storage.getSubscriptionByCompany(companyId);
     if (!subscription) return res.status(404).json({ error: "No tiene una suscripción. Contacte a soporte." });
-    if (!subscription.contractAcceptedAt) {
-      return res.status(403).json({
-        error: "Debe aceptar el contrato antes de continuar con el pago.",
-        redirectTo: "/checkout",
-      });
-    }
+    if (!await requireAcceptedPaymentContract(subscription, res)) return;
     const liveStatus = await getSubscriptionStatus(companyId);
     if (subscription.status === "active" && liveStatus.isActive) {
       return res.status(409).json({ error: "La suscripción ya está activa. Verifique el estado antes de iniciar otro pago." });
@@ -970,9 +980,7 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
     if (!subscription || subscription.companyId !== link.company_id) {
       return res.status(404).json({ error: "No se encontró la suscripción asociada al enlace." });
     }
-    if (!subscription.contractAcceptedAt) {
-      return res.status(403).json({ error: "Debe aceptar el contrato antes de continuar con el pago.", redirectTo: "/checkout" });
-    }
+    if (!await requireAcceptedPaymentContract(subscription, res)) return;
     const liveStatus = await getSubscriptionStatus(link.company_id);
     if (subscription.status === "active" && liveStatus.isActive) {
       return res.status(409).json({ error: "La suscripción ya está activa. Verifique el estado antes de iniciar otro pago." });
@@ -1287,12 +1295,7 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
         message: "Debes tener una suscripción activa para agregar usuarios adicionales.",
       });
     }
-    if (parsed.data.purchaseType === "subscription" && !subscription.contractAcceptedAt) {
-      return res.status(403).json({
-        error: "Debe aceptar el contrato antes de continuar con el pago.",
-        redirectTo: "/checkout",
-      });
-    }
+    if (parsed.data.purchaseType === "subscription" && !await requireAcceptedPaymentContract(subscription, res)) return;
     if (parsed.data.purchaseType === "subscription") {
       const liveStatus = await getSubscriptionStatus(companyId);
       if (subscription.status === "active" && liveStatus.isActive) {

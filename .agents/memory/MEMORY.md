@@ -92,3 +92,4 @@
 - [Tarifas negociadas por empresa](negotiated-worker-pricing.md) — tarifa fija o porcentual no acumula cupones; conservar el importe de cobros ya iniciados.
 - [Municipios homónimos de Colombia](colombia-location-identity.md) — DIVIPOLA distingue localidades por departamento; el nombre municipal por sí solo no identifica siempre la ubicación.
 - [Desbloqueo y aviso de inducción](welcome-unlock-induction.md) — reactivar una empresa debe ocultar la bienvenida sin atribuirle una inducción completada.
+- [Evidencia contractual para pagos](payment-contract-evidence.md) — la firma SaaS real vigente y la aceptación histórica habilitan pagos; no exigir un consentimiento duplicado por una marca vacía.
