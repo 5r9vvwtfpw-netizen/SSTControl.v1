@@ -99,6 +99,7 @@ const roleLabels: Record<string, string> = {
   superusuario: "Super Usuario",
   admin: "Administrador",
   lso: "LSO",
+  lso_externo: "LSO externo",
   coordinador_sst: "Coordinador SST",
   responsable_sst: "Responsable SST",
   trabajador: "Trabajador",
@@ -214,7 +215,12 @@ export default function MensajesInternos() {
   }, [selectedVaultCompanyId, companyMap]);
 
   // Fetch recipients - always fetch to ensure data is available
-  const { data: recipients, isLoading: recipientsLoading } = useQuery<Recipient[]>({
+  const {
+    data: recipients,
+    isLoading: recipientsLoading,
+    isError: recipientsError,
+    refetch: refetchRecipients,
+  } = useQuery<Recipient[]>({
     queryKey: ["/api/internal-messages/recipients"],
     staleTime: 0,
     refetchOnMount: true,
@@ -717,6 +723,15 @@ export default function MensajesInternos() {
             </DialogDescription>
           </DialogHeader>
 
+          {recipientsError && (
+            <div role="alert" className="text-sm text-destructive">
+              <p>No se pudieron cargar los destinatarios. Reintenta antes de enviar el mensaje.</p>
+              <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => void refetchRecipients()}>
+                Reintentar
+              </Button>
+            </div>
+          )}
+
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               {isLso && (
@@ -746,7 +761,7 @@ export default function MensajesInternos() {
                 </div>
               )}
 
-              {isLso && selectedCompanyFilter && !form.watch("receiverId") && !recipientsLoading && (
+              {isLso && selectedCompanyFilter && !form.watch("receiverId") && !recipientsLoading && !recipientsError && (
                 <p className="text-sm text-destructive">
                   Esta empresa no tiene una cuenta administrativa para recibir mensajes.
                 </p>
@@ -763,7 +778,7 @@ export default function MensajesInternos() {
                     <Select 
                       onValueChange={field.onChange} 
                       value={field.value}
-                      disabled={false}
+                      disabled={recipientsLoading || recipientsError}
                     >
                       <FormControl>
                         <SelectTrigger data-testid="select-recipient">
@@ -774,6 +789,10 @@ export default function MensajesInternos() {
                         {recipientsLoading ? (
                           <SelectItem value="_loading" disabled>
                             Cargando...
+                          </SelectItem>
+                        ) : recipientsError ? (
+                          <SelectItem value="_error" disabled>
+                            No se pudieron cargar los destinatarios
                           </SelectItem>
                         ) : filteredRecipients?.length === 0 ? (
                           <SelectItem value="_empty" disabled>
@@ -869,7 +888,7 @@ export default function MensajesInternos() {
                 </Button>
                 <Button
                   type="submit"
-                  disabled={sendMessageMutation.isPending || (isLso && !form.watch("receiverId"))}
+                  disabled={sendMessageMutation.isPending || recipientsLoading || recipientsError || (isLso && !form.watch("receiverId"))}
                   data-testid="button-send-message"
                 >
                   {sendMessageMutation.isPending ? (

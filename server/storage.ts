@@ -14919,7 +14919,9 @@ export class DbStorage implements IStorage {
         and(
           eq(schema.licensedProfessionalAssignments.companyId, companyId),
           eq(schema.licensedProfessionalAssignments.isActive, true),
-          inArray(schema.users.role, ['lso', 'lso_externo'])
+          // Older production enums may not contain lso_externo. Compare as text
+          // so that a missing enum label cannot hide the actively assigned LSO.
+          inArray(sql<string>`${schema.users.role}::text`, ['lso', 'lso_externo'])
         )
       );
       const uniqueLsos = new Map<string, typeof assignedLsos[0]>();
