@@ -29,7 +29,9 @@ export class WorkerBillingQuoteError extends Error {}
  * established, the latest approved transaction's created_at is the coverage
  * snapshot, so registrations made between initiation and approval are retained.
  * Retirees are included when they retired at/after the next cycle boundary, or
- * entered the app after the last paid coverage snapshot.
+ * entered the app after the last paid coverage snapshot. An administrative
+ * coverage cutoff can preserve a confirmed prior-cycle boundary when reopening
+ * a manual payment; it is not payment evidence and never overrides approved PSE.
  */
 export async function getVerifiedWorkerBillingQuote(
   company: { id: string; name: string; quoteCouponCode?: string | null },
@@ -53,8 +55,13 @@ export async function getVerifiedWorkerBillingQuote(
           ORDER BY p.created_at DESC
           LIMIT 1
         )
-        WHEN s.status = 'active' THEN s.current_period_end
-        ELSE s.current_period_start
+        ELSE COALESCE(
+          NULLIF(s.metadata->>'workerBillingCoverageCutoff', '')::timestamp,
+          CASE
+            WHEN s.status = 'active' THEN s.current_period_end
+            ELSE s.current_period_start
+          END
+        )
       END AS billing_cutoff
     FROM subscriptions s
     WHERE s.id = ${subscriptionId} AND s.company_id = ${company.id}

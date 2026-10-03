@@ -14,3 +14,9 @@ Al pasar de pagos por transferencia externa a PSE, tratar la fecha de fin del pe
 **Why:** Una confirmación bancaria puede llegar después de que se registró y retiró un trabajador; usar la aprobación como límite haría que su alta se perdiera entre ciclos. También sería incorrecto cobrar otra vez los retiros anteriores a la transición.
 
 **How to apply:** Separar la cobertura externa del primer PSE y conservar la fecha de instantánea de cada pago para el ciclo siguiente. No reescribir transacciones pendientes ni pagos confirmados al actualizar la plantilla de cotización.
+
+Al reabrir administrativamente un pago, conservar el límite de conteo del ciclo que el usuario confirmó. Cambiar la suscripción de activa a vencida no debe volver a incluir retiros de ciclos anteriores. Un límite administrativo de conteo no acredita pago, no extiende la licencia y nunca reemplaza la instantánea de un PSE aprobado.
+
+**Why:** Al reabrir una mensualidad, el cálculo dependiente del estado podía usar el inicio del período anterior y sumar otra vez a un trabajador retirado antes del ciclo solicitado.
+
+**How to apply:** Confirmar las fechas y el alcance del ajuste, conservar el límite sin inventar fechas de pago y comprobar el importe con el mismo cálculo verificado que inicia PSE. Distinguir la actualización de datos en producción de una corrección de cálculo que todavía requiere publicación.
