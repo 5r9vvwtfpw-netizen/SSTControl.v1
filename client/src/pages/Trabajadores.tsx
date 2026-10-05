@@ -594,7 +594,7 @@ export default function Trabajadores() {
       if (data?.overageWarning) {
         toast({
           title: "Trabajador registrado",
-          description: "Este trabajador adicional se reflejará como cobro extra en tu próxima factura.",
+          description: "Se incluirá en la cotización del próximo pago PSE. Si se retira durante este ciclo, se conserva el cobro de este período.",
           className: "bg-orange-50 border-orange-200",
           duration: 7000,
         });
@@ -1745,7 +1745,7 @@ export default function Trabajadores() {
                     <Alert className="border-orange-200 bg-orange-50 dark:bg-orange-950/30 dark:border-orange-800">
                       <AlertCircle className="h-4 w-4 text-orange-600 dark:text-orange-400" />
                       <AlertDescription className="text-orange-800 dark:text-orange-300 text-sm">
-                        Su plan incluye <strong>{workersPurchased} trabajador{workersPurchased !== 1 ? "es" : ""}</strong> y ya tiene <strong>{activeWorkerCount}</strong> registrados. Este trabajador adicional generará un cobro extra en su próxima factura.
+                        Su plan incluye <strong>{workersPurchased} trabajador{workersPurchased !== 1 ? "es" : ""}</strong> y ya tiene <strong>{activeWorkerCount}</strong> registrados. Este trabajador se incluirá en la cotización del próximo pago PSE. Si se retira durante este ciclo, se conserva el cobro de este período.
                       </AlertDescription>
                     </Alert>
                   );
@@ -1756,7 +1756,7 @@ export default function Trabajadores() {
                     <Alert className="border-green-200 bg-green-50 dark:bg-green-950/30 dark:border-green-800">
                       <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
                       <AlertDescription className="text-green-800 dark:text-green-300 text-sm">
-                        Tiene <strong>{activeWorkerCount}</strong> de <strong>{workersPurchased}</strong> trabajadores registrados en su plan. Este trabajador está incluido — <strong>sin costo adicional</strong>.
+                        Tiene <strong>{activeWorkerCount}</strong> de <strong>{workersPurchased}</strong> trabajadores registrados en su plan. Aunque hay un cupo disponible, este trabajador se incluirá en el cálculo por trabajador del próximo pago PSE. Si se retira durante este ciclo, se conserva el cobro de este período.
                       </AlertDescription>
                     </Alert>
                   );
@@ -1767,7 +1767,7 @@ export default function Trabajadores() {
                   <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-950/30 dark:border-blue-800">
                     <AlertCircle className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                     <AlertDescription className="text-blue-800 dark:text-blue-300 text-sm">
-                      Su empresa tiene actualmente <strong>{activeWorkerCount} trabajador{activeWorkerCount !== 1 ? "es" : ""}</strong>. Al registrar este nuevo trabajador pasará a <strong>{newTotal}</strong>.
+                      Su empresa tiene actualmente <strong>{activeWorkerCount} trabajador{activeWorkerCount !== 1 ? "es" : ""}</strong>. Al registrar este nuevo trabajador pasará a <strong>{newTotal}</strong> y se incluirá en la cotización del próximo pago PSE, aunque se retire durante este ciclo.
                     </AlertDescription>
                   </Alert>
                 );
