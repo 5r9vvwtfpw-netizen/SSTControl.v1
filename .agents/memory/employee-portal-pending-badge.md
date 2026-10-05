@@ -7,4 +7,8 @@ La campana del Portal de Empleados, el distintivo de la PWA instalada y los Web 
 
 **Why:** Contadores separados o parciales hacen que el empleado no sepa que debe entrar al portal; sumar módulos históricos, informativos o voluntarios genera alertas que nunca puede limpiar.
 
+Las invitaciones de capacitación vencidas, completadas o canceladas no cuentan como obligaciones pendientes, aunque el registro del invitado siga sin confirmar. La vigencia se interpreta en hora de Colombia y debe coincidir con la disponibilidad del botón Confirmar. Conservar el historial sin cambiar la asistencia registrada.
+
+**Why:** El usuario aprobó eliminar del contador las capacitaciones que el trabajador ya no puede confirmar; no corresponde resolver la alerta atribuyendo asistencia ni borrando registros.
+
 **How to apply:** Toda categoría nueva con una acción obligatoria y accesible desde el Portal de Empleados debe incorporarse al cálculo central y sus eventos deben enviar Web Push con el total absoluto. No usar incrementos locales, contar simples listados ni incluir Mensajes Internos. En iPhone/iPad, un contador correcto no aparece en el icono hasta que la PWA instalada tenga habilitados Notificaciones y Distintivos; al activar el permiso se debe resincronizar el total por navigator y por el registro del service worker.

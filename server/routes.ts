@@ -39145,6 +39145,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         duracionHoras: number | null;
         normativa: string | null;
         estado: string;
+        estadoEvento: string;
         asistenciaId: string;
         source: 'programa' | 'legacy';
         contentType?: string | null;
@@ -39174,6 +39175,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
             duracionHoras: evento.duracionHoras,
             normativa: evento.normativa,
             estado: asistencia.estado,
+            estadoEvento: evento.estado,
             asistenciaId: asistencia.id,
             source: 'programa',
             contentType: evento.archivoUrl ? 'archivo' : 'presencial',
@@ -39207,6 +39209,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
             duracionHoras: null,
             normativa: null,
             estado: attendee.attended ? 'asistio' : (attendee.confirmed ? 'confirmado' : 'invitado'),
+            estadoEvento: training.status,
             asistenciaId: attendee.id,
             source: 'legacy',
             contentType: training.contentType ?? 'presencial',
@@ -39249,15 +39252,16 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
               categoria: 'seguridad-vial', // This triggers the PESV traceability banner
               fechaInicio: dateStr,
               fechaFin: null,
-              horaInicio: null,
-              horaFin: null,
+              horaInicio: training.startTime || null,
+              horaFin: training.endTime || null,
               lugar: training.location || null,
               instructor: training.instructor || null,
                duracionHoras: 4,
               normativa: 'Resolución 40595/2022 - Plan Estratégico de Seguridad Vial',
-              estado: myAttendance.attended === 1
+              estado: myAttendance.attended === 1 || workerInvitation?.attended === 1
                 ? 'asistio'
                 : (workerInvitation?.confirmedAt ? 'confirmado' : 'invitado'),
+              estadoEvento: training.status,
               asistenciaId: workerInvitation?.id || myAttendance.id,
               source: 'programa',
               contentType: training.contentType ?? 'presencial',
@@ -39291,13 +39295,14 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
               categoria: 'seguridad-vial',
               fechaInicio: dateStr,
               fechaFin: null,
-              horaInicio: null,
-              horaFin: null,
+              horaInicio: training.startTime || null,
+              horaFin: training.endTime || null,
               lugar: training.location || null,
               instructor: training.instructor || null,
               duracionHoras: 4,
               normativa: 'Resolución 40595/2022 - Plan Estratégico de Seguridad Vial',
               estado: inv.attended ? 'asistio' : (inv.confirmedAt ? 'confirmado' : 'invitado'),
+              estadoEvento: training.status,
               asistenciaId: inv.id,
               source: 'programa',
               contentType: training.contentType ?? 'presencial',

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { isTrainingConfirmationOpen } from "@shared/training-confirmation-window";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { formatCurrency, getTodayDateString } from "@/lib/utils/formatters";
@@ -2326,6 +2327,7 @@ interface WorkerCapacitacion {
   duracionHoras: number | null;
   normativa: string | null;
   estado: string;
+  estadoEvento: string;
   asistenciaId: string;
   contentType: string | null;
   contentUrl: string | null;
@@ -2364,6 +2366,7 @@ function MisCapacitacionesTab() {
       apiRequest("POST", `/api/portal/capacitaciones/${asistenciaId}/confirmar`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/portal/mis-capacitaciones"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/portal/worker/pesv-capacitaciones"] });
       queryClient.invalidateQueries({ queryKey: ["/api/portal/notification-count"] });
       toast({
         title: "Asistencia confirmada",
@@ -2420,18 +2423,13 @@ function MisCapacitacionesTab() {
               {pendientes.map((cap) => {
                 const estadoInfo = estadoLabels[cap.estado] || { label: cap.estado, color: "bg-gray-600" };
                 const fechaEvento = new Date(cap.fechaInicio);
-                // Consider event time for "future" check - if event has horaFin, use that; otherwise use end of day
-                let fechaFinEvento = new Date(cap.fechaInicio);
-                if (cap.horaFin) {
-                  const [hh, mm] = cap.horaFin.split(':').map(Number);
-                  fechaFinEvento.setHours(hh || 23, mm || 59, 59);
-                } else if (cap.horaInicio) {
-                  const [hh, mm] = cap.horaInicio.split(':').map(Number);
-                  fechaFinEvento.setHours((hh || 0) + 2, mm || 0, 0); // Assume 2 hour duration
-                } else {
-                  fechaFinEvento.setHours(23, 59, 59);
-                }
-                const esFuturo = fechaFinEvento > new Date();
+                const esFuturo = isTrainingConfirmationOpen({
+                  date: cap.fechaInicio,
+                  endDate: cap.fechaFin,
+                  startTime: cap.horaInicio,
+                  endTime: cap.horaFin,
+                  status: cap.estadoEvento,
+                });
                 
                 return (
                   <Card key={cap.asistenciaId} data-testid={`card-capacitacion-${cap.asistenciaId}`}>
@@ -5336,6 +5334,7 @@ function MisCapacitacionesPesvTab() {
       apiRequest("POST", `/api/portal/pesv-capacitaciones/${attendeeId}/confirmar`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/portal/worker/pesv-capacitaciones"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/portal/mis-capacitaciones"] });
       queryClient.invalidateQueries({ queryKey: ["/api/portal/notification-count"] });
       toast({ title: "Asistencia confirmada", description: "Ha confirmado su asistencia a la capacitación PESV." });
     },
@@ -5389,17 +5388,12 @@ function MisCapacitacionesPesvTab() {
             <div className="space-y-4">
               {pendientes.map((cap) => {
                 const fechaEvento = new Date(cap.fecha);
-                let fechaFinEvento = new Date(cap.fecha);
-                if (cap.horaFin) {
-                  const [hh, mm] = cap.horaFin.split(':').map(Number);
-                  fechaFinEvento.setHours(hh || 23, mm || 59, 59);
-                } else if (cap.horaInicio) {
-                  const [hh, mm] = cap.horaInicio.split(':').map(Number);
-                  fechaFinEvento.setHours((hh || 0) + 2, mm || 0, 0);
-                } else {
-                  fechaFinEvento.setHours(23, 59, 59);
-                }
-                const esFuturo = fechaFinEvento > new Date();
+                const esFuturo = isTrainingConfirmationOpen({
+                  date: cap.fecha,
+                  startTime: cap.horaInicio,
+                  endTime: cap.horaFin,
+                  status: cap.estado,
+                });
                 const yaConfirmado = !!cap.confirmadoEn;
 
                 return (

@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import { db } from "../db";
+import { trainingConfirmationOpenSql } from "./training-confirmation-window";
 
 export type PortalPendingCount = {
   messages: number;
@@ -69,6 +70,7 @@ export async function getPortalPendingCount(
       JOIN capacitacion_eventos ce ON ce.id = ca.evento_id
       JOIN resolved_worker rw ON rw.worker_id = ca.worker_id
       WHERE ce.company_id = ${companyId} AND ca.estado = 'invitado'
+        AND ${trainingConfirmationOpenSql(sql`COALESCE(ce.fecha_fin, ce.fecha_inicio)`, sql`ce.hora_inicio`, sql`ce.hora_fin`, sql`ce.estado`)}
 
       UNION
 
@@ -79,6 +81,7 @@ export async function getPortalPendingCount(
       WHERE t.company_id = ${companyId}
         AND ta.attended = 0
         AND ta.confirmed = 0
+        AND ${trainingConfirmationOpenSql(sql`t.date`, sql`t.start_time`, sql`t.end_time`, sql`t.status`)}
 
       UNION
 
@@ -90,6 +93,7 @@ export async function getPortalPendingCount(
         AND rwa.invited = 1
         AND rwa.attended = 0
         AND rwa.confirmed_at IS NULL
+        AND ${trainingConfirmationOpenSql(sql`rst.training_date`, sql`rst.start_time`, sql`rst.end_time`, sql`rst.status`)}
 
       UNION
 
@@ -99,12 +103,13 @@ export async function getPortalPendingCount(
       JOIN worker_driver wd ON wd.id = rsa.driver_id
       WHERE rst.company_id = ${companyId}
         AND rsa.attended = 0
+        AND ${trainingConfirmationOpenSql(sql`rst.training_date`, sql`rst.start_time`, sql`rst.end_time`, sql`rst.status`)}
         AND NOT EXISTS (
           SELECT 1
           FROM road_safety_worker_attendees rwa
           JOIN resolved_worker rw ON rw.worker_id = rwa.worker_id
           WHERE rwa.training_id = rsa.training_id
-            AND rwa.confirmed_at IS NOT NULL
+            AND (rwa.confirmed_at IS NOT NULL OR rwa.attended = 1)
         )
     )
     SELECT
