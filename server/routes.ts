@@ -47,6 +47,7 @@ import companyCreationDiagnosticRoutes from "./routes/company-creation-diagnosti
 import writeTestDiagnosticRoutes from "./routes/write-test-diagnostic";
 import { registerSubscriptionCheckRoutes } from "./routes/subscription-check";
 import { registerLicensedProfessionalsRoutes } from "./routes/licensed-professionals";
+import { denySuspendedLsoCompany, getSuspendedCompanyIds } from "./middleware/lso-company-suspension";
 import { registerRiesgosVinculacionRoutes } from "./routes/riesgos-vinculacion";
 import { registerAdminPortalsRoutes } from "./routes/admin-portals";
 import { registerNgoWebhookRoutes } from "./routes/ngo-webhook";
@@ -1529,7 +1530,7 @@ function getRoleCredentialLabel(role: UserRole): string | undefined {
  * Verifica que un LSO tenga asignación activa a la empresa indicada.
  * Úsase en todos los endpoints donde userRole === 'lso' actúa como admin.
  */
-async function assertLsoAssignedToCompany(userId: string, companyId: string): Promise<boolean> {
+async function assertLsoAssignedToCompany(userId: string, companyId: string, checkSuspension = true): Promise<boolean> {
   const [asgn] = await db.select({ id: schema.licensedProfessionalAssignments.id })
     .from(schema.licensedProfessionalAssignments)
     .where(and(
@@ -1537,7 +1538,9 @@ async function assertLsoAssignedToCompany(userId: string, companyId: string): Pr
       eq(schema.licensedProfessionalAssignments.companyId, companyId),
       eq(schema.licensedProfessionalAssignments.isActive, true)
     ));
-  return !!asgn;
+  // Resource-by-ID handlers must also check the actual owner, even when the
+  // requester supplied an unrelated active company in X-Company-Id.
+  return !!asgn && (!checkSuspension || !(await getSuspendedCompanyIds([companyId])).has(companyId));
 }
 
 /**
@@ -1719,7 +1722,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Validate tenant selection once for every subsequent API route. LSO users
   // may only act in companies where they have an active assignment.
-  app.use("/api", async (req, res, next) => {
+  app.use(["/api", "/objects", "/uploads"], async (req, res, next) => {
     const user = req.user;
     if (!user || (user.role !== "lso" && user.role !== "lso_externo")) {
       return next();
@@ -1761,9 +1764,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
-      if (!(await assertLsoAssignedToCompany(user.id, selectedCompanyId))) {
+      if (!(await assertLsoAssignedToCompany(user.id, selectedCompanyId, false))) {
         return res.status(403).json({ error: "No tiene una asignación activa para esta empresa" });
       }
+      if (await denySuspendedLsoCompany(user.role, selectedCompanyId, res)) return;
     } catch (error) {
       return next(error);
     }
@@ -1919,6 +1923,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         /\/(?:curso-50-horas|afiliaciones|alto-riesgo|logos|signatures|documentos|programas-capacitacion|copasst-actas|convivencia-actas|worker-photos|ticket-attachments)\/([^/]+)\//
       );
       const pathCompanyId = companyIdMatch?.[1] || null;
+      if (pathCompanyId && req.user &&
+          await denySuspendedLsoCompany(req.user.role, pathCompanyId, res)) return;
 
       // New uploads include companyId in their path. Reject cross-company access.
       // Legacy UUID-only paths remain available to authenticated users for compatibility.
@@ -2986,6 +2992,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/companies/:id", requirePermission("companies:view"), async (req, res) => {
+    if (req.user && await denySuspendedLsoCompany(req.user.role, req.params.id, res)) return;
     const company = await storage.getCompany(req.params.id);
     if (!company) {
       return res.status(404).send("Empresa no encontrada");
@@ -48748,6 +48755,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       }
       
       // Security: Soporte role must have active access session to receiver's company
+      if (senderIsLso && receiver.companyId &&
+          await denySuspendedLsoCompany(user.role, receiver.companyId, res)) return;
+
       // Superadmin has global access so no session check needed
       if (user.role === 'soporte' && receiver.companyId) {
         const activeSession = await storage.getActiveSupportAccessSession(user.id, receiver.companyId);

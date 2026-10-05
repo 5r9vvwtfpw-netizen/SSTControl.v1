@@ -8,7 +8,7 @@
 - [Production DB tool vs AWS RDS](production-db-tool-vs-aws-rds.md) — the production database skill's executeSql hits the wrong DB for this app; query real AWS RDS prod via a bash-run pg script instead.
 - [Compatibilidad de enums de roles](postgres-enum-compatibility.md) — el enum de AWS RDS puede carecer de roles que el código reconoce; filtros de lectura deben tolerar etiquetas ausentes.
 - [Subscription grace period](subscription-grace-period.md) — expired subscriptions don't auto-block; a daily cron with a configurable grace period flips status to past_due after current_period_end.
-- [LSO and worker portals are free](free-portals-lso-trabajador.md) — roles lso/lso_externo/trabajador must be exempt from every subscription-block check (frontend + backend); several duplicate exemption lists exist and drift out of sync.
+- [Portales gratuitos y suspensión LSO](free-portals-lso-trabajador.md) — sin bloqueo de cuenta por cobro; superadmin sí puede suspender el acceso LSO a una empresa, manteniendo las otras.
 - [CIIU automation entry points](ciiu-automation-entry-points.md) — every company create/update path must explicitly call prepareCompanyWithCiiuAutomation or riskLevel silently defaults to "I", misclassifying SST standards (pricing is unaffected, it's worker-count only).
 - [IPER CIIU integration boundary](iperc-ciiu-integration.md) — CIIU classification sets risk/standards; IPER must separately merge four-code suggestions and let the user confirm each concrete hazard.
 - [Accounting sync test-company exclusion](accounting-test-company-exclusion.md) — hardcoded companyId allowlist skips Cloud Books sync for demo/test companies; must be checked in all 3 send sites plus the retry query.

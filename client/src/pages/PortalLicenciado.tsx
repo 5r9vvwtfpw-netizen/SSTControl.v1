@@ -99,6 +99,7 @@ interface AssignedCompany {
   porcentajeSst: number | null;
   nivelCumplimiento: string | null;
   subscriptionBlocked: boolean;
+  companySuspended: boolean;
   lastActivity: string | null;
   adminUserId: string | null;
   adminFullName: string | null;
@@ -1078,6 +1079,8 @@ function EmpresasTab() {
   const [, setLocation] = useLocation();
   const { data: empresas = [], isLoading, isError, error } = useQuery<AssignedCompany[]>({
     queryKey: ["/api/portal-licenciado/empresas"],
+    refetchInterval: 15_000,
+    refetchOnWindowFocus: "always",
   });
 
   const { data: historial = [] } = useQuery<HistorialEmpresa[]>({
@@ -1223,7 +1226,7 @@ function EmpresasTab() {
                           {empresa.subscriptionBlocked && (
                             <Badge variant="secondary" className="text-xs gap-1" data-testid={`badge-blocked-${empresa.id}`}>
                               <Info className="h-3 w-3" />
-                              Acceso suspendido
+                              {empresa.companySuspended ? "Empresa suspendida" : "Acceso suspendido"}
                             </Badge>
                           )}
                         </div>
@@ -1260,7 +1263,11 @@ function EmpresasTab() {
                         </span>
                       </TableCell>
                       <TableCell className="sticky right-0 z-10 min-w-[360px] border-l bg-background shadow-[-8px_0_12px_-12px_rgba(0,0,0,0.35)]">
-                        <div className="grid w-[336px] grid-cols-2 gap-2">
+                        <fieldset
+                          disabled={empresa.companySuspended}
+                          className="grid w-[336px] grid-cols-2 gap-2 disabled:opacity-50"
+                          aria-label={empresa.companySuspended ? "Empresa suspendida: acciones no disponibles" : `Acciones de ${empresa.name}`}
+                        >
                           <Button
                             size="sm"
                             variant="outline"
@@ -1321,7 +1328,7 @@ function EmpresasTab() {
                             <MessageSquare className="h-4 w-4 mr-1" />
                             Enviar mensaje
                           </Button>
-                        </div>
+                        </fieldset>
                       </TableCell>
                     </TableRow>
                   ))}

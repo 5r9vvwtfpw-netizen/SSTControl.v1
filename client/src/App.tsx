@@ -63,6 +63,7 @@ import { PHVANavigation } from "@/components/PHVANavigation";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 import { useWebSocketNotifications } from "@/hooks/use-websocket-notifications";
 import { CompanyProvider, useCompanyContext } from "@/hooks/use-company-context";
+import { LsoCompanyAccessBoundary } from "@/components/LsoCompanyAccessBoundary";
 import { ProtectedRoute } from "@/lib/protected-route";
 import { SubscriptionProtectedRoute } from "@/lib/subscription-protected-route";
 import { Button } from "@/components/ui/button";
@@ -667,7 +668,9 @@ function AuthenticatedLayout() {
   if (user.role === "lso" || user.role === "lso_externo") {
     return (
       <SubscriptionGate>
-        <AdminLayout />
+        <LsoCompanyAccessBoundary>
+          <AdminLayout />
+        </LsoCompanyAccessBoundary>
       </SubscriptionGate>
     );
   }

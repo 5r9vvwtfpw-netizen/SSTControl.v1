@@ -16,8 +16,10 @@ import { notifyNewMessage } from "../websocket";
 import { generateLsoManagementReport } from "../services/lso-management-report";
 import { terminateLsoAssignment, activateLsoAssignment } from "../services/lso-management-report-archive";
 import { canAccessLsoArchive } from "../services/lso-management-report-policy";
+import { denySuspendedLsoCompany, excludeSuspendedCompanies, getSuspendedCompanyIds } from "../middleware/lso-company-suspension";
+import type { PgTable, AnyPgColumn } from "drizzle-orm/pg-core";
 
-async function shouldIncludeFallbackCompany(userId: string, companyId: string): Promise<boolean> {
+async function shouldIncludeFallbackCompany(userId: string, companyId: string, includeSuspended = false): Promise<boolean> {
   const [wasUnassigned] = await db.select({ id: schema.licensedProfessionalAssignments.id })
     .from(schema.licensedProfessionalAssignments)
     .where(and(
@@ -26,7 +28,7 @@ async function shouldIncludeFallbackCompany(userId: string, companyId: string): 
       eq(schema.licensedProfessionalAssignments.isActive, false)
     ))
     .limit(1);
-  return !wasUnassigned;
+  return !wasUnassigned && (includeSuspended || !(await getSuspendedCompanyIds([companyId])).has(companyId));
 }
 
 async function notifyLsoRemoval(assignment: any, companyId: string) {
@@ -194,6 +196,47 @@ function hasContradictoryCompanyContext(req: Request, companyId: string, explici
 }
 
 export function registerLicensedProfessionalsRoutes(app: Express) {
+  // Portal bootstrap/list routes intentionally bypass the selected-company
+  // middleware. Resolve the actual document owner here, never a browser header.
+  const documentTables: Record<string, PgTable & { id: AnyPgColumn; companyId: AnyPgColumn }> = {
+    investigacion: schema.accidentInvestigations,
+    designacion: schema.responsibleDesignations,
+    "evaluacion-sst": schema.evaluacionesSst,
+    "plan-trabajo": schema.planesTrabajoAnual,
+    "matriz-iperc": schema.matricesIperc,
+    "programa-capacitacion": schema.programasCapacitacion,
+    "objetivo-sst": schema.objetivosSst,
+  };
+  app.use(["/api/portal-licenciado", "/api/lso-management-report-archives"], async (req, res, next) => {
+    const user = req.user;
+    if (!user || !["lso", "lso_externo"].includes(user.role)) return next();
+    try {
+      const parts = req.path.split("/").filter(Boolean);
+      let companyId: string | undefined;
+      let table = documentTables[parts[0]];
+      let id = parts[1];
+      if (parts[0] === "empresa" || parts[0] === "matrices-iperc-empresa") {
+        companyId = parts[1];
+      } else {
+        if (parts[0] === "pesv" && parts[1] === "evaluaciones" && parts[2]) {
+          table = schema.evaluacionesPesv;
+          id = parts[2];
+        } else if (req.baseUrl === "/api/lso-management-report-archives" && parts[1] === "download") {
+          table = schema.lsoManagementReportArchives;
+          id = parts[0];
+        }
+        if (table && id) {
+          const [document] = await db.select({ companyId: table.companyId }).from(table)
+            .where(eq(table.id, id)).limit(1);
+          companyId = typeof document?.companyId === "string" ? document.companyId : undefined;
+        }
+      }
+      if (companyId && await denySuspendedLsoCompany(user.role, companyId, res)) return;
+      next();
+    } catch (error) {
+      next(error);
+    }
+  });
 
   // GET /api/licensed-professionals - List all licensed professionals (users with role='lso')
   app.get("/api/licensed-professionals", requirePermission("licensed_professionals:view"), async (req, res) => {
@@ -530,7 +573,10 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
       }).from(schema.lsoManagementReportArchives)
         .where(conditions.length ? and(...conditions) : undefined)
         .orderBy(desc(schema.lsoManagementReportArchives.terminatedAt));
-      res.json(archives);
+      const suspended = ["lso", "lso_externo"].includes(user.role)
+        ? await getSuspendedCompanyIds(archives.map(archive => archive.companyId))
+        : new Set<string>();
+      res.json(archives.filter(archive => !suspended.has(archive.companyId)));
     } catch (error: any) {
       res.status(500).json({ error: "Error al obtener archivos de cierre LSO" });
     }
@@ -566,8 +612,8 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
           eq(schema.licensedProfessionalAssignments.isActive, true)
         ));
       
-      const companyIds = assignments.map(a => a.companyId);
-      if (companyIds.length === 0 && user.companyId) {
+      const companyIds = await excludeSuspendedCompanies(assignments.map(a => a.companyId));
+      if (assignments.length === 0 && user.companyId) {
         if (await shouldIncludeFallbackCompany(user.id, user.companyId)) {
           companyIds.push(user.companyId);
         }
@@ -621,7 +667,8 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
       }
       
       res.json({
-        totalAssignedCompanies: companyIds.length,
+        totalAssignedCompanies: assignments.length ||
+          (user.companyId && await shouldIncludeFallbackCompany(user.id, user.companyId, true) ? 1 : 0),
         pendingDocuments,
         signedDocuments,
         licenseStatus,
@@ -721,7 +768,21 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
         }
       }
 
+      const suspendedCompanyIds = await getSuspendedCompanyIds(empresas.map(empresa => empresa.id));
       const enriched = await Promise.all(empresas.map(async (empresa) => {
+        // Keep the assignment visible, but do not expose operational data.
+        if (suspendedCompanyIds.has(empresa.id)) {
+          return {
+            ...empresa,
+            companySuspended: true,
+            subscriptionBlocked: true,
+            porcentajeSst: null,
+            nivelCumplimiento: null,
+            lastActivity: null,
+            adminUserId: null,
+            adminFullName: null,
+          };
+        }
         let porcentajeSst: number | null = null;
         let nivelCumplimiento: string | null = null;
         let subscriptionBlocked = false;
@@ -795,6 +856,7 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
           porcentajeSst,
           nivelCumplimiento,
           subscriptionBlocked,
+          companySuspended: false,
           lastActivity,
           adminUserId,
           adminFullName,
@@ -830,7 +892,8 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
       ))
       .orderBy(desc(schema.licensedProfessionalAssignments.unassignedAt));
 
-      res.json(historial);
+      const suspended = await getSuspendedCompanyIds(historial.map(empresa => empresa.id));
+      res.json(historial.filter(empresa => !suspended.has(empresa.id)));
     } catch (error: any) {
       console.error('[GET /api/portal-licenciado/empresas-historial] Error:', error.message);
       res.status(500).json({ message: "Error fetching company history", error: error.message });
@@ -850,8 +913,8 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
           eq(schema.licensedProfessionalAssignments.isActive, true)
         ));
       
-      const companyIds = assignments.map(a => a.companyId);
-      if (companyIds.length === 0 && user.companyId) {
+      const companyIds = await excludeSuspendedCompanies(assignments.map(a => a.companyId));
+      if (assignments.length === 0 && user.companyId) {
         if (await shouldIncludeFallbackCompany(user.id, user.companyId)) {
           companyIds.push(user.companyId);
         }
@@ -1085,8 +1148,8 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
           eq(schema.licensedProfessionalAssignments.userId, user.id),
           eq(schema.licensedProfessionalAssignments.isActive, true)
         ));
-      const companyIds = assignments.map(a => a.companyId);
-      if (companyIds.length === 0 && user.companyId) {
+      const companyIds = await excludeSuspendedCompanies(assignments.map(a => a.companyId));
+      if (assignments.length === 0 && user.companyId) {
         if (await shouldIncludeFallbackCompany(user.id, user.companyId)) {
           companyIds.push(user.companyId);
         }
@@ -1522,8 +1585,8 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
           eq(schema.licensedProfessionalAssignments.isActive, true)
         ));
       
-      const companyIds = assignments.map(a => a.companyId);
-      if (companyIds.length === 0 && user.companyId) {
+      const companyIds = await excludeSuspendedCompanies(assignments.map(a => a.companyId));
+      if (assignments.length === 0 && user.companyId) {
         if (await shouldIncludeFallbackCompany(user.id, user.companyId)) {
           companyIds.push(user.companyId);
         }
@@ -1703,8 +1766,8 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
           eq(schema.licensedProfessionalAssignments.isActive, true)
         ));
 
-      const companyIds = assignments.map(a => a.companyId);
-      if (companyIds.length === 0 && user.companyId) {
+      const companyIds = await excludeSuspendedCompanies(assignments.map(a => a.companyId));
+      if (assignments.length === 0 && user.companyId) {
         const [wasUnassigned] = await db.select({ id: schema.licensedProfessionalAssignments.id })
           .from(schema.licensedProfessionalAssignments)
           .where(and(
@@ -1714,7 +1777,9 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
           ))
           .limit(1);
         if (!wasUnassigned) {
-          companyIds.push(user.companyId);
+          if (!(await getSuspendedCompanyIds([user.companyId])).has(user.companyId)) {
+            companyIds.push(user.companyId);
+          }
         }
       }
       if (companyIds.length === 0) {
