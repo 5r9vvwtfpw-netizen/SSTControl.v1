@@ -55,7 +55,7 @@ interface DashboardVerificarStats {
       alta: number;
       critica: number;
     };
-    porcentajeConformidad: number;
+    porcentajeConformidad: number | null;
   };
   revisiones: {
     totalAnio: number;

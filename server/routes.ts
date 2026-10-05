@@ -36591,6 +36591,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!companyId) return res.status(401).json({ error: "No autorizado" });
       
       const year = req.query.year ? parseInt(req.query.year as string) : new Date().getFullYear();
+      if (req.query.year && (!/^\d{4}$/.test(String(req.query.year)) || year < 2020 || year > 2100)) {
+        return res.status(400).json({ error: "El año debe estar entre 2020 y 2100." });
+      }
       const dashboard = await storage.getDashboardVerificar(companyId, year);
       res.json(dashboard);
     } catch (error: any) {

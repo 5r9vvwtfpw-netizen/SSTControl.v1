@@ -1,4 +1,5 @@
 import { drizzle as drizzleNeon } from "drizzle-orm/neon-serverless";
+import { getVerificarPeriod } from "./services/dashboard-verificar-period";
 import { drizzle as drizzlePg } from "drizzle-orm/node-postgres";
 import { Pool as NeonPool, neonConfig } from "@neondatabase/serverless";
 import { Pool as PgPool } from "pg";
@@ -1225,6 +1226,7 @@ export interface IStorage {
   // Dashboard VERIFICAR - Indicadores SG-SST (PHVA cycle)
   // ========================================
   getDashboardVerificar(companyId: string, year?: number): Promise<{
+    periodo: { anio: number; ultimoMes: string };
     objetivos: {
       total: number;
       activos: number;
@@ -1241,6 +1243,7 @@ export interface IStorage {
       proceso: number;
       resultado: number;
       ultimasMediciones: number;
+      indicadoresConMedicion: number;
     };
     auditorias: {
       totalAnio: number;
@@ -1253,7 +1256,9 @@ export interface IStorage {
         alta: number;
         critica: number;
       };
-      porcentajeConformidad: number;
+      porcentajeConformidad: number | null;
+      conResultado: number;
+      sinResultado: number;
     };
     revisiones: {
       totalAnio: number;
@@ -9630,6 +9635,7 @@ export class DbStorage implements IStorage {
   // Dashboard VERIFICAR - Indicadores SG-SST
   // ========================================
   async getDashboardVerificar(companyId: string, year: number = new Date().getFullYear()): Promise<{
+    periodo: { anio: number; ultimoMes: string };
     objetivos: {
       total: number;
       activos: number;
@@ -9646,6 +9652,7 @@ export class DbStorage implements IStorage {
       proceso: number;
       resultado: number;
       ultimasMediciones: number;
+      indicadoresConMedicion: number;
     };
     auditorias: {
       totalAnio: number;
@@ -9658,7 +9665,9 @@ export class DbStorage implements IStorage {
         alta: number;
         critica: number;
       };
-      porcentajeConformidad: number;
+      porcentajeConformidad: number | null;
+      conResultado: number;
+      sinResultado: number;
     };
     revisiones: {
       totalAnio: number;
@@ -9681,7 +9690,7 @@ export class DbStorage implements IStorage {
     };
   }> {
     const currentYear = year;
-    const currentMonth = new Date().getMonth();
+    const period = getVerificarPeriod(year);
 
     // ========== OBJETIVOS SST ==========
     const allObjetivos = await db.select()
@@ -9718,15 +9727,14 @@ export class DbStorage implements IStorage {
         eq(schema.indicadoresSst.activo, 1)
       ));
 
-    // Count last month's measurements
-    const startOfLastMonth = new Date(currentYear, currentMonth - 1, 1);
-    const endOfLastMonth = new Date(currentYear, currentMonth, 0);
+    // Measurements in the explicitly reported month, for active indicators only.
     const recentMediciones = await db.select()
       .from(schema.medicionesIndicadores)
       .where(and(
         eq(schema.medicionesIndicadores.companyId, companyId),
-        sql`${schema.medicionesIndicadores.fechaMedicion} >= ${startOfLastMonth.toISOString().split('T')[0]}`,
-        sql`${schema.medicionesIndicadores.fechaMedicion} <= ${endOfLastMonth.toISOString().split('T')[0]}`
+        inArray(schema.medicionesIndicadores.indicadorId, allIndicadores.map(i => i.id)),
+        sql`${schema.medicionesIndicadores.fechaMedicion} >= ${period.monthStart}`,
+        sql`${schema.medicionesIndicadores.fechaMedicion} < ${period.monthEnd}`
       ));
 
     const indicadores = {
@@ -9734,22 +9742,26 @@ export class DbStorage implements IStorage {
       estructura: allIndicadores.filter(i => i.tipo === 'estructura').length,
       proceso: allIndicadores.filter(i => i.tipo === 'proceso').length,
       resultado: allIndicadores.filter(i => i.tipo === 'resultado').length,
-      ultimasMediciones: recentMediciones.length
+      ultimasMediciones: recentMediciones.length,
+      indicadoresConMedicion: new Set(recentMediciones.map(m => m.indicadorId)).size
     };
 
     // ========== AUDITORÍAS INTERNAS ==========
-    const startOfYear = new Date(currentYear, 0, 1);
     const allAuditorias = await db.select()
       .from(schema.auditoriasInternas)
       .where(and(
         eq(schema.auditoriasInternas.companyId, companyId),
-        sql`${schema.auditoriasInternas.fechaProgramada} >= ${startOfYear.toISOString().split('T')[0]}`
+        sql`${schema.auditoriasInternas.fechaProgramada} >= ${period.yearStart}`,
+        sql`${schema.auditoriasInternas.fechaProgramada} < ${period.yearEnd}`
       ));
 
     // Get hallazgos for severity breakdown
     const hallazgosAuditorias = await db.select()
       .from(schema.hallazgosAuditoria)
-      .where(eq(schema.hallazgosAuditoria.companyId, companyId));
+      .where(and(
+        eq(schema.hallazgosAuditoria.companyId, companyId),
+        inArray(schema.hallazgosAuditoria.auditoriaId, allAuditorias.map(a => a.id))
+      ));
 
     const hallazgosPorSeveridad = {
       baja: hallazgosAuditorias.filter(h => h.severidad === 'baja').length,
@@ -9759,24 +9771,27 @@ export class DbStorage implements IStorage {
     };
 
     const auditoriasCompletadas = allAuditorias.filter(a => 
-      (a.estado as string) === 'completada' || (a.estado as string) === 'aprobada'
+      a.estado === 'completada' || a.estado === 'cerrada'
     );
     
     // Promedio del porcentaje de cumplimiento de auditorías completadas
-    const totalPorcentaje = auditoriasCompletadas.reduce((sum, a) => 
-      sum + (a.porcentajeCumplimiento || 0), 0
+    const auditoriasConResultado = auditoriasCompletadas.filter(a => a.porcentajeCumplimiento != null);
+    const totalPorcentaje = auditoriasConResultado.reduce((sum, a) =>
+      sum + a.porcentajeCumplimiento!, 0
     );
-    const promedioCumplimiento = auditoriasCompletadas.length > 0
-      ? Math.round(totalPorcentaje / auditoriasCompletadas.length)
-      : 0;
+    const promedioCumplimiento = auditoriasConResultado.length > 0
+      ? Math.round(totalPorcentaje / auditoriasConResultado.length)
+      : null;
 
     const auditorias = {
       totalAnio: allAuditorias.length,
       completadas: auditoriasCompletadas.length,
-      enCurso: allAuditorias.filter(a => (a.estado as string) === 'en_progreso').length,
+      enCurso: allAuditorias.filter(a => a.estado === 'en_ejecucion').length,
       programadas: allAuditorias.filter(a => a.estado === 'programada').length,
       hallazgosPorSeveridad,
-      porcentajeConformidad: promedioCumplimiento
+      porcentajeConformidad: promedioCumplimiento,
+      conResultado: auditoriasConResultado.length,
+      sinResultado: auditoriasCompletadas.length - auditoriasConResultado.length
     };
 
     // ========== REVISIONES POR DIRECCIÓN ==========
@@ -9784,17 +9799,22 @@ export class DbStorage implements IStorage {
       .from(schema.revisionesDireccion)
       .where(and(
         eq(schema.revisionesDireccion.companyId, companyId),
-        sql`${schema.revisionesDireccion.fechaRevision} >= ${startOfYear.toISOString().split('T')[0]}`
+        sql`${schema.revisionesDireccion.fechaRevision} >= ${period.yearStart}`,
+        sql`${schema.revisionesDireccion.fechaRevision} < ${period.yearEnd}`
       ));
 
     const decisionesCount = await db.select()
       .from(schema.decisionesRevision)
-      .where(eq(schema.decisionesRevision.companyId, companyId));
+      .where(and(
+        eq(schema.decisionesRevision.companyId, companyId),
+        inArray(schema.decisionesRevision.revisionId, allRevisiones.map(r => r.id))
+      ));
 
     const accionesCount = await db.select()
       .from(schema.accionesRevision)
       .where(and(
         eq(schema.accionesRevision.companyId, companyId),
+        inArray(schema.accionesRevision.decisionId, decisionesCount.map(d => d.id)),
         or(
           eq(schema.accionesRevision.estado, 'pendiente'),
           eq(schema.accionesRevision.estado, 'en-proceso')
@@ -9803,7 +9823,7 @@ export class DbStorage implements IStorage {
 
     const revisiones = {
       totalAnio: allRevisiones.length,
-      completadas: allRevisiones.filter(r => r.estado === 'completada' || r.estado === 'aprobada').length,
+      completadas: allRevisiones.filter(r => r.estado === 'completada' || r.estado === 'aprobada' || r.estado === 'seguimiento').length,
       enEjecucion: allRevisiones.filter(r => r.estado === 'en_ejecucion').length,
       programadas: allRevisiones.filter(r => r.estado === 'programada').length,
       decisionesTomadas: decisionesCount.length,
@@ -9812,66 +9832,46 @@ export class DbStorage implements IStorage {
 
     // ========== CUMPLIMIENTO NORMATIVO ==========
     const lastEvaluation = await db.select()
-      .from(schema.sstEvaluations)
+      .from(schema.evaluacionesSst)
       .where(and(
-        eq(schema.sstEvaluations.companyId, companyId),
-        eq(schema.sstEvaluations.status, 'completada')
+        eq(schema.evaluacionesSst.companyId, companyId),
+        eq(schema.evaluacionesSst.anio, currentYear),
+        inArray(schema.evaluacionesSst.estado, ['completada', 'enviada'])
       ))
-      .orderBy(desc(schema.sstEvaluations.evaluationDate))
+      .orderBy(desc(schema.evaluacionesSst.fechaEvaluacion), desc(schema.evaluacionesSst.version), desc(schema.evaluacionesSst.updatedAt))
       .limit(1);
 
     const evaluationItems = lastEvaluation.length > 0
       ? await db.select()
-          .from(schema.sstEvaluationItems)
-          .where(eq(schema.sstEvaluationItems.evaluationId, lastEvaluation[0].id))
+          .from(schema.respuestasEstandares)
+          .where(eq(schema.respuestasEstandares.evaluacionId, lastEvaluation[0].id))
       : [];
 
     const cumplimientoNormativo = {
-      ultimaEvaluacion: lastEvaluation.length > 0 ? lastEvaluation[0].compliancePercentage : null,
+      ultimaEvaluacion: lastEvaluation.length > 0 ? lastEvaluation[0].porcentajeCumplimiento : null,
       fechaUltimaEvaluacion: lastEvaluation.length > 0 
-        ? lastEvaluation[0].evaluationDate || null
+        ? lastEvaluation[0].fechaEvaluacion || null
         : null,
-      estandaresCriticos: evaluationItems.filter(item => item.score === 0).length,
-      estandaresCumplidos: evaluationItems.filter(item => 
-        item.score !== null && item.score > 0
-      ).length
+      // This is a count of unmet standards, not a severity classification.
+      estandaresCriticos: evaluationItems.filter(item => item.cumple === 0 && item.noAplica === 0).length,
+      estandaresCumplidos: evaluationItems.filter(item => item.cumple === 1 || item.noAplica === 1).length
     };
 
     // ========== ACCIDENTALIDAD ==========
-    const accidentsThisYear = await db.select()
+    const accidentsInWindow = await db.select()
       .from(schema.accidents)
       .where(and(
         eq(schema.accidents.companyId, companyId),
-        sql`${schema.accidents.date} >= ${startOfYear.toISOString().split('T')[0]}`
+        sql`${schema.accidents.date} >= ${period.accidentsStart}`,
+        sql`${schema.accidents.date} < ${period.yearEnd}`
       ));
 
-    const startOfCurrentMonth = new Date(currentYear, currentMonth, 1);
-    const accidentsThisMonth = accidentsThisYear.filter(a => 
-      new Date(a.date) >= startOfCurrentMonth
-    );
-
-    // Monthly trend (last 6 months)
-    const tendenciaMensual: Array<{ mes: string; cantidad: number }> = [];
-    const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-    
-    for (let i = 5; i >= 0; i--) {
-      const targetMonth = currentMonth - i;
-      const targetYear = targetMonth < 0 ? currentYear - 1 : currentYear;
-      const adjustedMonth = targetMonth < 0 ? targetMonth + 12 : targetMonth;
-      
-      const monthStart = new Date(targetYear, adjustedMonth, 1);
-      const monthEnd = new Date(targetYear, adjustedMonth + 1, 0);
-      
-      const accidentsInMonth = accidentsThisYear.filter(a => {
-        const accidentDate = new Date(a.date);
-        return accidentDate >= monthStart && accidentDate <= monthEnd;
-      }).length;
-      
-      tendenciaMensual.push({
-        mes: monthNames[adjustedMonth],
-        cantidad: accidentsInMonth
-      });
-    }
+    const accidentsThisYear = accidentsInWindow.filter(a => a.date >= period.yearStart && a.date < period.yearEnd);
+    const accidentsThisMonth = accidentsInWindow.filter(a => a.date >= period.monthStart && a.date < period.monthEnd);
+    const tendenciaMensual = period.trend.map(month => ({
+      mes: month.label,
+      cantidad: accidentsInWindow.filter(a => a.date >= month.start && a.date < month.end).length,
+    }));
 
     const accidentalidad = {
       totalAccidentes: accidentsThisYear.length,
@@ -9880,6 +9880,7 @@ export class DbStorage implements IStorage {
     };
 
     return {
+      periodo: { anio: year, ultimoMes: period.monthLabel },
       objetivos,
       indicadores,
       auditorias,

@@ -96,3 +96,4 @@
 - [Evidencia contractual para pagos](payment-contract-evidence.md) — la firma SaaS real vigente y la aceptación histórica habilitan pagos; no exigir un consentimiento duplicado por una marca vacía.
 - [ABI de bibliotecas nativas en Nix](nix-native-library-abi.md) — conviven runtimes de 32 y 64 bits; comprobar ELF antes de seleccionar una biblioteca para Python.
 - [Pago sin enlaces compartidos](payment-link-retirement.md) — el usuario retiró esta opción por confusión de clientes; pagar desde Mi Cuenta y conservar confirmaciones anteriores.
+- [Períodos del Panel VERIFICAR](dashboard-reporting-periods.md) — mes cerrado explícito, catálogo vigente y cobertura por indicadores distintos; ausencia de resultado no equivale a cero.
