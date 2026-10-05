@@ -25,8 +25,10 @@ export class WorkerBillingQuoteError extends Error {}
 
 /**
  * Quotes workers eligible for the upcoming payment. On the first PSE payment,
- * current_period_end is the cutoff for externally paid history. After PSE is
- * established, the latest approved transaction's created_at is the coverage
+ * current_period_start is the cutoff for the roster already covered by the
+ * current external-payment period. Workers registered during that period remain
+ * billable at the first PSE quote even if they retire before renewal. After PSE
+ * is established, the latest approved transaction's created_at is the coverage
  * snapshot, so registrations made between initiation and approval are retained.
  * Retirees are included when they retired at/after the next cycle boundary, or
  * entered the app after the last paid coverage snapshot. An administrative
@@ -57,10 +59,7 @@ export async function getVerifiedWorkerBillingQuote(
         )
         ELSE COALESCE(
           NULLIF(s.metadata->>'workerBillingCoverageCutoff', '')::timestamp,
-          CASE
-            WHEN s.status = 'active' THEN s.current_period_end
-            ELSE s.current_period_start
-          END
+          s.current_period_start
         )
       END AS billing_cutoff
     FROM subscriptions s

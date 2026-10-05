@@ -9,11 +9,11 @@ Cada trabajador que entra al sistema se cobra en el ciclo en que fue registrado,
 
 **How to apply:** Pedir confirmación de la fecha efectiva mediante un diálogo al marcar el retiro; contar al trabajador en el ciclo del retiro y excluirlo de los posteriores. Guardar un desglose por ciclo para no reescribir pagos anteriores ni el importe de un PSE ya iniciado. No inferir la fecha de retiro de la fecha de fin del contrato.
 
-Al pasar de pagos por transferencia externa a PSE, tratar la fecha de fin del período previamente pagado como límite de cobertura; no reconstruir cobros de retirados históricos sin evidencia de su fecha efectiva. Una vez confirmado un PSE, usar la fecha de **inicio del intento cobrado**, no la fecha de aprobación, como límite para arrastrar nuevas altas no incluidas en aquel importe.
+Al pasar de pagos por transferencia externa a PSE, usar el inicio del período activo como corte del personal ya cubierto: las altas registradas después de ese inicio se cobran en la primera cotización PSE, aunque se retiren antes del próximo vencimiento. No volver a cobrar al personal anterior al corte. Una vez confirmado un PSE, usar la fecha de **inicio del intento cobrado**, no la fecha de aprobación, como corte para arrastrar nuevas altas no incluidas en aquel importe.
 
-**Why:** Una confirmación bancaria puede llegar después de que se registró y retiró un trabajador; usar la aprobación como límite haría que su alta se perdiera entre ciclos. También sería incorrecto cobrar otra vez los retiros anteriores a la transición.
+**Why:** El usuario confirmó que un trabajador que entra al sistema y consume el servicio debe cobrarse aunque se retire horas después; excluir una alta reciente por mirar solo el fin del período dejaría trabajo sin cobrar. También sería incorrecto volver a cobrar al personal ya cubierto antes del inicio del período.
 
-**How to apply:** Separar la cobertura externa del primer PSE y conservar la fecha de instantánea de cada pago para el ciclo siguiente. No reescribir transacciones pendientes ni pagos confirmados al actualizar la plantilla de cotización.
+**How to apply:** En la primera cotización PSE, distinguir la plantilla ya cubierta al inicio del período de las altas posteriores; tras PSE, conservar la instantánea de cada intento y no reescribir transacciones pendientes ni pagos confirmados.
 
 Al reabrir administrativamente un pago, conservar el límite de conteo del ciclo que el usuario confirmó. Cambiar la suscripción de activa a vencida no debe volver a incluir retiros de ciclos anteriores. Un límite administrativo de conteo no acredita pago, no extiende la licencia y nunca reemplaza la instantánea de un PSE aprobado.
 
