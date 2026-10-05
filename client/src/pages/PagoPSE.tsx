@@ -9,7 +9,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
   ArrowLeft,
-  Mail,
   Landmark,
   Loader2,
   LockKeyhole,
@@ -128,35 +127,6 @@ export default function PagoPSE() {
       if (!error.message) return;
       toast({
         title: 'No se pudo iniciar el pago',
-        description: error.message,
-        variant: 'destructive',
-      });
-    },
-  });
-
-  const sendPaymentLink = useMutation({
-    mutationFn: async () => {
-      const response = await fetch('/api/epayco/pse/enlace/enviar', {
-        method: 'POST',
-        credentials: 'include',
-      });
-      const result = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        throw new Error(result.error || result.message || 'No se pudo enviar el enlace de pago');
-      }
-      return result as { message?: string; recipientMasked?: string };
-    },
-    onSuccess: (result) => {
-      toast({
-        title: 'Enlace de pago enviado',
-        description: result.recipientMasked
-          ? `Se envió al correo de contacto registrado ${result.recipientMasked}.`
-          : result.message || 'El enlace se envió al correo de contacto registrado.',
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: 'No se pudo enviar el enlace',
         description: error.message,
         variant: 'destructive',
       });
@@ -418,34 +388,6 @@ export default function PagoPSE() {
                 </>
               )}
             </Button>
-            {!isExtraSeatPurchase && <div className="border-t pt-5 text-center">
-              <p className="mb-3 text-sm text-muted-foreground">
-                Para restablecer el acceso al software, el responsable debe pagar por PSE.
-                Envía el enlace al correo de contacto registrado en la empresa. El acceso
-                se restablecerá cuando ePayco confirme el pago.
-              </p>
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                onClick={() => sendPaymentLink.mutate()}
-                disabled={
-                  sendPaymentLink.isPending ||
-                  startPayment.isPending ||
-                  quoteQuery.isLoading ||
-                  quoteQuery.isError ||
-                  !quoteQuery.data ||
-                  quoteQuery.data.paymentAmount <= 0
-                }
-              >
-                {sendPaymentLink.isPending ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Mail className="mr-2 h-4 w-4" />
-                )}
-                {sendPaymentLink.isPending ? 'Enviando enlace...' : 'Enviar enlace de pago'}
-              </Button>
-            </div>}
           </form>
         </CardContent>
       </Card>

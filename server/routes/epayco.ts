@@ -10,6 +10,7 @@ import { isIP } from "net";
 import type { Express, Request, Response } from "express";
 import rateLimit from "express-rate-limit";
 import { sql } from "drizzle-orm";
+import { rejectSharedPaymentLinks } from "../middleware/retired-payment-links";
 import { z } from "zod";
 import { requireAuth } from "../auth";
 import { storage } from "../storage";
@@ -687,7 +688,7 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
     }
   });
 
-  app.post("/api/epayco/pse/enlace/enviar", paymentOperationLimiter, requireAuth, requireWorkerPricingSchema, async (req: any, res) => {
+  app.post("/api/epayco/pse/enlace/enviar", paymentOperationLimiter, rejectSharedPaymentLinks, requireAuth, requireWorkerPricingSchema, async (req: any, res) => {
     if (process.env.NODE_ENV !== "production") {
       return res.status(503).json({ error: "El envío de enlaces de pago no está disponible en este entorno." });
     }
@@ -855,6 +856,8 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
       return res.status(404).json({ error: "Enlace de pago no válido o vencido." });
     }
 
+    if (!link.used_at) return rejectSharedPaymentLinks(req, res);
+
     if (!link.used_at) {
       if (
         link.billed_worker_count === null ||
@@ -912,10 +915,11 @@ export async function registerEpaycoRoutes(app: Express): Promise<void> {
       currency: link.currency,
       banks,
       status,
+      used: Boolean(link.used_at),
     });
   });
 
-  app.post("/api/epayco/pse/enlace/iniciar", paymentOperationLimiter, requireWorkerPricingSchema, async (req, res) => {
+  app.post("/api/epayco/pse/enlace/iniciar", paymentOperationLimiter, rejectSharedPaymentLinks, requireWorkerPricingSchema, async (req, res) => {
     const bodySchema = z.object({
       bankCode: z.string().min(1, "Seleccione un banco"),
       userType: z.enum(["0", "1"]),

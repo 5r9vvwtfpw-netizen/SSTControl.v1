@@ -19,6 +19,7 @@ interface PaymentLink {
   currency: string;
   banks: EpaycoBank[];
   status: string;
+  used?: boolean;
 }
 
 interface LinkPaymentStatus {
@@ -143,7 +144,7 @@ export default function PagoPSEEnlace() {
     },
   });
   const linkStatus = (linkQuery.data?.status || '').toUpperCase();
-  const showStatus = Boolean(invoice) || linkStatus === 'USED';
+  const showStatus = Boolean(invoice) || Boolean(linkQuery.data?.used) || linkStatus === 'USED';
 
   const statusQuery = useQuery<LinkPaymentStatus>({
     queryKey: ['/api/epayco/pse/enlace/estado', linkCacheKey, invoice || 'latest'],
@@ -195,7 +196,7 @@ export default function PagoPSEEnlace() {
   const paymentStatus = statusQuery.data?.status?.toUpperCase();
   const approved = paymentStatus === 'APPROVED';
   const failedStatus = ['DECLINED', 'ERROR', 'EXPIRED', 'INVALID', 'CANCELLED'].includes(paymentStatus || '');
-  const inactiveLink = ['EXPIRED', 'INVALID', 'CANCELLED', 'INACTIVE'].includes(linkStatus);
+  const inactiveLink = !showStatus && ['EXPIRED', 'INVALID', 'CANCELLED', 'INACTIVE'].includes(linkStatus);
   const error = linkQuery.error || statusQuery.error;
 
   if (!token) {
@@ -206,9 +207,9 @@ export default function PagoPSEEnlace() {
             <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/20">
               <AlertCircle className="h-7 w-7 text-blue-600" />
             </div>
-            <CardTitle className="text-center">Abre el enlace de pago de tu correo</CardTitle>
+            <CardTitle className="text-center">Pago desde Mi Cuenta</CardTitle>
             <CardDescription className="text-center">
-              No encontramos el acceso seguro de este enlace en esta sesión. Abre nuevamente el enlace original recibido por correo para consultar el pago.
+              Los enlaces compartidos ya no están disponibles. Ingresa a la cuenta de la empresa y selecciona Mi Cuenta → Pagar Ahora.
             </CardDescription>
           </CardHeader>
         </Card>
@@ -224,9 +225,10 @@ export default function PagoPSEEnlace() {
     );
   }
 
-  if (linkQuery.isError || !linkQuery.data || inactiveLink) {
-    const expired = linkStatus === 'EXPIRED' ||
-      (error instanceof PublicPaymentError && error.statusCode === 410);
+  if (linkQuery.isError || !linkQuery.data || inactiveLink || !showStatus) {
+    const retired = !showStatus;
+    const expired = !retired && (linkStatus === 'EXPIRED' ||
+      (error instanceof PublicPaymentError && error.statusCode === 410));
     return (
       <main className="container mx-auto max-w-2xl px-4 py-8">
         <Card>
@@ -234,11 +236,11 @@ export default function PagoPSEEnlace() {
             <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/20">
               <XCircle className="h-7 w-7 text-red-600" />
             </div>
-            <CardTitle className="text-center">{expired ? 'Enlace de pago vencido' : 'Enlace no disponible'}</CardTitle>
+            <CardTitle className="text-center">{retired ? 'Pago desde Mi Cuenta' : expired ? 'Enlace de pago vencido' : 'Enlace no disponible'}</CardTitle>
             <CardDescription className="text-center">
-              {error?.message || (expired
-                ? 'Este enlace seguro de pago ha vencido. Solicita a la empresa que genere uno nuevo.'
-                : 'No pudimos validar este enlace de pago. Verifica que la dirección sea correcta o solicita un nuevo enlace.')}
+              {retired
+                ? 'Los enlaces compartidos ya no están disponibles. Ingresa a la cuenta de la empresa y selecciona Mi Cuenta → Pagar Ahora.'
+                : error?.message || 'No pudimos consultar este pago. Ingresa a Mi Cuenta para revisar su estado. No inicies otro pago si la transacción sigue pendiente.'}
             </CardDescription>
           </CardHeader>
         </Card>
