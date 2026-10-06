@@ -39,6 +39,8 @@ type BillingMetrics = {
   mrr: number;
   arr: number;
   activeSubscriptions: number;
+  mrrConfirmedSubscriptions: number;
+  mrrUnverifiedSubscriptions: number;
   trialSubscriptions: number;
   churnRate: number;
   totalRevenue: number;
@@ -122,18 +124,22 @@ export default function DashboardFacturacion() {
 
   const { data: metrics, isLoading: metricsLoading } = useQuery<BillingMetrics>({
     queryKey: ['/api/billing/admin/metrics'],
+    refetchInterval: 60_000,
   });
 
   const { data: subscriptions, isLoading: subscriptionsLoading } = useQuery<SubscriptionWithDetails[]>({
     queryKey: ['/api/billing/admin/subscriptions'],
+    refetchInterval: 60_000,
   });
 
   const { data: revenueData, isLoading: revenueLoading } = useQuery<RevenueDataPoint[]>({
     queryKey: ['/api/billing/admin/revenue-chart'],
+    refetchInterval: 60_000,
   });
 
   const { data: companiesWithoutSub } = useQuery<{ count: number; companies: CompanyWithoutSubscription[] }>({
     queryKey: ['/api/billing/admin/companies-without-subscription'],
+    refetchInterval: 60_000,
   });
 
   const assignTrialMutation = useMutation({
@@ -307,7 +313,7 @@ export default function DashboardFacturacion() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         <Card data-testid="card-mrr">
           <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">MRR (Ingreso Mensual Recurrente)</CardTitle>
+            <CardTitle className="text-sm font-medium">MRR confirmado por PSE</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -315,7 +321,15 @@ export default function DashboardFacturacion() {
               {formatCurrency(metrics?.mrr || 0)}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              ARR: {formatCurrency(metrics?.arr || 0)}
+              Neto de IVA · {metrics?.mrrConfirmedSubscriptions || 0} suscripciones con pago PSE confirmado
+            </p>
+            {metrics?.mrrUnverifiedSubscriptions ? (
+              <p className="text-xs text-muted-foreground mt-1">
+                {metrics.mrrUnverifiedSubscriptions} suscripciones activas sin pago PSE confirmado no se incluyen
+              </p>
+            ) : null}
+            <p className="text-xs text-muted-foreground mt-1">
+              ARR estimado: {formatCurrency(metrics?.arr || 0)}
             </p>
           </CardContent>
         </Card>
@@ -354,6 +368,9 @@ export default function DashboardFacturacion() {
       <Card className="mb-8" data-testid="card-revenue-chart">
         <CardHeader>
           <CardTitle>Ingresos Mensuales</CardTitle>
+          <CardDescription>
+            Pagos confirmados por fecha de aprobación · actualización automática cada minuto
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>

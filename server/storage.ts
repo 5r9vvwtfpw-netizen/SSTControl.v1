@@ -1581,6 +1581,8 @@ export interface IStorage {
     mrr: number;
     arr: number;
     activeSubscriptions: number;
+    mrrConfirmedSubscriptions: number;
+    mrrUnverifiedSubscriptions: number;
     trialSubscriptions: number;
     churnRate: number;
     totalRevenue: number;
@@ -12979,6 +12981,8 @@ export class DbStorage implements IStorage {
     mrr: number;
     arr: number;
     activeSubscriptions: number;
+    mrrConfirmedSubscriptions: number;
+    mrrUnverifiedSubscriptions: number;
     trialSubscriptions: number;
     churnRate: number;
     totalRevenue: number;
@@ -12999,10 +13003,29 @@ export class DbStorage implements IStorage {
     const activeCount = subscriptions.filter(s => s.subscription.status === 'active').length;
     const trialCount = subscriptions.filter(s => s.subscription.status === 'trial').length;
 
-    // Calculate MRR (Monthly Recurring Revenue)
-    const mrr = subscriptions
-      .filter(s => s.subscription.status === 'active' && s.plan)
-      .reduce((sum, s) => sum + (s.plan?.priceMonthly || 0), 0);
+    // Recognize MRR from each active company's latest provider-confirmed PSE
+    // subscription payment. Use the paid invoice subtotal so VAT is not counted
+    // as revenue. A plan catalog price is not proof of the contracted PSE rate.
+    const confirmedPseMrr = await db.execute(sql`
+      SELECT DISTINCT ON (p.subscription_id)
+        p.subscription_id AS "subscriptionId",
+        i.subtotal AS amount
+      FROM epayco_pse_transactions p
+      INNER JOIN subscriptions s
+        ON s.id = p.subscription_id AND s.status = 'active'
+      INNER JOIN invoices i
+        ON i.subscription_id = p.subscription_id
+        AND i.status = 'paid'
+        AND i.notes = 'Suscripción mensual pagada por PSE ePayco. Referencia: ' || p.invoice
+      WHERE p.status = 'APPROVED'
+        AND p.currency = 'COP'
+        AND p.purchase_type = 'subscription'
+      ORDER BY p.subscription_id, p.paid_at DESC NULLS LAST, p.created_at DESC
+    `);
+    const mrr = confirmedPseMrr.rows.reduce(
+      (sum, payment) => sum + Number((payment as { amount: number | string }).amount || 0),
+      0,
+    );
 
     // ARR = MRR * 12
     const arr = mrr * 12;
@@ -13039,6 +13062,8 @@ export class DbStorage implements IStorage {
       mrr,
       arr,
       activeSubscriptions: activeCount,
+      mrrConfirmedSubscriptions: confirmedPseMrr.rows.length,
+      mrrUnverifiedSubscriptions: Math.max(0, activeCount - confirmedPseMrr.rows.length),
       trialSubscriptions: trialCount,
       churnRate: Math.round(churnRate * 100) / 100,
       totalRevenue
@@ -13143,22 +13168,25 @@ export class DbStorage implements IStorage {
       .where(
         and(
           eq(schema.paymentTransactions.status, 'APPROVED'),
-          sql`${schema.paymentTransactions.createdAt} >= ${startDate.toISOString()}`
+          sql`COALESCE(${schema.paymentTransactions.paidAt}, ${schema.paymentTransactions.createdAt}) >= ${startDate.toISOString()}`
         )
       );
 
     // PSE uses a separate gateway table; merge its verified COP payments so
     // the revenue chart reflects payments approved through either provider.
     const epaycoResult = await db.execute(sql`
-      SELECT subscription_id AS "subscriptionId", amount, created_at AS "createdAt"
+      SELECT subscription_id AS "subscriptionId", amount,
+             paid_at AS "paidAt", created_at AS "createdAt"
       FROM epayco_pse_transactions
       WHERE status = 'APPROVED'
         AND currency = 'COP'
-        AND created_at >= ${startDate.toISOString()}
+        AND paid_at IS NOT NULL
+        AND paid_at >= ${startDate.toISOString()}
     `);
     const epaycoTransactions = epaycoResult.rows as Array<{
       subscriptionId: string | null;
       amount: number | string;
+      paidAt: Date | string | null;
       createdAt: Date | string;
     }>;
 

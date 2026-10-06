@@ -28,7 +28,7 @@
 - [Induction content isolation](induction-content-isolation.md) — el contenido enviado por Capacitaciones no debe aparecer en inducciones, aunque comparta URL o haya quedado en una instantánea.
 - [PESV vehicle step naming](pesv-vehicle-step-naming.md) — vehículos seguros corresponde a H04; H08 está reservado para rutas seguras.
 - [Decimales en horómetro de maquinaria](machinery-inspection-hour-meter-decimals.md) — las lecturas pueden incluir decimales; validar y almacenar el horómetro como numérico, no entero.
-- [Production billing data alignment](production-billing-data-alignment.md) — separar registros locales de suscripciones/facturas de pagos confirmados por Stripe o Wompi.
+- [Production billing data alignment](production-billing-data-alignment.md) — el MRR usa el último PSE mensual aprobado conciliado con factura; separar importes locales de cobros comprobados.
 - [TypeScript cleanup workflow](typescript-cleanup-workflow.md) — las correcciones delegadas deben validarse de inmediato; pueden dejar mejoras parciales pero nunca sustituyen el chequeo global final.
 - [Worker and contract date synchronization](worker-contract-date-sync.md) — workers y contracts duplican fechas laborales; sincronizar solo el contrato activo en ambas direcciones.
 - [Retiro y acceso al Portal de Empleados](worker-portal-retirement-access.md) — el retiro efectivo, no la terminación aislada de un contrato, determina el bloqueo de la cuenta de trabajador.
