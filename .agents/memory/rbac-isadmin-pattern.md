@@ -20,14 +20,6 @@ For an administrative panel tied to a fine-grained permission, derive visibility
 - Replace all inline `hasCompanyAdminAccess(user.role)` JSX calls with `isAdmin`
 - For permission-managed admin panels, use the permission matrix directly; a hard-coded staff-role list can omit superadmin even when its role has that permission.
 
-## Superadmin policy
-
-The `superadmin` role has every permission defined anywhere in the app, including permissions added to other roles later. The shared permission helpers and the frontend route gate must therefore never deny superadmin because a permission is absent from its role matrix.
-
-**Why:** The user explicitly requested unrestricted app permissions for superadmin.
-
-**How to apply:** Keep permission grants centralized in `shared/permissions.ts`; verify the union reaches `requirePermission`, permission-based UI checks, menus, and protected routes. This does not bypass authentication, company context, data-integrity constraints, or destructive confirmations.
-
 ## Resource mapping (page → resource)
 - Trabajadores → `workers`
 - Contratos → `contracts`

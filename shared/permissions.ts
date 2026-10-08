@@ -1157,16 +1157,8 @@ export const rolePermissions: Record<UserRole, Permission[]> = {
 
 rolePermissions.lso_externo = rolePermissions.lso;
 
-// Superadmin is an internal platform role and receives every permission the
-// app currently exposes. Derive the matrix from all roles so new permissions
-// don't accidentally remain unavailable to this account.
-rolePermissions.superadmin = Array.from(
-  new Set(Object.values(rolePermissions).flat()),
-);
-
 // Función para verificar si un rol tiene un permiso específico
 export function hasPermission(role: UserRole, permission: Permission): boolean {
-  if (role === "superadmin") return true;
   return rolePermissions[role]?.includes(permission) ?? false;
 }
 

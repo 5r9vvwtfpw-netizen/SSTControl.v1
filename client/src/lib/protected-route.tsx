@@ -21,7 +21,6 @@ export function ProtectedRoute({
 
   const hasAccess = useMemo(() => {
     if (!user) return false;
-    if (user.role === "superadmin") return true;
     return canAccessRoute(userPermissions, path);
   }, [userPermissions, path, user]);
 
