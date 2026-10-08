@@ -1,6 +1,6 @@
 import { Express, Request, Response } from 'express';
 import { db } from '../db';
-import { eq, desc, and, inArray } from 'drizzle-orm';
+import { eq, desc, and, inArray, sql } from 'drizzle-orm';
 import * as schema from '@shared/schema';
 import {
   addStandardHeader, addSectionBar, addSignatureFooter, addSimpleTable,
@@ -12,6 +12,8 @@ import { getTrialStatus } from '@shared/utils';
 import { requireAuth as authRequireAuth, requirePermission, requireAnyPermission } from '../auth';
 import { storage } from '../storage';
 import { withPdfSemaphore } from '../services/pdf-semaphore';
+import { getAuthorizedReportCompanyId } from '../lib/report-company-context';
+import { MAQUINARIA_CHECKLIST } from '@shared/pesv-maquinaria-checklist';
 
 function getEffectiveCompanyId(req: Request): string | null {
   const user = (req as any).user;
@@ -30,6 +32,7 @@ function getEffectiveCompanyId(req: Request): string | null {
 export function registerPesvPdfRoutes(app: Express) {
   const requireAuth = authRequireAuth;
   const viewPermission = requirePermission('sst_management:view');
+  const machineryInspectionViewPermission = requirePermission('vehicle_inspections:view');
   const managementReviewViewPermission = requireAnyPermission(['sst_management:view', 'management_review:view']);
 
   // 1. GET /api/pesv/comite/actas/:id/pdf
@@ -1381,6 +1384,99 @@ export function registerPesvPdfRoutes(app: Express) {
       doc.end();
     } catch (error) {
       handlePdfError(error, res, 'pesv-lista-asistencia');
+    }
+  });
+
+  // Inspección individual de maquinaria amarilla (Portal H06).
+  app.get('/api/portal/admin/inspecciones-maquinaria/:id/pdf', requireAuth, machineryInspectionViewPermission, async (req: Request, res: Response) => {
+    try {
+      const companyId = getAuthorizedReportCompanyId(req);
+      if (!companyId) return res.status(403).send('Empresa no identificada');
+
+      const [company] = await db.select().from(schema.companies).where(eq(schema.companies.id, companyId)).limit(1);
+      if (!company) return res.status(404).send('Empresa no encontrada');
+
+      const inspectionResult = await db.execute(sql`
+        SELECT mi.*, v.plate, v.serial_number, v.machinery_type, w.name AS worker_name
+        FROM maquinaria_inspecciones mi
+        JOIN vehicles v ON v.id = mi.equipment_id AND v.company_id = mi.company_id
+        JOIN workers w ON w.id = mi.worker_id AND w.company_id = mi.company_id
+        WHERE mi.id = ${req.params.id} AND mi.company_id = ${companyId}
+        LIMIT 1
+      `);
+      const inspectionRows = (inspectionResult as unknown as { rows?: any[] }).rows ?? [];
+      const inspection = inspectionRows[0];
+      if (!inspection) return res.status(404).send('Inspección de maquinaria no encontrada');
+
+      const answers = typeof inspection.answers === 'string'
+        ? JSON.parse(inspection.answers)
+        : inspection.answers || {};
+      const answerLabels: Record<string, string> = {
+        conforme: 'Conforme',
+        falla: 'Falla',
+        no_aplica: 'No aplica',
+      };
+
+      const { default: PDFDocument } = await import('pdfkit');
+      const doc = new PDFDocument({ margin: PDF_CONFIG.MARGIN, size: 'LETTER' });
+      const subscription = await storage.getSubscriptionByCompany(companyId);
+      const trialStatus = getTrialStatus(subscription?.status || 'trial', subscription?.trialEnd || null, true, true);
+      setupTrialWatermarkOnAllPages(doc, trialStatus.requiresWatermark);
+
+      const equipmentLabel = String(inspection.plate || inspection.serial_number || inspection.equipment_id);
+      const safeEquipmentLabel = equipmentLabel.replace(/[^\w.-]+/g, '-');
+      const inspectionDate = String(inspection.inspection_date).slice(0, 10);
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader(
+        'Content-Disposition',
+        `inline; filename="inspeccion-maquinaria-${safeEquipmentLabel}-${inspectionDate}.pdf"`,
+      );
+      doc.pipe(res);
+
+      const logoBuffer = await loadCompanyLogo(company.logoUrl);
+      const signers = await getSignersForCompany(companyId, true);
+      let y = await addStandardHeader({
+        doc,
+        company,
+        documentTitle: 'INSPECCIÓN PREOPERACIONAL DE MAQUINARIA AMARILLA',
+        documentCode: `PESV-H06-MAQ-${String(inspection.id).slice(0, 8).toUpperCase()}`,
+        logoBuffer,
+      });
+
+      y = addParagraph(doc, 'Registro enviado desde el Portal de Empleados — PESV H06.', { y, fontSize: 8 });
+      y = addSectionBar(doc, '1. Datos de la inspección', y);
+      y = addLabeledField(doc, 'Equipo', equipmentLabel, { y });
+      y = addLabeledField(doc, 'Tipo de maquinaria', inspection.machinery_type || 'No especificado', { y });
+      y = addLabeledField(doc, 'Trabajador', inspection.worker_name || 'No identificado', { y });
+      y = addLabeledField(doc, 'Fecha', formatDate(inspection.inspection_date), { y });
+      y = addLabeledField(doc, 'Turno', inspection.shift || 'No especificado', { y });
+      y = addLabeledField(doc, 'Horómetro', `${String(inspection.engine_hours)} h`, { y });
+      y = addLabeledField(doc, 'Frente de trabajo', inspection.work_front || 'No especificado', { y });
+      y = addLabeledField(doc, 'Resultado', inspection.result === 'apta' ? 'APTA' : 'NO APTA', { y });
+
+      y = addSectionBar(doc, '2. Lista de chequeo', y);
+      const checklistRows = MAQUINARIA_CHECKLIST.map(([key, label]) => {
+        const answer = answers[key];
+        return [
+          label,
+          answerLabels[answer?.value] || 'Sin respuesta',
+          String(answer?.comment || '—'),
+        ];
+      });
+      y = addSimpleTable(doc, ['Ítem', 'Resultado', 'Comentario'], checklistRows, {
+        y,
+        columnWidths: [215, 90, 237],
+      });
+
+      y = addSectionBar(doc, '3. Observaciones y evidencias', y);
+      y = addParagraph(doc, inspection.observations || 'Sin observaciones registradas.', { y });
+      const evidenceCount = Array.isArray(inspection.evidence_urls) ? inspection.evidence_urls.length : 0;
+      y = addLabeledField(doc, 'Evidencias adjuntas', String(evidenceCount), { y });
+
+      await addSignatureFooter(doc, signers, true);
+      doc.end();
+    } catch (error) {
+      handlePdfError(error, res, 'pesv-inspeccion-maquinaria');
     }
   });
 
