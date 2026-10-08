@@ -54,9 +54,24 @@ test("cross-company portal lists filter suspended companies without losing assig
   assert.match(portal, /totalAssignedCompanies: assignments.length/);
 });
 
+test("suspended company list entries hide company identity and business details", () => {
+  const suspendedEntry = portal.match(
+    /if \(suspendedCompanyIds\.has\(empresa\.id\)\) \{([\s\S]*?)\n        \}/,
+  )?.[1];
+  assert.ok(suspendedEntry);
+  assert.match(suspendedEntry, /name: "Acceso suspendido"/);
+  assert.match(suspendedEntry, /nit: ""/);
+  assert.match(suspendedEntry, /city: null/);
+  assert.match(suspendedEntry, /riskLevel: ""/);
+  assert.match(suspendedEntry, /numberOfWorkers: 0/);
+  assert.match(suspendedEntry, /numberOfVehicles: null/);
+  assert.doesNotMatch(suspendedEntry, /\.\.\.empresa/);
+});
+
 test("suspended company actions are disabled and other companies stay available", () => {
   assert.match(ui, /<fieldset\s+disabled=\{empresa.companySuspended\}/);
   assert.match(ui, /empresa.companySuspended \? "Empresa suspendida"/);
+  assert.match(ui, /empresa\.companySuspended \? "—" : empresa\.nit/);
   const actionGroup = ui.slice(ui.indexOf("<fieldset"), ui.indexOf("</fieldset>"));
   for (const action of ["button-sst-", "button-pesv-", "InformeConsolidadoButton", "button-message-"]) {
     assert.ok(actionGroup.includes(action), action);

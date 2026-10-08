@@ -773,7 +773,15 @@ export function registerLicensedProfessionalsRoutes(app: Express) {
         // Keep the assignment visible, but do not expose operational data.
         if (suspendedCompanyIds.has(empresa.id)) {
           return {
-            ...empresa,
+            id: empresa.id,
+            name: "Acceso suspendido",
+            nit: "",
+            city: null,
+            riskLevel: "",
+            numberOfWorkers: 0,
+            numberOfVehicles: null,
+            assignmentId: "",
+            assignedAt: "",
             companySuspended: true,
             subscriptionBlocked: true,
             porcentajeSst: null,

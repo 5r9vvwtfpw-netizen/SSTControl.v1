@@ -1231,21 +1231,21 @@ function EmpresasTab() {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>{empresa.nit}</TableCell>
-                      <TableCell>{empresa.city || '-'}</TableCell>
+                      <TableCell>{empresa.companySuspended ? "—" : empresa.nit}</TableCell>
+                      <TableCell>{empresa.companySuspended ? "—" : empresa.city || '-'}</TableCell>
                       <TableCell>
-                        <Badge variant="outline">Nivel {empresa.riskLevel}</Badge>
+                        <Badge variant="outline">{empresa.companySuspended ? "—" : `Nivel ${empresa.riskLevel}`}</Badge>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
-                          <Users className="h-3.5 w-3.5 text-muted-foreground" />
-                          {empresa.numberOfWorkers}
+                          {!empresa.companySuspended && <Users className="h-3.5 w-3.5 text-muted-foreground" />}
+                          {empresa.companySuspended ? "—" : empresa.numberOfWorkers}
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
-                          <Truck className="h-3.5 w-3.5 text-muted-foreground" />
-                          {empresa.numberOfVehicles ?? 0}
+                          {!empresa.companySuspended && <Truck className="h-3.5 w-3.5 text-muted-foreground" />}
+                          {empresa.companySuspended ? "—" : empresa.numberOfVehicles ?? 0}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -1259,7 +1259,9 @@ function EmpresasTab() {
                       </TableCell>
                       <TableCell>
                         <span className="text-sm">
-                          {format(new Date(empresa.assignedAt), "dd MMM yyyy", { locale: es })}
+                          {empresa.companySuspended
+                            ? "—"
+                            : format(new Date(empresa.assignedAt), "dd MMM yyyy", { locale: es })}
                         </span>
                       </TableCell>
                       <TableCell className="sticky right-0 z-10 min-w-[360px] border-l bg-background shadow-[-8px_0_12px_-12px_rgba(0,0,0,0.35)]">
