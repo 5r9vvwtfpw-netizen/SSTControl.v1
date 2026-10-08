@@ -18,6 +18,7 @@ import { MachineryPreoperationalInspectionsCard } from "@/components/pesv/Machin
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { EvaluacionPesv, VehicleInspection, Vehicle, Driver } from "@shared/schema";
+import { withCompanyContext } from "@/lib/company-context-url";
 
 const ITEMS_INSPECCION = [
   {
@@ -541,7 +542,11 @@ export default function PesvInspeccionesEvaluacion() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => window.open(`/api/pesv/inspecciones/${inspection.id}/pdf`, '_blank')}
+                          onClick={() => window.open(
+                            withCompanyContext(`/api/pesv/inspecciones/${inspection.id}/pdf`, inspection.companyId),
+                            "_blank",
+                            "noopener,noreferrer",
+                          )}
                           data-testid={`button-pdf-inspection-${inspection.id}`}
                           title="Descargar PDF"
                         >

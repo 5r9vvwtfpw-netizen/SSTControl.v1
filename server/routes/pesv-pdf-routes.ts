@@ -1438,7 +1438,10 @@ export function registerPesvPdfRoutes(app: Express) {
       if (!company) return res.status(404).send('Empresa no encontrada');
 
       const [ins] = await db.select().from(schema.vehicleInspections)
-        .where(eq(schema.vehicleInspections.id, id)).limit(1);
+        .where(and(
+          eq(schema.vehicleInspections.id, id),
+          eq(schema.vehicleInspections.companyId, companyId),
+        )).limit(1);
       if (!ins) return res.status(404).send('Inspección no encontrada');
 
       const [vehicle] = await db.select().from(schema.vehicles)
