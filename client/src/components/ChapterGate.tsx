@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Lock, ArrowLeft, Building2 } from "lucide-react";
 import type { Company } from "@shared/schema";
+import { isMechanicRouteAllowed } from "@/lib/mechanic-route-scope";
 
 interface ChapterGateProps {
   children: ReactNode;
@@ -21,7 +22,14 @@ function isPesvRoute(path: string): boolean {
 export function ChapterGate({ children }: ChapterGateProps) {
   const [location, setLocation] = useLocation();
   const { user } = useAuth();
-  const { companyChapter, canSelectCompany, selectedCompanyId, selectedCompany, isLoading } = useCompanyContext();
+  const {
+    companyChapter,
+    canSelectCompany,
+    selectedCompanyId,
+    selectedCompany,
+    selectedCompanyScope,
+    isLoading,
+  } = useCompanyContext();
 
   const { data: userCompany } = useQuery<Company>({
     queryKey: ["/api/company/current"],
@@ -43,10 +51,12 @@ export function ChapterGate({ children }: ChapterGateProps) {
   const isPublicRoute = publicRoutes.some(r => location === r || location.startsWith(r + "/"));
 
   const isAllowed = import.meta.env.DEV
-    || effectiveChapter === null
     || isPublicRoute
-    || isModuleAllowedForChapter(location, effectiveChapter)
-    || (isPesvRoute(location) && companyHasVehicles);
+    || (user?.role === "tecnico_mecanico"
+      ? location === "/" || isMechanicRouteAllowed(location, selectedCompanyScope)
+      : effectiveChapter === null
+        || isModuleAllowedForChapter(location, effectiveChapter)
+        || (isPesvRoute(location) && companyHasVehicles));
 
   // Si está cargando, mostrar el contenido (evitar flash de contenido)
   if (isLoading) {

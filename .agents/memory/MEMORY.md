@@ -38,7 +38,7 @@
 - [Development module access](development-module-access.md) — en desarrollo se omiten gates comerciales para probar módulos; producción conserva capítulo, suscripción y menú.
 - [Empresa interna de pruebas en producción](internal-production-test-company.md) — DEMO-PRUEBA requiere registrar trabajadores sin suscripción; la excepción debe limitarse a su identidad exacta.
 - [Blank form validation](blank-form-validation.md) — los campos de negocio empiezan vacíos y los obligatorios requieren validación explícita antes de mutar.
-- [Mechanic tenant context](mechanic-tenant-context.md) — el contexto externo exige caché por empresa y no debe validar selección persistida hasta que terminen de cargar las autorizaciones.
+- [Mechanic tenant context](mechanic-tenant-context.md) — rutas por scopes activos, caché separada por empresa y selección persistida validada después de cargar autorizaciones.
 - [Safari login autofill](safari-login-autofill.md) — Safari puede mostrar credenciales que React no recibió; el submit debe leer los valores reales del formulario.
 - [Entrega de PDF en Safari](safari-pdf-delivery.md) — Guardar como en una vista previa de Replit guarda HTML; el buscador de Files no expone el menú del árbol.
 - [Vite and app WebSockets](vite-app-websockets.md) — un WebSocket con path sobre el servidor compartido puede rechazar HMR; aislar upgrades por ruta con noServer.
