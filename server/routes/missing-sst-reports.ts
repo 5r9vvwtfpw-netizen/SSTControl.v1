@@ -1,28 +1,11 @@
 import type { Express, Request, Response } from "express";
-import { and, eq } from "drizzle-orm";
-import { db } from "../db";
-import { licensedProfessionalAssignments } from "@shared/schema";
 import { withPdfSemaphore } from "../services/pdf-semaphore";
 import { generateMissingSstReport, type MissingSstReport } from "../reports/missing-sst-reports";
-
-async function effectiveCompanyId(req: Request): Promise<string | null> {
-  const user = req.user as any;
-  if (!user?.companyId && user?.role !== "superadmin") return null;
-  const requested = typeof req.headers["x-company-id"] === "string"
-    ? req.headers["x-company-id"] : typeof req.query.companyId === "string" ? req.query.companyId : null;
-  if (!requested || requested === user.companyId) return user.companyId || null;
-  if (user.role === "superadmin") return requested;
-  if (user.role === "lso" || user.role === "lso_externo") {
-    const [assignment] = await db.select({ id: licensedProfessionalAssignments.id }).from(licensedProfessionalAssignments)
-      .where(and(eq(licensedProfessionalAssignments.companyId, requested), eq(licensedProfessionalAssignments.userId, user.id), eq(licensedProfessionalAssignments.isActive, true))).limit(1);
-    return assignment ? requested : null;
-  }
-  return null;
-}
+import { getAuthorizedReportCompanyId } from "../lib/report-company-context";
 
 export function registerMissingSstReportsRoutes(app: Express, requireAuth: any) {
   const register = (path: string, report: MissingSstReport, acceptsPeriod = false) => app.get(path, requireAuth, async (req: Request, res: Response) => {
-    const companyId = await effectiveCompanyId(req);
+    const companyId = getAuthorizedReportCompanyId(req);
     if (!companyId) return res.status(403).json({ error: "No autorizado para consultar esta empresa" });
     const year = acceptsPeriod && req.query.year !== undefined ? Number(req.query.year) : undefined;
     const month = acceptsPeriod && req.query.month !== undefined ? Number(req.query.month) : undefined;

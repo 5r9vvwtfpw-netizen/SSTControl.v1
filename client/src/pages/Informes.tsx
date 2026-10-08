@@ -76,10 +76,15 @@ export default function Informes() {
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
-  const { selectedCompanyId, selectedCompany } = useCompanyContext();
+  const {
+    selectedCompanyId,
+    selectedCompany,
+    effectiveCompanyId: companyContextId,
+  } = useCompanyContext();
   
   const isSuperadmin = user?.role === 'superadmin';
-  const effectiveCompanyId = isSuperadmin ? selectedCompanyId : user?.companyId;
+  const isLso = user?.role === 'lso' || user?.role === 'lso_externo';
+  const effectiveCompanyId = isSuperadmin ? selectedCompanyId : companyContextId;
   const hasCompanyAssigned = !!effectiveCompanyId;
 
   // Obtener planes de trabajo para enlace al cronograma activo
@@ -110,8 +115,18 @@ export default function Informes() {
       return;
     }
 
-    // Validación para usuarios sin empresa asignada
-    if (!isSuperadmin && !user?.companyId) {
+    // Los LSO trabajan con una empresa autorizada en el contexto del portal,
+    // no con user.companyId. El servidor volverá a validar la asignación activa.
+    if (!effectiveCompanyId) {
+      if (isLso) {
+        toast({
+          title: "Seleccione una empresa asignada",
+          description: "Abra la empresa autorizada desde el Portal del Licenciado e intente generar el informe nuevamente.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       toast({
         title: "Empresa no asignada",
         description: "Su cuenta no tiene una empresa asignada. Por favor complete el registro de su empresa en Configuración.",
@@ -134,7 +149,7 @@ export default function Informes() {
       await downloadAuthenticatedReport({
         url: endpoint,
         filename: report.filename,
-        companyId: isSuperadmin ? selectedCompanyId : undefined,
+        companyId: isSuperadmin || isLso ? effectiveCompanyId : undefined,
       });
 
       toast({
@@ -188,11 +203,20 @@ export default function Informes() {
         </Alert>
       )}
 
-      {!isSuperadmin && !user?.companyId && (
+      {!isSuperadmin && !isLso && !user?.companyId && (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
             Su cuenta no tiene una empresa asignada. Por favor vaya a <strong>Configuración → Empresa</strong> para registrar su empresa, o contacte al administrador del sistema.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {isLso && !effectiveCompanyId && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Abra una empresa con asignación activa desde el Portal del Licenciado para generar informes.
           </AlertDescription>
         </Alert>
       )}
