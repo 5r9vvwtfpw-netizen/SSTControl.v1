@@ -14,6 +14,7 @@ import {
   isNumericEnvironmentalMeasurementValue,
 } from "@shared/environmental-measurement-catalog";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { openCompanyDocument } from "@/lib/company-context-url";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
@@ -517,7 +518,7 @@ export default function MedicionesAmbientales() {
                       size="sm"
                       className="flex-1"
                       onClick={() => {
-                        window.open(`/api/environmental-measurements/${measurement.id}/pdf`, '_blank');
+                        openCompanyDocument(`/api/environmental-measurements/${measurement.id}/pdf`);
                       }}
                       data-testid={`button-download-pdf-${measurement.id}`}
                     >

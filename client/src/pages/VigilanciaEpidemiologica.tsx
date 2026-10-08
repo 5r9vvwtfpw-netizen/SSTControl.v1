@@ -12,6 +12,7 @@ import { Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { SveProgram, SveCase, Worker, insertSveProgramSchema, insertSveCaseSchema } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { openCompanyDocument } from "@/lib/company-context-url";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
@@ -614,7 +615,7 @@ export default function VigilanciaEpidemiologica() {
         </div>
         <Button
           variant="outline"
-          onClick={() => window.open('/api/sve-programs/pdf', '_blank')}
+          onClick={() => openCompanyDocument('/api/sve-programs/pdf')}
           data-testid="button-download-general-pdf"
         >
           <FileText className="h-4 w-4 mr-2" />

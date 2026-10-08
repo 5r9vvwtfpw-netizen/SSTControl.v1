@@ -10,6 +10,7 @@ function parseDateLocal(dateStr: string | Date): Date {
 }
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { openCompanyDocument } from "@/lib/company-context-url";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -981,7 +982,7 @@ function CambiosTab({ prefillData, onPrefillApplied }: CambiosTabProps) {
                           variant="ghost"
                           size="icon"
                           onClick={() => {
-                            window.open(`/api/cambios-sst/${cambio.id}/pdf`, '_blank');
+                            openCompanyDocument(`/api/cambios-sst/${cambio.id}/pdf`);
                           }}
                           title="Descargar PDF del Cambio"
                           data-testid={`button-pdf-${cambio.id}`}
@@ -1558,7 +1559,7 @@ function EvaluacionesTab() {
                             variant="ghost"
                             size="icon"
                             onClick={() => {
-                              window.open(`/api/evaluaciones-impacto-cambio/${evaluacion.id}/report`, '_blank');
+                              openCompanyDocument(`/api/evaluaciones-impacto-cambio/${evaluacion.id}/report`);
                             }}
                             title="Descargar PDF de Evaluación de Impacto"
                             data-testid={`button-pdf-evaluacion-${evaluacion.id}`}
@@ -2035,7 +2036,7 @@ function DashboardTab() {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => window.open('/api/gestion-cambios/panel/pdf', '_blank')}
+          onClick={() => openCompanyDocument('/api/gestion-cambios/panel/pdf')}
           data-testid="button-download-panel-pdf"
         >
           <Printer className="h-4 w-4 mr-2" />

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { openCompanyDocument } from "@/lib/company-context-url";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -780,7 +781,7 @@ export default function MatrizLegal() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => window.open(`/api/matriz-legal/${item.id}/pdf`, '_blank')}
+                        onClick={() => openCompanyDocument(`/api/matriz-legal/${item.id}/pdf`)}
                         data-testid={`button-pdf-${item.id}`}
                       >
                         <Download className="w-4 h-4 mr-1" />

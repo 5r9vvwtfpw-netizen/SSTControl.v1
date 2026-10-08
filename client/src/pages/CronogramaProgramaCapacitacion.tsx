@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { openCompanyDocument } from "@/lib/company-context-url";
 import { useToast } from "@/hooks/use-toast";
 import type { ProgramTraining, TrainingProgram } from "@shared/schema";
 import { Button } from "@/components/ui/button";
@@ -66,7 +67,7 @@ export default function CronogramaProgramaCapacitacion() {
   const refresh = () => queryClient.invalidateQueries({ queryKey: [`/api/program-trainings/${id}`] });
   const downloadPdf = () => {
     if (!id) return;
-    window.open(`/api/training-programs/${id}/cronograma-pdf`, "_blank", "noopener,noreferrer");
+    openCompanyDocument(`/api/training-programs/${id}/cronograma-pdf`);
   };
   const saveMutation = useMutation({
     mutationFn: async (payload: Record<string, unknown>) => editing

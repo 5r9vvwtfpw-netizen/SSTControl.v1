@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { withActiveCompanyContext } from "@/lib/company-context-url";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -993,7 +994,7 @@ export default function PesvInduccionVirtual() {
                               Ver respuestas
                             </Button>
                           )}
-                          <a href={`/api/sesiones-induccion-pesv/${s.id}/pdf`} target="_blank" rel="noopener noreferrer">
+                          <a href={withActiveCompanyContext(`/api/sesiones-induccion-pesv/${s.id}/pdf`)} target="_blank" rel="noopener noreferrer">
                             <Button size="sm" variant="outline">
                               <Eye className="h-4 w-4 mr-1" />
                               Ver PDF

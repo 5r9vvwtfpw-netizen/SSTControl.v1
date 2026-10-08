@@ -16,6 +16,7 @@ import { AlertTriangle, Plus, CheckCircle2, XCircle, Pencil, Trash2, Shield, Bea
 import { EvaluacionPesvContextHeader } from "@/components/EvaluacionPesvContextHeader";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { openCompanyDocument } from "@/lib/company-context-url";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { PesvAlcoholRegistro, Driver, User } from "@shared/schema";
@@ -234,7 +235,7 @@ export default function PesvAlcoholSustancias() {
           <HelpVideoButton customRoute="/pesv/alcohol-sustancias" testId="button-help-video-pesv-alcohol" />
           <Button
             variant="outline"
-            onClick={() => window.open('/api/pesv/alcohol-registros/pdf', '_blank')}
+            onClick={() => openCompanyDocument('/api/pesv/alcohol-registros/pdf')}
             data-testid="button-download-general-pdf"
             className="gap-2"
           >
@@ -343,7 +344,7 @@ export default function PesvAlcoholSustancias() {
                       <TableCell>{r.responsable ?? "—"}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Button size="icon" variant="ghost" onClick={() => window.open(`/api/pesv/alcohol-registros/${r.id}/pdf`, '_blank')} data-testid={`button-pdf-alcohol-${r.id}`}>
+                          <Button size="icon" variant="ghost" onClick={() => openCompanyDocument(`/api/pesv/alcohol-registros/${r.id}/pdf`)} data-testid={`button-pdf-alcohol-${r.id}`}>
                             <FileDown className="h-4 w-4" />
                           </Button>
                           <Button size="icon" variant="ghost" onClick={() => openEdit(r)} data-testid={`button-editar-alcohol-${r.id}`}>

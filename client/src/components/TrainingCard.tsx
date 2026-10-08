@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar, Users, CheckCircle2, Pencil, UserPlus, Printer } from "lucide-react";
+import { openCompanyDocument } from "@/lib/company-context-url";
 
 interface TrainingCardProps {
   id: string;
@@ -101,7 +102,7 @@ export function TrainingCard({ id, title, date, attendees, countError, totalWork
           <Button
             variant="outline"
             className="w-full"
-            onClick={() => window.open(pdfUrl ?? `/api/trainings/${id}/lista-asistencia/pdf`, '_blank')}
+            onClick={() => openCompanyDocument(pdfUrl ?? `/api/trainings/${id}/lista-asistencia/pdf`)}
             data-testid={`button-attendance-pdf-${id}`}
           >
             <Printer className="h-4 w-4 mr-2" />

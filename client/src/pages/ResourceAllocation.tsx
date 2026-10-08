@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { openCompanyDocument } from "@/lib/company-context-url";
 import { z } from "zod";
 import { Calendar, Plus, Search, Pencil, Trash2, User, Printer, Bot, DollarSign, Users, Wrench, FileText, TrendingUp, CalendarDays, Target, Monitor, Shield, UserCheck, AlertTriangle } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
@@ -622,7 +623,7 @@ export default function ResourceAllocation() {
   };
 
   const handleDownloadResumenPdf = () => {
-    window.open('/api/resource-allocations/resumen-pdf', '_blank');
+    openCompanyDocument('/api/resource-allocations/resumen-pdf');
   };
 
   const handleAutoFillFromPredefinido = (resourceId: string) => {

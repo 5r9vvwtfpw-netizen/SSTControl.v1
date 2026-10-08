@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { openCompanyDocument } from "@/lib/company-context-url";
 import { useToast } from "@/hooks/use-toast";
 import type { EvsProgram, EvsProgramCatalog, EvsActivity, EvsControl, EvsIncident, EvsFollowup, Worker, ResourceAllocation } from "@shared/schema";
 import { getTodayDateString, formatCurrency } from "@/lib/utils/formatters";
@@ -547,7 +548,7 @@ function ProgramasTab({ programs, programCatalog, workers, financialResources, i
           <CardDescription>Programas anuales de promoción de estilos de vida saludables</CardDescription>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => window.open("/api/evs/programs/pdf", "_blank")} data-testid="button-print-programs">
+          <Button variant="outline" onClick={() => openCompanyDocument("/api/evs/programs/pdf")} data-testid="button-print-programs">
             <Printer className="h-4 w-4 mr-2" /> Imprimir
           </Button>
           <Button onClick={() => { resetForm(); setDialogOpen(true); }} data-testid="button-new-program">
@@ -965,7 +966,7 @@ function ActividadesTab({ activities, programs, workers, isLoading, toast }: { a
           <CardDescription>Campañas, charlas y talleres de promoción de la salud</CardDescription>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => window.open("/api/evs/activities/pdf", "_blank")} data-testid="button-print-activities">
+          <Button variant="outline" onClick={() => openCompanyDocument("/api/evs/activities/pdf")} data-testid="button-print-activities">
             <Printer className="h-4 w-4 mr-2" /> Imprimir
           </Button>
           <Button onClick={() => { resetForm(); setDialogOpen(true); }} data-testid="button-new-activity">
@@ -1338,7 +1339,7 @@ function ControlesTab({ controls, workers, programs, isLoading, toast }: { contr
           <CardDescription>Registro de pruebas de alcohol, drogas y tamizajes de salud</CardDescription>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => window.open("/api/evs/controls/pdf", "_blank")} data-testid="button-print-controls">
+          <Button variant="outline" onClick={() => openCompanyDocument("/api/evs/controls/pdf")} data-testid="button-print-controls">
             <Printer className="h-4 w-4 mr-2" /> Imprimir
           </Button>
           <Button onClick={() => { resetForm(); setDialogOpen(true); }} data-testid="button-new-control">
@@ -1683,7 +1684,7 @@ function IncidentesTab({ incidents, workers, controls, isLoading, toast }: { inc
           <CardDescription>Registro de incidentes relacionados con consumo de sustancias</CardDescription>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => window.open("/api/evs/incidents/pdf", "_blank")} data-testid="button-print-incidents">
+          <Button variant="outline" onClick={() => openCompanyDocument("/api/evs/incidents/pdf")} data-testid="button-print-incidents">
             <Printer className="h-4 w-4 mr-2" /> Imprimir
           </Button>
           <Button onClick={() => { resetForm(); setDialogOpen(true); }} data-testid="button-new-incident">
@@ -2060,7 +2061,7 @@ function SeguimientosTab({ followups, workers, controls, incidents, isLoading, t
           <CardDescription>Gestión de casos que requieren intervención y seguimiento</CardDescription>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => window.open("/api/evs/followups/pdf", "_blank")} data-testid="button-print-followups">
+          <Button variant="outline" onClick={() => openCompanyDocument("/api/evs/followups/pdf")} data-testid="button-print-followups">
             <Printer className="h-4 w-4 mr-2" /> Imprimir
           </Button>
           <Button onClick={() => { resetForm(); setDialogOpen(true); }} data-testid="button-new-followup">
@@ -2099,7 +2100,7 @@ function SeguimientosTab({ followups, workers, controls, incidents, isLoading, t
                     <TableCell>{followup.nextReviewDate ? format(new Date(followup.nextReviewDate), "dd/MM/yyyy", { locale: es }) : "-"}</TableCell>
                     <TableCell>{getStatusBadge(followup.status, FOLLOWUP_STATUS)}</TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="icon" onClick={() => window.open(`/api/evs/followups/${followup.id}/pdf`, "_blank")} title="Ver PDF" data-testid={`button-pdf-followup-${followup.id}`}>
+                      <Button variant="ghost" size="icon" onClick={() => openCompanyDocument(`/api/evs/followups/${followup.id}/pdf`)} title="Ver PDF" data-testid={`button-pdf-followup-${followup.id}`}>
                         <Eye className="h-4 w-4" />
                       </Button>
                       <Button variant="ghost" size="icon" onClick={() => handleEdit(followup)} data-testid={`button-edit-followup-${followup.id}`}>

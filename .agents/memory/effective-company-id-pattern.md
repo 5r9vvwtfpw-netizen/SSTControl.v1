@@ -56,3 +56,9 @@ The audited company selector must reach every request in a module, not only muta
 **Why:** A superadmin could enter a PESV vault through the audited dialog yet still see empty evidence or fail to upload because its detail page bypassed the shared header builder.
 
 **How to apply:** When making tenant-scoped requests outside the shared API helper, send the active context header as well; leave FormData Content-Type to the browser. A failed evidence request must show an error rather than returning an empty list.
+
+New-tab document requests cannot carry `X-Company-Id`; every company-scoped `/api` PDF opened with `window.open`, an anchor, or a download link must include the active `companyId` query parameter. Keep external/object-storage URLs unchanged.
+
+**Why:** A functional superadmin session produced valid PDFs for the tested report endpoints only when the selected company was included in the URL; direct links without it returned authorization or company-context errors.
+
+**How to apply:** Use the shared active-company document URL/open helper for tenant PDF links, and keep regular company accounts scoped by their authenticated account when no global company selection exists.

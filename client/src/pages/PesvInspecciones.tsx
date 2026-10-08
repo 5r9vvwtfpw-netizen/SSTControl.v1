@@ -19,7 +19,7 @@ import { z } from "zod";
 import { hasCompanyAdminAccess, hasGlobalAccess, canWrite } from "@shared/permissions";
 import { BackToPesvEvaluationButton } from "@/components/BackToPesvEvaluationButton";
 import { Link } from "wouter";
-import { withCompanyContext } from "@/lib/company-context-url";
+import { openCompanyDocument, withCompanyContext } from "@/lib/company-context-url";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
 import { MachineryPreoperationalInspectionsCard } from "@/components/pesv/MachineryPreoperationalInspectionsCard";
 
@@ -558,11 +558,7 @@ export default function PesvInspecciones() {
                         size="icon"
                         onClick={() => {
                           const pdfUrl = `/api/pesv/inspecciones/${inspection.id}/pdf`;
-                          window.open(
-                            effectiveCompanyId ? withCompanyContext(pdfUrl, effectiveCompanyId) : pdfUrl,
-                            '_blank',
-                            'noopener,noreferrer',
-                          );
+                          openCompanyDocument(pdfUrl, effectiveCompanyId);
                         }}
                         data-testid={`button-pdf-inspection-${inspection.id}`}
                         title="Descargar PDF"

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { openCompanyDocument } from "@/lib/company-context-url";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -883,7 +884,7 @@ export default function CapacitacionCopasst() {
                       variant="outline"
                       size="sm"
                       className="w-full"
-                      onClick={() => cert.pdfUrl && window.open(cert.pdfUrl, '_blank')}
+                      onClick={() => cert.pdfUrl && openCompanyDocument(cert.pdfUrl)}
                       data-testid={`button-descargar-certificado-${cert.id}`}
                     >
                       <Download className="h-4 w-4 mr-2" />

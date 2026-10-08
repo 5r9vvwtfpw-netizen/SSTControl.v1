@@ -16,6 +16,7 @@ import { Plus, Pencil, Trash2, HeartHandshake, Shield, FileDown, Link2 } from "l
 import { EvaluacionPesvContextHeader } from "@/components/EvaluacionPesvContextHeader";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { openCompanyDocument } from "@/lib/company-context-url";
 import { useToast } from "@/hooks/use-toast";
 import { PesvVictimasRegistro, RoadIncident } from "@shared/schema";
 import { getTrazabilidadPaso } from "@/data/pesv-normativa-trazabilidad";
@@ -237,7 +238,7 @@ export default function PesvAtencionVictimas() {
           <HelpVideoButton customRoute="/pesv/atencion-victimas" testId="button-help-video-pesv-victimas" />
           <Button
             variant="outline"
-            onClick={() => window.open('/api/pesv/victimas-registros/pdf', '_blank')}
+            onClick={() => openCompanyDocument('/api/pesv/victimas-registros/pdf')}
             data-testid="button-download-general-pdf"
             className="gap-2"
           >
@@ -358,7 +359,7 @@ export default function PesvAtencionVictimas() {
                       <TableCell>{r.responsable ?? "—"}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Button size="icon" variant="ghost" onClick={() => window.open(`/api/pesv/victimas-registros/${r.id}/pdf`, '_blank')} data-testid={`button-pdf-victima-${r.id}`}>
+                          <Button size="icon" variant="ghost" onClick={() => openCompanyDocument(`/api/pesv/victimas-registros/${r.id}/pdf`)} data-testid={`button-pdf-victima-${r.id}`}>
                             <FileDown className="h-4 w-4" />
                           </Button>
                           <Button size="icon" variant="ghost" onClick={() => openEdit(r)} data-testid={`button-editar-victima-${r.id}`}>

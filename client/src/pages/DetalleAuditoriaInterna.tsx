@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { withActiveCompanyContext } from "@/lib/company-context-url";
 import { AuditoriaAuditor, AuditoriaChecklist, AuditoriaInterna, HallazgoAuditoria, PlanAccionAuditoria } from "@shared/schema";
 
 const statusConfig: Record<string, { label: string; className: string; icon: typeof Calendar }> = {
@@ -646,7 +647,7 @@ export default function DetalleAuditoriaInterna() {
             {auditoria.fechaInforme ? `Emitido el ${formatDate(auditoria.fechaInforme)}` : "Aún no se ha emitido el informe final."}
           </div>
           <Button variant="outline" asChild>
-            <a href={`/api/auditorias-internas/${id}/informe`} target="_blank" rel="noopener noreferrer">
+            <a href={withActiveCompanyContext(`/api/auditorias-internas/${id}/informe`)} target="_blank" rel="noopener noreferrer">
               <Download className="h-4 w-4 mr-2" /> Descargar informe PDF
             </a>
           </Button>

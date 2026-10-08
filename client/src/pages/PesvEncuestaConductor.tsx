@@ -16,6 +16,7 @@ import { Plus, Trash2, ArrowLeft, ClipboardList, CheckCircle2, XCircle, AlertTri
 import { EvaluacionPesvContextHeader } from "@/components/EvaluacionPesvContextHeader";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
 import { apiRequest, buildHeaders, queryClient } from "@/lib/queryClient";
+import { openCompanyDocument } from "@/lib/company-context-url";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { useCompanyContext } from "@/hooks/use-company-context";
@@ -312,7 +313,7 @@ export default function PesvEncuestaConductor() {
                         <Button
                           size="icon"
                           variant="ghost"
-                          onClick={() => window.open(`/api/pesv/encuestas-conductor/${enc.id}/pdf`, '_blank')}
+                          onClick={() => openCompanyDocument(`/api/pesv/encuestas-conductor/${enc.id}/pdf`)}
                           data-testid={`button-pdf-encuesta-${enc.id}`}
                           title="Descargar PDF"
                         >

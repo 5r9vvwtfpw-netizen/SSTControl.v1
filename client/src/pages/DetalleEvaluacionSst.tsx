@@ -15,7 +15,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { EvaluacionSst, ComponenteSst, EstandarSst, RespuestaEstandar, insertRespuestaEstandarSchema, AccionMejora, insertAccionMejoraSchema } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { withCompanyContext } from "@/lib/company-context-url";
+import { withActiveCompanyContext, withCompanyContext } from "@/lib/company-context-url";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation, useParams } from "wouter";
@@ -577,6 +577,8 @@ export default function DetalleEvaluacionSst() {
       const basePdfUrl = `/api/evaluaciones-sst/${id}/pdf`;
       const pdfUrl = (user?.role === 'lso' || user?.role === 'lso_externo') && evaluacion?.companyId
         ? withCompanyContext(basePdfUrl, evaluacion.companyId)
+        : user?.role === 'superadmin'
+          ? withActiveCompanyContext(basePdfUrl)
         : basePdfUrl;
       const response = await fetch(pdfUrl, {
         credentials: 'include'
@@ -622,6 +624,8 @@ export default function DetalleEvaluacionSst() {
       const basePdfUrl = `/api/evaluaciones-sst/${id}/pdf-iso45001`;
       const pdfUrl = (user?.role === 'lso' || user?.role === 'lso_externo') && evaluacion?.companyId
         ? withCompanyContext(basePdfUrl, evaluacion.companyId)
+        : user?.role === 'superadmin'
+          ? withActiveCompanyContext(basePdfUrl)
         : basePdfUrl;
       const response = await fetch(pdfUrl, {
         credentials: 'include'
@@ -666,6 +670,8 @@ export default function DetalleEvaluacionSst() {
       const basePdfUrl = `/api/evaluaciones-sst/${id}/pdf-ministerio?${params.toString()}`;
       const pdfUrl = (user?.role === 'lso' || user?.role === 'lso_externo') && evaluacion?.companyId
         ? withCompanyContext(basePdfUrl, evaluacion.companyId)
+        : user?.role === 'superadmin'
+          ? withActiveCompanyContext(basePdfUrl)
         : basePdfUrl;
       const response = await fetch(pdfUrl, {
         credentials: 'include'
@@ -2388,6 +2394,8 @@ export default function DetalleEvaluacionSst() {
                         const basePdfUrl = `/api/evaluaciones-sst/${id}/informe-verificacion-sistema`;
                         const pdfUrl = (user?.role === 'lso' || user?.role === 'lso_externo') && evaluacion?.companyId
                           ? withCompanyContext(basePdfUrl, evaluacion.companyId)
+                          : user?.role === 'superadmin'
+                            ? withActiveCompanyContext(basePdfUrl)
                           : basePdfUrl;
                         window.open(pdfUrl, '_blank');
                       }}

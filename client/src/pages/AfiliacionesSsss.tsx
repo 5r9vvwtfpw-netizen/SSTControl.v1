@@ -3,6 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { openCompanyDocument } from "@/lib/company-context-url";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -2358,7 +2359,7 @@ export default function AfiliacionesSsss() {
                               variant="ghost"
                               size="icon"
                               onClick={() => {
-                                window.open(`/api/verificaciones-muestreo-sgss/${verificacion.id}/evidencia-pdf`, '_blank');
+                                openCompanyDocument(`/api/verificaciones-muestreo-sgss/${verificacion.id}/evidencia-pdf`);
                               }}
                               data-testid={`button-descargar-pdf-${verificacion.id}`}
                               title="Descargar PDF de evidencia"
@@ -2444,7 +2445,7 @@ export default function AfiliacionesSsss() {
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={() => window.open('/api/high-risk-workers/evidencia-pdf', '_blank')}
+                  onClick={() => openCompanyDocument('/api/high-risk-workers/evidencia-pdf')}
                   disabled={highRiskWorkers.length === 0}
                   data-testid="button-descargar-evidencia-alto-riesgo"
                 >

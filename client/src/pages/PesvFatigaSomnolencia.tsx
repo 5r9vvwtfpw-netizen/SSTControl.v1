@@ -16,6 +16,7 @@ import { AlertCircle, Plus, Moon, Clock, CheckCircle2, XCircle, Pencil, Trash2, 
 import { EvaluacionPesvContextHeader } from "@/components/EvaluacionPesvContextHeader";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { openCompanyDocument } from "@/lib/company-context-url";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { PesvFatigaRegistro, Driver, User } from "@shared/schema";
@@ -231,7 +232,7 @@ export default function PesvFatigaSomnolencia() {
           <HelpVideoButton customRoute="/pesv/fatiga-somnolencia" testId="button-help-video-pesv-fatiga" />
           <Button
             variant="outline"
-            onClick={() => window.open('/api/pesv/fatiga-registros/pdf', '_blank')}
+            onClick={() => openCompanyDocument('/api/pesv/fatiga-registros/pdf')}
             data-testid="button-download-general-pdf"
             className="gap-2"
           >
@@ -355,7 +356,7 @@ export default function PesvFatigaSomnolencia() {
                       <TableCell>{r.responsable ?? "—"}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Button size="icon" variant="ghost" onClick={() => window.open(`/api/pesv/fatiga-registros/${r.id}/pdf`, '_blank')} data-testid={`button-pdf-fatiga-${r.id}`}>
+                          <Button size="icon" variant="ghost" onClick={() => openCompanyDocument(`/api/pesv/fatiga-registros/${r.id}/pdf`)} data-testid={`button-pdf-fatiga-${r.id}`}>
                             <FileDown className="h-4 w-4" />
                           </Button>
                           <Button size="icon" variant="ghost" onClick={() => openEdit(r)} data-testid={`button-editar-fatiga-${r.id}`}>

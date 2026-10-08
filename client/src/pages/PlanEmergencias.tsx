@@ -28,6 +28,7 @@ import {
   Company, Worker
 } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { openCompanyDocument } from "@/lib/company-context-url";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
@@ -1177,7 +1178,7 @@ export default function PlanEmergencias() {
         <div className="flex items-center gap-2 flex-wrap">
         <Button
           variant="outline"
-          onClick={() => window.open('/api/planes-emergencia/pdf', '_blank')}
+          onClick={() => openCompanyDocument('/api/planes-emergencia/pdf')}
           data-testid="button-download-general-pdf"
         >
           <FileText className="h-4 w-4 mr-2" />
@@ -1443,9 +1444,7 @@ export default function PlanEmergencias() {
                       <Button 
                         size="sm" 
                         variant="outline" 
-                        onClick={() => {
-                          window.open(`/api/planes-emergencia/${plan.id}/pdf`, '_blank');
-                        }}
+                        onClick={() => openCompanyDocument(`/api/planes-emergencia/${plan.id}/pdf`)}
                         data-testid={`button-download-pdf-plan-${plan.id}`}
                       >
                         <FileDown className="h-4 w-4" />

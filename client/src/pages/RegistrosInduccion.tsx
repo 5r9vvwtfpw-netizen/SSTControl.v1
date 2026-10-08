@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { openCompanyDocument } from "@/lib/company-context-url";
 import { type RegistroInduccion, type Worker, type AfiliacionSsss, type ResponsibleDesignation } from "@shared/schema";
 import { Plus, Pencil, Trash2, ClipboardList, FileDown, Settings, Send, CalendarDays } from "lucide-react";
 import { Link } from "wouter";
@@ -1023,7 +1024,7 @@ export default function RegistrosInduccionPage() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => window.open(`/api/registros-induccion/${registro.id}/pdf`, '_blank')}
+                          onClick={() => openCompanyDocument(`/api/registros-induccion/${registro.id}/pdf`)}
                           data-testid={`button-pdf-${registro.id}`}
                           title="Descargar PDF"
                         >

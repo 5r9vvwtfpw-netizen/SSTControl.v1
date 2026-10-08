@@ -1,3 +1,5 @@
+import { getSelectedCompanyId } from "./queryClient";
+
 /**
  * Adds the selected company context to a document URL opened in a new tab.
  *
@@ -20,4 +22,21 @@ export function withCompanyContext(path: string, companyId: string): string {
 
   params.set("companyId", companyId);
   return `${pathname}?${params.toString()}${hash}`;
+}
+
+/**
+ * Adds the active company context to a document URL when one is selected.
+ * Regular company users can omit it because the server resolves their own company
+ * from the authenticated account.
+ */
+export function withActiveCompanyContext(path: string, companyId?: string | null): string {
+  if (!path.startsWith("/api/")) return path;
+  const activeCompanyId = companyId || getSelectedCompanyId();
+  return activeCompanyId ? withCompanyContext(path, activeCompanyId) : path;
+}
+
+/** Open a company-scoped document in a new tab without dropping tenant context. */
+export function openCompanyDocument(path: string, companyId?: string | null): Window | null {
+  if (typeof window === "undefined") return null;
+  return window.open(withActiveCompanyContext(path, companyId), "_blank", "noopener,noreferrer");
 }

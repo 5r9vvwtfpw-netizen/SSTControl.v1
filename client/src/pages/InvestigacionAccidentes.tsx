@@ -4,6 +4,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useCompanyContext } from "@/hooks/use-company-context";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { openCompanyDocument } from "@/lib/company-context-url";
 import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -1245,7 +1246,7 @@ export default function InvestigacionAccidentes() {
                           size="sm"
                           data-testid={`button-download-pdf-${investigation.id}`}
                           onClick={() => {
-                            window.open(`/api/investigations/${investigation.id}/pdf`, '_blank');
+                            openCompanyDocument(`/api/investigations/${investigation.id}/pdf`);
                           }}
                         >
                           <Download className="h-4 w-4 mr-1" />

@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { openCompanyDocument } from "@/lib/company-context-url";
 import {
   CopasstPeriodo, InsertCopasstPeriodo, insertCopasstPeriodoSchema,
   CopasstMiembro, InsertCopasstMiembro, insertCopasstMiembroSchema,
@@ -718,11 +719,11 @@ export default function CopasstGestion() {
   };
 
   const handleActaDownloadPdf = (actaId: string) => {
-    window.open(`/api/copasst-actas/${actaId}/pdf`, '_blank');
+    openCompanyDocument(`/api/copasst-actas/${actaId}/pdf`);
   };
 
   const handleDownloadGeneralPdf = () => {
-    window.open('/api/copasst-actas-general/pdf', '_blank');
+    openCompanyDocument('/api/copasst-actas-general/pdf');
   };
 
   // Filtered actas
@@ -854,7 +855,7 @@ export default function CopasstGestion() {
                       <Button 
                         variant="outline" 
                         size="sm" 
-                        onClick={() => window.open(`/api/copasst-periodos/${activePeriodo.id}/acta-constitucion-pdf`, '_blank')} 
+                        onClick={() => openCompanyDocument(`/api/copasst-periodos/${activePeriodo.id}/acta-constitucion-pdf`)}
                         data-testid="button-descargar-acta-constitucion"
                       >
                         <Download className="h-4 w-4 mr-2" />
@@ -1175,7 +1176,7 @@ export default function CopasstGestion() {
                     <div className="flex justify-between gap-4 flex-wrap">
                       <Button 
                         variant="outline" 
-                        onClick={() => window.open(`/api/copasst-elecciones/${activeElection.id}/convocatoria-pdf`, '_blank')} 
+                        onClick={() => openCompanyDocument(`/api/copasst-elecciones/${activeElection.id}/convocatoria-pdf`)}
                         data-testid="button-descargar-convocatoria"
                       >
                         <Download className="h-4 w-4 mr-2" />
@@ -1214,7 +1215,7 @@ export default function CopasstGestion() {
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => window.open(`/api/copasst-elecciones/${completedElection.id}/acta-escrutinio-pdf`, '_blank')} 
+                    onClick={() => openCompanyDocument(`/api/copasst-elecciones/${completedElection.id}/acta-escrutinio-pdf`)}
                     data-testid="button-descargar-acta-escrutinio"
                   >
                     <Download className="h-4 w-4 mr-2" />

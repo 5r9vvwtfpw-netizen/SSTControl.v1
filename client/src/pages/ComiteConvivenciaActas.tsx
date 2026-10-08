@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { openCompanyDocument } from "@/lib/company-context-url";
 import {
   ConvivenciaPeriodo, InsertConvivenciaPeriodo, insertConvivenciaPeriodoSchema,
   ConvivenciaMiembro, InsertConvivenciaMiembro, insertConvivenciaMiembroSchema,
@@ -641,7 +642,7 @@ export default function ComiteConvivenciaActas() {
   };
 
   const handleDownloadActaPdf = (actaId: string) => {
-    window.open(`/api/convivencia-actas/${actaId}/pdf`, "_blank");
+    openCompanyDocument(`/api/convivencia-actas/${actaId}/pdf`);
   };
 
   const empleadorMiembros = miembros.filter(m => m.representacion === 'empleador');
@@ -757,7 +758,7 @@ export default function ComiteConvivenciaActas() {
                       <Button 
                         variant="outline" 
                         size="sm" 
-                        onClick={() => window.open(`/api/convivencia-periodos/${activePeriodo.id}/acta-constitucion-pdf`, '_blank')} 
+                        onClick={() => openCompanyDocument(`/api/convivencia-periodos/${activePeriodo.id}/acta-constitucion-pdf`)}
                         data-testid="button-descargar-acta-constitucion"
                       >
                         <Download className="h-4 w-4 mr-2" />
@@ -1005,7 +1006,7 @@ export default function ComiteConvivenciaActas() {
                     <div className="flex justify-between gap-4 flex-wrap">
                       <Button 
                         variant="outline" 
-                        onClick={() => window.open(`/api/convivencia-elecciones/${activeElection.id}/convocatoria-pdf`, '_blank')} 
+                        onClick={() => openCompanyDocument(`/api/convivencia-elecciones/${activeElection.id}/convocatoria-pdf`)}
                         data-testid="button-descargar-convocatoria"
                       >
                         <Download className="h-4 w-4 mr-2" />
@@ -1044,7 +1045,7 @@ export default function ComiteConvivenciaActas() {
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => window.open(`/api/convivencia-elecciones/${completedElection.id}/acta-escrutinio-pdf`, '_blank')} 
+                    onClick={() => openCompanyDocument(`/api/convivencia-elecciones/${completedElection.id}/acta-escrutinio-pdf`)}
                     data-testid="button-descargar-acta-escrutinio"
                   >
                     <Download className="h-4 w-4 mr-2" />
@@ -1239,7 +1240,7 @@ export default function ComiteConvivenciaActas() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => window.open(acta.documentoUrl!, '_blank')}
+                                onClick={() => openCompanyDocument(acta.documentoUrl!)}
                                 data-testid={`button-descargar-acta-${acta.id}`}
                                 title="Descargar documento histórico"
                               >

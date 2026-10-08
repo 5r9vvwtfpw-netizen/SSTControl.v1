@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
+import { openCompanyDocument } from "@/lib/company-context-url";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -1290,7 +1291,7 @@ export default function ResponsibleDesignationPage() {
                             variant="outline"
                             size="sm"
                             onClick={() => {
-                              window.open(`/api/responsible-designations/${designation.id}/acta-pdf`, '_blank');
+                              openCompanyDocument(`/api/responsible-designations/${designation.id}/acta-pdf`);
                             }}
                             data-testid={`button-acta-pdf-${designation.id}`}
                             title="Generar Acta de Designación (PDF)"

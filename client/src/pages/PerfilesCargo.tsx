@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { openCompanyDocument } from "@/lib/company-context-url";
 import { useToast } from "@/hooks/use-toast";
 import type { JobProfile, Company, Worker } from "@shared/schema";
 import { insertJobProfileSchema } from "@shared/schema";
@@ -625,7 +626,7 @@ export default function PerfilesCargo() {
         <div className="flex gap-2 flex-wrap">
           <Button
             variant="outline"
-            onClick={() => window.open('/api/job-profiles/pdf', '_blank')}
+            onClick={() => openCompanyDocument('/api/job-profiles/pdf')}
             data-testid="button-download-general-pdf"
           >
             <Download className="h-4 w-4 mr-2" />
@@ -1720,7 +1721,7 @@ export default function PerfilesCargo() {
                     variant="outline"
                     size="sm"
                     onClick={() => {
-                      window.open(`/api/job-profiles/${profile.id}/pdf`, '_blank');
+                      openCompanyDocument(`/api/job-profiles/${profile.id}/pdf`);
                     }}
                     data-testid={`button-pdf-${profile.id}`}
                     title="Descargar PDF"

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { openCompanyDocument } from "@/lib/company-context-url";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -2235,7 +2236,7 @@ function DashboardTab({ onNavigateToEvaluaciones }: DashboardTabProps) {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => window.open('/api/evaluacion-proveedores/panel/pdf', '_blank')}
+          onClick={() => openCompanyDocument('/api/evaluacion-proveedores/panel/pdf')}
           data-testid="button-download-panel-pdf"
         >
           <Printer className="h-4 w-4 mr-2" />

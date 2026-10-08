@@ -22,6 +22,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Training, Company, Worker, insertTrainingSchema } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { withActiveCompanyContext } from "@/lib/company-context-url";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
@@ -436,7 +437,7 @@ export default function Capacitaciones() {
             variant="outline"
             onClick={() => {
               const link = document.createElement('a');
-              link.href = '/api/reports/capacitaciones';
+              link.href = withActiveCompanyContext('/api/reports/capacitaciones');
               link.target = '_blank';
               link.download = 'informe-capacitaciones.pdf';
               document.body.appendChild(link);

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { withActiveCompanyContext } from "@/lib/company-context-url";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -1158,7 +1159,7 @@ export default function ConfiguracionInduccion() {
                                 Ver respuestas
                               </Button>
                               <a
-                                href={`/api/sesiones-induccion-virtual/${sesion.id}/pdf`}
+                                href={withActiveCompanyContext(`/api/sesiones-induccion-virtual/${sesion.id}/pdf`)}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 data-testid={`button-descargar-pdf-${sesion.id}`}

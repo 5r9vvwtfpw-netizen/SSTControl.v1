@@ -17,6 +17,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { RevisionDireccion, Company, DecisionRevision, AccionRevision, ParticipanteRevision, TemaRevision, insertRevisionDireccionSchema, insertDecisionRevisionSchema, insertAccionRevisionSchema } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { withActiveCompanyContext } from "@/lib/company-context-url";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
@@ -474,7 +475,7 @@ export default function RevisionesDireccion() {
 
   const handleDownloadPdf = (revisionId: string, codigo: string) => {
     const link = document.createElement('a');
-    link.href = `/api/revisiones-direccion/${revisionId}/pdf`;
+    link.href = withActiveCompanyContext(`/api/revisiones-direccion/${revisionId}/pdf`);
     link.target = '_blank';
     link.download = `revision-direccion-${codigo}.pdf`;
     document.body.appendChild(link);

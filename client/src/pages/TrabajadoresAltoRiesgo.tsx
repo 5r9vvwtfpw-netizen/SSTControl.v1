@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertTrabajadorAltoRiesgoSchema, type InsertTrabajadorAltoRiesgo, type TrabajadorAltoRiesgo, type Worker } from "@shared/schema";
 import { queryClient, apiRequest } from "@/lib/queryClient";
+import { openCompanyDocument } from "@/lib/company-context-url";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -458,7 +459,7 @@ export default function TrabajadoresAltoRiesgo() {
   };
 
   const handlePrintPDF = () => {
-    window.open("/api/trabajadores-alto-riesgo/report/pdf", "_blank");
+    openCompanyDocument("/api/trabajadores-alto-riesgo/report/pdf");
   };
 
   const handleSelectPlantilla = (plantilla: PlantillaInfo) => {

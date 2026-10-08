@@ -15,6 +15,7 @@ import { getTodayDateString } from "@/lib/utils/formatters";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { ComiteIntegrantePesv, ActaComitePesv, Worker, ActoAdministrativoPesv, CronogramaReunionPesv, ResponsibleDesignation, Company } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { openCompanyDocument } from "@/lib/company-context-url";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { hasCompanyAdminAccess, canWrite } from "@shared/permissions";
@@ -300,7 +301,7 @@ function IntegrantesTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
           {integrantes.length} integrantes ({integrantesActivos.length} activos)
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => { const link = document.createElement('a'); link.href = '/api/pesv/comite/integrantes/pdf'; link.target = '_blank'; document.body.appendChild(link); link.click(); document.body.removeChild(link); }} data-testid="button-download-integrantes-pdf">
+          <Button variant="outline" size="sm" onClick={() => openCompanyDocument('/api/pesv/comite/integrantes/pdf')} data-testid="button-download-integrantes-pdf">
             <FileDown className="h-4 w-4 mr-2" /> PDF
           </Button>
           {isAdmin && (
@@ -582,7 +583,7 @@ function ActoAdministrativoTab({ isAdmin, toast }: { isAdmin: boolean; toast: an
   const actoVigente = actos.find(a => a.estado === "vigente");
 
   const handlePrint = (a: ActoAdministrativoPesv) => {
-    window.open(`/api/pesv/comite/actos-administrativos/${a.id}/pdf`, "_blank");
+    openCompanyDocument(`/api/pesv/comite/actos-administrativos/${a.id}/pdf`);
   };
 
   return (
@@ -1067,12 +1068,7 @@ function ActasTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
   };
 
   const handleDownloadPdf = (url: string) => {
-    const link = document.createElement('a');
-    link.href = url;
-    link.target = '_blank';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    openCompanyDocument(url);
   };
 
   const integrantesActivos = integrantes.filter(i => i.estado === "activo");
