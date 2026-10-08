@@ -9,6 +9,13 @@ test("adds company context to a document URL", () => {
   );
 });
 
+test("adds the selected company to an individual PESV inspection PDF", () => {
+  assert.equal(
+    withCompanyContext("/api/pesv/inspecciones/inspection-1/pdf", "company-1"),
+    "/api/pesv/inspecciones/inspection-1/pdf?companyId=company-1",
+  );
+});
+
 test("preserves existing document parameters", () => {
   assert.equal(
     withCompanyContext(

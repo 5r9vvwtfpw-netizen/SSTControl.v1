@@ -19,6 +19,7 @@ import { z } from "zod";
 import { hasCompanyAdminAccess, hasGlobalAccess, canWrite } from "@shared/permissions";
 import { BackToPesvEvaluationButton } from "@/components/BackToPesvEvaluationButton";
 import { Link } from "wouter";
+import { withCompanyContext } from "@/lib/company-context-url";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
 import { MachineryPreoperationalInspectionsCard } from "@/components/pesv/MachineryPreoperationalInspectionsCard";
 
@@ -73,8 +74,7 @@ function computeResult(data: Record<ItemKey, number>): "apto" | "apto-con-observ
 
 export default function PesvInspecciones() {
   const { user } = useAuth();
-  const { effectiveCompanyId } = useCompanyContext();
-  const { selectedCompany: currentCompany } = useCompanyContext();
+  const { effectiveCompanyId, selectedCompany: currentCompany } = useCompanyContext();
   const { toast } = useToast();
   const isAdmin = user?.role ? canWrite(user.role, 'vehicle_inspections') : false;
   const isSuperadmin = user?.role ? hasGlobalAccess(user.role) : false;
@@ -260,7 +260,7 @@ export default function PesvInspecciones() {
 
   const handleDownloadPdf = (url: string, filename: string) => {
     const link = document.createElement('a');
-    link.href = url;
+    link.href = effectiveCompanyId ? withCompanyContext(url, effectiveCompanyId) : url;
     link.target = '_blank';
     link.download = filename;
     document.body.appendChild(link);
@@ -556,7 +556,14 @@ export default function PesvInspecciones() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => window.open(`/api/pesv/inspecciones/${inspection.id}/pdf`, '_blank')}
+                        onClick={() => {
+                          const pdfUrl = `/api/pesv/inspecciones/${inspection.id}/pdf`;
+                          window.open(
+                            effectiveCompanyId ? withCompanyContext(pdfUrl, effectiveCompanyId) : pdfUrl,
+                            '_blank',
+                            'noopener,noreferrer',
+                          );
+                        }}
                         data-testid={`button-pdf-inspection-${inspection.id}`}
                         title="Descargar PDF"
                       >
