@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
+import { readFile, writeFile } from "node:fs/promises";
 import { randomBytes, randomUUID } from "node:crypto";
 import test from "node:test";
 import { and, eq, sql } from "drizzle-orm";
@@ -35,6 +36,7 @@ type TestActa = {
 
 type TestIncident = {
   id: string;
+  incidentDate: string;
   vehicleId: string;
   driverId: string;
   policeReport: string | null;
@@ -58,6 +60,7 @@ test(
       import("../shared/schema"),
       import("../server/auth"),
     ]);
+      const { SINIESTROS_REPORT_HEADERS } = await import("../server/reports/pesv-siniestros-report");
 
     const companyResult = await db.execute(sql`
       SELECT id, name FROM companies WHERE id = ${companyId} LIMIT 1
@@ -243,61 +246,229 @@ test(
         },
       ] as const;
 
-      const statusResponse = await apiJson<{
+      const allCompanyStatus = await apiJson<{
         companyName: string;
         total: number;
         ready: number;
         incomplete: Array<{ id: string; missingFields: string[] }>;
       }>("/api/pesv/informes/siniestros/estado");
-      assert.equal(statusResponse.companyName, "DEMO-PRUEBA");
-      assert.ok(statusResponse.total > 0, "La prueba debe encontrar siniestros en DEMO-PRUEBA.");
-      assert.ok(statusResponse.ready > 0, "El caso marcado como prueba debe quedar completo.");
-      assert.ok(!statusResponse.incomplete.some((record) => record.id === testIncident.id));
-      const pendingFieldNames = [...new Set(statusResponse.incomplete.flatMap((record) => record.missingFields))];
+      assert.equal(allCompanyStatus.companyName, "DEMO-PRUEBA");
+      assert.equal(allCompanyStatus.total, 5, "Deben estar los cuatro registros previos y el siniestro funcional.");
+      assert.equal(allCompanyStatus.ready, 1, "El caso funcional debe estar completo.");
+      assert.ok(!allCompanyStatus.incomplete.some((record) => record.id === testIncident.id));
+      const pendingFieldNames = [...new Set(allCompanyStatus.incomplete.flatMap((record) => record.missingFields))];
 
       const outcomes: string[] = [];
       for (const format of formats) {
         const response = await fetch(`${baseUrl}${format.path}`, {
           headers: { Cookie: cookie, "X-Company-Id": companyId },
         });
-        if (statusResponse.incomplete.length > 0) {
+        if (allCompanyStatus.incomplete.length > 0) {
           assert.equal(response.status, 409, `${format.name} debe bloquearse mientras falten datos.`);
           const body = await response.json() as {
             message?: string;
             incomplete?: Array<{ id: string; missingFields: string[] }>;
           };
           assert.match(body.message || "", /Completa los datos/i);
-          assert.equal(body.incomplete?.length, statusResponse.incomplete.length);
+          assert.equal(body.incomplete?.length, allCompanyStatus.incomplete.length);
           outcomes.push(`${format.name}: bloqueado por ${body.incomplete.length} registros incompletos`);
-        } else {
-          assert.equal(response.status, 200, `${format.name}: ${await response.clone().text()}`);
-          assert.match(response.headers.get("Content-Type") || "", new RegExp(format.contentType));
-          const content = Buffer.from(await response.arrayBuffer());
-          assert.deepEqual(content.subarray(0, format.signature.length), format.signature);
-          if (format.name === "Excel") {
-            const workbook = XLSX.read(content, { type: "buffer" });
-            const rows = XLSX.utils.sheet_to_json<(string | number | null)[]>(
-              workbook.Sheets["Siniestros PESV"],
-              { header: 1 },
-            );
-            assert.ok(rows.some((row) => row.includes(testPoliceReport)));
-            assert.ok(rows.some((row) => row.includes(testVehicle!.plate)));
-            assert.ok(rows.some((row) => row.includes(testDriver!.name)));
-          } else {
-            const text = execFileSync("pdftotext", ["-", "-"], {
-              input: content,
-              encoding: "utf8",
-            }).replace(/\s+/g, " ");
-            assert.ok(text.includes(testPoliceReport));
-            assert.ok(text.includes(testVehicle.plate));
-            assert.ok(text.includes(testDriver.name));
-          }
-          outcomes.push(`${format.name}: descargado`);
         }
       }
 
+      for (const invalidQuery of [
+        "from=2026-02-31&to=2026-10-09",
+        "from=2026-10-10&to=2026-10-09",
+      ]) {
+        const invalidResponse = await fetch(
+          `${baseUrl}/api/pesv/informes/siniestros/estado?${invalidQuery}`,
+          { headers: { Cookie: cookie, "X-Company-Id": companyId } },
+        );
+        assert.equal(invalidResponse.status, 400, `Debe rechazar período inválido: ${invalidQuery}`);
+      }
+
+      const periodQuery = new URLSearchParams({
+        from: testIncident.incidentDate,
+        to: testIncident.incidentDate,
+      }).toString();
+      const periodStatus = await apiJson<{
+        total: number;
+        ready: number;
+        incomplete: Array<{ id: string; missingFields: string[] }>;
+        period: { from?: string; to?: string };
+      }>(`/api/pesv/informes/siniestros/estado?${periodQuery}`);
+      assert.equal(periodStatus.total, 1, "El período de prueba debe incluir el siniestro funcional.");
+      assert.equal(periodStatus.ready, 1);
+      assert.equal(periodStatus.incomplete.length, 0);
+      assert.equal(periodStatus.period.from, testIncident.incidentDate);
+      assert.equal(periodStatus.period.to, testIncident.incidentDate);
+
+      for (const format of formats) {
+        const response = await fetch(`${baseUrl}${format.path}?${periodQuery}`, {
+          headers: { Cookie: cookie, "X-Company-Id": companyId },
+        });
+        assert.equal(response.status, 200, `${format.name}: ${await response.clone().text()}`);
+        assert.match(response.headers.get("Content-Type") || "", new RegExp(format.contentType));
+        assert.match(
+          response.headers.get("Content-Disposition") || "",
+          /desde_2026-10-09_hasta_2026-10-09/i,
+        );
+        const content = Buffer.from(await response.arrayBuffer());
+        assert.deepEqual(content.subarray(0, format.signature.length), format.signature);
+        if (format.name === "Excel") {
+          const workbook = XLSX.read(content, { type: "buffer" });
+          const rows = XLSX.utils.sheet_to_json<(string | number | null)[]>(
+            workbook.Sheets["Siniestros PESV"],
+            { header: 1 },
+          );
+          assert.deepEqual(rows[4], SINIESTROS_REPORT_HEADERS);
+          assert.ok(
+            String(rows[2]?.[0]).includes("Período consultado: 09/10/2026 al 09/10/2026"),
+            "El Excel debe indicar claramente el período incluido.",
+          );
+          assert.equal(rows[5][0], "09/10/2026");
+          assert.equal(rows[5][1], "Choque simple: 2");
+          assert.equal(rows[5][2], 0);
+          assert.equal(rows[5][3], 0);
+          assert.equal(rows[5][4], 0);
+          assert.equal(rows[5][5], 2);
+          assert.equal(rows[5][6], testVehicle.plate);
+          assert.equal(rows[5][7], testDriver.name);
+          assert.equal(rows[5][8], testDriver.identificationNumber);
+          assert.equal(rows[5][9], testPoliceReport);
+          assert.equal(rows[5][10], "Autoridad de tránsito de prueba - NO REAL");
+          assert.equal(rows[5][11], testActa.numeroActa);
+          assert.equal(rows[5][12], "09/10/2026");
+          await writeFile("attached_assets/DEMO-PRUEBA_prueba_funcional_informe_siniestros_2026-10-09.xlsx", content);
+        } else {
+          const text = execFileSync("pdftotext", ["-", "-"], {
+            input: content,
+            encoding: "utf8",
+          }).toUpperCase();
+          const compact = (value: string) => value.toUpperCase().replace(/[\s-]+/g, "");
+          const compactText = compact(text);
+          const expectedPdfValues = [
+            "DEMO-PRUEBA",
+            "09/10/2026",
+            "Choque simple: 2",
+            testVehicle.plate,
+            testDriver.name,
+            testDriver.identificationNumber,
+            testPoliceReport,
+            "Autoridad de tránsito de prueba - NO REAL",
+            String(testActa.numeroActa),
+            "Período consultado: 09/10/2026 al 09/10/2026",
+          ];
+          for (const value of expectedPdfValues) {
+            assert.ok(compactText.includes(compact(value)), `PDF falta el dato: ${value}`);
+          }
+          const expectedPdfLabels = [
+            "Fecha del siniestro",
+            "Nivel de pérdida",
+            "Fatalidad (personas)",
+            "Heridos graves (personas)",
+            "Heridos leves (personas)",
+            "Choque simple (personas implicadas)",
+            "Placa del vehículo de la empresa",
+            "Nombre del conductor de la empresa",
+            "Identificación del conductor de la empresa",
+            "Consecutivo del IPAT en RNAT/RUNT",
+            "Organismo de tránsito o autoridad que elaboró el IPAT",
+            "Número del acta del comité",
+            "Fecha del comité donde fue analizado",
+          ];
+          for (const label of expectedPdfLabels) {
+            assert.ok(compactText.includes(compact(label)), `PDF no contiene el campo solicitado: ${label}`);
+          }
+          await writeFile("attached_assets/DEMO-PRUEBA_prueba_funcional_informe_siniestros_2026-10-09.pdf", content);
+        }
+        outcomes.push(`${format.name}: descargado desde la ruta autenticada`);
+      }
+
+      const { chromium } = await import("playwright");
+      const browser = await chromium.launch({ headless: true });
+      try {
+        const context = await browser.newContext({
+          acceptDownloads: true,
+          viewport: { width: 1280, height: 1000 },
+        });
+        await context.addCookies(
+          cookie.split("; ").map((pair) => {
+            const separator = pair.indexOf("=");
+            return {
+              name: pair.slice(0, separator),
+              value: pair.slice(separator + 1),
+              url: baseUrl,
+            };
+          }),
+        );
+        const page = await context.newPage();
+        const pageErrors: string[] = [];
+        page.on("pageerror", (error) => pageErrors.push(error.message));
+        await page.goto(`${baseUrl}/pesv/informes`, { waitUntil: "domcontentloaded" });
+        await page.getByTestId("input-pesv-report-from").waitFor({ state: "visible", timeout: 20_000 });
+        const essentialCookiesButton = page.getByRole("button", { name: "Solo esenciales" });
+        if (await essentialCookiesButton.isVisible()) {
+          await essentialCookiesButton.click();
+        }
+        await page.waitForFunction(
+          () => document.querySelector('[data-testid="text-pesv-report-total"]')?.textContent?.trim() === "5",
+          undefined,
+          { timeout: 20_000 },
+        );
+        assert.equal(await page.getByTestId("button-download-siniestros-excel").isDisabled(), true);
+        assert.equal(await page.getByTestId("button-download-siniestros-pdf").isDisabled(), true);
+
+        await page.getByTestId("input-pesv-report-from").fill(testIncident.incidentDate);
+        await page.getByTestId("input-pesv-report-to").fill(testIncident.incidentDate);
+        await page.getByTestId("button-apply-pesv-report-period").click();
+        await page.waitForFunction(
+          () => document.querySelector('[data-testid="text-pesv-report-total"]')?.textContent?.trim() === "1"
+            && document.querySelector('[data-testid="text-pesv-report-ready"]')?.textContent?.trim() === "1"
+            && document.querySelector('[data-testid="text-pesv-report-incomplete"]')?.textContent?.trim() === "0",
+          undefined,
+          { timeout: 20_000 },
+        );
+        assert.equal(await page.getByTestId("button-download-siniestros-excel").isEnabled(), true);
+        assert.equal(await page.getByTestId("button-download-siniestros-pdf").isEnabled(), true);
+        assert.match(
+          await page.getByTestId("text-pesv-report-period").innerText(),
+          /09\/10\/2026 al 09\/10\/2026/,
+        );
+        await page.screenshot({ path: "/tmp/pesv-report-ui-functional.png", fullPage: true });
+
+        const [excelDownload] = await Promise.all([
+          page.waitForEvent("download"),
+          page.getByTestId("button-download-siniestros-excel").click(),
+        ]);
+        assert.match(excelDownload.suggestedFilename(), /desde_2026-10-09_hasta_2026-10-09\.xlsx$/i);
+        await excelDownload.saveAs("attached_assets/DEMO-PRUEBA_prueba_funcional_informe_siniestros_2026-10-09.xlsx");
+        const uiExcel = await readFile("attached_assets/DEMO-PRUEBA_prueba_funcional_informe_siniestros_2026-10-09.xlsx");
+        const uiWorkbook = XLSX.read(uiExcel, { type: "buffer" });
+        const uiRows = XLSX.utils.sheet_to_json<(string | number | null)[]>(
+          uiWorkbook.Sheets["Siniestros PESV"],
+          { header: 1 },
+        );
+        assert.equal(uiRows[5][9], testPoliceReport);
+
+        const [pdfDownload] = await Promise.all([
+          page.waitForEvent("download"),
+          page.getByTestId("button-download-siniestros-pdf").click(),
+        ]);
+        assert.match(pdfDownload.suggestedFilename(), /desde_2026-10-09_hasta_2026-10-09\.pdf$/i);
+        await pdfDownload.saveAs("attached_assets/DEMO-PRUEBA_prueba_funcional_informe_siniestros_2026-10-09.pdf");
+        const uiPdf = await readFile("attached_assets/DEMO-PRUEBA_prueba_funcional_informe_siniestros_2026-10-09.pdf");
+        assert.equal(uiPdf.subarray(0, 5).toString("ascii"), "%PDF-");
+        const uiPdfText = execFileSync("pdftotext", ["-", "-"], { input: uiPdf, encoding: "utf8" });
+        const compactPdfText = (value: string) => value.toUpperCase().replace(/[\s-]+/g, "");
+        assert.ok(compactPdfText(uiPdfText).includes(compactPdfText(testPoliceReport)));
+        assert.deepEqual(pageErrors, [], `La pantalla no debe generar errores: ${pageErrors.join(" | ")}`);
+        outcomes.push("Excel y PDF descargados también desde los botones de la pantalla");
+      } finally {
+        await browser.close();
+      }
+
       console.log(
-        `DEMO-PRUEBA: caso retenido=${testPoliceReport}, placa=${testVehicle.plate}, acta=${testActa.numeroActa}; siniestros=${statusResponse.total}, completos=${statusResponse.ready}, pendientes=${statusResponse.incomplete.length}, campos pendientes=${pendingFieldNames.join(" | ") || "ninguno"}; ${outcomes.join("; ")}`,
+        `DEMO-PRUEBA: caso retenido=${testPoliceReport}, placa=${testVehicle.plate}, acta=${testActa.numeroActa}; siniestros empresa=${allCompanyStatus.total}, completos=${allCompanyStatus.ready}, pendientes=${allCompanyStatus.incomplete.length}, campos pendientes=${pendingFieldNames.join(" | ") || "ninguno"}; período de prueba=${testIncident.incidentDate}, registros=${periodStatus.total}, completos=${periodStatus.ready}; ${outcomes.join("; ")}`,
       );
     } finally {
       try {

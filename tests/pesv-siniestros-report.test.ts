@@ -80,12 +80,14 @@ test("el Excel conserva los encabezados oficiales y los datos enlazados", () => 
     { name: "Empresa de prueba", nit: "900123456" },
     [completeRecord],
     new Date("2026-10-09T12:00:00.000Z"),
+    { from: "2026-10-08", to: "2026-10-09" },
   );
   const workbook = XLSX.read(buffer, { type: "buffer" });
   const worksheet = workbook.Sheets["Siniestros PESV"];
   const rows = XLSX.utils.sheet_to_json<(string | number | null)[]>(worksheet, { header: 1 });
 
   assert.deepEqual(SINIESTROS_REPORT_HEADERS, requestedColumns);
+  assert.ok(String(rows[2]?.[0]).includes("Período consultado: 08/10/2026 al 09/10/2026"));
   assert.deepEqual(rows[4], requestedColumns);
   assert.equal(rows[5][0], "08/10/2026");
   assert.equal(rows[5][1], "Heridos graves: 1; Heridos leves: 2");
@@ -113,6 +115,7 @@ test("el PDF muestra los mismos campos y datos que solicita la evidencia", async
     },
     [completeRecord],
     false,
+    { from: "2026-10-08", to: "2026-10-09" },
   );
 
   assert.equal(buffer.subarray(0, 5).toString("ascii"), "%PDF-");
@@ -134,6 +137,7 @@ test("el PDF muestra los mismos campos y datos que solicita la evidencia", async
     "Secretaría de Movilidad",
     "8",
     "09/10/2026",
+    "Período consultado: 08/10/2026 al 09/10/2026",
   ]) {
     assert.ok(text.includes(value), `El PDF debe incluir el valor de prueba: ${value}`);
   }

@@ -4,6 +4,7 @@ import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCompanyContext } from "@/hooks/use-company-context";
 import { useToast } from "@/hooks/use-toast";
@@ -24,6 +25,7 @@ type SiniestrosReportStatus = {
   total: number;
   ready: number;
   incomplete: IncompleteSiniestro[];
+  period: { from?: string; to?: string };
 };
 
 function displayDate(value: string | null) {
@@ -41,7 +43,21 @@ export default function PesvInformes() {
   const { selectedCompany } = useCompanyContext();
   const { toast } = useToast();
   const [downloading, setDownloading] = useState<"excel" | "pdf" | null>(null);
+  const [draftPeriod, setDraftPeriod] = useState({ from: "", to: "" });
+  const [appliedPeriod, setAppliedPeriod] = useState({ from: "", to: "" });
   const companyContextKey = selectedCompany?.id || getSelectedCompanyId() || "empresa-activa";
+  const periodIsReversed = Boolean(
+    draftPeriod.from && draftPeriod.to && draftPeriod.from > draftPeriod.to,
+  );
+  const hasAppliedPeriod = Boolean(appliedPeriod.from || appliedPeriod.to);
+
+  const withPeriodQuery = (path: string) => {
+    const params = new URLSearchParams();
+    if (appliedPeriod.from) params.set("from", appliedPeriod.from);
+    if (appliedPeriod.to) params.set("to", appliedPeriod.to);
+    const query = params.toString();
+    return query ? `${path}?${query}` : path;
+  };
 
   const {
     data: status,
@@ -50,17 +66,43 @@ export default function PesvInformes() {
     error,
     refetch,
   } = useQuery<SiniestrosReportStatus>({
-    queryKey: ["/api/pesv/informes/siniestros/estado", companyContextKey],
+    queryKey: [
+      "/api/pesv/informes/siniestros/estado",
+      companyContextKey,
+      appliedPeriod.from,
+      appliedPeriod.to,
+    ],
     queryFn: async () => {
-      const response = await apiRequest("GET", "/api/pesv/informes/siniestros/estado");
+      const response = await apiRequest(
+        "GET",
+        withPeriodQuery("/api/pesv/informes/siniestros/estado"),
+      );
       return response.json();
     },
   });
 
+  const applyPeriod = () => {
+    if (periodIsReversed) {
+      toast({
+        title: "Revisa las fechas",
+        description: "La fecha inicial no puede ser posterior a la fecha final.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setAppliedPeriod({ ...draftPeriod });
+  };
+
+  const showAllRecords = () => {
+    const emptyPeriod = { from: "", to: "" };
+    setDraftPeriod(emptyPeriod);
+    setAppliedPeriod(emptyPeriod);
+  };
+
   const downloadReport = async (format: "excel" | "pdf") => {
     const url = format === "excel"
-      ? "/api/pesv/informes/siniestros.xlsx"
-      : "/api/pesv/informes/siniestros.pdf";
+      ? withPeriodQuery("/api/pesv/informes/siniestros.xlsx")
+      : withPeriodQuery("/api/pesv/informes/siniestros.pdf");
     setDownloading(format);
 
     try {
@@ -134,6 +176,55 @@ export default function PesvInformes() {
           </div>
         </CardHeader>
         <CardContent className="space-y-5">
+          <div className="space-y-3 rounded-md border p-4">
+            <div>
+              <h3 className="font-semibold">Período del informe</h3>
+              <p className="text-sm text-muted-foreground">
+                Deja las fechas en blanco para consultar todos los siniestros. Al elegir fechas, el archivo indicará el período incluido.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-end gap-3">
+              <label className="grid gap-1 text-sm">
+                <span>Desde</span>
+                <Input
+                  type="date"
+                  value={draftPeriod.from}
+                  onChange={(event) => setDraftPeriod((current) => ({ ...current, from: event.target.value }))}
+                  data-testid="input-pesv-report-from"
+                />
+              </label>
+              <label className="grid gap-1 text-sm">
+                <span>Hasta</span>
+                <Input
+                  type="date"
+                  value={draftPeriod.to}
+                  onChange={(event) => setDraftPeriod((current) => ({ ...current, to: event.target.value }))}
+                  data-testid="input-pesv-report-to"
+                />
+              </label>
+              <Button
+                variant="outline"
+                onClick={applyPeriod}
+                disabled={downloading !== null || periodIsReversed}
+                data-testid="button-apply-pesv-report-period"
+              >
+                Aplicar período
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={showAllRecords}
+                disabled={downloading !== null || (!hasAppliedPeriod && !draftPeriod.from && !draftPeriod.to)}
+              >
+                Ver todos
+              </Button>
+            </div>
+            {periodIsReversed && (
+              <p className="text-sm text-destructive" role="alert">
+                La fecha inicial no puede ser posterior a la fecha final.
+              </p>
+            )}
+          </div>
+
           {isLoading ? (
             <div className="space-y-3">
               <Skeleton className="h-16 w-full" />
@@ -157,23 +248,36 @@ export default function PesvInformes() {
                   <p className="font-semibold">{status.companyName} · NIT {status.companyNit}</p>
                 </div>
                 <div className="rounded-md border px-4 py-3">
-                  <span className="text-muted-foreground">Siniestros registrados</span>
-                  <p className="font-semibold">{status.total}</p>
+                  <span className="text-muted-foreground">
+                    {hasAppliedPeriod ? "Siniestros dentro del período" : "Siniestros registrados"}
+                  </span>
+                  <p className="font-semibold" data-testid="text-pesv-report-total">{status.total}</p>
                 </div>
                 <div className="rounded-md border px-4 py-3">
                   <span className="text-muted-foreground">Registros completos</span>
-                  <p className="font-semibold">{status.ready}</p>
+                  <p className="font-semibold" data-testid="text-pesv-report-ready">{status.ready}</p>
                 </div>
                 <div className="rounded-md border px-4 py-3">
                   <span className="text-muted-foreground">Con datos pendientes</span>
-                  <p className="font-semibold">{status.incomplete.length}</p>
+                  <p className="font-semibold" data-testid="text-pesv-report-incomplete">{status.incomplete.length}</p>
                 </div>
               </div>
+              {hasAppliedPeriod && (
+                <p className="text-sm text-muted-foreground" data-testid="text-pesv-report-period">
+                  Período consultado: {appliedPeriod.from ? displayDate(appliedPeriod.from) : "Inicio"}
+                  {" al "}
+                  {appliedPeriod.to ? displayDate(appliedPeriod.to) : "Actualidad"}
+                </p>
+              )}
 
               {status.total === 0 ? (
                 <div className="rounded-md border border-dashed p-6 text-center">
                   <FileWarning className="mx-auto mb-2 h-6 w-6 text-muted-foreground" />
-                  <p className="font-medium">No hay siniestros registrados para esta empresa.</p>
+                  <p className="font-medium">
+                    {hasAppliedPeriod
+                      ? "No hay siniestros registrados en el período seleccionado."
+                      : "No hay siniestros registrados para esta empresa."}
+                  </p>
                   <p className="mt-1 text-sm text-muted-foreground">
                     Registra los eventos en el módulo PESV de Siniestros para que aparezcan en este informe.
                   </p>
@@ -185,7 +289,8 @@ export default function PesvInformes() {
                       <AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />
                       <div>
                         <p className="font-semibold">
-                          No se habilita la descarga hasta completar los {status.incomplete.length} registros pendientes.
+                          No se habilita la descarga hasta completar los {status.incomplete.length} registros pendientes
+                          {hasAppliedPeriod ? " del período seleccionado." : " de la empresa."}
                         </p>
                         <p className="mt-1 text-sm">
                           Abre cada siniestro en el módulo existente. El informe no llenará datos que no estén registrados.
@@ -226,7 +331,11 @@ export default function PesvInformes() {
               ) : (
                 <div className="flex items-start gap-2 rounded-md border border-emerald-300 bg-emerald-50 p-4 text-emerald-950 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-100">
                   <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0" />
-                  <p>Todos los siniestros tienen los datos requeridos. Puedes descargar el informe completo.</p>
+                  <p>
+                    {hasAppliedPeriod
+                      ? "Todos los siniestros del período seleccionado tienen los datos requeridos. Puedes descargar el informe del período."
+                      : "Todos los siniestros tienen los datos requeridos. Puedes descargar el informe completo."}
+                  </p>
                 </div>
               )}
 

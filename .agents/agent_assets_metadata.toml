@@ -741,3 +741,31 @@ mtime_ms = 1791540334383
 storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/c916d2e6-4b89-48dd-b13f-a66cd821b765/4c88877b-be47-422f-a935-30961fa4d8e5"
 storage_version_token = "1791540379996118"
 content_type = "application/pdf"
+
+[[outputs]]
+id = "AW2srGpKuMPnPjMuKbeQr"
+uri = "file://attached_assets/DEMO-PRUEBA_prueba_funcional_informe_siniestros_2026-10-09.xlsx"
+type = "table"
+title = "Informe PESV funcional — Excel"
+description = "Descargado desde el botón de la pantalla autenticada. Incluye el siniestro ficticio de DEMO-PRUEBA del 09/10/2026 con los 13 campos solicitados; no es el informe de todos los períodos de la empresa."
+logical_id = "a914d810-0f53-48a2-9faa-7c5de98c3f09"
+content_hash = "sha256:93eb3f7994ed77bf9055bfd6b1a4033f562c98b44a7f8d0984fd60d3df710f70"
+size = 18468
+mtime_ms = 1791541389740
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/a914d810-0f53-48a2-9faa-7c5de98c3f09/2ea813d3-03b0-44c7-a8ee-e58e2a1feb4d"
+storage_version_token = "1791541428358549"
+content_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
+[[outputs]]
+id = "jCnASIHjTcSZQqAE5yDEi"
+uri = "file://attached_assets/DEMO-PRUEBA_prueba_funcional_informe_siniestros_2026-10-09.pdf"
+type = "pdf"
+title = "Informe PESV funcional — PDF"
+description = "Descargado desde el botón de la pantalla autenticada. Incluye el siniestro ficticio de DEMO-PRUEBA del 09/10/2026 con los 13 campos solicitados; no es el informe de todos los períodos de la empresa."
+logical_id = "93063dd8-6809-40db-8973-f95a00997a30"
+content_hash = "sha256:f00b184f47334e47a4059b6dd5cbd5be9a757eb16664301059e86993c365f5ca"
+size = 180125
+mtime_ms = 1791541390077
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/93063dd8-6809-40db-8973-f95a00997a30/001b7383-f264-4df7-9005-67ca3b3289d4"
+storage_version_token = "1791541429038526"
+content_type = "application/pdf"
