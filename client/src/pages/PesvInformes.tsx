@@ -149,9 +149,9 @@ export default function PesvInformes() {
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-4 md:p-6" data-testid="pesv-informes-page">
       <div>
-        <p className="text-sm font-medium text-primary">PESV · Generador de informes</p>
+        <p className="text-sm font-medium text-primary">PESV · Informe mensual</p>
         <h1 className="mt-1 text-2xl font-bold md:text-3xl" data-testid="text-pesv-informes-title">
-          Informes para la Superintendencia de Transporte
+          Informe mensual para la Superintendencia de Transporte
         </h1>
         <p className="mt-2 max-w-3xl text-muted-foreground">
           Los archivos se construyen con los datos de Siniestros, Vehículos, Conductores y las actas existentes del Comité PESV.
