@@ -109,11 +109,25 @@ export function buildSiniestrosExcelBuffer(
   records: SiniestroReportRecord[],
   generatedAt: Date = new Date(),
   period?: SiniestroReportPeriod,
+  noIncidentsConfirmed = false,
 ): Buffer {
+  if (records.length === 0 && !noIncidentsConfirmed) {
+    throw new Error("Confirma que no hubo siniestros en un período definido para generar el informe en cero.");
+  }
+  if (records.length > 0 && noIncidentsConfirmed) {
+    throw new Error("No se puede declarar un período sin siniestros cuando sí existen registros.");
+  }
+  if (noIncidentsConfirmed && (!period?.from || !period.to)) {
+    throw new Error("El informe en cero requiere fecha inicial y final.");
+  }
+
   const title = "REGISTRO DE VEHÍCULOS SINIESTRADOS";
   const metadata = `Empresa: ${company.name} · NIT: ${company.nit}`;
   const periodLabel = describeSiniestroReportPeriod(period);
-  const generatedLabel = `Generado: ${generatedAt.toLocaleString("es-CO")}${periodLabel ? ` · ${periodLabel}` : ""}`;
+  const declarationLabel = noIncidentsConfirmed
+    ? " · La empresa confirma que no ocurrieron siniestros en el período"
+    : "";
+  const generatedLabel = `Generado: ${generatedAt.toLocaleString("es-CO")}${periodLabel ? ` · ${periodLabel}` : ""}${declarationLabel}`;
   const rows = records.map((record) => [
     formatSiniestroReportDate(record.incidentDate),
     describeSiniestroLossLevel(record),
@@ -160,6 +174,26 @@ export function buildSiniestrosExcelBuffer(
 
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, "Siniestros PESV");
+  if (noIncidentsConfirmed) {
+    const summaryRows = [
+      ["RESUMEN DEL PERÍODO SIN SINIESTROS"],
+      ["Empresa", company.name],
+      ["NIT", company.nit],
+      ["Período", `${formatSiniestroReportDate(period.from)} al ${formatSiniestroReportDate(period.to)}`],
+      ["Declaración", "La empresa confirma que no ocurrieron siniestros viales durante este período."],
+      ["Siniestros viales", 0],
+      ["Fatalidades", 0],
+      ["Heridos graves", 0],
+      ["Heridos leves", 0],
+      ["Personas implicadas en choque simple", 0],
+      ["Total personas afectadas", 0],
+      ["Vehículo, conductor, IPAT y acta", "No aplica: no se reportaron siniestros."],
+      ["Generado", generatedAt.toLocaleString("es-CO")],
+    ];
+    const summarySheet = XLSX.utils.aoa_to_sheet(summaryRows);
+    summarySheet["!cols"] = [{ wch: 38 }, { wch: 80 }];
+    XLSX.utils.book_append_sheet(workbook, summarySheet, "Resumen sin siniestros");
+  }
   return XLSX.write(workbook, { type: "buffer", bookType: "xlsx" }) as Buffer;
 }
 
@@ -168,7 +202,18 @@ export async function buildSiniestrosPdfBuffer(
   records: SiniestroReportRecord[],
   requiresWatermark: boolean,
   period?: SiniestroReportPeriod,
+  noIncidentsConfirmed = false,
 ): Promise<Buffer> {
+  if (records.length === 0 && !noIncidentsConfirmed) {
+    throw new Error("Confirma que no hubo siniestros en un período definido para generar el informe en cero.");
+  }
+  if (records.length > 0 && noIncidentsConfirmed) {
+    throw new Error("No se puede declarar un período sin siniestros cuando sí existen registros.");
+  }
+  if (noIncidentsConfirmed && (!period?.from || !period.to)) {
+    throw new Error("El informe en cero requiere fecha inicial y final.");
+  }
+
   const { default: PDFDocument } = await import("pdfkit");
   const document = new PDFDocument({ margin: PDF_CONFIG.MARGIN, size: "LEGAL", layout: "landscape" });
   const chunks: Buffer[] = [];
@@ -180,6 +225,45 @@ export async function buildSiniestrosPdfBuffer(
 
   setupTrialWatermarkOnAllPages(document, requiresWatermark);
   const periodLabel = describeSiniestroReportPeriod(period);
+
+  if (noIncidentsConfirmed) {
+    let y = await addStandardHeader({
+      doc: document,
+      company,
+      documentTitle: "DECLARACIÓN DE SINIESTROS VIALES EN CERO",
+      documentCode: "PESV-SINIESTROS-01",
+    });
+    y = addParagraph(
+      document,
+      "La empresa confirma que no ocurrieron siniestros viales durante el período consultado.",
+      { y, fontSize: 10 },
+    );
+    y = addSectionBar(document, "Resumen del período", y);
+    const zeroSummaryFields = [
+      ["Período consultado", `${formatSiniestroReportDate(period.from)} al ${formatSiniestroReportDate(period.to)}`],
+      ["Siniestros viales", "0"],
+      ["Fatalidades", "0"],
+      ["Heridos graves", "0"],
+      ["Heridos leves", "0"],
+      ["Personas implicadas en choque simple", "0"],
+      ["Total personas afectadas", "0"],
+      ["Vehículo, conductor, IPAT y acta", "No aplica: no se reportaron siniestros."],
+    ];
+    for (const [label, value] of zeroSummaryFields) {
+      y = checkPageBreak(document, 26, y);
+      y = addLabeledField(document, label, value, { y, labelWidth: 230 });
+    }
+
+    const footerY = document.page.height - PDF_CONFIG.MARGIN - 22;
+    document.fontSize(7).font("Helvetica").text(
+      "SST Colombia · Página 1 de 1",
+      PDF_CONFIG.MARGIN,
+      footerY,
+      { width: document.page.width - PDF_CONFIG.MARGIN * 2, align: "right" },
+    );
+    document.end();
+    return bufferPromise;
+  }
 
   const reportFields = (record: SiniestroReportRecord, index: number) => [
     ["Fecha del siniestro", formatSiniestroReportDate(record.incidentDate)],
