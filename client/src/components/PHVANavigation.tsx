@@ -164,6 +164,7 @@ const phvaTabs: { key: PHVASection; label: string; icon?: typeof Settings }[] = 
 const pesvNavMenuItems: { label: string; path: string; group?: string }[] = [
   { label: "Panel de Control", path: "/pesv" },
   { label: "Evaluaciones PESV", path: "/pesv/evaluaciones" },
+  { label: "Informes Superintendencia", path: "/pesv/informes" },
 ];
 
 export function PHVANavigation() {

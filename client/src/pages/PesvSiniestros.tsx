@@ -10,11 +10,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Eye, Trash2, AlertTriangle, Users, Skull, DollarSign, FileDown, HeartHandshake } from "lucide-react";
-import { useState } from "react";
+import { Plus, Search, Eye, Pencil, Trash2, AlertTriangle, Users, Skull, DollarSign, FileDown, HeartHandshake } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { RoadIncident, Vehicle, Driver, Company, insertRoadIncidentSchema } from "@shared/schema";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { ActaComitePesv, RoadIncident, Vehicle, Driver, Company, insertRoadIncidentSchema } from "@shared/schema";
+import { apiRequest, buildHeaders, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 import { useCompanyContext } from "@/hooks/use-company-context";
 import { useToast } from "@/hooks/use-toast";
@@ -23,6 +23,7 @@ import { hasCompanyAdminAccess, hasGlobalAccess, canWrite } from "@shared/permis
 import { BackToPesvEvaluationButton } from "@/components/BackToPesvEvaluationButton";
 import { Link } from "wouter";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
+import { SiniestroInformeFields, type SiniestroInformeFieldValues } from "@/components/pesv/SiniestroInformeFields";
 
 export default function PesvSiniestros() {
   const { user } = useAuth();
@@ -34,6 +35,7 @@ export default function PesvSiniestros() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [selectedIncident, setSelectedIncident] = useState<RoadIncident | null>(null);
+  const [editingIncidentId, setEditingIncidentId] = useState<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     companyId: "",
@@ -44,7 +46,7 @@ export default function PesvSiniestros() {
     location: "",
     type: "colision" as "colision" | "volcamiento" | "atropello" | "salida-via" | "choque-objeto" | "otro",
     customType: "",
-    severity: "solo-danos" as const,
+    severity: "solo-danos" as "solo-danos" | "con-heridos" | "mortal",
     description: "",
     weatherConditions: "",
     roadConditions: "",
@@ -53,6 +55,11 @@ export default function PesvSiniestros() {
     policeReport: "",
     injuries: "" as number | string,
     fatalities: "" as number | string,
+    severeInjuries: "" as number | string,
+    minorInjuries: "" as number | string,
+    simpleCollisionPeople: "" as number | string,
+    ipatAuthorityName: "",
+    committeeActaId: "",
     estimatedCost: "" as number | string,
     rootCause: "",
     correctiveActions: "",
@@ -73,6 +80,19 @@ export default function PesvSiniestros() {
 
   const { data: drivers = [] } = useQuery<Driver[]>({
     queryKey: ["/api/drivers"],
+  });
+
+  const actaCompanyId = (isSuperadmin ? formData.companyId : currentCompany?.id) || currentCompany?.id || "";
+  const { data: committeeActas = [] } = useQuery<ActaComitePesv[]>({
+    queryKey: ["/api/pesv/comite/actas", actaCompanyId],
+    queryFn: async () => {
+      const headers = new Headers(buildHeaders());
+      if (actaCompanyId) headers.set("X-Company-Id", actaCompanyId);
+      const response = await fetch("/api/pesv/comite/actas", { credentials: "include", headers });
+      if (!response.ok) throw new Error("No fue posible cargar las actas del Comité PESV");
+      return response.json();
+    },
+    enabled: !!actaCompanyId,
   });
 
   const { data: companies = [] } = useQuery<Company[]>({
@@ -115,6 +135,22 @@ export default function PesvSiniestros() {
     },
   });
 
+  const updateIncidentMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: z.infer<typeof insertRoadIncidentSchema> }) => {
+      const res = await apiRequest("PATCH", `/api/road-incidents/${id}`, data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/road-incidents"] });
+      setDialogOpen(false);
+      resetForm();
+      toast({ title: "Siniestro actualizado", description: "Los datos del siniestro quedaron guardados." });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
   const deleteIncidentMutation = useMutation({
     mutationFn: async (id: string) => {
       await apiRequest("DELETE", `/api/road-incidents/${id}`);
@@ -138,14 +174,34 @@ export default function PesvSiniestros() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    const injuriesValue = formData.injuries === '' ? 0 : Number(formData.injuries);
-    const fatalitiesValue = formData.fatalities === '' ? 0 : Number(formData.fatalities);
+
+    const fatalitiesValue = Number(formData.fatalities);
+    const severeInjuriesValue = Number(formData.severeInjuries);
+    const minorInjuriesValue = Number(formData.minorInjuries);
+    const simpleCollisionPeopleValue = Number(formData.simpleCollisionPeople);
+    if (fatalitiesValue + severeInjuriesValue + minorInjuriesValue + simpleCollisionPeopleValue < 1) {
+      toast({
+        title: "Falta registrar personas implicadas",
+        description: "Registre al menos una persona en el nivel de pérdida correspondiente.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const estimatedCostValue = formData.estimatedCost === '' ? undefined : Number(formData.estimatedCost);
+    const injuryTotal = severeInjuriesValue + minorInjuriesValue;
+    const severity: "mortal" | "con-heridos" | "solo-danos" =
+      fatalitiesValue > 0 ? "mortal" : injuryTotal > 0 ? "con-heridos" : "solo-danos";
     const data = {
       ...formData,
-      injuries: injuriesValue,
+      severity,
+      injuries: injuryTotal,
       fatalities: fatalitiesValue,
+      severeInjuries: severeInjuriesValue,
+      minorInjuries: minorInjuriesValue,
+      simpleCollisionPeople: simpleCollisionPeopleValue,
+      ipatAuthorityName: formData.ipatAuthorityName.trim() || null,
+      committeeActaId: formData.committeeActaId || null,
       estimatedCost: estimatedCostValue,
       customType: formData.type === "otro" ? formData.customType : undefined,
       weatherConditions: formData.weatherConditions || undefined,
@@ -156,7 +212,11 @@ export default function PesvSiniestros() {
       correctiveActions: formData.correctiveActions || undefined,
       preventiveActions: formData.preventiveActions || undefined,
     };
-    createIncidentMutation.mutate(data);
+    if (editingIncidentId) {
+      updateIncidentMutation.mutate({ id: editingIncidentId, data });
+    } else {
+      createIncidentMutation.mutate(data);
+    }
   };
 
   const handleDelete = (id: string) => {
@@ -168,7 +228,41 @@ export default function PesvSiniestros() {
     setDetailDialogOpen(true);
   };
 
+  const handleEditIncident = (incident: RoadIncident) => {
+    setEditingIncidentId(incident.id);
+    setFormData({
+      companyId: incident.companyId,
+      vehicleId: incident.vehicleId,
+      driverId: incident.driverId,
+      incidentDate: incident.incidentDate,
+      incidentTime: incident.incidentTime,
+      location: incident.location,
+      type: incident.type,
+      customType: incident.customType || "",
+      severity: incident.severity,
+      description: incident.description,
+      weatherConditions: incident.weatherConditions || "",
+      roadConditions: incident.roadConditions || "",
+      witnesses: incident.witnesses || "",
+      authoritiesNotified: incident.authoritiesNotified,
+      policeReport: incident.policeReport || "",
+      injuries: incident.injuries,
+      fatalities: incident.fatalities,
+      severeInjuries: incident.severeInjuries ?? "",
+      minorInjuries: incident.minorInjuries ?? "",
+      simpleCollisionPeople: incident.simpleCollisionPeople ?? "",
+      ipatAuthorityName: incident.ipatAuthorityName || "",
+      committeeActaId: incident.committeeActaId || "",
+      estimatedCost: incident.estimatedCost ?? "",
+      rootCause: incident.rootCause || "",
+      correctiveActions: incident.correctiveActions || "",
+      preventiveActions: incident.preventiveActions || "",
+    });
+    setDialogOpen(true);
+  };
+
   const resetForm = () => {
+    setEditingIncidentId(null);
     setFormData({
       companyId: "",
       vehicleId: "",
@@ -187,12 +281,26 @@ export default function PesvSiniestros() {
       policeReport: "",
       injuries: "",
       fatalities: "",
+      severeInjuries: "",
+      minorInjuries: "",
+      simpleCollisionPeople: "",
+      ipatAuthorityName: "",
+      committeeActaId: "",
       estimatedCost: "",
       rootCause: "",
       correctiveActions: "",
       preventiveActions: "",
     });
   };
+
+  useEffect(() => {
+    const incidentId = new URLSearchParams(window.location.search).get("editarSiniestro");
+    if (!incidentId || incidentsLoading) return;
+    const incident = incidents.find((item) => item.id === incidentId);
+    if (!incident) return;
+    handleEditIncident(incident);
+    window.history.replaceState(window.history.state, "", "/pesv/siniestros");
+  }, [incidents, incidentsLoading]);
 
   const getVehiclePlate = (vehicleId: string) => {
     const vehicle = vehicles.find(v => v.id === vehicleId);
@@ -289,8 +397,8 @@ export default function PesvSiniestros() {
             </DialogTrigger>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Registrar Nuevo Siniestro Vial</DialogTitle>
-                <DialogDescription>Complete los detalles del siniestro</DialogDescription>
+                <DialogTitle>{editingIncidentId ? "Completar o editar siniestro vial" : "Registrar Nuevo Siniestro Vial"}</DialogTitle>
+                <DialogDescription>Registre los datos del siniestro y su análisis por el Comité PESV.</DialogDescription>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
@@ -424,22 +532,6 @@ export default function PesvSiniestros() {
                       />
                     </div>
                   )}
-                  <div className="space-y-2">
-                    <Label htmlFor="severity">Severidad *</Label>
-                    <Select
-                      value={formData.severity}
-                      onValueChange={(value: any) => setFormData({ ...formData, severity: value })}
-                    >
-                      <SelectTrigger id="severity" data-testid="select-severity">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="solo-danos">Solo Daños</SelectItem>
-                        <SelectItem value="con-heridos">Con Heridos</SelectItem>
-                        <SelectItem value="mortal">Mortal</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
                   <div className="space-y-2 col-span-2">
                     <Label htmlFor="description">Descripción del Siniestro *</Label>
                     <Textarea
@@ -492,40 +584,11 @@ export default function PesvSiniestros() {
                       <Label htmlFor="authoritiesNotified">Autoridades Notificadas</Label>
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="policeReport">Número de Reporte Policial</Label>
-                    <Input
-                      id="policeReport"
-                      value={formData.policeReport}
-                      onChange={(e) => setFormData({ ...formData, policeReport: e.target.value })}
-                      placeholder="Número de informe policial"
-                      data-testid="input-police-report"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="injuries">Número de Lesionados *</Label>
-                    <Input
-                      id="injuries"
-                      type="number"
-                      min="0"
-                      value={formData.injuries}
-                      onChange={(e) => setFormData({ ...formData, injuries: e.target.value === '' ? '' : e.target.value })}
-                      required
-                      data-testid="input-injuries"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="fatalities">Número de Fallecidos *</Label>
-                    <Input
-                      id="fatalities"
-                      type="number"
-                      min="0"
-                      value={formData.fatalities}
-                      onChange={(e) => setFormData({ ...formData, fatalities: e.target.value === '' ? '' : e.target.value })}
-                      required
-                      data-testid="input-fatalities"
-                    />
-                  </div>
+                  <SiniestroInformeFields
+                    values={formData as SiniestroInformeFieldValues}
+                    actas={committeeActas}
+                    onChange={(field, value) => setFormData((previous) => ({ ...previous, [field]: value }))}
+                  />
                   <div className="space-y-2">
                     <Label htmlFor="estimatedCost">Costo Estimado ($)</Label>
                     <Input
@@ -572,10 +635,12 @@ export default function PesvSiniestros() {
                 <DialogFooter>
                   <Button 
                     type="submit" 
-                    disabled={createIncidentMutation.isPending} 
+                    disabled={createIncidentMutation.isPending || updateIncidentMutation.isPending} 
                     data-testid="button-submit-incident"
                   >
-                    {createIncidentMutation.isPending ? "Guardando..." : "Registrar Siniestro"}
+                    {createIncidentMutation.isPending || updateIncidentMutation.isPending
+                      ? "Guardando..."
+                      : editingIncidentId ? "Guardar cambios" : "Registrar Siniestro"}
                   </Button>
                 </DialogFooter>
               </form>
@@ -713,6 +778,17 @@ export default function PesvSiniestros() {
                         <Button
                           variant="ghost"
                           size="icon"
+                          onClick={() => handleEditIncident(incident)}
+                          data-testid={`button-edit-${incident.id}`}
+                          title="Completar o editar datos"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      )}
+                      {isAdmin && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={() => handleDelete(incident.id)}
                           disabled={deleteIncidentMutation.isPending}
                           data-testid={`button-delete-${incident.id}`}
@@ -761,7 +837,7 @@ export default function PesvSiniestros() {
                   <p>{getTypeLabel(selectedIncident.type, selectedIncident.customType)}</p>
                 </div>
                 <div>
-                  <p className="font-semibold">Severidad:</p>
+                  <p className="font-semibold">Nivel de pérdida:</p>
                   <p>{getSeverityLabel(selectedIncident.severity)}</p>
                 </div>
                 <div>
@@ -771,6 +847,18 @@ export default function PesvSiniestros() {
                 <div>
                   <p className="font-semibold">Fallecidos:</p>
                   <p>{selectedIncident.fatalities}</p>
+                </div>
+                <div>
+                  <p className="font-semibold">Heridos graves:</p>
+                  <p>{selectedIncident.severeInjuries ?? "Pendiente de completar"}</p>
+                </div>
+                <div>
+                  <p className="font-semibold">Heridos leves:</p>
+                  <p>{selectedIncident.minorInjuries ?? "Pendiente de completar"}</p>
+                </div>
+                <div>
+                  <p className="font-semibold">Personas en choque simple:</p>
+                  <p>{selectedIncident.simpleCollisionPeople ?? "Pendiente de completar"}</p>
                 </div>
               </div>
               <div>
@@ -801,8 +889,26 @@ export default function PesvSiniestros() {
               </div>
               {selectedIncident.policeReport && (
                 <div>
-                  <p className="font-semibold">Reporte Policial:</p>
+                  <p className="font-semibold">Consecutivo IPAT en RNAT/RUNT:</p>
                   <p className="text-sm">{selectedIncident.policeReport}</p>
+                </div>
+              )}
+              {selectedIncident.ipatAuthorityName && (
+                <div>
+                  <p className="font-semibold">Organismo de tránsito o autoridad del IPAT:</p>
+                  <p className="text-sm">{selectedIncident.ipatAuthorityName}</p>
+                </div>
+              )}
+              {selectedIncident.committeeActaId && (
+                <div>
+                  <p className="font-semibold">Acta del comité que analizó el siniestro:</p>
+                  <p className="text-sm">
+                    {committeeActas.find((acta) => acta.id === selectedIncident.committeeActaId)
+                      ? `Acta ${committeeActas.find((acta) => acta.id === selectedIncident.committeeActaId)?.numeroActa} · ${
+                          committeeActas.find((acta) => acta.id === selectedIncident.committeeActaId)?.fechaReunion
+                        }`
+                      : "Acta vinculada"}
+                  </p>
                 </div>
               )}
               {selectedIncident.estimatedCost && (

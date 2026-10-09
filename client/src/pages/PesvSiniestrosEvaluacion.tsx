@@ -14,9 +14,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Eye, AlertTriangle, Calendar, MapPin, Car, User, Navigation, Sparkles, Database, ExternalLink } from "lucide-react";
 import { useLocation } from "wouter";
 import { EvaluacionPesvContextHeader } from "@/components/EvaluacionPesvContextHeader";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, buildHeaders, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { EvaluacionPesv, RoadIncident, Vehicle, Driver, VehicleGpsTracking } from "@shared/schema";
+import { ActaComitePesv, EvaluacionPesv, RoadIncident, Vehicle, Driver, VehicleGpsTracking, insertRoadIncidentSchema } from "@shared/schema";
+import { SiniestroInformeFields, type SiniestroInformeFieldValues } from "@/components/pesv/SiniestroInformeFields";
+import { z } from "zod";
 
 export default function PesvSiniestrosEvaluacion() {
   const { evaluacionId } = useParams<{ evaluacionId: string }>();
@@ -33,10 +35,16 @@ export default function PesvSiniestrosEvaluacion() {
     incidentTime: "",
     location: "",
     type: "colision" as const,
-    severity: "solo-danos" as const,
+    severity: "solo-danos" as "solo-danos" | "con-heridos" | "mortal",
     description: "",
     injuries: "" as number | string,
     fatalities: "" as number | string,
+    severeInjuries: "" as number | string,
+    minorInjuries: "" as number | string,
+    simpleCollisionPeople: "" as number | string,
+    policeReport: "",
+    ipatAuthorityName: "",
+    committeeActaId: "",
   });
 
   const { data: evaluacion, isLoading: evaluacionLoading } = useQuery<EvaluacionPesv>({
@@ -71,12 +79,25 @@ export default function PesvSiniestrosEvaluacion() {
     queryKey: ["/api/drivers"],
   });
 
+  const { data: committeeActas = [] } = useQuery<ActaComitePesv[]>({
+    queryKey: ["/api/pesv/comite/actas", evaluacionId],
+    queryFn: async () => {
+      const response = await fetch("/api/pesv/comite/actas", {
+        credentials: "include",
+        headers: buildHeaders(),
+      });
+      if (!response.ok) throw new Error("No fue posible cargar las actas del Comité PESV");
+      return response.json();
+    },
+    enabled: !!evaluacionId,
+  });
+
   const { data: gpsRecords = [] } = useQuery<VehicleGpsTracking[]>({
     queryKey: ["/api/vehicle-gps-tracking"],
   });
 
   const createIncidentMutation = useMutation({
-    mutationFn: async (data: typeof formData) => {
+    mutationFn: async (data: z.infer<typeof insertRoadIncidentSchema>) => {
       const res = await apiRequest("POST", `/api/evaluaciones-pesv/${evaluacionId}/siniestros`, data);
       return res.json();
     },
@@ -110,6 +131,12 @@ export default function PesvSiniestrosEvaluacion() {
       description: "",
       injuries: "",
       fatalities: "",
+      severeInjuries: "",
+      minorInjuries: "",
+      simpleCollisionPeople: "",
+      policeReport: "",
+      ipatAuthorityName: "",
+      committeeActaId: "",
     });
     setLocationFromGps(false);
   };
@@ -152,10 +179,32 @@ export default function PesvSiniestrosEvaluacion() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const fatalities = Number(formData.fatalities);
+    const severeInjuries = Number(formData.severeInjuries);
+    const minorInjuries = Number(formData.minorInjuries);
+    const simpleCollisionPeople = Number(formData.simpleCollisionPeople);
+    if (fatalities + severeInjuries + minorInjuries + simpleCollisionPeople < 1) {
+      toast({
+        title: "Falta registrar personas implicadas",
+        description: "Registre al menos una persona en el nivel de pérdida correspondiente.",
+        variant: "destructive",
+      });
+      return;
+    }
+    const injuryTotal = severeInjuries + minorInjuries;
+    const severity: "mortal" | "con-heridos" | "solo-danos" =
+      fatalities > 0 ? "mortal" : injuryTotal > 0 ? "con-heridos" : "solo-danos";
     createIncidentMutation.mutate({
       ...formData,
-      injuries: formData.injuries === '' ? 0 : Number(formData.injuries),
-      fatalities: formData.fatalities === '' ? 0 : Number(formData.fatalities),
+      severity,
+      injuries: injuryTotal,
+      fatalities,
+      severeInjuries,
+      minorInjuries,
+      simpleCollisionPeople,
+      policeReport: formData.policeReport.trim(),
+      ipatAuthorityName: formData.ipatAuthorityName.trim() || null,
+      committeeActaId: formData.committeeActaId || null,
     });
   };
 
@@ -397,65 +446,40 @@ export default function PesvSiniestrosEvaluacion() {
                     </p>
                   )}
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="type">Tipo</Label>
-                    <Select
-                      value={formData.type}
-                      onValueChange={(value: typeof formData.type) => setFormData({ ...formData, type: value })}
-                    >
-                      <SelectTrigger data-testid="select-type">
-                        <SelectValue placeholder="Seleccione tipo" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="colision">Colisión</SelectItem>
-                        <SelectItem value="volcamiento">Volcamiento</SelectItem>
-                        <SelectItem value="atropello">Atropello</SelectItem>
-                        <SelectItem value="caida-ocupante">Caída de Ocupante</SelectItem>
-                        <SelectItem value="incendio">Incendio</SelectItem>
-                        <SelectItem value="otro">Otro</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="severity">Severidad</Label>
-                    <Select
-                      value={formData.severity}
-                      onValueChange={(value: typeof formData.severity) => setFormData({ ...formData, severity: value })}
-                    >
-                      <SelectTrigger data-testid="select-severity">
-                        <SelectValue placeholder="Seleccione severidad" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="solo-danos">Solo Daños</SelectItem>
-                        <SelectItem value="con-heridos">Con Heridos</SelectItem>
-                        <SelectItem value="mortal">Con Fallecidos</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="type">Tipo</Label>
+                  <Select
+                    value={formData.type}
+                    onValueChange={(value: typeof formData.type) => setFormData({ ...formData, type: value })}
+                  >
+                    <SelectTrigger data-testid="select-type">
+                      <SelectValue placeholder="Seleccione tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="colision">Colisión</SelectItem>
+                      <SelectItem value="volcamiento">Volcamiento</SelectItem>
+                      <SelectItem value="atropello">Atropello</SelectItem>
+                      <SelectItem value="caida-ocupante">Caída de Ocupante</SelectItem>
+                      <SelectItem value="incendio">Incendio</SelectItem>
+                      <SelectItem value="otro">Otro</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="injuries">Heridos</Label>
-                    <Input
-                      id="injuries"
-                      type="number"
-                      min="0"
-                      value={formData.injuries}
-                      onChange={(e) => setFormData({ ...formData, injuries: e.target.value === '' ? '' : e.target.value })}
-                      data-testid="input-injuries"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="fatalities">Fallecidos</Label>
-                    <Input
-                      id="fatalities"
-                      type="number"
-                      min="0"
-                      value={formData.fatalities}
-                      onChange={(e) => setFormData({ ...formData, fatalities: e.target.value === '' ? '' : e.target.value })}
-                      data-testid="input-fatalities"
-                    />
+                <SiniestroInformeFields
+                  values={formData as SiniestroInformeFieldValues}
+                  actas={committeeActas}
+                  onChange={(field, value) => setFormData((previous) => ({ ...previous, [field]: value }))}
+                />
+                <div className="space-y-2">
+                  <Label htmlFor="severity">Nivel de pérdida calculado</Label>
+                  <div id="severity" className="flex min-h-10 items-center rounded-md border bg-muted px-3 text-sm">
+                    {Number(formData.fatalities) > 0
+                      ? "Fatalidad"
+                      : Number(formData.severeInjuries) + Number(formData.minorInjuries) > 0
+                        ? "Heridos graves o leves"
+                        : Number(formData.simpleCollisionPeople) > 0
+                          ? "Choque simple"
+                          : "Ingrese las cantidades por nivel"}
                   </div>
                 </div>
                 <div className="space-y-2">

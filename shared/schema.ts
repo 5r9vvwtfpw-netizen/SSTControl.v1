@@ -1440,9 +1440,38 @@ export const insertRoadIncidentSchema = createInsertSchema(roadIncidents)
   .extend({
     description: z.string().min(1, "La descripción del incidente es obligatoria"),
     location: z.string().min(1, "El lugar del incidente es obligatorio"),
+    severeInjuries: z.number().int().min(0).nullable().optional(),
+    minorInjuries: z.number().int().min(0).nullable().optional(),
+    simpleCollisionPeople: z.number().int().min(0).nullable().optional(),
+    policeReport: z.string().trim().max(500).nullable().optional(),
+    ipatAuthorityName: z.string().trim().max(500).nullable().optional(),
+    committeeActaId: z.string().trim().min(1).nullable().optional(),
   });
 export type InsertRoadIncident = z.infer<typeof insertRoadIncidentSchema>;
 export type RoadIncident = typeof roadIncidents.$inferSelect;
+
+export const insertRoadIncidentReportSchema = insertRoadIncidentSchema
+  .extend({
+    fatalities: z.number().int().min(0),
+    severeInjuries: z.number().int().min(0),
+    minorInjuries: z.number().int().min(0),
+    simpleCollisionPeople: z.number().int().min(0),
+  })
+  .superRefine((incident, context) => {
+    const peopleInvolved =
+      incident.fatalities +
+      incident.severeInjuries +
+      incident.minorInjuries +
+      incident.simpleCollisionPeople;
+
+    if (peopleInvolved < 1) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["simpleCollisionPeople"],
+        message: "Registre al menos una persona implicada en alguno de los niveles de pérdida",
+      });
+    }
+  });
 
 export const insertRoadSafetyTrainingSchema = createInsertSchema(roadSafetyTrainings)
   .omit({ id: true, createdAt: true })

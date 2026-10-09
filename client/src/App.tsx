@@ -100,6 +100,7 @@ import PesvEncuestaConductor from "@/pages/PesvEncuestaConductor";
 import PesvAlcoholSustancias from "@/pages/PesvAlcoholSustancias";
 import PesvAtencionVictimas from "@/pages/PesvAtencionVictimas";
 import PesvSiniestros from "@/pages/PesvSiniestros";
+import PesvInformes from "@/pages/PesvInformes";
 import PesvMejoraContinua from "@/pages/PesvMejoraContinua";
 import PesvRevisionDireccion from "@/pages/PesvRevisionDireccion";
 import PesvCapacitaciones from "@/pages/PesvCapacitaciones";
@@ -419,6 +420,7 @@ function Router() {
       <SubscriptionProtectedRoute path="/pesv/conductores" component={PesvConductores} feature="hasPESV" featureName="Módulo PESV - Conductores" />
       <SubscriptionProtectedRoute path="/pesv/inspecciones" component={PesvInspecciones} feature="hasPESV" featureName="Módulo PESV - Inspecciones" />
       <SubscriptionProtectedRoute path="/pesv/siniestros" component={PesvSiniestros} feature="hasPESV" featureName="Módulo PESV - Siniestros" />
+      <SubscriptionProtectedRoute path="/pesv/informes" component={PesvInformes} feature="hasPESV" featureName="Informes PESV" />
       <SubscriptionProtectedRoute path="/pesv/capacitaciones" component={PesvCapacitaciones} feature="hasPESV" featureName="Módulo PESV - Capacitaciones" />
       <SubscriptionProtectedRoute path="/pesv/induccion-virtual" component={PesvInduccionVirtual} feature="hasPESV" featureName="Módulo PESV - Inducción Virtual" />
       <SubscriptionProtectedRoute path="/pesv/auditorias" component={PesvAuditorias} feature="hasPESV" featureName="Módulo PESV - Auditorías" />

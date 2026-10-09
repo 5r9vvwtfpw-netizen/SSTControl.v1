@@ -107,6 +107,7 @@ import {
   insertDriverComparendoSchema,
   insertVehicleInspectionSchema,
   insertRoadIncidentSchema,
+  insertRoadIncidentReportSchema,
   insertRoadSafetyTrainingSchema,
   insertRoadSafetyAttendeeSchema,
   insertPesvAuditSchema,
@@ -11506,8 +11507,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         companyId = userCompanyId;
       }
       
-      const validatedData = insertRoadIncidentSchema.parse(req.body);
-      const incident = await storage.createRoadIncident(validatedData, companyId);
+      const validatedData = insertRoadIncidentReportSchema.parse(req.body);
+      const incident = await storage.createRoadIncident({
+        ...validatedData,
+        injuries: validatedData.severeInjuries + validatedData.minorInjuries,
+        severity: validatedData.fatalities > 0
+          ? "mortal"
+          : validatedData.severeInjuries + validatedData.minorInjuries > 0
+            ? "con-heridos"
+            : "solo-danos",
+      }, companyId);
       res.status(201).json(incident);
     } catch (error: any) {
       res.status(400).send(error.message);
@@ -53659,6 +53668,9 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   const { registerPesvPdfRoutes } = await import("./routes/pesv-pdf-routes");
   registerPesvPdfRoutes(app);
 
+  const { registerPesvInformeRoutes } = await import("./routes/pesv-informe-routes");
+  registerPesvInformeRoutes(app);
+
   const { registerPesvCriteriosEvidenciasRoutes } = await import("./routes/pesv-criterios-evidencias-routes");
   registerPesvCriteriosEvidenciasRoutes(app);
 
@@ -55224,9 +55236,15 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         return res.status(403).send('No tienes acceso a esta evaluación');
       }
 
-      const validatedData = insertRoadIncidentSchema.parse(req.body);
+      const validatedData = insertRoadIncidentReportSchema.parse(req.body);
       const incident = await storage.createRoadIncident({
         ...validatedData,
+        injuries: validatedData.severeInjuries + validatedData.minorInjuries,
+        severity: validatedData.fatalities > 0
+          ? "mortal"
+          : validatedData.severeInjuries + validatedData.minorInjuries > 0
+            ? "con-heridos"
+            : "solo-danos",
         evaluacionPesvId: evaluacionId,
       }, evaluacion.companyId);
       res.status(201).json(incident);

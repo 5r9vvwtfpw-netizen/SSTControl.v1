@@ -97,3 +97,4 @@
 - [Pago sin enlaces compartidos](payment-link-retirement.md) — el usuario retiró esta opción por confusión de clientes; pagar desde Mi Cuenta y conservar confirmaciones anteriores.
 - [Períodos del Panel VERIFICAR](dashboard-reporting-periods.md) — mes cerrado explícito, catálogo vigente y cobertura por indicadores distintos; ausencia de resultado no equivale a cero.
 - [Informe de inspección de maquinaria PESV](pesv-machinery-inspection-report.md) — compartir el checklist H06 entre captura, detalle administrativo y PDF; filtrar cada PDF por registro y empresa autorizada.
+- [Generador de informes regulatorios PESV](pesv-superintendencia-report-generator.md) — un solo generador en el menú PESV integra datos de módulos fuente y ofrece Excel y PDF.
