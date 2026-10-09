@@ -1209,6 +1209,11 @@ export const roadIncidents = pgTable("road_incidents", {
   policeReport: text("police_report"),
   injuries: integer("injuries").notNull().default(0), // Number of injured
   fatalities: integer("fatalities").notNull().default(0), // Number of fatalities
+  severeInjuries: integer("severe_injuries"),
+  minorInjuries: integer("minor_injuries"),
+  simpleCollisionPeople: integer("simple_collision_people"),
+  ipatAuthorityName: text("ipat_authority_name"),
+  committeeActaId: varchar("committee_acta_id").references(() => actasComitePesv.id, { onDelete: "set null" }),
   estimatedCost: integer("estimated_cost"), // Estimated cost in COP
   rootCause: text("root_cause"),
   correctiveActions: text("corrective_actions"),
