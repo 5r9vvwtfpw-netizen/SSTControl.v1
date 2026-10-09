@@ -67,6 +67,7 @@ test(
       };
       assert.equal(status.companyName, "DEMO-PRUEBA");
       assert.ok(status.total > 0, "La prueba debe encontrar siniestros existentes en DEMO-PRUEBA.");
+      const pendingFieldNames = [...new Set(status.incomplete.flatMap((record) => record.missingFields))];
 
       const formats = [
         {
@@ -105,7 +106,7 @@ test(
       }
 
       console.log(
-        `DEMO-PRUEBA: siniestros=${status.total}, completos=${status.ready}, pendientes=${status.incomplete.length}; ${outcomes.join("; ")}`,
+        `DEMO-PRUEBA: siniestros=${status.total}, completos=${status.ready}, pendientes=${status.incomplete.length}, campos pendientes=${pendingFieldNames.join(" | ") || "ninguno"}; ${outcomes.join("; ")}`,
       );
     } finally {
       try {

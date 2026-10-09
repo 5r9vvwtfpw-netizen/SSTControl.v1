@@ -174,7 +174,7 @@ export async function buildSiniestrosPdfBuffer(
     ["Choque simple (personas implicadas)", String(record.simpleCollisionPeople)],
     ["Placa del vehículo de la empresa", record.vehiclePlate || ""],
     ["Nombre del conductor de la empresa", record.driverName || ""],
-    ["Identificación del conductor", record.driverIdentification || ""],
+    ["Identificación del conductor de la empresa", record.driverIdentification || ""],
     ["Consecutivo del IPAT en RNAT/RUNT", record.policeReport || ""],
     ["Organismo de tránsito o autoridad que elaboró el IPAT", record.ipatAuthorityName || ""],
     ["Número del acta del comité", record.committeeActaNumber == null ? "" : String(record.committeeActaNumber)],
