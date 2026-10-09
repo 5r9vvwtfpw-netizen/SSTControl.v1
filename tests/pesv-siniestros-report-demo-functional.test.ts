@@ -257,6 +257,10 @@ test(
       assert.equal(allCompanyStatus.ready, 1, "El caso funcional debe estar completo.");
       assert.ok(!allCompanyStatus.incomplete.some((record) => record.id === testIncident.id));
       const pendingFieldNames = [...new Set(allCompanyStatus.incomplete.flatMap((record) => record.missingFields))];
+      const incompleteActaRecord = allCompanyStatus.incomplete.find((record) =>
+        record.missingFields.includes("Acta y fecha del comité que analizó el siniestro"),
+      );
+      assert.ok(incompleteActaRecord, "Debe existir un registro pendiente de vínculo con el acta del comité.");
 
       const outcomes: string[] = [];
       for (const format of formats) {
@@ -410,6 +414,24 @@ test(
         if (await essentialCookiesButton.isVisible()) {
           await essentialCookiesButton.click();
         }
+        await page.waitForFunction(
+          () => document.querySelector('[data-testid="text-pesv-report-total"]')?.textContent?.trim() === "5",
+          undefined,
+          { timeout: 20_000 },
+        );
+        const actaGuidance = page.getByTestId(`missing-guidance-committee-${incompleteActaRecord.id}`);
+        await actaGuidance.waitFor({ state: "visible" });
+        assert.match(await actaGuidance.innerText(), /Paso 1 \(P01\).*Planear/);
+        assert.match(await actaGuidance.innerText(), /Comité PESV.*pestaña Actas/);
+        const actaNavigationLink = page.getByTestId(`missing-guidance-link-committee-${incompleteActaRecord.id}`);
+        assert.equal(await actaNavigationLink.getAttribute("href"), "/pesv/comite?tab=actas");
+        await actaNavigationLink.click();
+        await page.waitForURL(/\/pesv\/comite\?tab=actas$/);
+        const actasTab = page.getByTestId("tab-actas");
+        await actasTab.waitFor({ state: "visible" });
+        assert.equal(await actasTab.getAttribute("data-state"), "active");
+        await page.goto(`${baseUrl}/pesv/informes`, { waitUntil: "domcontentloaded" });
+        await page.getByTestId("input-pesv-report-from").waitFor({ state: "visible", timeout: 20_000 });
         await page.waitForFunction(
           () => document.querySelector('[data-testid="text-pesv-report-total"]')?.textContent?.trim() === "5",
           undefined,

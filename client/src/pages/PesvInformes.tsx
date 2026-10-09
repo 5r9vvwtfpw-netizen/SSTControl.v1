@@ -39,6 +39,84 @@ function getDownloadName(disposition: string | null, fallback: string) {
   return match?.[1] || fallback;
 }
 
+type MissingFieldGuide = {
+  key: "incident" | "vehicle" | "driver" | "committee";
+  title: string;
+  fields: string[];
+  step: string;
+  route: string;
+  instruction: string;
+  href: string;
+  actionLabel: string;
+};
+
+function getMissingFieldGuides(missingFields: string[], incidentId: string): MissingFieldGuide[] {
+  const incidentFieldNames = new Set([
+    "Fecha del siniestro",
+    "Cantidad de personas fallecidas",
+    "Cantidad de heridos graves",
+    "Cantidad de heridos leves",
+    "Cantidad de personas en choque simple",
+    "Al menos una persona clasificada por nivel de pérdida",
+    "Consecutivo IPAT en RNAT/RUNT",
+    "Organismo de tránsito o autoridad del IPAT",
+  ]);
+  const vehicleFieldNames = new Set(["Placa del vehículo"]);
+  const driverFieldNames = new Set(["Nombre del conductor", "Identificación del conductor"]);
+  const committeeFieldNames = new Set(["Acta y fecha del comité que analizó el siniestro"]);
+  const knownFieldNames = new Set([
+    ...incidentFieldNames,
+    ...vehicleFieldNames,
+    ...driverFieldNames,
+    ...committeeFieldNames,
+  ]);
+  const unknownFields = missingFields.filter((field) => !knownFieldNames.has(field));
+  const definitions: MissingFieldGuide[] = [
+    {
+      key: "incident",
+      title: "Registro del siniestro",
+      fields: missingFields.filter((field) => incidentFieldNames.has(field)).concat(unknownFields),
+      step: "Paso 21 (V02) — Verificar: Registro y análisis de siniestros viales",
+      route: "PESV > Evaluaciones PESV > Paso 21 (V02) > Siniestros Viales",
+      instruction: "Completa estos datos en el registro del siniestro y guarda los cambios.",
+      href: `/pesv/siniestros?editarSiniestro=${encodeURIComponent(incidentId)}`,
+      actionLabel: "Abrir este siniestro (V02)",
+    },
+    {
+      key: "vehicle",
+      title: "Vehículo de la empresa",
+      fields: missingFields.filter((field) => vehicleFieldNames.has(field)),
+      step: "Paso 12 (H04) — Hacer: Gestión de vehículos seguros",
+      route: "PESV > Evaluaciones PESV > Paso 12 (H04) > Vehículos PESV",
+      instruction: "Registra o corrige la placa del vehículo; después vuelve al siniestro y verifica que esté vinculado.",
+      href: "/pesv/vehiculos",
+      actionLabel: "Abrir Vehículos PESV (H04)",
+    },
+    {
+      key: "driver",
+      title: "Conductor de la empresa",
+      fields: missingFields.filter((field) => driverFieldNames.has(field)),
+      step: "Paso 9 (H01) — Hacer: Fortalecimiento institucional - Factor Humano",
+      route: "PESV > Evaluaciones PESV > Paso 9 (H01) > Conductores PESV",
+      instruction: "Registra o corrige el nombre y la identificación; después vuelve al siniestro y verifica que esté vinculado.",
+      href: "/pesv/conductores",
+      actionLabel: "Abrir Conductores PESV (H01)",
+    },
+    {
+      key: "committee",
+      title: "Acta que analizó el siniestro",
+      fields: missingFields.filter((field) => committeeFieldNames.has(field)),
+      step: "Paso 1 (P01) — Planear: Conformación del equipo de trabajo",
+      route: "PESV > Evaluaciones PESV > Paso 1 (P01) > Comité PESV > pestaña Actas",
+      instruction: "Registra el acta y su fecha en P01. Luego vuelve a este siniestro y selecciona esa acta para vincularla.",
+      href: "/pesv/comite?tab=actas",
+      actionLabel: "Abrir Actas del Comité PESV (P01)",
+    },
+  ];
+
+  return definitions.filter((guide) => guide.fields.length > 0);
+}
+
 export default function PesvInformes() {
   const { selectedCompany } = useCompanyContext();
   const { toast } = useToast();
@@ -293,7 +371,7 @@ export default function PesvInformes() {
                           {hasAppliedPeriod ? " del período seleccionado." : " de la empresa."}
                         </p>
                         <p className="mt-1 text-sm">
-                          Abre cada siniestro en el módulo existente. El informe no llenará datos que no estén registrados.
+                          Cada pendiente indica el paso y módulo del PESV donde debes completarlo. Luego regresa al informe para verificarlo.
                         </p>
                       </div>
                     </div>
@@ -314,13 +392,39 @@ export default function PesvInformes() {
                             <p className="text-sm text-muted-foreground">
                               {incident.driverName || "Conductor sin nombre vinculado"}
                             </p>
-                            <p className="mt-2 text-sm">
-                              <span className="font-medium">Falta:</span> {incident.missingFields.join(" · ")}
-                            </p>
+                            <div className="mt-3 space-y-3">
+                              {getMissingFieldGuides(incident.missingFields, incident.id).map((guide) => (
+                                <div
+                                  key={guide.key}
+                                  className="rounded-md border bg-muted/30 p-3"
+                                  data-testid={`missing-guidance-${guide.key}-${incident.id}`}
+                                >
+                                  <p className="font-medium">{guide.title}</p>
+                                  <p className="mt-1 text-sm">
+                                    <span className="font-medium">Falta:</span> {guide.fields.join(" · ")}
+                                  </p>
+                                  <p className="mt-2 text-sm">
+                                    <span className="font-medium">Paso del PESV:</span> {guide.step}
+                                  </p>
+                                  <p className="text-sm">
+                                    <span className="font-medium">Ruta:</span> {guide.route}
+                                  </p>
+                                  <p className="mt-1 text-sm text-muted-foreground">{guide.instruction}</p>
+                                  <Button className="mt-3" variant="outline" size="sm" asChild>
+                                    <Link
+                                      href={guide.href}
+                                      data-testid={`missing-guidance-link-${guide.key}-${incident.id}`}
+                                    >
+                                      {guide.actionLabel}
+                                    </Link>
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
                           </div>
                           <Button variant="outline" size="sm" asChild>
                             <Link href={`/pesv/siniestros?editarSiniestro=${encodeURIComponent(incident.id)}`}>
-                              Completar en Siniestros
+                              Volver a este siniestro (V02)
                             </Link>
                           </Button>
                         </div>

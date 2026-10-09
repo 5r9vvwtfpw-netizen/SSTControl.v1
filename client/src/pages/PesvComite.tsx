@@ -107,7 +107,9 @@ export default function PesvComite() {
   const { user } = useAuth();
   const { toast } = useToast();
   const isAdmin = user?.role ? canWrite(user.role, 'sst_management') : false;
-  const [activeTab, setActiveTab] = useState("integrantes");
+  const [activeTab, setActiveTab] = useState(() => (
+    new URLSearchParams(window.location.search).get("tab") === "actas" ? "actas" : "integrantes"
+  ));
 
   return (
     <div className="space-y-6">
