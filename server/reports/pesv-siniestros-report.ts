@@ -22,6 +22,11 @@ export type SiniestroReportRecord = {
   committeeAnalysisDate: string | null;
 };
 
+export type SiniestroReportPeriod = {
+  from?: string;
+  to?: string;
+};
+
 export const SINIESTROS_REPORT_HEADERS = [
   "Fecha del siniestro",
   "Nivel de pérdida",
@@ -44,6 +49,13 @@ export function formatSiniestroReportDate(value: string | null | undefined): str
   if (match) return `${match[3]}/${match[2]}/${match[1]}`;
   const parsed = new Date(value);
   return Number.isNaN(parsed.getTime()) ? value : parsed.toLocaleDateString("es-CO");
+}
+
+export function describeSiniestroReportPeriod(period?: SiniestroReportPeriod): string {
+  if (!period?.from && !period?.to) return "";
+  const from = period.from ? formatSiniestroReportDate(period.from) : "Inicio";
+  const to = period.to ? formatSiniestroReportDate(period.to) : "Actualidad";
+  return `Período consultado: ${from} al ${to}`;
 }
 
 export function describeSiniestroLossLevel(record: Pick<
@@ -96,10 +108,12 @@ export function buildSiniestrosExcelBuffer(
   company: Pick<SiniestroReportCompany, "name" | "nit">,
   records: SiniestroReportRecord[],
   generatedAt: Date = new Date(),
+  period?: SiniestroReportPeriod,
 ): Buffer {
   const title = "REGISTRO DE VEHÍCULOS SINIESTRADOS";
   const metadata = `Empresa: ${company.name} · NIT: ${company.nit}`;
-  const generatedLabel = `Generado: ${generatedAt.toLocaleString("es-CO")}`;
+  const periodLabel = describeSiniestroReportPeriod(period);
+  const generatedLabel = `Generado: ${generatedAt.toLocaleString("es-CO")}${periodLabel ? ` · ${periodLabel}` : ""}`;
   const rows = records.map((record) => [
     formatSiniestroReportDate(record.incidentDate),
     describeSiniestroLossLevel(record),
@@ -153,6 +167,7 @@ export async function buildSiniestrosPdfBuffer(
   company: SiniestroReportCompany,
   records: SiniestroReportRecord[],
   requiresWatermark: boolean,
+  period?: SiniestroReportPeriod,
 ): Promise<Buffer> {
   const { default: PDFDocument } = await import("pdfkit");
   const document = new PDFDocument({ margin: PDF_CONFIG.MARGIN, size: "LEGAL", layout: "landscape" });
@@ -164,6 +179,7 @@ export async function buildSiniestrosPdfBuffer(
   });
 
   setupTrialWatermarkOnAllPages(document, requiresWatermark);
+  const periodLabel = describeSiniestroReportPeriod(period);
 
   const reportFields = (record: SiniestroReportRecord, index: number) => [
     ["Fecha del siniestro", formatSiniestroReportDate(record.incidentDate)],
@@ -190,7 +206,11 @@ export async function buildSiniestrosPdfBuffer(
       documentTitle: "REGISTRO DE VEHÍCULOS SINIESTRADOS",
       documentCode: "PESV-SINIESTROS-01",
     });
-    y = addParagraph(document, "Informe generado desde los registros vigentes del módulo PESV.", {
+    const reportIntroduction = [
+      "Informe generado desde los registros vigentes del módulo PESV.",
+      periodLabel,
+    ].filter(Boolean).join(" ");
+    y = addParagraph(document, reportIntroduction, {
       y,
       fontSize: 9,
     });

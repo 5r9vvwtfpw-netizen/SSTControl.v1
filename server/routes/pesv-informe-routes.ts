@@ -1,5 +1,5 @@
 import type { Express, Request, Response } from "express";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, gte, lte } from "drizzle-orm";
 import * as schema from "@shared/schema";
 import { db } from "../db";
 import { requireAuth as authRequireAuth, requirePermission } from "../auth";
@@ -8,6 +8,7 @@ import {
   buildSiniestrosExcelBuffer,
   buildSiniestrosPdfBuffer,
   getMissingSiniestroReportFields,
+  type SiniestroReportPeriod,
   type SiniestroReportRecord,
 } from "../reports/pesv-siniestros-report";
 import { storage } from "../storage";
@@ -16,12 +17,51 @@ import { getTrialStatus } from "@shared/utils";
 type ReportDataset = {
   company: typeof schema.companies.$inferSelect;
   records: SiniestroReportRecord[];
+  period: SiniestroReportPeriod;
 };
+
+function isValidIsoDate(value: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value)
+    && !Number.isNaN(Date.parse(`${value}T00:00:00Z`))
+    && new Date(`${value}T00:00:00Z`).toISOString().slice(0, 10) === value;
+}
+
+function parseReportPeriod(req: Request, res: Response): SiniestroReportPeriod | null {
+  const fromValue = req.query.from;
+  const toValue = req.query.to;
+  if (
+    (fromValue !== undefined && typeof fromValue !== "string")
+    || (toValue !== undefined && typeof toValue !== "string")
+  ) {
+    res.status(400).json({ message: "Las fechas deben tener el formato AAAA-MM-DD." });
+    return null;
+  }
+
+  const from = typeof fromValue === "string" ? fromValue.trim() || undefined : undefined;
+  const to = typeof toValue === "string" ? toValue.trim() || undefined : undefined;
+  if ((from && !isValidIsoDate(from)) || (to && !isValidIsoDate(to))) {
+    res.status(400).json({ message: "Las fechas deben tener el formato AAAA-MM-DD y ser fechas válidas." });
+    return null;
+  }
+  if (from && to && from > to) {
+    res.status(400).json({ message: "La fecha inicial no puede ser posterior a la fecha final." });
+    return null;
+  }
+  return { from, to };
+}
+
+function reportPeriodFilenameSuffix(period: SiniestroReportPeriod): string {
+  if (!period.from && !period.to) return "";
+  return `_desde_${period.from || "inicio"}_hasta_${period.to || "actualidad"}`;
+}
 
 async function loadReportDataset(
   req: Request,
   res: Response,
 ): Promise<ReportDataset | null> {
+  const period = parseReportPeriod(req, res);
+  if (!period) return null;
+
   const companyId = getAuthorizedReportCompanyId(req);
   if (!companyId) {
     res.status(403).json({ message: "Selecciona una empresa autorizada para consultar el informe." });
@@ -78,10 +118,14 @@ async function loadReportDataset(
         eq(schema.actasComitePesv.companyId, companyId),
       ),
     )
-    .where(eq(schema.roadIncidents.companyId, companyId))
+    .where(and(
+      eq(schema.roadIncidents.companyId, companyId),
+      period.from ? gte(schema.roadIncidents.incidentDate, period.from) : undefined,
+      period.to ? lte(schema.roadIncidents.incidentDate, period.to) : undefined,
+    ))
     .orderBy(desc(schema.roadIncidents.incidentDate), desc(schema.roadIncidents.createdAt));
 
-  return { company, records };
+  return { company, records, period };
 }
 
 function getIncompleteRecords(records: SiniestroReportRecord[]) {
@@ -126,6 +170,7 @@ export function registerPesvInformeRoutes(app: Express) {
           total: dataset.records.length,
           ready: dataset.records.length - incompleteRecords.length,
           incomplete: incompleteRecords,
+          period: dataset.period,
         });
       } catch (error: any) {
         console.error("Error consultando el estado del informe PESV:", error);
@@ -150,13 +195,13 @@ export function registerPesvInformeRoutes(app: Express) {
         const incomplete = getIncompleteRecords(dataset.records);
         if (incomplete.length > 0) {
           return res.status(409).json({
-            message: "Completa los datos señalados en el módulo Siniestros antes de descargar el informe.",
+            message: "Completa los datos señalados en el módulo Siniestros antes de descargar el informe del período seleccionado.",
             incomplete,
           });
         }
 
-        const buffer = buildSiniestrosExcelBuffer(dataset.company, dataset.records);
-        const filename = `registro_vehiculos_siniestrados_${companyFileSlug(dataset.company.name)}.xlsx`;
+        const buffer = buildSiniestrosExcelBuffer(dataset.company, dataset.records, new Date(), dataset.period);
+        const filename = `registro_vehiculos_siniestrados_${companyFileSlug(dataset.company.name)}${reportPeriodFilenameSuffix(dataset.period)}.xlsx`;
         res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
         res.setHeader("Content-Length", buffer.length);
@@ -184,7 +229,7 @@ export function registerPesvInformeRoutes(app: Express) {
         const incomplete = getIncompleteRecords(dataset.records);
         if (incomplete.length > 0) {
           return res.status(409).json({
-            message: "Completa los datos señalados en el módulo Siniestros antes de descargar el informe.",
+            message: "Completa los datos señalados en el módulo Siniestros antes de descargar el informe del período seleccionado.",
             incomplete,
           });
         }
@@ -200,8 +245,9 @@ export function registerPesvInformeRoutes(app: Express) {
           dataset.company,
           dataset.records,
           trialStatus.requiresWatermark,
+          dataset.period,
         );
-        const filename = `registro_vehiculos_siniestrados_${companyFileSlug(dataset.company.name)}.pdf`;
+        const filename = `registro_vehiculos_siniestrados_${companyFileSlug(dataset.company.name)}${reportPeriodFilenameSuffix(dataset.period)}.pdf`;
         res.setHeader("Content-Type", "application/pdf");
         res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
         res.setHeader("Content-Length", buffer.length);
