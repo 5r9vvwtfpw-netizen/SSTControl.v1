@@ -713,3 +713,31 @@ mtime_ms = 1790754341275
 storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/2fe3c63b-60e2-42fb-9bba-2d9d56f8875e/a7604b1b-4021-4330-9145-e13b28d5253c"
 storage_version_token = "1790754359726548"
 content_type = "application/octet-stream"
+
+[[outputs]]
+id = "jPiuI5BhyrKos9pKCO7sy"
+uri = "file://attached_assets/DEMO-PRUEBA_muestra_informe_siniestros_PESV.xlsx"
+type = "table"
+title = "Muestra Excel del informe de siniestros PESV"
+description = "Una fila de prueba guardada desde los módulos de DEMO-PRUEBA. Está marcada como muestra no oficial; no incluye los cuatro siniestros históricos incompletos."
+logical_id = "48c93db5-16cb-421c-a38f-bc4a404ebe1d"
+content_hash = "sha256:38c825051fc63c788cbfdf228d2e59755a9060c58a630fe94150763c659f04f8"
+size = 18449
+mtime_ms = 1791540334383
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/48c93db5-16cb-421c-a38f-bc4a404ebe1d/13966707-04ad-400e-b539-b0b0fd9f3f83"
+storage_version_token = "1791540379360210"
+content_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
+[[outputs]]
+id = "9YAtAtdm-nascMPcrVJGt"
+uri = "file://attached_assets/DEMO-PRUEBA_muestra_informe_siniestros_PESV.pdf"
+type = "pdf"
+title = "Muestra PDF del informe de siniestros PESV"
+description = "Una fila de prueba guardada desde los módulos de DEMO-PRUEBA. Está marcada como muestra no oficial; no incluye los cuatro siniestros históricos incompletos."
+logical_id = "c916d2e6-4b89-48dd-b13f-a66cd821b765"
+content_hash = "sha256:087c17c1ef0258fe542c709063a688c3248810263739df9a17233d9c870272a0"
+size = 180121
+mtime_ms = 1791540334383
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/c916d2e6-4b89-48dd-b13f-a66cd821b765/4c88877b-be47-422f-a935-30961fa4d8e5"
+storage_version_token = "1791540379996118"
+content_type = "application/pdf"
