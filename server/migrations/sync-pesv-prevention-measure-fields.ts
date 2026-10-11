@@ -9,7 +9,9 @@ export async function syncPesvPreventionMeasureFields() {
     ALTER TABLE safe_routes
       ADD COLUMN IF NOT EXISTS signage_implemented INTEGER NOT NULL DEFAULT 0,
       ADD COLUMN IF NOT EXISTS control_implemented INTEGER NOT NULL DEFAULT 0,
-      ADD COLUMN IF NOT EXISTS control_implementation_date DATE
+      ADD COLUMN IF NOT EXISTS control_implementation_date DATE,
+      ADD COLUMN IF NOT EXISTS signage_end_date DATE,
+      ADD COLUMN IF NOT EXISTS control_end_date DATE
   `);
   console.log("✅ Campos de implementación de medidas preventivas PESV sincronizados");
 }

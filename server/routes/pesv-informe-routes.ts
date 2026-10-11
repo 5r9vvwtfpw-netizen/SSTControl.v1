@@ -1,5 +1,5 @@
 import type { Express, Request, Response } from "express";
-import { and, desc, eq, gte, lte, ne } from "drizzle-orm";
+import { and, desc, eq, gte, lte, ne, or } from "drizzle-orm";
 import * as schema from "@shared/schema";
 import { db } from "../db";
 import { requireAuth as authRequireAuth, requirePermission } from "../auth";
@@ -232,11 +232,21 @@ export function registerPesvInformeRoutes(app: Express) {
       let controlInPeriod = false;
       if (route.signageImplemented === 1) {
         if (!route.signageImplementationDate) incomplete.push(`${route.routeName}: indica la fecha de implementación de señalización en Rutas Seguras (H08).`);
-        else signageInPeriod = route.signageImplementationDate >= period.from! && route.signageImplementationDate <= period.to!;
+        else if (route.signageEndDate && route.signageEndDate < route.signageImplementationDate) {
+          incomplete.push(`${route.routeName}: corrige la fecha de fin de vigencia de la señalización en Rutas Seguras (H08).`);
+        } else if (route.signageImplementationDate <= period.to! && (!route.signageEndDate || route.signageEndDate >= period.from!)) {
+          if (route.isActive === 1 || route.signageEndDate) signageInPeriod = true;
+          else incomplete.push(`${route.routeName}: registra cuándo terminó la señalización para verificar este trimestre en Rutas Seguras (H08).`);
+        }
       }
       if (route.controlImplemented === 1) {
         if (!route.controlImplementationDate) incomplete.push(`${route.routeName}: indica la fecha de implementación de los puestos de control en Rutas Seguras (H08).`);
-        else controlInPeriod = route.controlImplementationDate >= period.from! && route.controlImplementationDate <= period.to!;
+        else if (route.controlEndDate && route.controlEndDate < route.controlImplementationDate) {
+          incomplete.push(`${route.routeName}: corrige la fecha de fin de vigencia de los puestos de control en Rutas Seguras (H08).`);
+        } else if (route.controlImplementationDate <= period.to! && (!route.controlEndDate || route.controlEndDate >= period.from!)) {
+          if (route.isActive === 1 || route.controlEndDate) controlInPeriod = true;
+          else incomplete.push(`${route.routeName}: registra cuándo terminaron los puestos para verificar este trimestre en Rutas Seguras (H08).`);
+        }
       }
       if (!signageInPeriod && !controlInPeriod) return false;
       if (signageInPeriod && (!route.signageMeasures?.trim() || !route.signageEvidenceReference?.startsWith(`uploads/${companyId}/evidencias/`))) {
@@ -250,21 +260,41 @@ export function registerPesvInformeRoutes(app: Express) {
     const allExpenses = await db.select().from(schema.pesvGpsExpenses)
       .where(and(
         eq(schema.pesvGpsExpenses.companyId, companyId),
-        gte(schema.pesvGpsExpenses.expenseDate, period.from),
-        lte(schema.pesvGpsExpenses.expenseDate, period.to),
+        or(
+          and(gte(schema.pesvGpsExpenses.expenseDate, period.from), lte(schema.pesvGpsExpenses.expenseDate, period.to)),
+          and(lte(schema.pesvGpsExpenses.periodStart, period.to), gte(schema.pesvGpsExpenses.periodEnd, period.from)),
+        ),
       ));
     const expenses = allExpenses.filter((expense) =>
       ![expense.provider, expense.concept, expense.observations].join(" ").toUpperCase().includes("PRUEBA FUNCIONAL"));
+    const trackingRows = await db.select().from(schema.vehicleGpsTracking)
+      .where(and(
+        eq(schema.vehicleGpsTracking.companyId, companyId),
+        gte(schema.vehicleGpsTracking.trackingDate, period.from),
+        lte(schema.vehicleGpsTracking.trackingDate, period.to),
+      ));
+    const tracking = trackingRows.filter((row) =>
+      ![row.observations, row.alertType].join(" ").toUpperCase().includes("PRUEBA FUNCIONAL"));
+    const alertRows = await db.select().from(schema.sstSpeedAlerts)
+      .where(and(
+        eq(schema.sstSpeedAlerts.companyId, companyId),
+        gte(schema.sstSpeedAlerts.alertDate, period.from),
+        lte(schema.sstSpeedAlerts.alertDate, period.to),
+      ));
+    const speedAlerts = alertRows.filter((row) =>
+      ![row.observations, row.correctiveAction].join(" ").toUpperCase().includes("PRUEBA FUNCIONAL"));
     const missing: string[] = [];
     if (!company.legalRepName?.trim()) missing.push("Configura el nombre del Representante Legal en Empresas.");
     if (!company.legalRepId?.trim()) missing.push("Configura la identificación del Representante Legal en Empresas.");
     if (!company.legalRepSignatureUrl?.trim()) missing.push("Carga la firma del Representante Legal en Empresas.");
-    if (routes.length === 0 && expenses.length === 0) missing.push("Registra medidas implementadas en Rutas Seguras o gastos GPS del trimestre.");
+    if (routes.length === 0 && expenses.length === 0 && tracking.length === 0 && speedAlerts.length === 0) {
+      missing.push("Registra medidas implementadas en Rutas Seguras o información de operación GPS/alertas del trimestre.");
+    }
     missing.push(...incomplete);
     for (const expense of expenses) if (!expense.supportReference?.startsWith(`uploads/${companyId}/evidencias/`)) {
       missing.push(`${expense.provider} · ${expense.expenseDate}: adjunta la factura o el soporte en Monitoreo GPS (H07).`);
     }
-    return { company, routes, expenses, period, missing };
+    return { company, routes, expenses, tracking, speedAlerts, period, missing };
   }
 
   app.get("/api/pesv/informes-trimestrales/medidas-prevencion/estado", authRequireAuth, reportViewPermission, async (req, res) => {
@@ -279,6 +309,8 @@ export function registerPesvInformeRoutes(app: Express) {
         routeMeasures: data.routes.length,
         gpsExpenses: data.expenses.length,
         gpsExpensesTotalCop: data.expenses.reduce((sum, row) => sum + row.amountCop, 0),
+        gpsMonitoringRecords: data.tracking.length,
+        speedAlerts: data.speedAlerts.length,
         missing: data.missing,
       });
     } catch (error) {
@@ -303,6 +335,8 @@ export function registerPesvInformeRoutes(app: Express) {
         data.company,
         data.routes,
         data.expenses,
+        data.tracking,
+        data.speedAlerts,
         { from: data.period.from!, to: data.period.to! },
         trialStatus.requiresWatermark,
       );

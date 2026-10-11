@@ -18,6 +18,8 @@ type ReportState = {
   routeMeasures: number;
   gpsExpenses: number;
   gpsExpensesTotalCop: number;
+  gpsMonitoringRecords: number;
+  speedAlerts: number;
   missing: string[];
 };
 
@@ -71,7 +73,7 @@ export default function PesvInformeTrimestralMedidas() {
         <p className="text-sm font-medium text-primary">PESV · Informe trimestral</p>
         <h1 className="text-2xl font-bold md:text-3xl">Certificación de medidas para prevenir la accidentalidad</h1>
         <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
-          Consolida las medidas de Rutas Seguras y los gastos GPS registrados para el trimestre. La descarga incorpora la firma guardada del Representante Legal y requiere confirmar que la información fue revisada.
+          Consolida señalización, controles y gestión de rutas (H08), junto con operación GPS, alertas de velocidad y gastos registrados (H07). Revisa la información antes de emitir la certificación firmada por el Representante Legal.
         </p>
       </header>
       <Card>
@@ -93,8 +95,10 @@ export default function PesvInformeTrimestralMedidas() {
           <Card>
             <CardHeader><CardTitle>{data.companyName}</CardTitle><CardDescription>NIT {data.companyNit} · {period.from} al {period.to}</CardDescription></CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid gap-3 sm:grid-cols-3">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
                 <div className="rounded-md border p-3"><span className="text-sm text-muted-foreground">Medidas registradas en Rutas Seguras</span><p className="text-xl font-semibold">{data.routeMeasures}</p></div>
+                <div className="rounded-md border p-3"><span className="text-sm text-muted-foreground">Registros de monitoreo GPS</span><p className="text-xl font-semibold">{data.gpsMonitoringRecords}</p></div>
+                <div className="rounded-md border p-3"><span className="text-sm text-muted-foreground">Alertas de velocidad</span><p className="text-xl font-semibold">{data.speedAlerts}</p></div>
                 <div className="rounded-md border p-3"><span className="text-sm text-muted-foreground">Gastos GPS registrados</span><p className="text-xl font-semibold">{data.gpsExpenses}</p></div>
                 <div className="rounded-md border p-3"><span className="text-sm text-muted-foreground">Total GPS del período</span><p className="text-xl font-semibold">{new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(data.gpsExpensesTotalCop)}</p></div>
               </div>

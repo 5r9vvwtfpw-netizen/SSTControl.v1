@@ -826,11 +826,13 @@ export default function PesvRutasSeguras() {
     signageMeasures: "",
     signageImplemented: 0,
     signageImplementationDate: "",
+    signageEndDate: "",
     signageResponsible: "",
     signageEvidenceReference: "",
     controlPoints: "",
     controlImplemented: 0,
     controlImplementationDate: "",
+    controlEndDate: "",
     controlFrequency: "",
     controlResponsible: "",
     controlEvidenceReference: "",
@@ -1071,11 +1073,13 @@ export default function PesvRutasSeguras() {
       signageMeasures: route.signageMeasures || "",
       signageImplemented: route.signageImplemented || 0,
       signageImplementationDate: route.signageImplementationDate || "",
+      signageEndDate: route.signageEndDate || "",
       signageResponsible: route.signageResponsible || "",
       signageEvidenceReference: route.signageEvidenceReference || "",
       controlPoints: route.controlPoints || "",
       controlImplemented: route.controlImplemented || 0,
       controlImplementationDate: route.controlImplementationDate || "",
+      controlEndDate: route.controlEndDate || "",
       controlFrequency: route.controlFrequency || "",
       controlResponsible: route.controlResponsible || "",
       controlEvidenceReference: route.controlEvidenceReference || "",
@@ -1111,11 +1115,13 @@ export default function PesvRutasSeguras() {
       signageMeasures: "",
       signageImplemented: 0,
       signageImplementationDate: "",
+      signageEndDate: "",
       signageResponsible: "",
       signageEvidenceReference: "",
       controlPoints: "",
       controlImplemented: 0,
       controlImplementationDate: "",
+      controlEndDate: "",
       controlFrequency: "",
       controlResponsible: "",
       controlEvidenceReference: "",
@@ -1415,6 +1421,10 @@ export default function PesvRutasSeguras() {
                           <Input type="date" required={formData.signageImplemented === 1} value={formData.signageImplementationDate} onChange={(e) => setFormData({ ...formData, signageImplementationDate: e.target.value })} />
                         </div>
                         <div className="space-y-2">
+                          <Label>Fecha en que dejó de estar vigente</Label>
+                          <Input type="date" value={formData.signageEndDate} onChange={(e) => setFormData({ ...formData, signageEndDate: e.target.value })} />
+                        </div>
+                        <div className="space-y-2">
                           <Label>Responsable de la señalización</Label>
                           <Input value={formData.signageResponsible} onChange={(e) => setFormData({ ...formData, signageResponsible: e.target.value })} />
                         </div>
@@ -1444,6 +1454,10 @@ export default function PesvRutasSeguras() {
                         <div className="space-y-2">
                           <Label>Fecha de implementación de los puestos</Label>
                           <Input type="date" required={formData.controlImplemented === 1} value={formData.controlImplementationDate} onChange={(e) => setFormData({ ...formData, controlImplementationDate: e.target.value })} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Fecha en que dejaron de estar vigentes</Label>
+                          <Input type="date" value={formData.controlEndDate} onChange={(e) => setFormData({ ...formData, controlEndDate: e.target.value })} />
                         </div>
                         <div className="space-y-2">
                           <Label>Frecuencia de control</Label>
