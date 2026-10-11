@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { AlertCircle, ArrowLeft, CheckCircle2, Download, FileSpreadsheet, FileText } from "lucide-react";
+import { AlertCircle, ArrowLeft, CheckCircle2, Download, FileText } from "lucide-react";
 import { useState } from "react";
 import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
@@ -59,7 +59,7 @@ export default function PesvInformeTrimestralActas() {
   const today = new Date();
   const [quarter, setQuarter] = useState(Math.floor(today.getMonth() / 3) + 1);
   const [year, setYear] = useState(today.getFullYear());
-  const [downloading, setDownloading] = useState<"excel" | "pdf" | null>(null);
+  const [downloadingActaId, setDownloadingActaId] = useState<string | null>(null);
   const period = getQuarterPeriod(year, quarter);
   const companyKey = selectedCompany?.id || getSelectedCompanyId() || "empresa-activa";
   const query = new URLSearchParams(period).toString();
@@ -71,35 +71,32 @@ export default function PesvInformeTrimestralActas() {
     },
   });
 
-  const blocked = !data || data.incomplete.length > 0 || data.total === 0;
-  const download = async (format: "excel" | "pdf") => {
-    setDownloading(format);
+  const downloadActa = async (record: ActaEvidenceRecord) => {
+    if (!record.actaId) return;
+    setDownloadingActaId(record.actaId);
     try {
-      const path = format === "excel"
-        ? "/api/pesv/informes-trimestrales/actas-siniestros.xlsx"
-        : "/api/pesv/informes-trimestrales/actas-siniestros.pdf";
-      const response = await fetch(`${path}?${query}`, {
+      const response = await fetch(`/api/pesv/comite/actas/${encodeURIComponent(record.actaId)}/pdf`, {
         credentials: "include",
         headers: buildHeaders(),
       });
       if (!response.ok) {
-        const body = await response.json().catch(() => ({}));
-        throw new Error(body.message || "No fue posible generar el informe.");
+        const message = await response.text().catch(() => "");
+        throw new Error(message || "No fue posible descargar el acta oficial.");
       }
       const objectUrl = URL.createObjectURL(await response.blob());
       const anchor = document.createElement("a");
       anchor.href = objectUrl;
-      anchor.download = `actas_comite_pesv_siniestros_T${quarter}_${year}.${format === "excel" ? "xlsx" : "pdf"}`;
+      anchor.download = `acta-comite-pesv-${record.numeroActa}.pdf`;
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();
       URL.revokeObjectURL(objectUrl);
-      toast({ title: "Informe descargado", description: `Se descargó el informe trimestral en ${format.toUpperCase()}.` });
+      toast({ title: "Acta oficial descargada", description: `Se descargó el acta No. ${record.numeroActa} desde el módulo de Actas del Comité PESV.` });
     } catch (error) {
       toast({ title: "No se pudo descargar", description: error instanceof Error ? error.message : "Intenta nuevamente.", variant: "destructive" });
       await refetch();
     } finally {
-      setDownloading(null);
+      setDownloadingActaId(null);
     }
   };
 
@@ -112,7 +109,7 @@ export default function PesvInformeTrimestralActas() {
         <p className="text-sm font-medium text-primary">PESV · Informe trimestral</p>
         <h1 className="mt-1 text-2xl font-bold md:text-3xl">Copias de actas del Comité PESV</h1>
         <p className="mt-2 max-w-3xl text-muted-foreground">
-          Toma las reuniones programadas en el Cronograma del Comité PESV durante el trimestre y reúne sus actas en un solo PDF para cargar ante la entidad.
+          Consulta las reuniones del Cronograma PESV del trimestre y descarga el acta oficial asociada desde el módulo P01. No se crea ni modifica una copia del acta.
         </p>
       </header>
 
@@ -178,36 +175,35 @@ export default function PesvInformeTrimestralActas() {
             </div>
           )}
 
-          {data && data.total > 0 && data.incomplete.length === 0 && (
+          {data && data.total > 0 && (
             <>
-              <div className="flex items-start gap-2 rounded-md border border-emerald-300 bg-emerald-50 p-4 text-emerald-950">
+              {data.incomplete.length === 0 && <div className="flex items-start gap-2 rounded-md border border-emerald-300 bg-emerald-50 p-4 text-emerald-950">
                 <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0" />
-                <p>Las actas vinculadas contienen desarrollo de la investigación interna y están aprobadas. El PDF incluirá las copias generadas desde el Comité PESV.</p>
-              </div>
+                <p>El acta oficial se descargará directamente desde P01, con el formato estándar del sistema.</p>
+              </div>}
               <div className="overflow-x-auto rounded-md border">
                 <table className="w-full text-sm">
-                  <thead><tr className="border-b bg-muted/50 text-left"><th className="p-3">Fecha programada</th><th className="p-3">Frecuencia / tema</th><th className="p-3">Acta</th><th className="p-3">Estado</th></tr></thead>
+                  <thead><tr className="border-b bg-muted/50 text-left"><th className="p-3">Fecha programada</th><th className="p-3">Frecuencia / tema</th><th className="p-3">Acta oficial</th><th className="p-3">Estado</th><th className="p-3">Descarga</th></tr></thead>
                   <tbody>{data.records.map((record) => (
                     <tr key={record.meetingId} className="border-b last:border-0">
                       <td className="p-3">{displayDate(record.scheduledDate)}</td>
                       <td className="p-3">{record.frequency} · {record.meetingTopic || "—"}</td>
                       <td className="p-3">{record.numeroActa ?? "—"} · {displayDate(record.fechaReunion)}</td>
                       <td className="p-3">{record.estado}</td>
+                      <td className="p-3">
+                        {record.actaId ? (
+                          <Button size="sm" variant="outline" onClick={() => downloadActa(record)} disabled={downloadingActaId !== null}>
+                            <Download className="mr-2 h-4 w-4" />
+                            {downloadingActaId === record.actaId ? "Descargando…" : "Descargar acta oficial"}
+                          </Button>
+                        ) : "Acta pendiente"}
+                      </td>
                     </tr>
                   ))}</tbody>
                 </table>
               </div>
             </>
           )}
-
-          <div className="flex flex-wrap gap-3 border-t pt-4">
-            <Button onClick={() => download("excel")} disabled={blocked || downloading !== null}>
-              <FileSpreadsheet className="mr-2 h-4 w-4" />{downloading === "excel" ? "Generando Excel…" : "Descargar Excel"}
-            </Button>
-            <Button variant="outline" onClick={() => download("pdf")} disabled={blocked || downloading !== null}>
-              <FileText className="mr-2 h-4 w-4" />{downloading === "pdf" ? <Download className="mr-2 h-4 w-4 animate-pulse" /> : null}Descargar PDF
-            </Button>
-          </div>
         </CardContent>
       </Card>
     </main>

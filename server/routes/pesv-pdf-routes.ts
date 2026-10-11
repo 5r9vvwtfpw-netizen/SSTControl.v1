@@ -32,11 +32,12 @@ function getEffectiveCompanyId(req: Request): string | null {
 export function registerPesvPdfRoutes(app: Express) {
   const requireAuth = authRequireAuth;
   const viewPermission = requirePermission('sst_management:view');
+  const actaViewPermission = requireAnyPermission(['sst_management:view', 'road_incidents:view']);
   const machineryInspectionViewPermission = requirePermission('vehicle_inspections:view');
   const managementReviewViewPermission = requireAnyPermission(['sst_management:view', 'management_review:view']);
 
   // 1. GET /api/pesv/comite/actas/:id/pdf
-  app.get('/api/pesv/comite/actas/:id/pdf', requireAuth, viewPermission, async (req: Request, res: Response) => {
+  app.get('/api/pesv/comite/actas/:id/pdf', requireAuth, actaViewPermission, async (req: Request, res: Response) => {
     try {
       const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(403).send('Empresa no identificada');

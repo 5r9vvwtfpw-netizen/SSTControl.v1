@@ -13,11 +13,6 @@ import {
 } from "../reports/pesv-siniestros-report";
 import { storage } from "../storage";
 import { getTrialStatus } from "@shared/utils";
-import {
-  buildActasSiniestrosExcelBuffer,
-  buildActasSiniestrosPdfBuffer,
-  type ActaSiniestroEvidence,
-} from "../reports/pesv-actas-siniestros-report";
 
 type ReportDataset = {
   company: typeof schema.companies.$inferSelect;
@@ -287,7 +282,7 @@ export function registerPesvInformeRoutes(app: Express) {
         missing,
       }] : [];
     });
-    return { company, records: enrichedRecords as ActaSiniestroEvidence[], incomplete, period, companyId };
+    return { company, records: enrichedRecords, incomplete, period, companyId };
   }
 
   app.get("/api/pesv/informes-trimestrales/actas-siniestros/estado", authRequireAuth, reportViewPermission, async (req, res) => {
@@ -306,49 +301,6 @@ export function registerPesvInformeRoutes(app: Express) {
     } catch (error) {
       console.error("Error consultando actas trimestrales PESV:", error);
       res.status(500).json({ message: "No fue posible revisar las actas del trimestre." });
-    }
-  });
-
-  app.get("/api/pesv/informes-trimestrales/actas-siniestros.xlsx", authRequireAuth, reportViewPermission, async (req, res) => {
-    try {
-      const dataset = await loadQuarterlyActasDataset(req, res);
-      if (!dataset) return;
-      if (dataset.records.length === 0) return res.status(409).json({ message: "No hay reuniones del Comité PESV en el cronograma para el trimestre seleccionado." });
-      if (dataset.incomplete.length) return res.status(409).json({ message: "Completa las reuniones y actas pendientes del cronograma antes de descargar el informe.", incomplete: dataset.incomplete });
-      const buffer = buildActasSiniestrosExcelBuffer(dataset.company, dataset.records, dataset.period as { from: string; to: string });
-      const suffix = reportPeriodFilenameSuffix(dataset.period);
-      res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-      res.setHeader("Content-Disposition", `attachment; filename="actas_comite_pesv_siniestros${suffix}.xlsx"`);
-      res.setHeader("Content-Length", buffer.length);
-      res.send(buffer);
-    } catch (error) {
-      console.error("Error generando Excel de actas trimestrales:", error);
-      res.status(500).json({ message: "No fue posible generar el Excel de actas." });
-    }
-  });
-
-  app.get("/api/pesv/informes-trimestrales/actas-siniestros.pdf", authRequireAuth, reportViewPermission, async (req, res) => {
-    try {
-      const dataset = await loadQuarterlyActasDataset(req, res);
-      if (!dataset) return;
-      if (dataset.records.length === 0) return res.status(409).json({ message: "No hay reuniones del Comité PESV en el cronograma para el trimestre seleccionado." });
-      if (dataset.incomplete.length) return res.status(409).json({ message: "Completa las reuniones y actas pendientes del cronograma antes de descargar el informe.", incomplete: dataset.incomplete });
-      const subscription = await storage.getSubscriptionByCompany(dataset.companyId);
-      const trialStatus = getTrialStatus(subscription?.status || "trial", subscription?.trialEnd || null, true, true);
-      const buffer = await buildActasSiniestrosPdfBuffer(
-        dataset.company,
-        dataset.records,
-        dataset.period as { from: string; to: string },
-        trialStatus.requiresWatermark,
-      );
-      const suffix = reportPeriodFilenameSuffix(dataset.period);
-      res.setHeader("Content-Type", "application/pdf");
-      res.setHeader("Content-Disposition", `attachment; filename="actas_comite_pesv_siniestros${suffix}.pdf"`);
-      res.setHeader("Content-Length", buffer.length);
-      res.send(buffer);
-    } catch (error) {
-      console.error("Error generando PDF de actas trimestrales:", error);
-      res.status(500).json({ message: "No fue posible generar el PDF de actas." });
     }
   });
 
