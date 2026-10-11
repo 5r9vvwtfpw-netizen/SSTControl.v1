@@ -11,10 +11,11 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, buildHeaders, getSelectedCompanyId } from "@/lib/queryClient";
 
 type ActaEvidenceRecord = {
-  incidentId: string;
-  incidentDate: string;
-  vehiclePlate: string | null;
-  driverName: string | null;
+  meetingId: string;
+  scheduledDate: string;
+  meetingTopic: string | null;
+  meetingState: string;
+  frequency: string;
   actaId: string | null;
   numeroActa: number | null;
   fechaReunion: string | null;
@@ -31,10 +32,9 @@ type ActaReportStatus = {
   total: number;
   ready: number;
   incomplete: Array<{
-    incidentId: string;
-    incidentDate: string;
-    vehiclePlate: string | null;
-    driverName: string | null;
+    meetingId: string;
+    scheduledDate: string;
+    meetingTopic: string | null;
     actaId: string | null;
     missing: string[];
   }>;
@@ -59,7 +59,6 @@ export default function PesvInformeTrimestralActas() {
   const today = new Date();
   const [quarter, setQuarter] = useState(Math.floor(today.getMonth() / 3) + 1);
   const [year, setYear] = useState(today.getFullYear());
-  const [confirmNoIncidents, setConfirmNoIncidents] = useState(false);
   const [downloading, setDownloading] = useState<"excel" | "pdf" | null>(null);
   const period = getQuarterPeriod(year, quarter);
   const companyKey = selectedCompany?.id || getSelectedCompanyId() || "empresa-activa";
@@ -72,14 +71,14 @@ export default function PesvInformeTrimestralActas() {
     },
   });
 
-  const blocked = !data || data.incomplete.length > 0 || (data.total === 0 && !confirmNoIncidents);
+  const blocked = !data || data.incomplete.length > 0 || data.total === 0;
   const download = async (format: "excel" | "pdf") => {
     setDownloading(format);
     try {
       const path = format === "excel"
         ? "/api/pesv/informes-trimestrales/actas-siniestros.xlsx"
         : "/api/pesv/informes-trimestrales/actas-siniestros.pdf";
-      const response = await fetch(`${path}?${query}${confirmNoIncidents ? "&confirmNoIncidents=true" : ""}`, {
+      const response = await fetch(`${path}?${query}`, {
         credentials: "include",
         headers: buildHeaders(),
       });
@@ -113,7 +112,7 @@ export default function PesvInformeTrimestralActas() {
         <p className="text-sm font-medium text-primary">PESV · Informe trimestral</p>
         <h1 className="mt-1 text-2xl font-bold md:text-3xl">Copias de actas del Comité PESV</h1>
         <p className="mt-2 max-w-3xl text-muted-foreground">
-          Reúne las actas vinculadas a siniestros ocurridos en el trimestre. Si la reunión de análisis fue posterior al cierre, el acta se incluye por su relación con el siniestro.
+          Toma las reuniones programadas en el Cronograma del Comité PESV durante el trimestre y reúne sus actas en un solo PDF para cargar ante la entidad.
         </p>
       </header>
 
@@ -126,7 +125,7 @@ export default function PesvInformeTrimestralActas() {
           <div className="flex flex-wrap items-end gap-3">
             <label className="grid gap-1 text-sm">
               <span>Trimestre</span>
-              <select className="h-10 rounded-md border border-input bg-background px-3 text-sm" value={quarter} onChange={(event) => { setQuarter(Number(event.target.value)); setConfirmNoIncidents(false); }}>
+              <select className="h-10 rounded-md border border-input bg-background px-3 text-sm" value={quarter} onChange={(event) => setQuarter(Number(event.target.value))}>
                 <option value={1}>Primer trimestre (enero–marzo)</option>
                 <option value={2}>Segundo trimestre (abril–junio)</option>
                 <option value={3}>Tercer trimestre (julio–septiembre)</option>
@@ -135,11 +134,11 @@ export default function PesvInformeTrimestralActas() {
             </label>
             <label className="grid gap-1 text-sm">
               <span>Año</span>
-              <Input type="number" min={2000} max={today.getFullYear() + 1} value={year} onChange={(event) => { setYear(Number(event.target.value)); setConfirmNoIncidents(false); }} />
+              <Input type="number" min={2000} max={today.getFullYear() + 1} value={year} onChange={(event) => setYear(Number(event.target.value))} />
             </label>
             {data && (
               <>
-                <Badge variant="secondary">{data.total} siniestro(s)</Badge>
+                <Badge variant="secondary">{data.total} reunión(es) programada(s)</Badge>
                 <Badge variant={data.incomplete.length ? "destructive" : "default"}>{data.ready} con acta completa</Badge>
               </>
             )}
@@ -155,27 +154,24 @@ export default function PesvInformeTrimestralActas() {
 
           {data && data.total === 0 && (
             <div className="space-y-3 rounded-md border border-dashed p-5">
-              <p className="font-medium">No hay siniestros registrados en el trimestre consultado.</p>
-              <label className="flex items-start gap-3 text-sm">
-                <input type="checkbox" className="mt-1 h-4 w-4 accent-primary" checked={confirmNoIncidents} onChange={(event) => setConfirmNoIncidents(event.target.checked)} />
-                <span>Confirmo que no ocurrieron siniestros viales durante {displayDate(period.from)} al {displayDate(period.to)}.</span>
-              </label>
+              <p className="font-medium">No hay reuniones programadas en el Cronograma PESV para el trimestre consultado.</p>
+              <Button asChild size="sm" variant="outline"><Link href="/pesv/comite?tab=cronograma">Revisar Cronograma del Comité PESV (P01)</Link></Button>
             </div>
           )}
 
           {data && data.incomplete.length > 0 && (
             <div className="space-y-3">
               <div className="rounded-md border border-amber-300 bg-amber-50 p-4 text-amber-950">
-                <p className="font-semibold"><AlertCircle className="mr-2 inline h-4 w-4" />Hay actas pendientes para algunos siniestros.</p>
-                <p className="mt-1 text-sm">Completa el acta en Comité PESV y vincúlala desde el registro del siniestro.</p>
+                <p className="font-semibold"><AlertCircle className="mr-2 inline h-4 w-4" />Hay reuniones del cronograma sin acta trimestral lista.</p>
+                <p className="mt-1 text-sm">Completa el acta en Comité PESV, apruébala y vincúlala a la reunión programada.</p>
               </div>
               {data.incomplete.map((incident) => (
-                <div key={incident.incidentId} className="rounded-md border p-4">
-                  <p className="font-medium">{displayDate(incident.incidentDate)} · {incident.vehiclePlate || "Vehículo sin placa"}</p>
+                <div key={incident.meetingId} className="rounded-md border p-4">
+                  <p className="font-medium">{displayDate(incident.scheduledDate)} · {incident.meetingTopic || "Reunión del Comité PESV"}</p>
                   <ul className="mt-2 list-disc pl-5 text-sm">{incident.missing.map((field) => <li key={field}>{field}</li>)}</ul>
                   <div className="mt-3 flex flex-wrap gap-2">
+                    <Button asChild size="sm" variant="outline"><Link href="/pesv/comite?tab=cronograma">Abrir Cronograma del Comité PESV (P01)</Link></Button>
                     <Button asChild size="sm" variant="outline"><Link href="/pesv/comite?tab=actas">Abrir Actas del Comité PESV (P01)</Link></Button>
-                    <Button asChild size="sm" variant="outline"><Link href={`/pesv/siniestros?editarSiniestro=${encodeURIComponent(incident.incidentId)}`}>Vincular acta al siniestro (V02)</Link></Button>
                   </div>
                 </div>
               ))}
@@ -190,11 +186,11 @@ export default function PesvInformeTrimestralActas() {
               </div>
               <div className="overflow-x-auto rounded-md border">
                 <table className="w-full text-sm">
-                  <thead><tr className="border-b bg-muted/50 text-left"><th className="p-3">Siniestro</th><th className="p-3">Vehículo / conductor</th><th className="p-3">Acta</th><th className="p-3">Estado</th></tr></thead>
+                  <thead><tr className="border-b bg-muted/50 text-left"><th className="p-3">Fecha programada</th><th className="p-3">Frecuencia / tema</th><th className="p-3">Acta</th><th className="p-3">Estado</th></tr></thead>
                   <tbody>{data.records.map((record) => (
-                    <tr key={record.incidentId} className="border-b last:border-0">
-                      <td className="p-3">{displayDate(record.incidentDate)}</td>
-                      <td className="p-3">{record.vehiclePlate || "—"} · {record.driverName || "—"}</td>
+                    <tr key={record.meetingId} className="border-b last:border-0">
+                      <td className="p-3">{displayDate(record.scheduledDate)}</td>
+                      <td className="p-3">{record.frequency} · {record.meetingTopic || "—"}</td>
                       <td className="p-3">{record.numeroActa ?? "—"} · {displayDate(record.fechaReunion)}</td>
                       <td className="p-3">{record.estado}</td>
                     </tr>

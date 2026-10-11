@@ -772,7 +772,7 @@ function CronogramaTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
   const [generarForm, setGenerarForm] = useState({ frecuencia: "mensual", temaPrincipal: "" });
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingReunion, setEditingReunion] = useState<CronogramaReunionPesv | null>(null);
-  const [editForm, setEditForm] = useState({ fechaProgramada: "", temaPrincipal: "", estado: "programada", observaciones: "" });
+  const [editForm, setEditForm] = useState({ fechaProgramada: "", temaPrincipal: "", estado: "programada", observaciones: "", actaId: "" });
 
   const { data: cronogramaData, isLoading } = useQuery<CronogramaReunionPesv[]>({
     queryKey: ["/api/pesv/comite/cronograma", anio],
@@ -809,14 +809,14 @@ function CronogramaTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
 
   const handleEditReunion = (r: CronogramaReunionPesv) => {
     setEditingReunion(r);
-    setEditForm({ fechaProgramada: r.fechaProgramada, temaPrincipal: r.temaPrincipal || "", estado: r.estado, observaciones: r.observaciones || "" });
+    setEditForm({ fechaProgramada: r.fechaProgramada, temaPrincipal: r.temaPrincipal || "", estado: r.estado, observaciones: r.observaciones || "", actaId: r.actaId || "" });
     setEditDialogOpen(true);
   };
 
   const handleEditSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (editingReunion) {
-      updateMutation.mutate({ id: editingReunion.id, data: { ...editForm, temaPrincipal: editForm.temaPrincipal || null, observaciones: editForm.observaciones || null } });
+      updateMutation.mutate({ id: editingReunion.id, data: { ...editForm, temaPrincipal: editForm.temaPrincipal || null, observaciones: editForm.observaciones || null, actaId: editForm.actaId || null } });
     }
   };
 
@@ -931,6 +931,7 @@ function CronogramaTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
                   <TableHead>Fecha</TableHead>
                   <TableHead>Tema</TableHead>
                   <TableHead>Estado</TableHead>
+                  <TableHead>Acta vinculada</TableHead>
                   <TableHead>Observaciones</TableHead>
                   {isAdmin && <TableHead className="text-right">Acciones</TableHead>}
                 </TableRow>
@@ -947,6 +948,11 @@ function CronogramaTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
                           {ESTADOS_REUNION[r.estado]?.label || r.estado}
                         </Badge>
                         {isPast && <Badge variant="destructive" className="ml-1">Vencida</Badge>}
+                      </TableCell>
+                      <TableCell>
+                        {actas.find(acta => acta.id === r.actaId)
+                          ? `Acta ${actas.find(acta => acta.id === r.actaId)?.numeroActa}`
+                          : "Sin acta"}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate">{r.observaciones || "—"}</TableCell>
                       {isAdmin && (
@@ -990,6 +996,21 @@ function CronogramaTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
                   <SelectItem value="reprogramada">Reprogramada</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Acta de la reunión</Label>
+              <Select value={editForm.actaId || "none"} onValueChange={value => setEditForm({ ...editForm, actaId: value === "none" ? "" : value })}>
+                <SelectTrigger data-testid="select-cronograma-acta"><SelectValue placeholder="Seleccionar acta" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sin acta vinculada</SelectItem>
+                  {actas.map(acta => (
+                    <SelectItem key={acta.id} value={acta.id}>
+                      Acta {acta.numeroActa} · {new Date(acta.fechaReunion).toLocaleDateString()} · {acta.estado}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">Vincula aquí el acta existente que corresponde a esta reunión programada.</p>
             </div>
             <div className="space-y-2">
               <Label>Observaciones</Label>
@@ -1129,8 +1150,9 @@ function ActasTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
                     <Textarea value={form.temasOrdenDia} onChange={e => setForm({ ...form, temasOrdenDia: e.target.value })} required rows={3} data-testid="textarea-temas" />
                   </div>
                   <div className="space-y-2">
-                    <Label>Desarrollo de la Reunión</Label>
+                    <Label>Desarrollo de la reunión e investigación interna</Label>
                     <Textarea value={form.desarrolloReunion} onChange={e => setForm({ ...form, desarrolloReunion: e.target.value })} rows={3} data-testid="textarea-desarrollo" />
+                    <p className="text-xs text-muted-foreground">Si se analizaron siniestros viales, registre aquí la investigación interna, sus conclusiones y medidas acordadas.</p>
                   </div>
                   <div className="space-y-2">
                     <Label>Compromisos</Label>

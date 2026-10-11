@@ -21,10 +21,17 @@ export type ActaSiniestroEvidence = {
   numeroActa: number | null;
   fechaReunion: string | null;
   estado: string | null;
+  horaInicio: string | null;
+  horaFin: string | null;
+  lugar: string | null;
+  modalidad: string | null;
+  asistentesTexto: string;
+  invitados: string | null;
   temasOrdenDia: string | null;
   desarrolloReunion: string | null;
   compromisos: string | null;
   observaciones: string | null;
+  proximaReunion: string | null;
 };
 
 export type ActasSiniestrosCompany = Pick<Company, "id" | "name" | "nit" | "address" | "logoUrl">;
@@ -48,7 +55,7 @@ export function buildActasSiniestrosExcelBuffer(
     [`Período trimestral: ${dateLabel(period.from)} al ${dateLabel(period.to)}`],
     ["Actas vinculadas a reuniones del cronograma PESV programadas durante el trimestre seleccionado."],
     [],
-    ["Fecha programada", "Frecuencia", "Tema de la reunión", "Estado de la reunión", "Número del acta", "Fecha real del acta", "Estado del acta", "Temas", "Investigación / desarrollo registrado", "Compromisos", "Observaciones"],
+    ["Fecha programada", "Frecuencia", "Tema de la reunión", "Estado de la reunión", "Número del acta", "Fecha real del acta", "Estado del acta", "Asistentes", "Temas", "Investigación / desarrollo registrado", "Compromisos", "Observaciones"],
     ...records.map((record) => [
       dateLabel(record.scheduledDate),
       record.frequency,
@@ -57,6 +64,7 @@ export function buildActasSiniestrosExcelBuffer(
       record.numeroActa ?? "",
       dateLabel(record.fechaReunion),
       record.estado || "",
+      record.asistentesTexto,
       record.temasOrdenDia || "",
       record.desarrolloReunion || "",
       record.compromisos || "",
@@ -64,10 +72,10 @@ export function buildActasSiniestrosExcelBuffer(
     ]),
   ];
   const sheet = XLSX.utils.aoa_to_sheet(title);
-  sheet["!cols"] = [16, 15, 32, 18, 16, 18, 16, 36, 48, 36, 36].map((wch) => ({ wch }));
-  sheet["!autofilter"] = { ref: `A6:K${Math.max(6, records.length + 6)}` };
+  sheet["!cols"] = [16, 15, 32, 18, 16, 18, 16, 42, 36, 48, 36, 36].map((wch) => ({ wch }));
+  sheet["!autofilter"] = { ref: `A6:L${Math.max(6, records.length + 6)}` };
   sheet["!freeze"] = { xSplit: 0, ySplit: 6 };
-  for (let column = 0; column < 11; column += 1) {
+  for (let column = 0; column < 12; column += 1) {
     const cell = XLSX.utils.encode_cell({ r: 5, c: column });
     if (sheet[cell]) sheet[cell].s = {
       font: { name: "Arial", bold: true, color: { rgb: "FFFFFF" } },
@@ -106,11 +114,12 @@ export async function buildActasSiniestrosPdfBuffer(
   const unique = [...new Map(records.filter((record) => record.actaId).map((record) => [record.actaId, record])).values()];
   if (unique.length === 0) {
     y = addSectionBar(doc, "Resultado del período", y);
-    y = addParagraph(doc, "No hay siniestros con actas vinculadas para el período consultado.", { y });
+    y = addParagraph(doc, "No hay actas vinculadas a reuniones del Comité PESV para el período consultado.", { y });
   }
+  const signers = await getSignersForCompany(company.id, true);
   for (let index = 0; index < unique.length; index += 1) {
     const record = unique[index];
-    if (index > 0) doc.addPage();
+    doc.addPage();
     y = await addStandardHeader({
       doc,
       company,
@@ -122,6 +131,12 @@ export async function buildActasSiniestrosPdfBuffer(
       ["Número del acta", String(record.numeroActa ?? "Pendiente")],
       ["Fecha de reunión", dateLabel(record.fechaReunion)],
       ["Estado", record.estado || "Sin estado"],
+      ["Hora de inicio", record.horaInicio || "N/A"],
+      ["Hora de finalización", record.horaFin || "N/A"],
+      ["Lugar", record.lugar || "N/A"],
+      ["Modalidad", record.modalidad || "N/A"],
+      ["Asistentes", record.asistentesTexto || "No se registraron asistentes."],
+      ["Invitados", record.invitados || "N/A"],
       ["Fecha programada", dateLabel(record.scheduledDate)],
       ["Frecuencia", record.frequency],
       ["Tema de la reunión", record.meetingTopic || "—"],
@@ -135,9 +150,13 @@ export async function buildActasSiniestrosPdfBuffer(
     y = addParagraph(doc, record.compromisos || "No hay compromisos registrados.", { y });
     y = addSectionBar(doc, "Observaciones", y);
     y = addParagraph(doc, record.observaciones || "Sin observaciones.", { y });
+    if (record.proximaReunion) {
+      y = addParagraph(doc, `Próxima reunión: ${dateLabel(record.proximaReunion)}`, { y });
+    }
+    await addSignatureFooter(doc, signers, true);
   }
 
-  await addSignatureFooter(doc, await getSignersForCompany(company.id), true);
+  if (unique.length === 0) await addSignatureFooter(doc, signers, true);
   const pages = doc.bufferedPageRange();
   for (let page = pages.start; page < pages.start + pages.count; page += 1) {
     doc.switchToPage(page);

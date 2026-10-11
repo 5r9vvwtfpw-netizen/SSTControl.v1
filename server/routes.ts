@@ -57770,6 +57770,10 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     try {
       const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(400).json({ error: "Se requiere companyId" });
+      if (req.body.actaId) {
+        const acta = await storage.getActaComitePesv(req.body.actaId, companyId);
+        if (!acta) return res.status(400).json({ error: "El acta seleccionada no pertenece a la empresa activa." });
+      }
       const [result] = await db.update(cronogramaReunionesPesv)
         .set({ ...req.body, updatedAt: new Date() })
         .where(and(eq(cronogramaReunionesPesv.id, req.params.id), eq(cronogramaReunionesPesv.companyId, companyId)))

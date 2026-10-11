@@ -1,5 +1,5 @@
 import type { Express, Request, Response } from "express";
-import { and, desc, eq, gte, lte } from "drizzle-orm";
+import { and, desc, eq, gte, lte, ne } from "drizzle-orm";
 import * as schema from "@shared/schema";
 import { db } from "../db";
 import { requireAuth as authRequireAuth, requirePermission } from "../auth";
@@ -225,67 +225,69 @@ export function registerPesvInformeRoutes(app: Express) {
       return null;
     }
     const records = await db.select({
-      incidentId: schema.roadIncidents.id,
-      incidentDate: schema.roadIncidents.incidentDate,
-      vehiclePlate: schema.vehicles.plate,
-      driverName: schema.drivers.name,
+      meetingId: schema.cronogramaReunionesPesv.id,
+      scheduledDate: schema.cronogramaReunionesPesv.fechaProgramada,
+      meetingTopic: schema.cronogramaReunionesPesv.temaPrincipal,
+      meetingState: schema.cronogramaReunionesPesv.estado,
+      frequency: schema.cronogramaReunionesPesv.frecuencia,
       actaId: schema.actasComitePesv.id,
       numeroActa: schema.actasComitePesv.numeroActa,
       fechaReunion: schema.actasComitePesv.fechaReunion,
       estado: schema.actasComitePesv.estado,
+      horaInicio: schema.actasComitePesv.horaInicio,
+      horaFin: schema.actasComitePesv.horaFin,
+      lugar: schema.actasComitePesv.lugar,
+      modalidad: schema.actasComitePesv.modalidad,
+      asistentesIds: schema.actasComitePesv.asistentesIds,
+      invitados: schema.actasComitePesv.invitados,
       temasOrdenDia: schema.actasComitePesv.temasOrdenDia,
       desarrolloReunion: schema.actasComitePesv.desarrolloReunion,
       compromisos: schema.actasComitePesv.compromisos,
       observaciones: schema.actasComitePesv.observaciones,
-    }).from(schema.roadIncidents)
-      .leftJoin(schema.vehicles, and(
-        eq(schema.vehicles.id, schema.roadIncidents.vehicleId),
-        eq(schema.vehicles.companyId, companyId),
-      ))
-      .leftJoin(schema.drivers, and(
-        eq(schema.drivers.id, schema.roadIncidents.driverId),
-        eq(schema.drivers.companyId, companyId),
-      ))
+      proximaReunion: schema.actasComitePesv.proximaReunion,
+    }).from(schema.cronogramaReunionesPesv)
       .leftJoin(schema.actasComitePesv, and(
-        eq(schema.actasComitePesv.id, schema.roadIncidents.committeeActaId),
+        eq(schema.actasComitePesv.id, schema.cronogramaReunionesPesv.actaId),
         eq(schema.actasComitePesv.companyId, companyId),
       ))
       .where(and(
-        eq(schema.roadIncidents.companyId, companyId),
-        gte(schema.roadIncidents.incidentDate, period.from),
-        lte(schema.roadIncidents.incidentDate, period.to),
+        eq(schema.cronogramaReunionesPesv.companyId, companyId),
+        gte(schema.cronogramaReunionesPesv.fechaProgramada, period.from),
+        lte(schema.cronogramaReunionesPesv.fechaProgramada, period.to),
+        ne(schema.cronogramaReunionesPesv.estado, "cancelada"),
       ))
-      .orderBy(desc(schema.roadIncidents.incidentDate));
-    const incomplete = records.flatMap((record) => {
+      .orderBy(schema.cronogramaReunionesPesv.fechaProgramada);
+    const members = await db.select({
+      id: schema.comiteIntegrantesPesv.id,
+      nombre: schema.comiteIntegrantesPesv.nombre,
+      cargo: schema.comiteIntegrantesPesv.cargo,
+      rol: schema.comiteIntegrantesPesv.rol,
+    }).from(schema.comiteIntegrantesPesv)
+      .where(eq(schema.comiteIntegrantesPesv.companyId, companyId));
+    const enrichedRecords = records.map((record) => ({
+      ...record,
+      asistentesTexto: members
+        .filter((member) => record.asistentesIds?.includes(member.id))
+        .map((member) => `${member.nombre} · ${member.cargo} · ${member.rol}`)
+        .join("; "),
+    }));
+    const incomplete = enrichedRecords.flatMap((record) => {
       const missing: string[] = [];
-      if (!record.actaId) missing.push("No hay un acta del Comité PESV vinculada al siniestro.");
+      if (record.meetingState !== "realizada") missing.push("La reunión del cronograma aún no figura como realizada.");
+      if (!record.actaId) missing.push("No hay un acta vinculada a esta reunión del cronograma.");
       else {
         if (!record.desarrolloReunion?.trim()) missing.push("El acta no contiene el desarrollo de la investigación interna.");
         if (record.estado !== "aprobada") missing.push("El acta debe estar aprobada para incluirse como evidencia.");
       }
       return missing.length ? [{
-        incidentId: record.incidentId,
-        incidentDate: record.incidentDate,
-        vehiclePlate: record.vehiclePlate,
-        driverName: record.driverName,
+        meetingId: record.meetingId,
+        scheduledDate: record.scheduledDate,
+        meetingTopic: record.meetingTopic,
         actaId: record.actaId,
         missing,
       }] : [];
     });
-    return { company, records: records as ActaSiniestroEvidence[], incomplete, period, companyId };
-  }
-
-  function confirmNoQuarterlyActas(req: Request, res: Response, total: number): boolean {
-    const declaration = req.query.confirmNoIncidents;
-    if (total === 0 && declaration !== "true") {
-      res.status(409).json({ message: "No hay siniestros en el trimestre. Confirma esta situación para generar el informe sin actas." });
-      return false;
-    }
-    if (total > 0 && declaration === "true") {
-      res.status(409).json({ message: "El trimestre tiene siniestros registrados; no se puede declarar sin actas." });
-      return false;
-    }
-    return true;
+    return { company, records: enrichedRecords as ActaSiniestroEvidence[], incomplete, period, companyId };
   }
 
   app.get("/api/pesv/informes-trimestrales/actas-siniestros/estado", authRequireAuth, reportViewPermission, async (req, res) => {
@@ -311,8 +313,8 @@ export function registerPesvInformeRoutes(app: Express) {
     try {
       const dataset = await loadQuarterlyActasDataset(req, res);
       if (!dataset) return;
-      if (dataset.incomplete.length) return res.status(409).json({ message: "Completa las actas pendientes antes de descargar el informe.", incomplete: dataset.incomplete });
-      if (!confirmNoQuarterlyActas(req, res, dataset.records.length)) return;
+      if (dataset.records.length === 0) return res.status(409).json({ message: "No hay reuniones del Comité PESV en el cronograma para el trimestre seleccionado." });
+      if (dataset.incomplete.length) return res.status(409).json({ message: "Completa las reuniones y actas pendientes del cronograma antes de descargar el informe.", incomplete: dataset.incomplete });
       const buffer = buildActasSiniestrosExcelBuffer(dataset.company, dataset.records, dataset.period as { from: string; to: string });
       const suffix = reportPeriodFilenameSuffix(dataset.period);
       res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
@@ -329,8 +331,8 @@ export function registerPesvInformeRoutes(app: Express) {
     try {
       const dataset = await loadQuarterlyActasDataset(req, res);
       if (!dataset) return;
-      if (dataset.incomplete.length) return res.status(409).json({ message: "Completa las actas pendientes antes de descargar el informe.", incomplete: dataset.incomplete });
-      if (!confirmNoQuarterlyActas(req, res, dataset.records.length)) return;
+      if (dataset.records.length === 0) return res.status(409).json({ message: "No hay reuniones del Comité PESV en el cronograma para el trimestre seleccionado." });
+      if (dataset.incomplete.length) return res.status(409).json({ message: "Completa las reuniones y actas pendientes del cronograma antes de descargar el informe.", incomplete: dataset.incomplete });
       const subscription = await storage.getSubscriptionByCompany(dataset.companyId);
       const trialStatus = getTrialStatus(subscription?.status || "trial", subscription?.trialEnd || null, true, true);
       const buffer = await buildActasSiniestrosPdfBuffer(
