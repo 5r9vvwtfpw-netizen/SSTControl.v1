@@ -187,6 +187,7 @@ test(
           return { name: pair.slice(0, separator), value: pair.slice(separator + 1), url: browserBaseUrl };
         }));
         const page = await context.newPage();
+        await page.setViewportSize({ width: 1280, height: 1200 });
         const pageErrors: string[] = [];
         page.on("pageerror", (error) => pageErrors.push(error.message));
         await page.goto(`${browserBaseUrl}/pesv/informes-trimestrales/actas-siniestros`, { waitUntil: "commit", timeout: 15_000 });
@@ -196,6 +197,11 @@ test(
         await page.locator('input[type="number"]').fill(period.from.slice(0, 4));
         await page.locator("select").selectOption(String(Math.floor((Number(period.from.slice(5, 7)) - 1) / 3) + 1));
         await page.getByRole("button", { name: "Descargar acta oficial" }).waitFor({ state: "visible", timeout: 20_000 });
+        if (await essentialCookiesButton.isVisible()) await essentialCookiesButton.click();
+        await page.screenshot({
+          path: "attached_assets/DEMO-PRUEBA_pantalla_informe_trimestral_T1_2027.png",
+          fullPage: true,
+        });
         const [download] = await Promise.all([
           page.waitForEvent("download"),
           page.getByRole("button", { name: "Descargar acta oficial" }).click(),
