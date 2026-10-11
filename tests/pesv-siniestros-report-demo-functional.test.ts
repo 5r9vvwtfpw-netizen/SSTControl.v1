@@ -358,10 +358,11 @@ test(
             input: zeroContent,
             encoding: "utf8",
           }).replace(/\s+/g, " ");
-          assert.match(zeroPdfText, /DECLARACIÓN DE SINIESTROS VIALES EN CERO/);
+          assert.match(zeroPdfText, /DECLARACIÓN DE LA EMPRESA: SIN SINIESTROS VIALES/);
           assert.match(zeroPdfText, /Fatalidades: 0/);
           assert.match(zeroPdfText, /Heridos graves: 0/);
           assert.match(zeroPdfText, /Total personas afectadas: 0/);
+          assert.match(zeroPdfText, /01\/01\/2025 al 31\/01\/2025/);
         }
         outcomes.push(`${format.name}: informe en cero tras confirmación explícita`);
       }
@@ -536,7 +537,7 @@ test(
           input: await readFile("/tmp/DEMO-PRUEBA-informe-siniestros-cero.pdf"),
           encoding: "utf8",
         });
-        assert.match(zeroUiPdfText, /DECLARACIÓN DE SINIESTROS VIALES EN CERO/);
+        assert.match(zeroUiPdfText, /DECLARACIÓN DE LA EMPRESA: SIN SINIESTROS VIALES/);
 
         await page.getByTestId("input-pesv-report-from").fill(testIncident.incidentDate);
         await page.getByTestId("input-pesv-report-to").fill(testIncident.incidentDate);

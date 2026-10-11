@@ -1,4 +1,4 @@
-import * as XLSX from "xlsx";
+import XLSX from "xlsx-js-style";
 import type { Company } from "@shared/schema";
 import { addLabeledField, addParagraph, addSectionBar, addStandardHeader, checkPageBreak, loadCompanyLogo, PDF_CONFIG } from "../services/pdf-standardizer";
 import { setupTrialWatermarkOnAllPages } from "../services/pdf-watermark";
@@ -124,10 +124,9 @@ export function buildSiniestrosExcelBuffer(
   const title = "REGISTRO DE VEHÍCULOS SINIESTRADOS";
   const metadata = `Empresa: ${company.name} · NIT: ${company.nit}`;
   const periodLabel = describeSiniestroReportPeriod(period);
-  const declarationLabel = noIncidentsConfirmed
-    ? " · La empresa confirma que no ocurrieron siniestros en el período"
-    : "";
-  const generatedLabel = `Generado: ${generatedAt.toLocaleString("es-CO")}${periodLabel ? ` · ${periodLabel}` : ""}${declarationLabel}`;
+  const generatedLabel = `Generado: ${generatedAt.toLocaleString("es-CO")}${periodLabel ? ` · ${periodLabel}` : ""}`;
+  const declarationText =
+    `DECLARACIÓN DE LA EMPRESA\nLa empresa declara que no se presentaron siniestros viales durante el período consultado: ${formatSiniestroReportDate(period?.from)} al ${formatSiniestroReportDate(period?.to)}.`;
   const rows = records.map((record) => [
     formatSiniestroReportDate(record.incidentDate),
     describeSiniestroLossLevel(record),
@@ -144,24 +143,64 @@ export function buildSiniestrosExcelBuffer(
     formatSiniestroReportDate(record.committeeAnalysisDate),
   ]);
 
-  const worksheet = XLSX.utils.aoa_to_sheet([
+  const worksheetRows: (string | number | null)[][] = [
     [title],
     [metadata],
     [generatedLabel],
-    [],
-    SINIESTROS_REPORT_HEADERS,
-    ...rows,
-  ]);
+  ];
+  const headerRow = noIncidentsConfirmed ? 5 : 4;
+  if (noIncidentsConfirmed) worksheetRows.push([declarationText]);
+  worksheetRows.push([]);
+  worksheetRows.push(SINIESTROS_REPORT_HEADERS, ...rows);
+  const worksheet = XLSX.utils.aoa_to_sheet(worksheetRows);
   const lastColumn = SINIESTROS_REPORT_HEADERS.length - 1;
   worksheet["!merges"] = [
     { s: { r: 0, c: 0 }, e: { r: 0, c: lastColumn } },
     { s: { r: 1, c: 0 }, e: { r: 1, c: lastColumn } },
     { s: { r: 2, c: 0 }, e: { r: 2, c: lastColumn } },
   ];
+  if (noIncidentsConfirmed) {
+    worksheet["!merges"].push({ s: { r: 3, c: 0 }, e: { r: 3, c: lastColumn } });
+    worksheet["!rows"] = [
+      { hpt: 28 },
+      { hpt: 20 },
+      { hpt: 22 },
+      { hpt: 52 },
+    ];
+    worksheet["A1"].s = {
+      font: { name: "Arial", sz: 16, bold: true, color: { rgb: "FFFFFF" } },
+      fill: { fgColor: { rgb: "246B45" } },
+      alignment: { horizontal: "center", vertical: "center" },
+    };
+    worksheet["A2"].s = {
+      font: { name: "Arial", sz: 11, bold: true },
+      alignment: { vertical: "center" },
+    };
+    worksheet["A3"].s = {
+      font: { name: "Arial", sz: 10, color: { rgb: "404040" } },
+      alignment: { vertical: "center", wrapText: true },
+    };
+    worksheet["A4"].s = {
+      font: { name: "Arial", sz: 15, bold: true, color: { rgb: "FFFFFF" } },
+      fill: { fgColor: { rgb: "246B45" } },
+      alignment: { horizontal: "center", vertical: "center", wrapText: true },
+      border: {
+        top: { style: "medium", color: { rgb: "1B5134" } },
+        bottom: { style: "medium", color: { rgb: "1B5134" } },
+      },
+    };
+    worksheet["!rows"][4] = { hpt: 8 };
+    worksheet[`A${headerRow + 1}`].s = {
+      font: { name: "Arial", sz: 10, bold: true, color: { rgb: "FFFFFF" } },
+      fill: { fgColor: { rgb: "3B7657" } },
+      alignment: { horizontal: "center", vertical: "center", wrapText: true },
+    };
+    worksheet["!rows"][headerRow] = { hpt: 36 };
+  }
   worksheet["!autofilter"] = {
     ref: XLSX.utils.encode_range({
-      s: { r: 4, c: 0 },
-      e: { r: 4 + records.length, c: lastColumn },
+      s: { r: headerRow, c: 0 },
+      e: { r: headerRow + records.length, c: lastColumn },
     }),
   };
   worksheet["!cols"] = SINIESTROS_REPORT_HEADERS.map((header, index) => {
@@ -177,10 +216,11 @@ export function buildSiniestrosExcelBuffer(
   if (noIncidentsConfirmed) {
     const summaryRows = [
       ["RESUMEN DEL PERÍODO SIN SINIESTROS"],
+      [declarationText],
+      [],
       ["Empresa", company.name],
       ["NIT", company.nit],
       ["Período", `${formatSiniestroReportDate(period?.from)} al ${formatSiniestroReportDate(period?.to)}`],
-      ["Declaración", "La empresa confirma que no ocurrieron siniestros viales durante este período."],
       ["Siniestros viales", 0],
       ["Fatalidades", 0],
       ["Heridos graves", 0],
@@ -192,6 +232,41 @@ export function buildSiniestrosExcelBuffer(
     ];
     const summarySheet = XLSX.utils.aoa_to_sheet(summaryRows);
     summarySheet["!cols"] = [{ wch: 38 }, { wch: 80 }];
+    summarySheet["!merges"] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 1 } },
+      { s: { r: 1, c: 0 }, e: { r: 1, c: 1 } },
+    ];
+    summarySheet["!rows"] = [{ hpt: 30 }, { hpt: 54 }];
+    summarySheet["A1"].s = {
+      font: { name: "Arial", sz: 16, bold: true, color: { rgb: "FFFFFF" } },
+      fill: { fgColor: { rgb: "246B45" } },
+      alignment: { horizontal: "center", vertical: "center" },
+    };
+    summarySheet["A2"].s = {
+      font: { name: "Arial", sz: 13, bold: true, color: { rgb: "1B5134" } },
+      fill: { fgColor: { rgb: "E5F2EA" } },
+      alignment: { horizontal: "center", vertical: "center", wrapText: true },
+      border: {
+        top: { style: "medium", color: { rgb: "246B45" } },
+        bottom: { style: "medium", color: { rgb: "246B45" } },
+      },
+    };
+    for (let row = 4; row <= summaryRows.length; row += 1) {
+      const labelCell = summarySheet[`A${row}`];
+      if (labelCell) {
+        labelCell.s = {
+          font: { name: "Arial", sz: 11, bold: true },
+          alignment: { vertical: "center", wrapText: true },
+        };
+      }
+      const valueCell = summarySheet[`B${row}`];
+      if (valueCell) {
+        valueCell.s = {
+          font: { name: "Arial", sz: 11 },
+          alignment: { vertical: "center", wrapText: true },
+        };
+      }
+    }
     XLSX.utils.book_append_sheet(workbook, summarySheet, "Resumen sin siniestros");
   }
   return XLSX.write(workbook, { type: "buffer", bookType: "xlsx" }) as Buffer;
@@ -230,14 +305,35 @@ export async function buildSiniestrosPdfBuffer(
     let y = await addStandardHeader({
       doc: document,
       company,
-      documentTitle: "DECLARACIÓN DE SINIESTROS VIALES EN CERO",
+      documentTitle: "INFORME PESV · SINIESTROS VIALES",
       documentCode: "PESV-SINIESTROS-01",
     });
-    y = addParagraph(
-      document,
-      "La empresa confirma que no ocurrieron siniestros viales durante el período consultado.",
-      { y, fontSize: 10 },
-    );
+    const boxX = PDF_CONFIG.MARGIN;
+    const boxY = y + 5;
+    const boxWidth = document.page.width - PDF_CONFIG.MARGIN * 2;
+    const boxHeight = 76;
+    document
+      .roundedRect(boxX, boxY, boxWidth, boxHeight, 6)
+      .fillAndStroke("#E5F2EA", "#246B45");
+    document
+      .font("Helvetica-Bold")
+      .fontSize(14)
+      .fillColor("#1B5134")
+      .text("DECLARACIÓN DE LA EMPRESA: SIN SINIESTROS VIALES", boxX + 16, boxY + 12, {
+        width: boxWidth - 32,
+        align: "center",
+      });
+    document
+      .font("Helvetica")
+      .fontSize(11)
+      .fillColor("#222222")
+      .text(
+        `La empresa declara que no se presentaron siniestros viales durante el período consultado: ${formatSiniestroReportDate(period?.from)} al ${formatSiniestroReportDate(period?.to)}.`,
+        boxX + 18,
+        boxY + 37,
+        { width: boxWidth - 36, align: "center", lineGap: 2 },
+      );
+    y = boxY + boxHeight + 12;
     y = addSectionBar(document, "Resumen del período", y);
     const zeroSummaryFields = [
       ["Período consultado", `${formatSiniestroReportDate(period?.from)} al ${formatSiniestroReportDate(period?.to)}`],

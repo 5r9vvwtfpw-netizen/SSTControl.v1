@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
-import * as XLSX from "xlsx";
+import XLSX from "xlsx-js-style";
 import {
   buildSiniestrosExcelBuffer,
   buildSiniestrosPdfBuffer,
@@ -113,18 +116,33 @@ test("Excel y PDF generan un resumen explícito en cero sin inventar filas de si
     period,
     true,
   );
-  const workbook = XLSX.read(excelBuffer, { type: "buffer" });
+  const workbook = XLSX.read(excelBuffer, { type: "buffer", cellStyles: true });
   assert.ok(workbook.SheetNames.includes("Resumen sin siniestros"));
   const incidentRows = XLSX.utils.sheet_to_json<(string | number | null)[]>(
     workbook.Sheets["Siniestros PESV"],
     { header: 1 },
   );
-  assert.deepEqual(incidentRows[4], requestedColumns);
-  assert.equal(incidentRows.length, 5, "La hoja oficial no debe inventar filas de accidentes.");
+  assert.deepEqual(incidentRows[5], requestedColumns);
+  assert.equal(incidentRows.length, 6, "La hoja oficial no debe agregar filas de accidentes.");
+  const declarationCell = workbook.Sheets["Siniestros PESV"]["A4"];
+  assert.match(String(declarationCell.v), /DECLARACIÓN DE LA EMPRESA/);
+  assert.equal(declarationCell.s.patternType, "solid");
+  assert.equal(declarationCell.s.fgColor.rgb, "246B45");
   const zeroSummaryRows = XLSX.utils.sheet_to_json<(string | number | null)[]>(
     workbook.Sheets["Resumen sin siniestros"],
     { header: 1 },
   );
+  assert.match(String(workbook.Sheets["Resumen sin siniestros"]["A2"].v), /DECLARACIÓN DE LA EMPRESA/);
+  assert.equal(workbook.Sheets["Resumen sin siniestros"]["A2"].s.fgColor.rgb, "E5F2EA");
+  const tempDir = mkdtempSync(join(tmpdir(), "pesv-zero-report-"));
+  try {
+    const workbookPath = join(tempDir, "report.xlsx");
+    writeFileSync(workbookPath, excelBuffer);
+    const stylesXml = execFileSync("unzip", ["-p", workbookPath, "xl/styles.xml"], { encoding: "utf8" });
+    assert.match(stylesXml, /<font>.*?<b\/>.*?<sz val="15"/s);
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
   assert.ok(zeroSummaryRows.some((row) => row[0] === "Siniestros viales" && row[1] === 0));
   assert.ok(zeroSummaryRows.some((row) => row[0] === "Fatalidades" && row[1] === 0));
   assert.ok(zeroSummaryRows.some((row) => row[0] === "Heridos graves" && row[1] === 0));
@@ -150,9 +168,9 @@ test("Excel y PDF generan un resumen explícito en cero sin inventar filas de si
     encoding: "utf8",
   }).replace(/\s+/g, " ");
   for (const value of [
-    "DECLARACIÓN DE SINIESTROS VIALES EN CERO",
+    "DECLARACIÓN DE LA EMPRESA: SIN SINIESTROS VIALES",
     "01/09/2026 al 30/09/2026",
-    "La empresa confirma que no ocurrieron siniestros viales",
+    "La empresa declara que no se presentaron siniestros viales",
   ]) {
     assert.ok(pdfText.includes(value), `El PDF en cero debe incluir: ${value}`);
   }
