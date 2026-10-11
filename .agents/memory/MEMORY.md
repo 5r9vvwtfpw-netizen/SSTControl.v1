@@ -98,3 +98,4 @@
 - [Períodos del Panel VERIFICAR](dashboard-reporting-periods.md) — mes cerrado explícito, catálogo vigente y cobertura por indicadores distintos; ausencia de resultado no equivale a cero.
 - [Informe de inspección de maquinaria PESV](pesv-machinery-inspection-report.md) — compartir el checklist H06 entre captura, detalle administrativo y PDF; filtrar cada PDF por registro y empresa autorizada.
 - [Generador de informes regulatorios PESV](pesv-superintendencia-report-generator.md) — informes trimestrales desde módulos fuente; implementar de uno en uno y esperar aprobación.
+- [Secuencia de informes PESV trimestrales](pesv-quarterly-report-sequencing.md) — implementar el siguiente informe descrito usando módulos existentes, sin diseñar por adelantado los restantes.

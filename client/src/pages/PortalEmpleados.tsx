@@ -3145,18 +3145,22 @@ function InduccionPesvTab() {
 
 // ==================== TAB 4: COMUNICACIONES RECIBIDAS ====================
 
-type ComunicacionConLectura = ComunicacionSst & { fechaLecturaConfirmada: Date | string | null };
+type ComunicacionConLectura = ComunicacionSst & {
+  fechaLecturaConfirmada: Date | string | null;
+  comentariosRetroalimentacion: string | null;
+};
 
 function ComunicacionesTab() {
   const { toast } = useToast();
+  const [feedbackDrafts, setFeedbackDrafts] = useState<Record<string, string>>({});
   const { data: comunicaciones = [], isLoading } = useQuery<ComunicacionConLectura[]>({
     queryKey: ["/api/comunicacion-sst/mis-comunicaciones"],
     refetchInterval: 60000,
   });
 
   const marcarLeidaMutation = useMutation({
-    mutationFn: (comunicacionId: string) =>
-      apiRequest("POST", `/api/comunicacion-sst/comunicaciones/${comunicacionId}/lectura`),
+    mutationFn: ({ comunicacionId, comentarios }: { comunicacionId: string; comentarios?: string }) =>
+      apiRequest("POST", `/api/comunicacion-sst/comunicaciones/${comunicacionId}/lectura`, { comentarios }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/comunicacion-sst/mis-comunicaciones"] });
       toast({
@@ -3166,9 +3170,13 @@ function ComunicacionesTab() {
     },
   });
 
-  const handleMarcarLeida = (comunicacionId: string) => {
-    marcarLeidaMutation.mutate(comunicacionId);
+  const handleMarcarLeida = (comunicacionId: string, comentarios?: string) => {
+    marcarLeidaMutation.mutate({ comunicacionId, comentarios });
   };
+
+  const isLessonCommunication = (com: ComunicacionConLectura) => com.relacionadoCon === "pesv_leccion_aprendida";
+  const feedbackValue = (com: ComunicacionConLectura) =>
+    feedbackDrafts[com.id] ?? com.comentariosRetroalimentacion ?? "";
 
   if (isLoading) {
     return <ListSkeletonLoading items={4} />;
@@ -3219,18 +3227,30 @@ function ComunicacionesTab() {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => handleMarcarLeida(com.id)}
-                          disabled={marcarLeidaMutation.isPending}
+                          onClick={() => handleMarcarLeida(com.id, isLessonCommunication(com) ? feedbackValue(com).trim() : undefined)}
+                          disabled={marcarLeidaMutation.isPending || (isLessonCommunication(com) && !feedbackValue(com).trim())}
                           data-testid={`button-marcar-leida-${com.id}`}
                           className="self-end sm:self-start gap-1"
                         >
                           <CheckCircle2 className="h-4 w-4" />
-                          <span className="hidden sm:inline">Confirmar lectura</span>
+                          <span className="hidden sm:inline">{isLessonCommunication(com) ? "Enviar respuesta y confirmar" : "Confirmar lectura"}</span>
                         </Button>
                       </div>
                     </CardHeader>
                     <CardContent>
                       <p className="text-sm whitespace-pre-line">{com.contenido}</p>
+                      {isLessonCommunication(com) && (
+                        <div className="mt-4 space-y-2">
+                          <label htmlFor={`lesson-feedback-${com.id}`} className="text-sm font-medium">Retroalimentación</label>
+                          <Textarea
+                            id={`lesson-feedback-${com.id}`}
+                            value={feedbackValue(com)}
+                            onChange={(event) => setFeedbackDrafts((current) => ({ ...current, [com.id]: event.target.value }))}
+                            placeholder="Escribe tu observación o indica “Sin observaciones”."
+                            rows={3}
+                          />
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 ))}
@@ -3271,6 +3291,34 @@ function ComunicacionesTab() {
                     </CardHeader>
                     <CardContent>
                       <p className="text-sm whitespace-pre-line">{com.contenido}</p>
+                      {isLessonCommunication(com) && (
+                        <div className="mt-4 space-y-2">
+                          {com.comentariosRetroalimentacion ? (
+                            <div className="rounded-md border bg-muted/40 p-3">
+                              <p className="text-sm font-medium">Tu retroalimentación</p>
+                              <p className="mt-1 whitespace-pre-line text-sm">{com.comentariosRetroalimentacion}</p>
+                            </div>
+                          ) : (
+                            <>
+                              <label htmlFor={`lesson-feedback-${com.id}`} className="text-sm font-medium">Aún puedes enviar tu retroalimentación</label>
+                              <Textarea
+                                id={`lesson-feedback-${com.id}`}
+                                value={feedbackValue(com)}
+                                onChange={(event) => setFeedbackDrafts((current) => ({ ...current, [com.id]: event.target.value }))}
+                                placeholder="Escribe tu observación o indica “Sin observaciones”."
+                                rows={3}
+                              />
+                              <Button
+                                size="sm"
+                                onClick={() => handleMarcarLeida(com.id, feedbackValue(com).trim())}
+                                disabled={marcarLeidaMutation.isPending || !feedbackValue(com).trim()}
+                              >
+                                Enviar retroalimentación
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 ))}

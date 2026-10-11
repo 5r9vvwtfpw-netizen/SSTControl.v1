@@ -13,6 +13,11 @@ import {
 } from "../reports/pesv-siniestros-report";
 import { storage } from "../storage";
 import { getTrialStatus } from "@shared/utils";
+import {
+  buildLeccionesExcelBuffer,
+  buildLeccionesPdfBuffer,
+  type LeccionReportRow,
+} from "../reports/pesv-lecciones-aprendidas-report";
 
 type ReportDataset = {
   company: typeof schema.companies.$inferSelect;
@@ -200,6 +205,106 @@ function companyFileSlug(companyName: string): string {
 
 export function registerPesvInformeRoutes(app: Express) {
   const reportViewPermission = requirePermission("road_incidents:view");
+
+  async function loadQuarterlyLessonsDataset(req: Request, res: Response) {
+    const period = parseReportPeriod(req, res);
+    if (!period) return null;
+    if (!period.from || !period.to) {
+      res.status(400).json({ message: "Selecciona el trimestre completo para consultar las comunicaciones." });
+      return null;
+    }
+    const companyId = getAuthorizedReportCompanyId(req);
+    if (!companyId) {
+      res.status(403).json({ message: "Selecciona una empresa autorizada para consultar el informe." });
+      return null;
+    }
+    const [company] = await db.select().from(schema.companies).where(eq(schema.companies.id, companyId)).limit(1);
+    if (!company) {
+      res.status(404).json({ message: "No se encontró la empresa seleccionada." });
+      return null;
+    }
+    const rows = await db.select({
+      asunto: schema.comunicacionesSst.asunto,
+      contenido: schema.comunicacionesSst.contenido,
+      fechaEnvio: schema.comunicacionesSst.fechaEnvio,
+      fechaEvento: schema.accidentInvestigations.eventDate,
+      leccionAprendida: schema.accidentInvestigations.lessonLearned,
+      trabajador: schema.workers.name,
+      fechaLectura: schema.lecturasComunicacion.fechaLectura,
+      retroalimentacion: schema.lecturasComunicacion.comentarios,
+    }).from(schema.comunicacionesSst)
+      .leftJoin(schema.accidentInvestigations, and(
+        eq(schema.accidentInvestigations.id, schema.comunicacionesSst.relacionadoId),
+        eq(schema.accidentInvestigations.companyId, companyId),
+      ))
+      .leftJoin(schema.lecturasComunicacion, and(
+        eq(schema.lecturasComunicacion.comunicacionId, schema.comunicacionesSst.id),
+        eq(schema.lecturasComunicacion.companyId, companyId),
+      ))
+      .leftJoin(schema.workers, and(
+        eq(schema.workers.id, schema.lecturasComunicacion.workerId),
+        eq(schema.workers.companyId, companyId),
+      ))
+      .where(and(
+        eq(schema.comunicacionesSst.companyId, companyId),
+        eq(schema.comunicacionesSst.relacionadoCon, "pesv_leccion_aprendida"),
+        gte(schema.comunicacionesSst.fechaEnvio, new Date(`${period.from}T00:00:00`)),
+        lte(schema.comunicacionesSst.fechaEnvio, new Date(`${period.to}T23:59:59.999`)),
+      ))
+      .orderBy(schema.comunicacionesSst.fechaEnvio, schema.workers.name);
+    return { company, rows: rows as LeccionReportRow[], period };
+  }
+
+  app.get("/api/pesv/informes-trimestrales/lecciones-aprendidas/estado", authRequireAuth, reportViewPermission, async (req, res) => {
+    try {
+      const dataset = await loadQuarterlyLessonsDataset(req, res);
+      if (!dataset) return;
+      res.json({
+        companyName: dataset.company.name,
+        companyNit: dataset.company.nit,
+        total: dataset.rows.length,
+        read: dataset.rows.filter((row) => row.fechaLectura).length,
+        feedback: dataset.rows.filter((row) => row.retroalimentacion?.trim()).length,
+        records: dataset.rows,
+        period: dataset.period,
+      });
+    } catch (error) {
+      console.error("Error consultando divulgación de lecciones PESV:", error);
+      res.status(500).json({ message: "No fue posible consultar las comunicaciones del trimestre." });
+    }
+  });
+
+  app.get("/api/pesv/informes-trimestrales/lecciones-aprendidas.xlsx", authRequireAuth, reportViewPermission, async (req, res) => {
+    try {
+      const dataset = await loadQuarterlyLessonsDataset(req, res);
+      if (!dataset) return;
+      const buffer = buildLeccionesExcelBuffer(dataset.company, dataset.rows, dataset.period as {from:string;to:string});
+      res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+      res.setHeader("Content-Disposition", `attachment; filename="evidencia_lecciones_aprendidas_${companyFileSlug(dataset.company.name)}_${dataset.period.from}_${dataset.period.to}.xlsx"`);
+      res.setHeader("Content-Length", buffer.length);
+      res.send(buffer);
+    } catch (error) {
+      console.error("Error generando Excel de lecciones PESV:", error);
+      res.status(500).json({ message: "No fue posible generar el archivo Excel." });
+    }
+  });
+
+  app.get("/api/pesv/informes-trimestrales/lecciones-aprendidas.pdf", authRequireAuth, reportViewPermission, async (req, res) => {
+    try {
+      const dataset = await loadQuarterlyLessonsDataset(req, res);
+      if (!dataset) return;
+      const subscription = await storage.getSubscriptionByCompany(dataset.company.id);
+      const trial = getTrialStatus(subscription?.status || "trial", subscription?.trialEnd || null, true, true);
+      const buffer = await buildLeccionesPdfBuffer(dataset.company, dataset.rows, dataset.period as {from:string;to:string}, trial.requiresWatermark);
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="evidencia_lecciones_aprendidas_${companyFileSlug(dataset.company.name)}_${dataset.period.from}_${dataset.period.to}.pdf"`);
+      res.setHeader("Content-Length", buffer.length);
+      res.send(buffer);
+    } catch (error) {
+      console.error("Error generando PDF de lecciones PESV:", error);
+      res.status(500).json({ message: "No fue posible generar el archivo PDF." });
+    }
+  });
 
   async function loadQuarterlyActasDataset(req: Request, res: Response) {
     const period = parseReportPeriod(req, res);

@@ -38814,9 +38814,15 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       if (!companyId || !userId) return res.status(401).json({ error: "No autorizado" });
       
       const comunicacionId = req.params.id;
+      const comunicacion = await storage.getComunicacionSstById(comunicacionId, companyId);
+      if (!comunicacion) return res.status(404).json({ error: "Comunicación no encontrada" });
+      const comentarios = typeof req.body?.comentarios === "string" ? req.body.comentarios.trim() : undefined;
+      if (comunicacion.relacionadoCon === "pesv_leccion_aprendida" && !comentarios) {
+        return res.status(400).json({ error: "Registra tu retroalimentación o escribe “Sin observaciones” antes de confirmar." });
+      }
       
       // Actualizar la lectura existente marcando fecha_lectura
-      const result = await storage.confirmarLecturaComunicacion(comunicacionId, workerId || null, companyId, userId!);
+      const result = await storage.confirmarLecturaComunicacion(comunicacionId, workerId || null, companyId, userId, comentarios);
       
       if (!result) {
         return res.status(404).json({ error: "Lectura no encontrada" });

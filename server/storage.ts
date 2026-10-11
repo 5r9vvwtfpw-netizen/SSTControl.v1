@@ -1353,7 +1353,7 @@ export interface IStorage {
   // Comunicaciones SST methods
   getComunicacionesSst(companyId: string): Promise<ComunicacionSst[]>;
   getComunicacionSstById(id: string, companyId: string): Promise<ComunicacionSst | undefined>;
-  getComunicacionesForUser(userId: string, companyId: string): Promise<(ComunicacionSst & { fechaLecturaConfirmada: Date | null })[]>;
+  getComunicacionesForUser(userId: string, companyId: string): Promise<(ComunicacionSst & { fechaLecturaConfirmada: Date | null; comentariosRetroalimentacion: string | null })[]>;
   createComunicacionSst(comunicacion: InsertComunicacionSst, companyId: string, userId: string, trabajadoresDestinatarios?: string[]): Promise<ComunicacionSst>;
   updateComunicacionSst(id: string, comunicacion: Partial<InsertComunicacionSst>, companyId: string, userId: string): Promise<ComunicacionSst | undefined>;
   deleteComunicacionSst(id: string, companyId: string, userId: string): Promise<void>;
@@ -1362,7 +1362,7 @@ export interface IStorage {
   // Lecturas de Comunicación methods
   getLecturasComunicacion(comunicacionId: string, companyId: string): Promise<LecturaComunicacion[]>;
   createLecturaComunicacion(lectura: InsertLecturaComunicacion, companyId: string, userId: string): Promise<LecturaComunicacion>;
-  confirmarLecturaComunicacion(comunicacionId: string, workerId: string | null, companyId: string, userId: string): Promise<boolean>;
+  confirmarLecturaComunicacion(comunicacionId: string, workerId: string | null, companyId: string, userId: string, comentarios?: string): Promise<boolean>;
   
   // Reportes de Trabajadores methods
   getReportesTrabajadores(companyId: string): Promise<ReporteTrabajador[]>;
@@ -10238,7 +10238,7 @@ export class DbStorage implements IStorage {
     return comunicacion;
   }
 
-  async getComunicacionesForUser(userId: string, companyId: string): Promise<(ComunicacionSst & { fechaLecturaConfirmada: Date | null })[]> {
+  async getComunicacionesForUser(userId: string, companyId: string): Promise<(ComunicacionSst & { fechaLecturaConfirmada: Date | null; comentariosRetroalimentacion: string | null })[]> {
     // Primero obtener el workerId del usuario
     const user = await db.select({ workerId: schema.users.workerId })
       .from(schema.users)
@@ -10256,7 +10256,8 @@ export class DbStorage implements IStorage {
     const result = await db
       .select({
         comunicacion: schema.comunicacionesSst,
-        fechaLecturaConfirmada: schema.lecturasComunicacion.fechaLectura
+        fechaLecturaConfirmada: schema.lecturasComunicacion.fechaLectura,
+        comentariosRetroalimentacion: schema.lecturasComunicacion.comentarios,
       })
       .from(schema.lecturasComunicacion)
       .innerJoin(
@@ -10272,7 +10273,8 @@ export class DbStorage implements IStorage {
     // Mapear resultados para incluir fechaLecturaConfirmada en cada comunicación
     return result.map(r => ({
       ...r.comunicacion,
-      fechaLecturaConfirmada: r.fechaLecturaConfirmada
+      fechaLecturaConfirmada: r.fechaLecturaConfirmada,
+      comentariosRetroalimentacion: r.comentariosRetroalimentacion,
     }));
   }
 
@@ -10398,7 +10400,7 @@ export class DbStorage implements IStorage {
     return newLectura;
   }
 
-  async confirmarLecturaComunicacion(comunicacionId: string, workerId: string | null, companyId: string, userId: string): Promise<boolean> {
+  async confirmarLecturaComunicacion(comunicacionId: string, workerId: string | null, companyId: string, userId: string, comentarios?: string): Promise<boolean> {
     // Buscar la lectura existente
     const [lectura] = await db.select()
       .from(schema.lecturasComunicacion)
@@ -10417,7 +10419,10 @@ export class DbStorage implements IStorage {
 
     // Actualizar fecha_lectura
     await db.update(schema.lecturasComunicacion)
-      .set({ fechaLectura: new Date() })
+      .set({
+        fechaLectura: new Date(),
+        ...(comentarios !== undefined ? { comentarios } : {}),
+      })
       .where(eq(schema.lecturasComunicacion.id, lectura.id));
 
     // Incrementar contador de lecturas en la comunicación solo si es primera confirmación

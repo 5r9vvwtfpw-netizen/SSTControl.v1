@@ -970,7 +970,19 @@ function EnviarComunicacionTab({ prefilledData, onPrefilledDataApplied }: Enviar
       departamentoEspecifico: "",
       requiereConfirmacionLectura: 0,
       observaciones: "",
+      relacionadoCon: null,
+      relacionadoId: null,
     },
+  });
+
+  const isLessonDisclosure = form.watch("relacionadoCon") === "pesv_leccion_aprendida";
+  const { data: lessonInvestigations = [], isError: lessonInvestigationsError } = useQuery<Array<{
+    id: string;
+    eventDate: string;
+    lessonLearned: string | null;
+  }>>({
+    queryKey: ["/api/investigations"],
+    enabled: isLessonDisclosure,
   });
 
   useEffect(() => {
@@ -1013,6 +1025,10 @@ function EnviarComunicacionTab({ prefilledData, onPrefilledDataApplied }: Enviar
   });
 
   const onSubmit = (data: z.infer<typeof formSchemaComunicacion>) => {
+    if (data.relacionadoCon === "pesv_leccion_aprendida" && !data.relacionadoId) {
+      toast({ title: "Selecciona la investigación", description: "Vincula la lección con su investigación de origen.", variant: "destructive" });
+      return;
+    }
     if (selectedWorkers.length === 0) {
       toast({
         title: "Error",
@@ -1154,6 +1170,67 @@ function EnviarComunicacionTab({ prefilledData, onPrefilledDataApplied }: Enviar
                 </FormItem>
               )}
             />
+
+            <div className="space-y-3 rounded-md border p-4">
+              <FormField
+                control={form.control}
+                name="relacionadoCon"
+                render={({ field }) => (
+                  <FormItem className="flex items-start gap-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value === "pesv_leccion_aprendida"}
+                        onCheckedChange={(checked) => {
+                          field.onChange(checked ? "pesv_leccion_aprendida" : null);
+                          form.setValue("relacionadoId", null);
+                          if (checked) form.setValue("requiereConfirmacionLectura", 1);
+                        }}
+                      />
+                    </FormControl>
+                    <div className="space-y-1">
+                      <FormLabel>Divulgación de una lección aprendida</FormLabel>
+                      <FormDescription>
+                        Vincula esta comunicación con una investigación. Los destinatarios podrán dejar su respuesta en el Portal de Empleados.
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
+              {isLessonDisclosure && (
+                <FormField
+                  control={form.control}
+                  name="relacionadoId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Investigación de origen *</FormLabel>
+                      <Select
+                        value={field.value || ""}
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                          const source = lessonInvestigations.find((item) => item.id === value);
+                          if (source?.lessonLearned?.trim() && !form.getValues("contenido")?.trim()) {
+                            form.setValue("contenido", source.lessonLearned.trim());
+                          }
+                        }}
+                      >
+                        <FormControl>
+                          <SelectTrigger><SelectValue placeholder="Selecciona la investigación" /></SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {lessonInvestigations.filter((item) => item.lessonLearned?.trim()).map((item) => (
+                            <SelectItem key={item.id} value={item.id}>
+                              {format(new Date(item.eventDate), "dd/MM/yyyy")} · {item.lessonLearned}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {lessonInvestigationsError && <FormDescription className="text-destructive">No se pudieron cargar las investigaciones. Verifica el permiso para consultarlas.</FormDescription>}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+            </div>
 
             <div>
               <FormLabel>Medios Utilizados</FormLabel>
