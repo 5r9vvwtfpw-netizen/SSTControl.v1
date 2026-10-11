@@ -1,10 +1,9 @@
 import assert from "node:assert/strict";
 import { randomBytes, randomUUID } from "node:crypto";
-import { mkdir, writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
 import test from "node:test";
 import { sql } from "drizzle-orm";
-import * as XLSX from "xlsx";
 
 const enabled = process.env.RUN_PESV_QUARTERLY_ACTAS_DEMO_FUNCTIONAL === "1";
 const companyId = "demo-company-001";
@@ -23,7 +22,7 @@ function quarterPeriod(year: number, quarter: number) {
 }
 
 test(
-  "DEMO-PRUEBA: una descarga PDF trimestral consolida actas vinculadas al cronograma",
+  "DEMO-PRUEBA: el informe trimestral descarga el PDF oficial del acta vinculada",
   { skip: !enabled },
   async () => {
     assert.notEqual(process.env.NODE_ENV, "production", "La prueba no se ejecuta en producción.");
@@ -162,37 +161,59 @@ test(
       assert.equal(status.records[0].numeroActa, testActa.numeroActa);
       assert.match(status.records[0].desarrolloReunion, new RegExp(marker));
 
-      const formats = [
-        { ext: "xlsx", type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", signature: Buffer.from([0x50, 0x4b, 0x03, 0x04]) },
-        { ext: "pdf", type: "application/pdf", signature: Buffer.from("%PDF-") },
-      ] as const;
-      await mkdir("attached_assets", { recursive: true });
-      for (const format of formats) {
-        const response = await fetch(`${baseUrl}/api/pesv/informes-trimestrales/actas-siniestros.${format.ext}?${query}`, {
-          headers: { Cookie: cookie, "X-Company-Id": companyId },
-        });
-        assert.equal(response.status, 200, `${format.ext}: ${await response.clone().text()}`);
-        assert.match(response.headers.get("Content-Type") || "", new RegExp(format.type));
-        assert.match(response.headers.get("Content-Disposition") || "", new RegExp(`\\.${format.ext}`));
-        const content = Buffer.from(await response.arrayBuffer());
-        assert.deepEqual(content.subarray(0, format.signature.length), format.signature);
-        const filename = `attached_assets/DEMO-PRUEBA_informe_trimestral_actas_PESV_prueba_${period.from.slice(0, 4)}_T${Math.floor((Number(period.from.slice(5, 7)) - 1) / 3) + 1}.${format.ext}`;
-        await writeFile(filename, content);
-        if (format.ext === "xlsx") {
-          const workbook = XLSX.read(content, { type: "buffer" });
-          const rows = XLSX.utils.sheet_to_json<(string | number | null)[]>(workbook.Sheets[workbook.SheetNames[0]], { header: 1 });
-          const allCells = rows.flat().join(" ");
-          assert.match(allCells, new RegExp(marker));
-          assert.ok(rows.some((row) => row.includes(testActa!.numeroActa)));
-        } else {
-          const text = execFileSync("pdftotext", ["-", "-"], { input: content, encoding: "utf8" });
-          assert.match(text, new RegExp(marker));
-          assert.match(text, /COPIA DEL ACTA DE INVESTIGACIÓN INTERNA/i);
-          assert.ok(text.includes(String(testActa.numeroActa)));
-          assert.ok(text.includes(scheduledDate.split("-").reverse().join("/")));
-        }
+      const response = await fetch(`${baseUrl}/api/pesv/comite/actas/${testActa.id}/pdf`, {
+        headers: { Cookie: cookie, "X-Company-Id": companyId },
+      });
+      assert.equal(response.status, 200, `PDF del acta oficial: ${await response.clone().text()}`);
+      assert.match(response.headers.get("Content-Type") || "", /application\/pdf/);
+      assert.match(response.headers.get("Content-Disposition") || "", new RegExp(`acta-comite-pesv-${testActa.numeroActa}\\.pdf`));
+      const content = Buffer.from(await response.arrayBuffer());
+      assert.deepEqual(content.subarray(0, 5), Buffer.from("%PDF-"));
+      const text = execFileSync("pdftotext", ["-", "-"], { input: content, encoding: "utf8" });
+      assert.match(text, /ACTA DE REUNIÓN - COMITÉ DE SEGURIDAD VIAL/i);
+      assert.match(text, new RegExp(marker));
+      assert.ok(text.includes(String(testActa.numeroActa)));
+      assert.ok(text.includes(testActa.fechaReunion.split("-").reverse().join("/")));
+      assert.doesNotMatch(text, /COPIA DE ACTAS DEL COMITÉ PESV/i, "La descarga no debe añadir la portada del generador trimestral.");
+      const filename = `attached_assets/DEMO-PRUEBA_acta_oficial_comite_PESV_${testActa.numeroActa}_prueba.pdf`;
+      await writeFile(filename, content);
+      const { chromium } = await import("playwright");
+      const browser = await chromium.launch({ headless: true });
+      try {
+        const browserBaseUrl = "http://127.0.0.1:5000";
+        const context = await browser.newContext({ acceptDownloads: true });
+        await context.addCookies(cookie.split("; ").map((pair) => {
+          const separator = pair.indexOf("=");
+          return { name: pair.slice(0, separator), value: pair.slice(separator + 1), url: browserBaseUrl };
+        }));
+        const page = await context.newPage();
+        const pageErrors: string[] = [];
+        page.on("pageerror", (error) => pageErrors.push(error.message));
+        await page.goto(`${browserBaseUrl}/pesv/informes-trimestrales/actas-siniestros`, { waitUntil: "commit", timeout: 15_000 });
+        await page.getByTestId("pesv-quarterly-actas-report-page").waitFor({ state: "visible", timeout: 20_000 });
+        const essentialCookiesButton = page.getByRole("button", { name: "Solo esenciales" });
+        if (await essentialCookiesButton.isVisible()) await essentialCookiesButton.click();
+        await page.locator('input[type="number"]').fill(period.from.slice(0, 4));
+        await page.locator("select").selectOption(String(Math.floor((Number(period.from.slice(5, 7)) - 1) / 3) + 1));
+        await page.getByRole("button", { name: "Descargar acta oficial" }).waitFor({ state: "visible", timeout: 20_000 });
+        const [download] = await Promise.all([
+          page.waitForEvent("download"),
+          page.getByRole("button", { name: "Descargar acta oficial" }).click(),
+        ]);
+        const downloadedPath = await download.path();
+        assert.ok(downloadedPath);
+        const browserPdfText = execFileSync("pdftotext", ["-", "-"], {
+          input: await readFile(downloadedPath),
+          encoding: "utf8",
+        }).replace(/\s+/g, " ").trim();
+        assert.equal(browserPdfText, text.replace(/\s+/g, " ").trim(), "La interfaz debe descargar el contenido del PDF oficial del módulo P01.");
+        assert.deepEqual(pageErrors, []);
+        await browser.close();
+      } catch (error) {
+        await browser.close();
+        throw error;
       }
-      console.log(`DEMO-PRUEBA: acta ${testActa.numeroActa} y reunión ${scheduledDate} conservadas; el PDF único y el Excel del trimestre descargaron y contienen el marcador de prueba.`);
+      console.log(`DEMO-PRUEBA: el trimestre lista la reunión ${scheduledDate} y desde la interfaz descargó directamente el PDF oficial del acta ${testActa.numeroActa}; datos de prueba conservados.`);
     } finally {
       if (accountCreated) {
         await db.delete(schema.users).where(sql`id = ${accountId} AND username = ${username}`);
