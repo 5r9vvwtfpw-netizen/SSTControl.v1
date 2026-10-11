@@ -383,7 +383,7 @@ export default function PesvInformes() {
                     <div className="mx-auto mt-4 max-w-2xl space-y-3">
                       <p className="text-sm text-muted-foreground">
                         Si confirmas que no ocurrieron accidentes en estas fechas, podrás descargar una declaración en cero.
-                        No se creará un siniestro ficticio.
+                        La declaración no agrega registros de siniestros.
                       </p>
                       <label className="flex cursor-pointer items-start gap-3 rounded-md border p-3 text-left">
                         <input
