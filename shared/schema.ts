@@ -11090,6 +11090,37 @@ export const vehicleGpsTracking = pgTable("vehicle_gps_tracking", {
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
 });
 
+// Gastos de implementación y operación del monitoreo GPS, gestionados desde H07.
+export const pesvGpsExpenses = pgTable("pesv_gps_expenses", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull().references(() => companies.id),
+  provider: text("provider").notNull(),
+  expenseType: text("expense_type").notNull(),
+  concept: text("concept").notNull(),
+  expenseDate: date("expense_date").notNull(),
+  periodStart: date("period_start"),
+  periodEnd: date("period_end"),
+  amountCop: integer("amount_cop").notNull(),
+  coverage: text("coverage"),
+  supportReference: text("support_reference"),
+  observations: text("observations"),
+  createdBy: varchar("created_by").notNull().references(() => users.id),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+});
+
+export const insertPesvGpsExpenseSchema = createInsertSchema(pesvGpsExpenses)
+  .omit({ id: true, companyId: true, createdBy: true, createdAt: true, updatedAt: true })
+  .extend({
+    provider: z.string().trim().min(1),
+    expenseType: z.string().trim().min(1),
+    concept: z.string().trim().min(1),
+    expenseDate: z.string().min(1),
+    amountCop: z.number().int().min(0),
+  });
+export type InsertPesvGpsExpense = z.infer<typeof insertPesvGpsExpenseSchema>;
+export type PesvGpsExpense = typeof pesvGpsExpenses.$inferSelect;
+
 export const insertVehicleGpsTrackingSchema = createInsertSchema(vehicleGpsTracking)
   .omit({ id: true, createdAt: true })
   .extend({
@@ -11157,6 +11188,14 @@ export const safeRoutes = pgTable("safe_routes", {
   mapUrl: text("map_url"), // URL del mapa
   isActive: integer("is_active").notNull().default(1), // 0=no, 1=sí
   observations: text("observations"),
+  signageMeasures: text("signage_measures"),
+  signageImplementationDate: date("signage_implementation_date"),
+  signageResponsible: text("signage_responsible"),
+  signageEvidenceReference: text("signage_evidence_reference"),
+  controlPoints: text("control_points"),
+  controlFrequency: text("control_frequency"),
+  controlResponsible: text("control_responsible"),
+  controlEvidenceReference: text("control_evidence_reference"),
   
   // Vinculación a evaluación PESV anual (opcional para datos existentes)
   evaluacionPesvId: varchar("evaluacion_pesv_id"),
