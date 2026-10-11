@@ -769,3 +769,31 @@ mtime_ms = 1791541390077
 storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/93063dd8-6809-40db-8973-f95a00997a30/001b7383-f264-4df7-9005-67ca3b3289d4"
 storage_version_token = "1791541429038526"
 content_type = "application/pdf"
+
+[[outputs]]
+id = "aVbBfU9ardO60lGr8wufQ"
+uri = "file://attached_assets/DEMO-PRUEBA_informe_trimestral_actas_PESV_prueba_2027_T1.pdf"
+type = "pdf"
+title = "DEMO-PRUEBA — Actas PESV trimestral (PDF)"
+description = "Archivo único consolidado, descargado desde el endpoint autenticado para el primer trimestre de 2027. Incluye el acta de prueba conservada en DEMO-PRUEBA."
+logical_id = "8d8cd91c-07b8-4581-8aef-5796503e9283"
+content_hash = "sha256:be9ad2bc153b4ba7a84798144853b70ab0e537aa6d508a19d5b763b6a0a0b02e"
+size = 946856
+mtime_ms = 1791702054003
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/8d8cd91c-07b8-4581-8aef-5796503e9283/40741e8d-1431-4b9c-a691-b666f8e0ced2"
+storage_version_token = "1791702077322824"
+content_type = "application/pdf"
+
+[[outputs]]
+id = "pj4ONINbiPrY3AXhoPDvf"
+uri = "file://attached_assets/DEMO-PRUEBA_informe_trimestral_actas_PESV_prueba_2027_T1.xlsx"
+type = "table"
+title = "DEMO-PRUEBA — Actas PESV trimestral (Excel)"
+description = "Versión Excel paralela, descargada en la misma prueba funcional del primer trimestre de 2027."
+logical_id = "b283793b-1b53-4cb7-9e20-6ee619a6673b"
+content_hash = "sha256:547979052dcc5c11439ec91235cc7aba3555a1a57d2475ab0665946bebbc0ebd"
+size = 19347
+mtime_ms = 1791702052671
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/b283793b-1b53-4cb7-9e20-6ee619a6673b/556a57e2-00df-4955-b577-8ee5a6439eef"
+storage_version_token = "1791702077984939"
+content_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
