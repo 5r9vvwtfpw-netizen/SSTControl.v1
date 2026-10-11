@@ -123,16 +123,18 @@ export default function PesvInformes() {
   const [downloading, setDownloading] = useState<"excel" | "pdf" | null>(null);
   const [draftPeriod, setDraftPeriod] = useState({ from: "", to: "" });
   const [appliedPeriod, setAppliedPeriod] = useState({ from: "", to: "" });
+  const [noIncidentsConfirmed, setNoIncidentsConfirmed] = useState(false);
   const companyContextKey = selectedCompany?.id || getSelectedCompanyId() || "empresa-activa";
   const periodIsReversed = Boolean(
     draftPeriod.from && draftPeriod.to && draftPeriod.from > draftPeriod.to,
   );
   const hasAppliedPeriod = Boolean(appliedPeriod.from || appliedPeriod.to);
 
-  const withPeriodQuery = (path: string) => {
+  const withPeriodQuery = (path: string, includeZeroDeclaration = false) => {
     const params = new URLSearchParams();
     if (appliedPeriod.from) params.set("from", appliedPeriod.from);
     if (appliedPeriod.to) params.set("to", appliedPeriod.to);
+    if (includeZeroDeclaration) params.set("confirmNoIncidents", "true");
     const query = params.toString();
     return query ? `${path}?${query}` : path;
   };
@@ -168,6 +170,7 @@ export default function PesvInformes() {
       });
       return;
     }
+    setNoIncidentsConfirmed(false);
     setAppliedPeriod({ ...draftPeriod });
   };
 
@@ -175,12 +178,13 @@ export default function PesvInformes() {
     const emptyPeriod = { from: "", to: "" };
     setDraftPeriod(emptyPeriod);
     setAppliedPeriod(emptyPeriod);
+    setNoIncidentsConfirmed(false);
   };
 
   const downloadReport = async (format: "excel" | "pdf") => {
     const url = format === "excel"
-      ? withPeriodQuery("/api/pesv/informes/siniestros.xlsx")
-      : withPeriodQuery("/api/pesv/informes/siniestros.pdf");
+      ? withPeriodQuery("/api/pesv/informes/siniestros.xlsx", noIncidentsConfirmed)
+      : withPeriodQuery("/api/pesv/informes/siniestros.pdf", noIncidentsConfirmed);
     setDownloading(format);
 
     try {
@@ -222,7 +226,18 @@ export default function PesvInformes() {
     }
   };
 
-  const reportBlocked = !status || status.total === 0 || status.incomplete.length > 0;
+  const zeroReportReady = Boolean(
+    status?.total === 0
+    && appliedPeriod.from
+    && appliedPeriod.to
+    && noIncidentsConfirmed,
+  );
+  const reportReady = Boolean(
+    status && (status.total > 0
+      ? status.incomplete.length === 0
+      : zeroReportReady),
+  );
+  const reportBlocked = !status || (status.total === 0 ? !zeroReportReady : status.incomplete.length > 0);
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-4 md:p-6" data-testid="pesv-informes-page">
@@ -233,7 +248,7 @@ export default function PesvInformes() {
         </h1>
         <p className="mt-2 max-w-3xl text-muted-foreground">
           Los archivos se construyen con los datos de Siniestros, Vehículos, Conductores y las actas existentes del Comité PESV.
-          Esta pantalla no duplica ni captura información.
+          Esta pantalla no duplica ni captura información. El archivo reúne todos los accidentes reales del período; no debes crear un registro por cada vehículo de la flota.
         </p>
       </div>
 
@@ -243,12 +258,14 @@ export default function PesvInformes() {
             <div>
               <CardTitle>Registro de vehículos siniestrados</CardTitle>
               <CardDescription className="mt-1">
-                Un solo informe completo con los campos solicitados en la evidencia de la Superintendencia de Transporte.
+                Un solo archivo reúne los siniestros registrados. El vehículo se elige en la lista del módulo Siniestros; no registres vehículos que no tuvieron accidentes.
               </CardDescription>
             </div>
             {status && (
-              <Badge variant={status.incomplete.length === 0 && status.total > 0 ? "default" : "secondary"}>
-                {status.incomplete.length === 0 && status.total > 0 ? "Listo para descargar" : "Requiere completar datos"}
+              <Badge variant={reportReady ? "default" : "secondary"}>
+                {status.total === 0
+                  ? zeroReportReady ? "Informe en cero confirmado" : "Período sin siniestros"
+                  : status.incomplete.length === 0 ? "Listo para descargar" : "Requiere completar datos"}
               </Badge>
             )}
           </div>
@@ -267,7 +284,10 @@ export default function PesvInformes() {
                 <Input
                   type="date"
                   value={draftPeriod.from}
-                  onChange={(event) => setDraftPeriod((current) => ({ ...current, from: event.target.value }))}
+                  onChange={(event) => {
+                    setDraftPeriod((current) => ({ ...current, from: event.target.value }));
+                    setNoIncidentsConfirmed(false);
+                  }}
                   data-testid="input-pesv-report-from"
                 />
               </label>
@@ -276,7 +296,10 @@ export default function PesvInformes() {
                 <Input
                   type="date"
                   value={draftPeriod.to}
-                  onChange={(event) => setDraftPeriod((current) => ({ ...current, to: event.target.value }))}
+                  onChange={(event) => {
+                    setDraftPeriod((current) => ({ ...current, to: event.target.value }));
+                    setNoIncidentsConfirmed(false);
+                  }}
                   data-testid="input-pesv-report-to"
                 />
               </label>
@@ -349,16 +372,46 @@ export default function PesvInformes() {
               )}
 
               {status.total === 0 ? (
-                <div className="rounded-md border border-dashed p-6 text-center">
+                <div className="rounded-md border border-dashed p-6">
                   <FileWarning className="mx-auto mb-2 h-6 w-6 text-muted-foreground" />
-                  <p className="font-medium">
+                  <p className="text-center font-medium">
                     {hasAppliedPeriod
                       ? "No hay siniestros registrados en el período seleccionado."
                       : "No hay siniestros registrados para esta empresa."}
                   </p>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    Registra los eventos en el módulo PESV de Siniestros para que aparezcan en este informe.
-                  </p>
+                  {appliedPeriod.from && appliedPeriod.to ? (
+                    <div className="mx-auto mt-4 max-w-2xl space-y-3">
+                      <p className="text-sm text-muted-foreground">
+                        Si confirmas que no ocurrieron accidentes en estas fechas, podrás descargar una declaración en cero.
+                        No se creará un siniestro ficticio.
+                      </p>
+                      <label className="flex cursor-pointer items-start gap-3 rounded-md border p-3 text-left">
+                        <input
+                          type="checkbox"
+                          className="mt-1 h-4 w-4 accent-primary"
+                          checked={noIncidentsConfirmed}
+                          onChange={(event) => setNoIncidentsConfirmed(event.target.checked)}
+                          data-testid="checkbox-no-siniestros"
+                        />
+                        <span className="text-sm font-medium">
+                          Confirmo que no ocurrieron siniestros viales entre {displayDate(appliedPeriod.from)} y {displayDate(appliedPeriod.to)}.
+                        </span>
+                      </label>
+                      <div className="rounded-md bg-muted/50 p-3 text-sm" data-testid="zero-siniestros-summary">
+                        <p className="font-semibold">El informe indicará estos valores:</p>
+                        <p className="mt-1">
+                          Siniestros: 0 · Fatalidades: 0 · Heridos graves: 0 · Heridos leves: 0 · Personas implicadas en choque simple: 0
+                        </p>
+                        <p className="mt-1 text-muted-foreground">
+                          Los datos de vehículo, conductor, IPAT y acta no aplican porque no se reportan accidentes.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-center text-sm text-muted-foreground">
+                      Selecciona y aplica una fecha inicial y final para declarar un período sin siniestros.
+                    </p>
+                  )}
                 </div>
               ) : status.incomplete.length > 0 ? (
                 <div className="space-y-3">

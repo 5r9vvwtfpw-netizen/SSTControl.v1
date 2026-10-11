@@ -306,6 +306,66 @@ test(
       assert.equal(periodStatus.period.from, testIncident.incidentDate);
       assert.equal(periodStatus.period.to, testIncident.incidentDate);
 
+      let emptyPeriod: { from: string; to: string } | null = null;
+      for (const year of [2025, 2026]) {
+        for (let month = 1; month <= 12; month += 1) {
+          const monthText = String(month).padStart(2, "0");
+          const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+          const candidate = {
+            from: `${year}-${monthText}-01`,
+            to: `${year}-${monthText}-${String(lastDay).padStart(2, "0")}`,
+          };
+          const query = new URLSearchParams(candidate).toString();
+          const candidateStatus = await apiJson<{ total: number }>(
+            `/api/pesv/informes/siniestros/estado?${query}`,
+          );
+          if (candidateStatus.total === 0) {
+            emptyPeriod = candidate;
+            break;
+          }
+        }
+        if (emptyPeriod) break;
+      }
+      assert.ok(emptyPeriod, "La prueba requiere un mes sin siniestros registrados.");
+      const confirmedZeroPeriod = emptyPeriod!;
+      const emptyPeriodQuery = new URLSearchParams(confirmedZeroPeriod).toString();
+      for (const format of formats) {
+        const unconfirmedResponse = await fetch(`${baseUrl}${format.path}?${emptyPeriodQuery}`, {
+          headers: { Cookie: cookie, "X-Company-Id": companyId },
+        });
+        assert.equal(unconfirmedResponse.status, 409, "Un período vacío requiere confirmación expresa.");
+
+        const zeroResponse = await fetch(
+          `${baseUrl}${format.path}?${emptyPeriodQuery}&confirmNoIncidents=true`,
+          { headers: { Cookie: cookie, "X-Company-Id": companyId } },
+        );
+        assert.equal(zeroResponse.status, 200, `${format.name} en cero: ${await zeroResponse.clone().text()}`);
+        const zeroContent = Buffer.from(await zeroResponse.arrayBuffer());
+        assert.deepEqual(zeroContent.subarray(0, format.signature.length), format.signature);
+        if (format.name === "Excel") {
+          const zeroWorkbook = XLSX.read(zeroContent, { type: "buffer" });
+          assert.ok(zeroWorkbook.SheetNames.includes("Resumen sin siniestros"));
+          const rows = XLSX.utils.sheet_to_json<(string | number | null)[]>(
+            zeroWorkbook.Sheets["Resumen sin siniestros"],
+            { header: 1 },
+          );
+          assert.ok(rows.some((row) => row[0] === "Siniestros viales" && row[1] === 0));
+          assert.ok(rows.some((row) => row[0] === "Fatalidades" && row[1] === 0));
+          assert.ok(rows.some((row) => row[0] === "Heridos graves" && row[1] === 0));
+          assert.ok(rows.some((row) => row[0] === "Heridos leves" && row[1] === 0));
+        } else {
+          const zeroPdfText = execFileSync("pdftotext", ["-", "-"], {
+            input: zeroContent,
+            encoding: "utf8",
+          }).replace(/\s+/g, " ");
+          assert.match(zeroPdfText, /DECLARACIÓN DE SINIESTROS VIALES EN CERO/);
+          assert.match(zeroPdfText, /Fatalidades: 0/);
+          assert.match(zeroPdfText, /Heridos graves: 0/);
+          assert.match(zeroPdfText, /Total personas afectadas: 0/);
+        }
+        outcomes.push(`${format.name}: informe en cero tras confirmación explícita`);
+      }
+
       for (const format of formats) {
         const response = await fetch(`${baseUrl}${format.path}?${periodQuery}`, {
           headers: { Cookie: cookie, "X-Company-Id": companyId },
@@ -439,6 +499,44 @@ test(
         );
         assert.equal(await page.getByTestId("button-download-siniestros-excel").isDisabled(), true);
         assert.equal(await page.getByTestId("button-download-siniestros-pdf").isDisabled(), true);
+
+        await page.getByTestId("input-pesv-report-from").fill(confirmedZeroPeriod.from);
+        await page.getByTestId("input-pesv-report-to").fill(confirmedZeroPeriod.to);
+        await page.getByTestId("button-apply-pesv-report-period").click();
+        await page.waitForFunction(
+          () => document.querySelector('[data-testid="text-pesv-report-total"]')?.textContent?.trim() === "0",
+          undefined,
+          { timeout: 20_000 },
+        );
+        const noIncidentsCheckbox = page.getByTestId("checkbox-no-siniestros");
+        await noIncidentsCheckbox.waitFor({ state: "visible" });
+        assert.equal(await page.getByTestId("button-download-siniestros-excel").isDisabled(), true);
+        assert.equal(await page.getByTestId("button-download-siniestros-pdf").isDisabled(), true);
+        await noIncidentsCheckbox.check();
+        assert.equal(await page.getByTestId("button-download-siniestros-excel").isEnabled(), true);
+        assert.equal(await page.getByTestId("button-download-siniestros-pdf").isEnabled(), true);
+
+        const [zeroExcelDownload] = await Promise.all([
+          page.waitForEvent("download"),
+          page.getByTestId("button-download-siniestros-excel").click(),
+        ]);
+        await zeroExcelDownload.saveAs("/tmp/DEMO-PRUEBA-informe-siniestros-cero.xlsx");
+        const zeroUiWorkbook = XLSX.read(
+          await readFile("/tmp/DEMO-PRUEBA-informe-siniestros-cero.xlsx"),
+          { type: "buffer" },
+        );
+        assert.ok(zeroUiWorkbook.SheetNames.includes("Resumen sin siniestros"));
+
+        const [zeroPdfDownload] = await Promise.all([
+          page.waitForEvent("download"),
+          page.getByTestId("button-download-siniestros-pdf").click(),
+        ]);
+        await zeroPdfDownload.saveAs("/tmp/DEMO-PRUEBA-informe-siniestros-cero.pdf");
+        const zeroUiPdfText = execFileSync("pdftotext", ["-", "-"], {
+          input: await readFile("/tmp/DEMO-PRUEBA-informe-siniestros-cero.pdf"),
+          encoding: "utf8",
+        });
+        assert.match(zeroUiPdfText, /DECLARACIÓN DE SINIESTROS VIALES EN CERO/);
 
         await page.getByTestId("input-pesv-report-from").fill(testIncident.incidentDate);
         await page.getByTestId("input-pesv-report-to").fill(testIncident.incidentDate);

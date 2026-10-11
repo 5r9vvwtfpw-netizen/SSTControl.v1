@@ -179,7 +179,7 @@ export function buildSiniestrosExcelBuffer(
       ["RESUMEN DEL PERÍODO SIN SINIESTROS"],
       ["Empresa", company.name],
       ["NIT", company.nit],
-      ["Período", `${formatSiniestroReportDate(period.from)} al ${formatSiniestroReportDate(period.to)}`],
+      ["Período", `${formatSiniestroReportDate(period?.from)} al ${formatSiniestroReportDate(period?.to)}`],
       ["Declaración", "La empresa confirma que no ocurrieron siniestros viales durante este período."],
       ["Siniestros viales", 0],
       ["Fatalidades", 0],
@@ -240,7 +240,7 @@ export async function buildSiniestrosPdfBuffer(
     );
     y = addSectionBar(document, "Resumen del período", y);
     const zeroSummaryFields = [
-      ["Período consultado", `${formatSiniestroReportDate(period.from)} al ${formatSiniestroReportDate(period.to)}`],
+      ["Período consultado", `${formatSiniestroReportDate(period?.from)} al ${formatSiniestroReportDate(period?.to)}`],
       ["Siniestros viales", "0"],
       ["Fatalidades", "0"],
       ["Heridos graves", "0"],

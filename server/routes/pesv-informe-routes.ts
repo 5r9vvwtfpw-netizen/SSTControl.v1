@@ -140,6 +140,53 @@ function getIncompleteRecords(records: SiniestroReportRecord[]) {
     .filter((record) => record.missingFields.length > 0);
 }
 
+function validateReportDownload(
+  req: Request,
+  res: Response,
+  dataset: ReportDataset,
+): boolean | null {
+  const declaration = req.query.confirmNoIncidents;
+  if (declaration !== undefined && declaration !== "true") {
+    res.status(400).json({ message: "La confirmación del informe en cero no es válida." });
+    return null;
+  }
+
+  const noIncidentsConfirmed = declaration === "true";
+  if (dataset.records.length === 0) {
+    if (!dataset.period.from || !dataset.period.to) {
+      res.status(400).json({
+        message: "Para generar un informe en cero, selecciona una fecha inicial y una fecha final.",
+      });
+      return null;
+    }
+    if (!noIncidentsConfirmed) {
+      res.status(409).json({
+        message: "No hay siniestros registrados en este período. Confirma que no ocurrieron siniestros para generar el informe en cero.",
+      });
+      return null;
+    }
+    return true;
+  }
+
+  if (noIncidentsConfirmed) {
+    res.status(409).json({
+      message: "El período tiene siniestros registrados; no se puede generar como informe en cero.",
+    });
+    return null;
+  }
+
+  const incomplete = getIncompleteRecords(dataset.records);
+  if (incomplete.length > 0) {
+    res.status(409).json({
+      message: "Completa los datos señalados en el módulo Siniestros antes de descargar el informe del período seleccionado.",
+      incomplete,
+    });
+    return null;
+  }
+
+  return false;
+}
+
 function companyFileSlug(companyName: string): string {
   const slug = companyName
     .normalize("NFD")
@@ -188,19 +235,16 @@ export function registerPesvInformeRoutes(app: Express) {
         const dataset = await loadReportDataset(req, res);
         if (!dataset) return;
 
-        if (dataset.records.length === 0) {
-          return res.status(409).json({ message: "La empresa no tiene siniestros registrados para generar el informe." });
-        }
+        const noIncidentsConfirmed = validateReportDownload(req, res, dataset);
+        if (noIncidentsConfirmed === null) return;
 
-        const incomplete = getIncompleteRecords(dataset.records);
-        if (incomplete.length > 0) {
-          return res.status(409).json({
-            message: "Completa los datos señalados en el módulo Siniestros antes de descargar el informe del período seleccionado.",
-            incomplete,
-          });
-        }
-
-        const buffer = buildSiniestrosExcelBuffer(dataset.company, dataset.records, new Date(), dataset.period);
+        const buffer = buildSiniestrosExcelBuffer(
+          dataset.company,
+          dataset.records,
+          new Date(),
+          dataset.period,
+          noIncidentsConfirmed,
+        );
         const filename = `registro_vehiculos_siniestrados_${companyFileSlug(dataset.company.name)}${reportPeriodFilenameSuffix(dataset.period)}.xlsx`;
         res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
@@ -222,17 +266,8 @@ export function registerPesvInformeRoutes(app: Express) {
         const dataset = await loadReportDataset(req, res);
         if (!dataset) return;
 
-        if (dataset.records.length === 0) {
-          return res.status(409).json({ message: "La empresa no tiene siniestros registrados para generar el informe." });
-        }
-
-        const incomplete = getIncompleteRecords(dataset.records);
-        if (incomplete.length > 0) {
-          return res.status(409).json({
-            message: "Completa los datos señalados en el módulo Siniestros antes de descargar el informe del período seleccionado.",
-            incomplete,
-          });
-        }
+        const noIncidentsConfirmed = validateReportDownload(req, res, dataset);
+        if (noIncidentsConfirmed === null) return;
 
         const subscription = await storage.getSubscriptionByCompany(dataset.company.id);
         const trialStatus = getTrialStatus(
@@ -246,6 +281,7 @@ export function registerPesvInformeRoutes(app: Express) {
           dataset.records,
           trialStatus.requiresWatermark,
           dataset.period,
+          noIncidentsConfirmed,
         );
         const filename = `registro_vehiculos_siniestrados_${companyFileSlug(dataset.company.name)}${reportPeriodFilenameSuffix(dataset.period)}.pdf`;
         res.setHeader("Content-Type", "application/pdf");

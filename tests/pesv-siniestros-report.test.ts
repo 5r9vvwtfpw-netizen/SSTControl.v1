@@ -104,6 +104,64 @@ test("el Excel conserva los encabezados oficiales y los datos enlazados", () => 
   assert.equal(rows[5][12], "09/10/2026");
 });
 
+test("Excel y PDF generan un resumen explícito en cero sin inventar filas de siniestros", async () => {
+  const period = { from: "2026-09-01", to: "2026-09-30" };
+  const excelBuffer = buildSiniestrosExcelBuffer(
+    { name: "Empresa de prueba", nit: "900123456" },
+    [],
+    new Date("2026-10-01T12:00:00.000Z"),
+    period,
+    true,
+  );
+  const workbook = XLSX.read(excelBuffer, { type: "buffer" });
+  assert.ok(workbook.SheetNames.includes("Resumen sin siniestros"));
+  const incidentRows = XLSX.utils.sheet_to_json<(string | number | null)[]>(
+    workbook.Sheets["Siniestros PESV"],
+    { header: 1 },
+  );
+  assert.deepEqual(incidentRows[4], requestedColumns);
+  assert.equal(incidentRows.length, 5, "La hoja oficial no debe inventar filas de accidentes.");
+  const zeroSummaryRows = XLSX.utils.sheet_to_json<(string | number | null)[]>(
+    workbook.Sheets["Resumen sin siniestros"],
+    { header: 1 },
+  );
+  assert.ok(zeroSummaryRows.some((row) => row[0] === "Siniestros viales" && row[1] === 0));
+  assert.ok(zeroSummaryRows.some((row) => row[0] === "Fatalidades" && row[1] === 0));
+  assert.ok(zeroSummaryRows.some((row) => row[0] === "Heridos graves" && row[1] === 0));
+  assert.ok(zeroSummaryRows.some((row) => row[0] === "Heridos leves" && row[1] === 0));
+  assert.ok(zeroSummaryRows.some((row) => row[0] === "Personas implicadas en choque simple" && row[1] === 0));
+  assert.ok(zeroSummaryRows.some((row) => row[0] === "Total personas afectadas" && row[1] === 0));
+
+  const pdfBuffer = await buildSiniestrosPdfBuffer(
+    {
+      id: "empresa-1",
+      name: "Empresa de prueba",
+      nit: "900123456",
+      address: null,
+      logoUrl: null,
+    },
+    [],
+    false,
+    period,
+    true,
+  );
+  const pdfText = execFileSync("pdftotext", ["-", "-"], {
+    input: pdfBuffer,
+    encoding: "utf8",
+  }).replace(/\s+/g, " ");
+  for (const value of [
+    "DECLARACIÓN DE SINIESTROS VIALES EN CERO",
+    "01/09/2026 al 30/09/2026",
+    "La empresa confirma que no ocurrieron siniestros viales",
+  ]) {
+    assert.ok(pdfText.includes(value), `El PDF en cero debe incluir: ${value}`);
+  }
+  assert.match(pdfText, /Fatalidades:?\s+0/);
+  assert.match(pdfText, /Heridos graves:?\s+0/);
+  assert.match(pdfText, /Heridos leves:?\s+0/);
+  assert.match(pdfText, /Total personas afectadas:?\s+0/);
+});
+
 test("el PDF muestra los mismos campos y datos que solicita la evidencia", async () => {
   const buffer = await buildSiniestrosPdfBuffer(
     {
