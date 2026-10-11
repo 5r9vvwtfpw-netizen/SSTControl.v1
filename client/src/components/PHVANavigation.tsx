@@ -165,6 +165,7 @@ const pesvNavMenuItems: { label: string; path: string; group?: string }[] = [
   { label: "Panel de Control", path: "/pesv" },
   { label: "Evaluaciones PESV", path: "/pesv/evaluaciones" },
   { label: "Informe mensual Superintendencia", path: "/pesv/informes" },
+  { label: "Informe trimestral Superintendencia", path: "/pesv/informes-trimestrales" },
 ];
 
 export function PHVANavigation() {

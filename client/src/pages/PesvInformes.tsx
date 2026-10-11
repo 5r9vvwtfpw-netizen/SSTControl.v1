@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { AlertCircle, CheckCircle2, Download, FileSpreadsheet, FileText, FileWarning } from "lucide-react";
+import { AlertCircle, ArrowLeft, CheckCircle2, Download, FileSpreadsheet, FileText, FileWarning } from "lucide-react";
 import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -49,6 +49,24 @@ type MissingFieldGuide = {
   href: string;
   actionLabel: string;
 };
+
+type PesvInformesProps = {
+  periodicity?: "monthly" | "quarterly";
+};
+
+function getQuarterPeriod(year: number, quarter: number) {
+  const startMonth = (quarter - 1) * 3;
+  const format = (date: Date) => {
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${date.getFullYear()}-${month}-${day}`;
+  };
+
+  return {
+    from: format(new Date(year, startMonth, 1)),
+    to: format(new Date(year, startMonth + 3, 0)),
+  };
+}
 
 function getMissingFieldGuides(missingFields: string[], incidentId: string): MissingFieldGuide[] {
   const incidentFieldNames = new Set([
@@ -117,12 +135,19 @@ function getMissingFieldGuides(missingFields: string[], incidentId: string): Mis
   return definitions.filter((guide) => guide.fields.length > 0);
 }
 
-export default function PesvInformes() {
+export default function PesvInformes({ periodicity = "monthly" }: PesvInformesProps = {}) {
   const { selectedCompany } = useCompanyContext();
   const { toast } = useToast();
   const [downloading, setDownloading] = useState<"excel" | "pdf" | null>(null);
-  const [draftPeriod, setDraftPeriod] = useState({ from: "", to: "" });
-  const [appliedPeriod, setAppliedPeriod] = useState({ from: "", to: "" });
+  const today = new Date();
+  const currentYear = today.getFullYear();
+  const [selectedQuarter, setSelectedQuarter] = useState(Math.floor(today.getMonth() / 3) + 1);
+  const [selectedYear, setSelectedYear] = useState(currentYear);
+  const initialPeriod = periodicity === "quarterly"
+    ? getQuarterPeriod(currentYear, Math.floor(today.getMonth() / 3) + 1)
+    : { from: "", to: "" };
+  const [draftPeriod, setDraftPeriod] = useState(initialPeriod);
+  const [appliedPeriod, setAppliedPeriod] = useState(initialPeriod);
   const [noIncidentsConfirmed, setNoIncidentsConfirmed] = useState(false);
   const companyContextKey = selectedCompany?.id || getSelectedCompanyId() || "empresa-activa";
   const periodIsReversed = Boolean(
@@ -162,6 +187,17 @@ export default function PesvInformes() {
   });
 
   const applyPeriod = () => {
+    if (
+      periodicity === "quarterly"
+      && (!Number.isInteger(selectedYear) || selectedYear < 2000 || selectedYear > currentYear + 1)
+    ) {
+      toast({
+        title: "Revisa el año",
+        description: `Ingresa un año entre 2000 y ${currentYear + 1}.`,
+        variant: "destructive",
+      });
+      return;
+    }
     if (periodIsReversed) {
       toast({
         title: "Revisa las fechas",
@@ -171,7 +207,11 @@ export default function PesvInformes() {
       return;
     }
     setNoIncidentsConfirmed(false);
-    setAppliedPeriod({ ...draftPeriod });
+    const period = periodicity === "quarterly"
+      ? getQuarterPeriod(selectedYear, selectedQuarter)
+      : draftPeriod;
+    setDraftPeriod(period);
+    setAppliedPeriod(period);
   };
 
   const showAllRecords = () => {
@@ -242,9 +282,19 @@ export default function PesvInformes() {
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-4 md:p-6" data-testid="pesv-informes-page">
       <div>
-        <p className="text-sm font-medium text-primary">PESV · Informe mensual</p>
+        {periodicity === "quarterly" && (
+          <Button variant="ghost" size="sm" asChild className="-ml-3 mb-2">
+            <Link href="/pesv/informes-trimestrales">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Volver a informes trimestrales
+            </Link>
+          </Button>
+        )}
+        <p className="text-sm font-medium text-primary">
+          PESV · Informe {periodicity === "quarterly" ? "trimestral" : "mensual"}
+        </p>
         <h1 className="mt-1 text-2xl font-bold md:text-3xl" data-testid="text-pesv-informes-title">
-          Informe mensual para la Superintendencia de Transporte
+          Informe {periodicity === "quarterly" ? "trimestral" : "mensual"} para la Superintendencia de Transporte
         </h1>
         <p className="mt-2 max-w-3xl text-muted-foreground">
           Los archivos se construyen con los datos de Siniestros, Vehículos, Conductores y las actas existentes del Comité PESV.
@@ -273,36 +323,78 @@ export default function PesvInformes() {
         <CardContent className="space-y-5">
           <div className="space-y-3 rounded-md border p-4">
             <div>
-              <h3 className="font-semibold">Período del informe</h3>
+              <h3 className="font-semibold">
+                {periodicity === "quarterly" ? "Trimestre del informe" : "Período del informe"}
+              </h3>
               <p className="text-sm text-muted-foreground">
-                Deja las fechas en blanco para consultar todos los siniestros. Al elegir fechas, el archivo indicará el período incluido.
+                {periodicity === "quarterly"
+                  ? "Elige el trimestre y año que se incluirán en el archivo."
+                  : "Deja las fechas en blanco para consultar todos los siniestros. Al elegir fechas, el archivo indicará el período incluido."}
               </p>
             </div>
             <div className="flex flex-wrap items-end gap-3">
-              <label className="grid gap-1 text-sm">
-                <span>Desde</span>
-                <Input
-                  type="date"
-                  value={draftPeriod.from}
-                  onChange={(event) => {
-                    setDraftPeriod((current) => ({ ...current, from: event.target.value }));
-                    setNoIncidentsConfirmed(false);
-                  }}
-                  data-testid="input-pesv-report-from"
-                />
-              </label>
-              <label className="grid gap-1 text-sm">
-                <span>Hasta</span>
-                <Input
-                  type="date"
-                  value={draftPeriod.to}
-                  onChange={(event) => {
-                    setDraftPeriod((current) => ({ ...current, to: event.target.value }));
-                    setNoIncidentsConfirmed(false);
-                  }}
-                  data-testid="input-pesv-report-to"
-                />
-              </label>
+              {periodicity === "quarterly" ? (
+                <>
+                  <label className="grid gap-1 text-sm">
+                    <span>Trimestre</span>
+                    <select
+                      className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                      value={selectedQuarter}
+                      onChange={(event) => {
+                        setSelectedQuarter(Number(event.target.value));
+                        setNoIncidentsConfirmed(false);
+                      }}
+                      data-testid="select-pesv-report-quarter"
+                    >
+                      <option value={1}>Primer trimestre (enero–marzo)</option>
+                      <option value={2}>Segundo trimestre (abril–junio)</option>
+                      <option value={3}>Tercer trimestre (julio–septiembre)</option>
+                      <option value={4}>Cuarto trimestre (octubre–diciembre)</option>
+                    </select>
+                  </label>
+                  <label className="grid gap-1 text-sm">
+                    <span>Año</span>
+                    <Input
+                      type="number"
+                      min={2000}
+                      max={currentYear + 1}
+                      value={selectedYear}
+                      onChange={(event) => {
+                        setSelectedYear(Number(event.target.value));
+                        setNoIncidentsConfirmed(false);
+                      }}
+                      data-testid="input-pesv-report-year"
+                    />
+                  </label>
+                </>
+              ) : (
+                <>
+                  <label className="grid gap-1 text-sm">
+                    <span>Desde</span>
+                    <Input
+                      type="date"
+                      value={draftPeriod.from}
+                      onChange={(event) => {
+                        setDraftPeriod((current) => ({ ...current, from: event.target.value }));
+                        setNoIncidentsConfirmed(false);
+                      }}
+                      data-testid="input-pesv-report-from"
+                    />
+                  </label>
+                  <label className="grid gap-1 text-sm">
+                    <span>Hasta</span>
+                    <Input
+                      type="date"
+                      value={draftPeriod.to}
+                      onChange={(event) => {
+                        setDraftPeriod((current) => ({ ...current, to: event.target.value }));
+                        setNoIncidentsConfirmed(false);
+                      }}
+                      data-testid="input-pesv-report-to"
+                    />
+                  </label>
+                </>
+              )}
               <Button
                 variant="outline"
                 onClick={applyPeriod}
@@ -311,13 +403,15 @@ export default function PesvInformes() {
               >
                 Aplicar período
               </Button>
-              <Button
-                variant="ghost"
-                onClick={showAllRecords}
-                disabled={downloading !== null || (!hasAppliedPeriod && !draftPeriod.from && !draftPeriod.to)}
-              >
-                Ver todos
-              </Button>
+              {periodicity === "monthly" && (
+                <Button
+                  variant="ghost"
+                  onClick={showAllRecords}
+                  disabled={downloading !== null || (!hasAppliedPeriod && !draftPeriod.from && !draftPeriod.to)}
+                >
+                  Ver todos
+                </Button>
+              )}
             </div>
             {periodIsReversed && (
               <p className="text-sm text-destructive" role="alert">
