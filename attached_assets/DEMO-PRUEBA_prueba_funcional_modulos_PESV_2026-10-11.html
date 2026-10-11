@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Prueba funcional PESV — DEMO-PRUEBA</title>
+  <style>
+    :root { color-scheme: light; font-family: Arial, Helvetica, sans-serif; color: #172b22; background: #f3f6f4; }
+    body { margin: 0; padding: 32px 16px; }
+    main { max-width: 860px; margin: auto; background: white; border: 1px solid #d9e3dc; border-radius: 14px; padding: 28px; box-shadow: 0 10px 30px #163b2412; }
+    h1 { margin: 0 0 8px; color: #176b3a; font-size: 26px; }
+    h2 { margin: 26px 0 10px; font-size: 18px; }
+    p, li { line-height: 1.55; }
+    .tag { display: inline-block; padding: 5px 10px; border-radius: 999px; background: #e4f4e9; color: #176b3a; font-weight: 700; font-size: 13px; }
+    .note { background: #fff8e5; border-left: 4px solid #dfa700; padding: 12px 14px; border-radius: 6px; }
+    .ok { color: #176b3a; font-weight: 700; }
+    .record { margin: 10px 0; border: 1px solid #e0e8e2; border-radius: 8px; padding: 14px; overflow-wrap: anywhere; }
+    code { background: #f1f4f2; padding: 2px 5px; border-radius: 4px; }
+    footer { margin-top: 26px; color: #56645b; font-size: 13px; border-top: 1px solid #e0e8e2; padding-top: 14px; }
+  </style>
+</head>
+<body>
+<main>
+  <span class="tag">PRUEBA FUNCIONAL · DESARROLLO</span>
+  <h1>Rutas Seguras y Monitoreo GPS</h1>
+  <p><strong>Empresa:</strong> DEMO-PRUEBA<br><strong>Fecha:</strong> 11/10/2026</p>
+  <p class="ok">Resultado: aprobada</p>
+  <p>Se inició sesión con una cuenta técnica temporal y se probaron las operaciones de alta, consulta y edición mediante las rutas autenticadas de la aplicación.</p>
+
+  <h2>Resultados verificados</h2>
+  <ul>
+    <li>Rutas Seguras: registro de señalización, fecha, responsable, referencia de soporte y puestos de control.</li>
+    <li>Rutas Seguras: consulta del registro de la empresa y edición de la frecuencia de control.</li>
+    <li>Monitoreo GPS: registro del gasto de prueba, consulta por empresa y edición de observaciones.</li>
+    <li>Respuestas del servidor: inicio de sesión 200; altas 201; consultas y ediciones 200.</li>
+  </ul>
+
+  <h2>Registros conservados para revisión</h2>
+  <div class="record">
+    <strong>Marcador de búsqueda</strong><br>
+    <code>PRUEBA FUNCIONAL H08-H07 DEMO-PRUEBA 2026-10-11 3b577c8d</code>
+  </div>
+  <div class="record">
+    <strong>Ruta segura</strong><br>
+    <code>5a555312-8852-4270-850f-24fa7f3800d5</code>
+  </div>
+  <div class="record">
+    <strong>Gasto GPS</strong><br>
+    <code>cc6ac3ba-99c2-42bd-b97a-bcc881cc0e05</code><br>
+    Importe: $0 COP. Registro de prueba no contable.
+  </div>
+
+  <div class="note">
+    Los registros contienen el marcador “PRUEBA FUNCIONAL” y no describen instalaciones, puestos de control ni gastos reales. Los datos preexistentes no se modificaron. Las referencias incluidas no son documentos probatorios válidos.
+  </div>
+  <footer>
+    La prueba cubrió la captura y persistencia de datos en los módulos fuente. No se generó ni se verificó el cuarto informe trimestral. La vista autenticada no se comprobó visualmente; se validaron los endpoints con una sesión autenticada de desarrollo.
+  </footer>
+</main>
+</body>
+</html>

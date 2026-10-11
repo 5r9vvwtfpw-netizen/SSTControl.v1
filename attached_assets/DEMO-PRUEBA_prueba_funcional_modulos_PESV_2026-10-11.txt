@@ -1,0 +1,14 @@
+PRUEBA FUNCIONAL — DEMO-PRUEBA (DESARROLLO)
+Marcador: PRUEBA FUNCIONAL H08-H07 DEMO-PRUEBA 2026-10-11 3b577c8d
+Fecha: 2026-10-11
+Alcance: API autenticada del módulo Rutas Seguras y Monitoreo GPS.
+Resultado: Autenticación de desarrollo: correcta
+Resultado: Rutas Seguras: alta correcta (5a555312-8852-4270-850f-24fa7f3800d5)
+Resultado: Rutas Seguras: consulta de campos de señalización y control correcta
+Resultado: Rutas Seguras: edición correcta
+Resultado: Monitoreo GPS: alta correcta (cc6ac3ba-99c2-42bd-b97a-bcc881cc0e05)
+Resultado: Monitoreo GPS: consulta y edición correctas
+Ruta de prueba conservada: 5a555312-8852-4270-850f-24fa7f3800d5
+Gasto GPS de prueba conservado: cc6ac3ba-99c2-42bd-b97a-bcc881cc0e05
+Los registros usan valores marcados como prueba; el gasto tiene valor cero y no representa un pago real.
+La cuenta técnica de acceso se dejó sin permisos de administración y sin empresa asignada.

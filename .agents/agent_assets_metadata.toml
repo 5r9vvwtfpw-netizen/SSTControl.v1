@@ -867,3 +867,17 @@ mtime_ms = 1791707653962
 storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/6fc966f6-bb50-4ded-947a-af2aef6e56f3/98d262c5-58f6-4c0b-bb3b-9c2507659b8a"
 storage_version_token = "1791707763340816"
 content_type = "text/plain"
+
+[[outputs]]
+id = "aqPm3Pni4Qs7rGvnzaGNb"
+uri = "file://attached_assets/DEMO-PRUEBA_prueba_funcional_modulos_PESV_2026-10-11.html"
+type = "html"
+title = "Evidencia de prueba funcional PESV — DEMO-PRUEBA"
+description = "Resultado autenticado de las pruebas de Rutas Seguras y gastos GPS, con IDs y marcador para localizar los registros que se conservaron en desarrollo."
+logical_id = "64d046d2-f56f-4b62-9a4f-f9f199a43828"
+content_hash = "sha256:cb91d6e2da54bcc0406c0572ae145047d053bafe3b9b1f882ef1def2414bf49d"
+size = 3264
+mtime_ms = 1791714768266
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/64d046d2-f56f-4b62-9a4f-f9f199a43828/d8ace7e3-9616-4c6b-b448-f55b4fb815ef"
+storage_version_token = "1791714776015864"
+content_type = "text/html"
