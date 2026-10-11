@@ -7,7 +7,11 @@ Cuando una prueba de desarrollo crea una cuenta temporal, no asumir que un corre
 
 **Why:** Una prueba funcional se detuvo en login por verificación pendiente en una cuenta temporal sin correo; era una condición del rol, no un fallo del retiro de trabajadores.
 
-**How to apply:** Crear una cuenta temporal delimitada a la empresa, usar un correo sintético no entregable y marcar verificada solamente esa cuenta en desarrollo, o emplear un rol que ya esté exento si su permiso permite el flujo. Eliminar después solo la cuenta temporal por su ID y marcador exactos; conservar los registros funcionales solicitados.
+**How to apply:** Crear una cuenta temporal delimitada a la empresa, usar un correo sintético no entregable y marcar verificada solamente esa cuenta en desarrollo, o emplear un rol que ya esté exento si su permiso permite el flujo. Si auditorías u otros registros la referencian, no borrar ni reasignar la trazabilidad: revocar su acceso (rol no privilegiado, sin vínculo de trabajador, verificación retirada y contraseña aleatoria) y conservarla junto con la evidencia solicitada.
+
+Las cuentas creadas para pruebas pueden quedar referenciadas por auditoría, comunicaciones u otros registros con restricciones de clave foránea; intentar borrarlas al final de la prueba puede fallar después de que la funcionalidad ya haya pasado.
+
+**Why:** Una prueba integral conservó correctamente la evidencia funcional, pero el borrado de la cuenta técnica fue rechazado por una clave foránea de auditoría.
 
 En clientes HTTP de Node, reenviar todas las cookies de `Set-Cookie` recibidas en el login, no solo la primera.
 

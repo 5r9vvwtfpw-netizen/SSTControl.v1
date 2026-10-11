@@ -825,3 +825,45 @@ mtime_ms = 1791703091890
 storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/10908bdc-5348-4ea1-8a06-3de51ce80982/be863310-9c53-48f4-a641-8c4e50a46045"
 storage_version_token = "1791703107518351"
 content_type = "image/png"
+
+[[outputs]]
+id = "FcNqLxSpz5kMwpSC9w5n2"
+uri = "file://attached_assets/DEMO-PRUEBA_informe_lecciones_aprendidas_2026_T4_prueba_funcional.pdf"
+type = "pdf"
+title = "DEMO-PRUEBA · Informe trimestral de lecciones aprendidas (PDF)"
+description = "PDF estandarizado generado durante la prueba funcional del cuarto trimestre de 2026. Incluye la investigación, divulgación, lectura y retroalimentación marcadas como prueba."
+logical_id = "68111149-eaf0-463d-9c7e-6e9b62c3d38d"
+content_hash = "sha256:8d18d4951b255051454f896751ff35e3bd24c0426e73d31be4643b3221f49654"
+size = 767660
+mtime_ms = 1791707653954
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/68111149-eaf0-463d-9c7e-6e9b62c3d38d/47759348-dba8-40b1-8482-e9cda3eaeba7"
+storage_version_token = "1791707761919900"
+content_type = "application/pdf"
+
+[[outputs]]
+id = "iVSrsXWXa2YdBd4jTnHCr"
+uri = "file://attached_assets/DEMO-PRUEBA_informe_lecciones_aprendidas_2026_T4_prueba_funcional.xlsx"
+type = "table"
+title = "DEMO-PRUEBA · Informe trimestral de lecciones aprendidas (Excel)"
+description = "Excel generado durante la prueba funcional del cuarto trimestre de 2026, con el registro de divulgación y la retroalimentación de prueba."
+logical_id = "2ca09e38-1675-47c7-b0ee-19437b9f0040"
+content_hash = "sha256:a23eb60a871f6a33096f8d920ba45b6c5794a32e4f39382bd6a114330202e7eb"
+size = 18948
+mtime_ms = 1791707653958
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/2ca09e38-1675-47c7-b0ee-19437b9f0040/c841bf01-0e1d-45f5-bbc4-8bb2b39e7fae"
+storage_version_token = "1791707762680821"
+content_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
+[[outputs]]
+id = "MsJh2SfKGk-0Fu9FROuvV"
+uri = "file://attached_assets/DEMO-PRUEBA_informe_lecciones_aprendidas_2026_T4_prueba_funcional_evidencia.txt"
+type = "text"
+title = "DEMO-PRUEBA · Resumen de evidencia de prueba"
+description = "Marcador, período, identificadores de investigación y comunicación, y resultado de validación. Los registros quedan en DEMO-PRUEBA para revisión."
+logical_id = "6fc966f6-bb50-4ded-947a-af2aef6e56f3"
+content_hash = "sha256:6bb7d80fec34d4132eef37a6fd008a0fb0f482f4fb1b0d2e8913c109ab5939e7"
+size = 488
+mtime_ms = 1791707653962
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/6fc966f6-bb50-4ded-947a-af2aef6e56f3/98d262c5-58f6-4c0b-bb3b-9c2507659b8a"
+storage_version_token = "1791707763340816"
+content_type = "text/plain"

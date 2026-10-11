@@ -1,0 +1,7 @@
+PRUEBA FUNCIONAL — DEMO-PRUEBA
+Marcador: PRUEBA FUNCIONAL PESV DEMO-PRUEBA 2026-10-11 3e7aeddd
+Período: 2026-10-01 a 2026-12-31
+Investigación: 2d15a543-07b1-4889-b1fd-d73f8ce53881
+Comunicación: de21f201-a227-493c-9d15-599bffb4b6b3
+Resultado: comunicación visible en Portal, lectura confirmada, retroalimentación incluida; PDF y Excel descargados y validados.
+Los registros de prueba de trabajador, accidente, investigación, comunicación y respuesta se conservaron para revisión.
