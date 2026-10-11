@@ -168,9 +168,16 @@ test("Excel y PDF generan un resumen explícito en cero sin inventar filas de si
     encoding: "utf8",
   }).replace(/\s+/g, " ");
   for (const value of [
+    "PESV-SINIESTROS-01",
+    "REGISTRO DE VEHÍCULOS SINIESTRADOS",
     "DECLARACIÓN DE LA EMPRESA: SIN SINIESTROS VIALES",
     "01/09/2026 al 30/09/2026",
     "La empresa declara que no se presentaron siniestros viales",
+    "ELABORÓ",
+    "AUTORIZÓ",
+    "APROBÓ",
+    "LICENCIADO SST",
+    "Página 1 de 1",
   ]) {
     assert.ok(pdfText.includes(value), `El PDF en cero debe incluir: ${value}`);
   }
@@ -204,6 +211,11 @@ test("el PDF muestra los mismos campos y datos que solicita la evidencia", async
     assert.ok(text.includes(field), `El PDF debe incluir el campo: ${field}`);
   }
   for (const value of [
+    "PESV-SINIESTROS-01",
+    "ELABORÓ",
+    "AUTORIZÓ",
+    "APROBÓ",
+    "Página 1 de 1",
     "08/10/2026",
     "Heridos graves: 1; Heridos leves: 2",
     "ABC123",

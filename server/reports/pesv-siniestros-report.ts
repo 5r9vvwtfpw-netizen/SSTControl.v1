@@ -1,6 +1,14 @@
 import XLSX from "xlsx-js-style";
 import type { Company } from "@shared/schema";
-import { addLabeledField, addParagraph, addSectionBar, addStandardHeader, checkPageBreak, loadCompanyLogo, PDF_CONFIG } from "../services/pdf-standardizer";
+import {
+  addParagraph,
+  addSectionBar,
+  addSimpleTable,
+  addSignatureFooter,
+  addStandardHeader,
+  getSignersForCompany,
+  PDF_CONFIG,
+} from "../services/pdf-standardizer";
 import { setupTrialWatermarkOnAllPages } from "../services/pdf-watermark";
 
 export type SiniestroReportCompany = Pick<Company, "id" | "name" | "nit" | "address" | "logoUrl">;
@@ -290,7 +298,11 @@ export async function buildSiniestrosPdfBuffer(
   }
 
   const { default: PDFDocument } = await import("pdfkit");
-  const document = new PDFDocument({ margin: PDF_CONFIG.MARGIN, size: "LEGAL", layout: "landscape" });
+  const document = new PDFDocument({
+    margin: PDF_CONFIG.MARGIN,
+    size: PDF_CONFIG.PAGE_SIZE,
+    bufferPages: true,
+  });
   const chunks: Buffer[] = [];
   const bufferPromise = new Promise<Buffer>((resolve, reject) => {
     document.on("data", (chunk: Buffer) => chunks.push(Buffer.from(chunk)));
@@ -305,35 +317,16 @@ export async function buildSiniestrosPdfBuffer(
     let y = await addStandardHeader({
       doc: document,
       company,
-      documentTitle: "INFORME PESV · SINIESTROS VIALES",
+      documentTitle: "REGISTRO DE VEHÍCULOS SINIESTRADOS",
       documentCode: "PESV-SINIESTROS-01",
     });
-    const boxX = PDF_CONFIG.MARGIN;
-    const boxY = y + 5;
-    const boxWidth = document.page.width - PDF_CONFIG.MARGIN * 2;
-    const boxHeight = 76;
-    document
-      .roundedRect(boxX, boxY, boxWidth, boxHeight, 6)
-      .fillAndStroke("#E5F2EA", "#246B45");
-    document
-      .font("Helvetica-Bold")
-      .fontSize(14)
-      .fillColor("#1B5134")
-      .text("DECLARACIÓN DE LA EMPRESA: SIN SINIESTROS VIALES", boxX + 16, boxY + 12, {
-        width: boxWidth - 32,
-        align: "center",
-      });
-    document
-      .font("Helvetica")
-      .fontSize(11)
-      .fillColor("#222222")
-      .text(
-        `La empresa declara que no se presentaron siniestros viales durante el período consultado: ${formatSiniestroReportDate(period?.from)} al ${formatSiniestroReportDate(period?.to)}.`,
-        boxX + 18,
-        boxY + 37,
-        { width: boxWidth - 36, align: "center", lineGap: 2 },
-      );
-    y = boxY + boxHeight + 12;
+    y = addParagraph(document, periodLabel, { y, fontSize: 9, bold: true });
+    y = addSectionBar(document, "DECLARACIÓN DE LA EMPRESA: SIN SINIESTROS VIALES", y);
+    y = addParagraph(
+      document,
+      `La empresa declara que no se presentaron siniestros viales durante el período consultado: ${formatSiniestroReportDate(period?.from)} al ${formatSiniestroReportDate(period?.to)}.`,
+      { y, fontSize: 11, bold: true },
+    );
     y = addSectionBar(document, "Resumen del período", y);
     const zeroSummaryFields = [
       ["Período consultado", `${formatSiniestroReportDate(period?.from)} al ${formatSiniestroReportDate(period?.to)}`],
@@ -345,71 +338,72 @@ export async function buildSiniestrosPdfBuffer(
       ["Total personas afectadas", "0"],
       ["Vehículo, conductor, IPAT y acta", "No aplica: no se reportaron siniestros."],
     ];
-    for (const [label, value] of zeroSummaryFields) {
-      y = checkPageBreak(document, 26, y);
-      y = addLabeledField(document, label, value, { y, labelWidth: 230 });
-    }
-
-    const footerY = document.page.height - PDF_CONFIG.MARGIN - 22;
-    document.fontSize(7).font("Helvetica").text(
-      "SST Colombia · Página 1 de 1",
-      PDF_CONFIG.MARGIN,
-      footerY,
-      { width: document.page.width - PDF_CONFIG.MARGIN * 2, align: "right" },
+    y = addSimpleTable(
+      document,
+      ["Indicador", "Resultado"],
+      zeroSummaryFields,
+      { y, columnWidths: [300, document.page.width - PDF_CONFIG.MARGIN * 2 - 300] },
     );
-    document.end();
-    return bufferPromise;
+  } else {
+    const reportFields = (record: SiniestroReportRecord, index: number) => [
+      ["Fecha del siniestro", formatSiniestroReportDate(record.incidentDate)],
+      ["Nivel de pérdida", describeSiniestroLossLevel(record)],
+      ["Fatalidad (personas)", String(record.fatalities)],
+      ["Heridos graves (personas)", String(record.severeInjuries)],
+      ["Heridos leves (personas)", String(record.minorInjuries)],
+      ["Choque simple (personas implicadas)", String(record.simpleCollisionPeople)],
+      ["Placa del vehículo de la empresa", record.vehiclePlate || ""],
+      ["Nombre del conductor de la empresa", record.driverName || ""],
+      ["Identificación del conductor de la empresa", record.driverIdentification || ""],
+      ["Consecutivo del IPAT en RNAT/RUNT", record.policeReport || ""],
+      ["Organismo de tránsito o autoridad que elaboró el IPAT", record.ipatAuthorityName || ""],
+      ["Número del acta del comité", record.committeeActaNumber == null ? "" : String(record.committeeActaNumber)],
+      ["Fecha del comité donde fue analizado", formatSiniestroReportDate(record.committeeAnalysisDate)],
+      ["Registro del informe", `${index + 1} de ${records.length}`],
+    ];
+
+    for (let index = 0; index < records.length; index += 1) {
+      if (index > 0) document.addPage();
+      let y = await addStandardHeader({
+        doc: document,
+        company,
+        documentTitle: "REGISTRO DE VEHÍCULOS SINIESTRADOS",
+        documentCode: "PESV-SINIESTROS-01",
+      });
+      const reportIntroduction = [
+        "Informe generado desde los registros vigentes del módulo PESV.",
+        periodLabel,
+      ].filter(Boolean).join(" ");
+      y = addParagraph(document, reportIntroduction, {
+        y,
+        fontSize: 9,
+      });
+      y = addSectionBar(document, "Datos del siniestro", y);
+
+      y = addSimpleTable(
+        document,
+        ["Dato del informe", "Información registrada"],
+        reportFields(records[index], index).map(([label, value]) => [label, value || "—"]),
+        { y, columnWidths: [240, document.page.width - PDF_CONFIG.MARGIN * 2 - 240] },
+      );
+    }
   }
 
-  const reportFields = (record: SiniestroReportRecord, index: number) => [
-    ["Fecha del siniestro", formatSiniestroReportDate(record.incidentDate)],
-    ["Nivel de pérdida", describeSiniestroLossLevel(record)],
-    ["Fatalidad (personas)", String(record.fatalities)],
-    ["Heridos graves (personas)", String(record.severeInjuries)],
-    ["Heridos leves (personas)", String(record.minorInjuries)],
-    ["Choque simple (personas implicadas)", String(record.simpleCollisionPeople)],
-    ["Placa del vehículo de la empresa", record.vehiclePlate || ""],
-    ["Nombre del conductor de la empresa", record.driverName || ""],
-    ["Identificación del conductor de la empresa", record.driverIdentification || ""],
-    ["Consecutivo del IPAT en RNAT/RUNT", record.policeReport || ""],
-    ["Organismo de tránsito o autoridad que elaboró el IPAT", record.ipatAuthorityName || ""],
-    ["Número del acta del comité", record.committeeActaNumber == null ? "" : String(record.committeeActaNumber)],
-    ["Fecha del comité donde fue analizado", formatSiniestroReportDate(record.committeeAnalysisDate)],
-    ["Registro del informe", `${index + 1} de ${records.length}`],
-  ];
-
-  for (let index = 0; index < records.length; index += 1) {
-    if (index > 0) document.addPage();
-    let y = await addStandardHeader({
-      doc: document,
-      company,
-      documentTitle: "REGISTRO DE VEHÍCULOS SINIESTRADOS",
-      documentCode: "PESV-SINIESTROS-01",
-    });
-    const reportIntroduction = [
-      "Informe generado desde los registros vigentes del módulo PESV.",
-      periodLabel,
-    ].filter(Boolean).join(" ");
-    y = addParagraph(document, reportIntroduction, {
-      y,
-      fontSize: 9,
-    });
-    y = addSectionBar(document, "Datos del siniestro", y);
-
-    for (const [label, value] of reportFields(records[index], index)) {
-      y = checkPageBreak(document, 26, y);
-      y = addLabeledField(document, label, value || "—", { y, labelWidth: 230 });
-    }
-
-    const footerY = document.page.height - PDF_CONFIG.MARGIN - 22;
-    document.fontSize(7).font("Helvetica").text(
-      `SST Colombia · Página ${index + 1} de ${records.length}`,
-      PDF_CONFIG.MARGIN,
-      footerY,
-      { width: document.page.width - PDF_CONFIG.MARGIN * 2, align: "right" },
-    );
+  await addSignatureFooter(document, await getSignersForCompany(company.id), true);
+  const pageRange = document.bufferedPageRange();
+  for (let pageIndex = pageRange.start; pageIndex < pageRange.start + pageRange.count; pageIndex += 1) {
+    document.switchToPage(pageIndex);
+    document
+      .fontSize(7)
+      .font("Helvetica")
+      .fillColor("#666666")
+      .text(
+        `SST Colombia · Página ${pageIndex - pageRange.start + 1} de ${pageRange.count}`,
+        PDF_CONFIG.MARGIN,
+        document.page.height - PDF_CONFIG.MARGIN - 12,
+        { width: document.page.width - PDF_CONFIG.MARGIN * 2, align: "right", lineBreak: false },
+      );
   }
-
   document.end();
   return bufferPromise;
 }
