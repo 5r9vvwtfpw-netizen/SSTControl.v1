@@ -822,6 +822,14 @@ export default function PesvRutasSeguras() {
     mapUrl: "",
     isActive: 1 as number,
     observations: "",
+    signageMeasures: "",
+    signageImplementationDate: "",
+    signageResponsible: "",
+    signageEvidenceReference: "",
+    controlPoints: "",
+    controlFrequency: "",
+    controlResponsible: "",
+    controlEvidenceReference: "",
   });
 
   const { data: safeRoutes = [], isLoading: routesLoading } = useQuery<SafeRoute[]>({
@@ -1017,6 +1025,14 @@ export default function PesvRutasSeguras() {
       restrictions: formData.restrictions || undefined,
       mapUrl: formData.mapUrl || undefined,
       observations: formData.observations || undefined,
+      signageMeasures: formData.signageMeasures || undefined,
+      signageImplementationDate: formData.signageImplementationDate || undefined,
+      signageResponsible: formData.signageResponsible || undefined,
+      signageEvidenceReference: formData.signageEvidenceReference || undefined,
+      controlPoints: formData.controlPoints || undefined,
+      controlFrequency: formData.controlFrequency || undefined,
+      controlResponsible: formData.controlResponsible || undefined,
+      controlEvidenceReference: formData.controlEvidenceReference || undefined,
     };
 
     if (editingRoute) {
@@ -1045,6 +1061,14 @@ export default function PesvRutasSeguras() {
       mapUrl: route.mapUrl || "",
       isActive: route.isActive,
       observations: route.observations || "",
+      signageMeasures: route.signageMeasures || "",
+      signageImplementationDate: route.signageImplementationDate || "",
+      signageResponsible: route.signageResponsible || "",
+      signageEvidenceReference: route.signageEvidenceReference || "",
+      controlPoints: route.controlPoints || "",
+      controlFrequency: route.controlFrequency || "",
+      controlResponsible: route.controlResponsible || "",
+      controlEvidenceReference: route.controlEvidenceReference || "",
     });
     setDialogOpen(true);
   };
@@ -1074,6 +1098,14 @@ export default function PesvRutasSeguras() {
       mapUrl: "",
       isActive: 1,
       observations: "",
+      signageMeasures: "",
+      signageImplementationDate: "",
+      signageResponsible: "",
+      signageEvidenceReference: "",
+      controlPoints: "",
+      controlFrequency: "",
+      controlResponsible: "",
+      controlEvidenceReference: "",
     });
   };
 
@@ -1348,6 +1380,58 @@ export default function PesvRutasSeguras() {
                         placeholder="https://maps.google.com/..."
                         data-testid="input-map-url"
                       />
+                    </div>
+                    <div className="col-span-2 rounded-md border p-4 space-y-4">
+                      <div>
+                        <h3 className="font-medium">Señalización implementada</h3>
+                        <p className="text-sm text-muted-foreground">Registre las señales instaladas para esta ruta y cómo se puede verificar su implementación.</p>
+                      </div>
+                      <Textarea
+                        aria-label="Señalización implementada"
+                        value={formData.signageMeasures}
+                        onChange={(e) => setFormData({ ...formData, signageMeasures: e.target.value })}
+                        placeholder="Tipo de señal, ubicación y tramo de la ruta"
+                      />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Fecha de implementación</Label>
+                          <Input type="date" value={formData.signageImplementationDate} onChange={(e) => setFormData({ ...formData, signageImplementationDate: e.target.value })} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Responsable de la señalización</Label>
+                          <Input value={formData.signageResponsible} onChange={(e) => setFormData({ ...formData, signageResponsible: e.target.value })} />
+                        </div>
+                        <div className="space-y-2 md:col-span-2">
+                          <Label>Referencia del soporte</Label>
+                          <Input value={formData.signageEvidenceReference} onChange={(e) => setFormData({ ...formData, signageEvidenceReference: e.target.value })} placeholder="Nombre del documento, consecutivo o ubicación del soporte" />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="col-span-2 rounded-md border p-4 space-y-4">
+                      <div>
+                        <h3 className="font-medium">Puestos de control</h3>
+                        <p className="text-sm text-muted-foreground">Registre los puntos y la frecuencia de control aplicados en esta ruta.</p>
+                      </div>
+                      <Textarea
+                        aria-label="Puestos de control"
+                        value={formData.controlPoints}
+                        onChange={(e) => setFormData({ ...formData, controlPoints: e.target.value })}
+                        placeholder="Ubicación de cada puesto y controles realizados"
+                      />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Frecuencia de control</Label>
+                          <Input value={formData.controlFrequency} onChange={(e) => setFormData({ ...formData, controlFrequency: e.target.value })} placeholder="Ej.: en cada despacho" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Responsable de los controles</Label>
+                          <Input value={formData.controlResponsible} onChange={(e) => setFormData({ ...formData, controlResponsible: e.target.value })} />
+                        </div>
+                        <div className="space-y-2 md:col-span-2">
+                          <Label>Referencia del soporte</Label>
+                          <Input value={formData.controlEvidenceReference} onChange={(e) => setFormData({ ...formData, controlEvidenceReference: e.target.value })} placeholder="Nombre del documento, consecutivo o ubicación del soporte" />
+                        </div>
+                      </div>
                     </div>
                     <div className="space-y-2 col-span-2">
                       <div className="flex items-center space-x-2">

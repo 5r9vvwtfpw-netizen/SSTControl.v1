@@ -1553,6 +1553,145 @@ export default function PesvMonitoreoGps() {
           />
         </CardContent>
       </Card>
+      <GpsExpenseSection companyId={effectiveCompanyId} canManage={isAdmin} />
     </div>
+  );
+}
+
+type GpsExpenseRow = {
+  id: string;
+  provider: string;
+  expenseType: string;
+  concept: string;
+  expenseDate: string;
+  periodStart: string | null;
+  periodEnd: string | null;
+  amountCop: number;
+  coverage: string | null;
+  supportReference: string | null;
+  observations: string | null;
+};
+
+function GpsExpenseSection({ companyId, canManage }: { companyId: string | null; canManage: boolean }) {
+  const { toast } = useToast();
+  const emptyForm = () => ({
+    provider: "",
+    expenseType: "Servicio mensual",
+    concept: "",
+    expenseDate: getTodayDateString(),
+    periodStart: "",
+    periodEnd: "",
+    amountCop: "",
+    coverage: "",
+    supportReference: "",
+    observations: "",
+  });
+  const [form, setForm] = useState(emptyForm);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const { data: expenses = [], isLoading } = useQuery<GpsExpenseRow[]>({
+    queryKey: ["/api/pesv/gps-expenses", companyId],
+    enabled: !!companyId,
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/pesv/gps-expenses?companyId=${encodeURIComponent(companyId!)}`);
+      return response.json();
+    },
+  });
+  const refresh = () => queryClient.invalidateQueries({ queryKey: ["/api/pesv/gps-expenses", companyId] });
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      if (!companyId) throw new Error("Seleccione una empresa activa.");
+      const payload = {
+        ...form,
+        amountCop: Number(form.amountCop),
+        companyId,
+        periodStart: form.periodStart || undefined,
+        periodEnd: form.periodEnd || undefined,
+        coverage: form.coverage || undefined,
+        supportReference: form.supportReference || undefined,
+        observations: form.observations || undefined,
+      };
+      const response = await apiRequest(editingId ? "PATCH" : "POST", editingId ? `/api/pesv/gps-expenses/${editingId}` : "/api/pesv/gps-expenses", payload);
+      return response.json();
+    },
+    onSuccess: () => {
+      refresh();
+      setForm(emptyForm());
+      setEditingId(null);
+      toast({ title: "Gasto GPS guardado", description: "El registro quedó asociado a la empresa activa." });
+    },
+    onError: (error: Error) => toast({ title: "No se pudo guardar", description: error.message, variant: "destructive" }),
+  });
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => apiRequest("DELETE", `/api/pesv/gps-expenses/${id}`),
+    onSuccess: () => {
+      refresh();
+      toast({ title: "Registro eliminado" });
+    },
+    onError: (error: Error) => toast({ title: "No se pudo eliminar", description: error.message, variant: "destructive" }),
+  });
+
+  const edit = (row: GpsExpenseRow) => {
+    setEditingId(row.id);
+    setForm({
+      provider: row.provider,
+      expenseType: row.expenseType,
+      concept: row.concept,
+      expenseDate: row.expenseDate,
+      periodStart: row.periodStart || "",
+      periodEnd: row.periodEnd || "",
+      amountCop: String(row.amountCop),
+      coverage: row.coverage || "",
+      supportReference: row.supportReference || "",
+      observations: row.observations || "",
+    });
+  };
+  const set = (key: keyof ReturnType<typeof emptyForm>, value: string) => setForm(previous => ({ ...previous, [key]: value }));
+
+  return (
+    <Card data-testid="card-pesv-gps-expenses">
+      <CardHeader>
+        <CardTitle className="text-lg">Gastos de GPS y monitoreo</CardTitle>
+        <p className="text-sm text-muted-foreground">Registre pagos de instalación, equipos, mantenimiento o servicio GPS, con su periodo y referencia de soporte.</p>
+      </CardHeader>
+      <CardContent className="space-y-5">
+        {canManage && (
+          <form onSubmit={(event) => { event.preventDefault(); saveMutation.mutate(); }} className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 rounded-md border p-4">
+            <Input aria-label="Proveedor GPS" placeholder="Proveedor" value={form.provider} onChange={e => set("provider", e.target.value)} required />
+            <Input aria-label="Tipo de gasto GPS" placeholder="Tipo de gasto" value={form.expenseType} onChange={e => set("expenseType", e.target.value)} required />
+            <Input aria-label="Concepto GPS" placeholder="Concepto del gasto" value={form.concept} onChange={e => set("concept", e.target.value)} required />
+            <Input aria-label="Fecha del gasto GPS" type="date" value={form.expenseDate} onChange={e => set("expenseDate", e.target.value)} required />
+            <Input aria-label="Valor del gasto GPS en pesos" type="number" min="0" step="1" placeholder="Valor en pesos" value={form.amountCop} onChange={e => set("amountCop", e.target.value)} required />
+            <Input aria-label="Vehículos o flota cubierta" placeholder="Vehículos o flota cubierta" value={form.coverage} onChange={e => set("coverage", e.target.value)} />
+            <Input aria-label="Inicio del periodo GPS" type="date" value={form.periodStart} onChange={e => set("periodStart", e.target.value)} />
+            <Input aria-label="Fin del periodo GPS" type="date" value={form.periodEnd} onChange={e => set("periodEnd", e.target.value)} />
+            <Input aria-label="Referencia del soporte GPS" placeholder="Factura o referencia del soporte" value={form.supportReference} onChange={e => set("supportReference", e.target.value)} />
+            <div className="md:col-span-2 xl:col-span-3 flex gap-2">
+              <Input aria-label="Observaciones del gasto GPS" placeholder="Observaciones" value={form.observations} onChange={e => set("observations", e.target.value)} />
+              <Button type="submit" disabled={saveMutation.isPending}>{editingId ? "Actualizar" : "Registrar gasto"}</Button>
+              {editingId && <Button type="button" variant="outline" onClick={() => { setEditingId(null); setForm(emptyForm()); }}>Cancelar</Button>}
+            </div>
+          </form>
+        )}
+        {isLoading ? <p className="text-sm text-muted-foreground">Cargando gastos GPS…</p> : expenses.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No hay gastos GPS registrados para esta empresa.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader><TableRow><TableHead>Fecha</TableHead><TableHead>Proveedor / concepto</TableHead><TableHead>Periodo</TableHead><TableHead>Valor</TableHead><TableHead>Soporte</TableHead>{canManage && <TableHead>Acciones</TableHead>}</TableRow></TableHeader>
+              <TableBody>{expenses.map(row => (
+                <TableRow key={row.id}>
+                  <TableCell>{row.expenseDate}</TableCell>
+                  <TableCell><div className="font-medium">{row.provider}</div><div className="text-sm text-muted-foreground">{row.expenseType}: {row.concept}</div>{row.coverage && <div className="text-xs text-muted-foreground">{row.coverage}</div>}</TableCell>
+                  <TableCell>{row.periodStart || "—"}{row.periodEnd ? ` a ${row.periodEnd}` : ""}</TableCell>
+                  <TableCell>{new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(row.amountCop)}</TableCell>
+                  <TableCell>{row.supportReference || "—"}</TableCell>
+                  {canManage && <TableCell className="whitespace-nowrap"><Button size="sm" variant="outline" onClick={() => edit(row)}>Editar</Button><Button size="icon" variant="ghost" aria-label="Eliminar gasto GPS" onClick={() => { if (confirm("¿Eliminar este gasto GPS?")) deleteMutation.mutate(row.id); }}><Trash2 className="h-4 w-4" /></Button></TableCell>}
+                </TableRow>
+              ))}</TableBody>
+            </Table>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

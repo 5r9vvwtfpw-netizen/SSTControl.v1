@@ -58509,6 +58509,72 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
   // ========== PESV - Safe Routes (Res. 40595/2022 - H08) ==========
 
+  // Gastos de monitoreo GPS — se administran dentro del módulo H07.
+  app.get("/api/pesv/gps-expenses", requirePermission("vehicles:view"), async (req, res) => {
+    try {
+      const companyId = hasGlobalAccess(req.user!.role) && typeof req.query.companyId === "string"
+        ? req.query.companyId
+        : getEffectiveCompanyId(req);
+      if (!companyId) return res.status(400).json({ error: "Se requiere una empresa activa" });
+      const expenses = await db.select().from(schema.pesvGpsExpenses)
+        .where(eq(schema.pesvGpsExpenses.companyId, companyId))
+        .orderBy(desc(schema.pesvGpsExpenses.expenseDate), desc(schema.pesvGpsExpenses.createdAt));
+      res.json(expenses);
+    } catch (error: any) {
+      console.error("Error consultando gastos GPS:", error);
+      res.status(500).json({ error: "No se pudieron consultar los gastos GPS" });
+    }
+  });
+
+  app.post("/api/pesv/gps-expenses", requirePermission("vehicles:create"), async (req, res) => {
+    try {
+      const companyId = hasGlobalAccess(req.user!.role) && typeof req.body.companyId === "string"
+        ? req.body.companyId
+        : getEffectiveCompanyId(req);
+      if (!companyId) return res.status(400).json({ error: "Se requiere una empresa activa" });
+      const data = schema.insertPesvGpsExpenseSchema.parse(req.body);
+      const [created] = await db.insert(schema.pesvGpsExpenses)
+        .values({ ...data, companyId, createdBy: req.user!.id })
+        .returning();
+      res.status(201).json(created);
+    } catch (error: any) {
+      console.error("Error registrando gasto GPS:", error);
+      res.status(400).json({ error: error.message || "No se pudo registrar el gasto GPS" });
+    }
+  });
+
+  app.patch("/api/pesv/gps-expenses/:id", requirePermission("vehicles:edit"), async (req, res) => {
+    try {
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(400).json({ error: "Se requiere una empresa activa" });
+      const data = schema.insertPesvGpsExpenseSchema.partial().parse(req.body);
+      const [updated] = await db.update(schema.pesvGpsExpenses)
+        .set({ ...data, updatedAt: new Date() })
+        .where(and(eq(schema.pesvGpsExpenses.id, req.params.id), eq(schema.pesvGpsExpenses.companyId, companyId)))
+        .returning();
+      if (!updated) return res.status(404).json({ error: "Gasto GPS no encontrado para la empresa activa" });
+      res.json(updated);
+    } catch (error: any) {
+      console.error("Error actualizando gasto GPS:", error);
+      res.status(400).json({ error: error.message || "No se pudo actualizar el gasto GPS" });
+    }
+  });
+
+  app.delete("/api/pesv/gps-expenses/:id", requirePermission("vehicles:delete"), async (req, res) => {
+    try {
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(400).json({ error: "Se requiere una empresa activa" });
+      const [deleted] = await db.delete(schema.pesvGpsExpenses)
+        .where(and(eq(schema.pesvGpsExpenses.id, req.params.id), eq(schema.pesvGpsExpenses.companyId, companyId)))
+        .returning({ id: schema.pesvGpsExpenses.id });
+      if (!deleted) return res.status(404).json({ error: "Gasto GPS no encontrado para la empresa activa" });
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Error eliminando gasto GPS:", error);
+      res.status(400).json({ error: error.message || "No se pudo eliminar el gasto GPS" });
+    }
+  });
+
   // GET /api/safe-routes - List all safe routes
   app.get("/api/safe-routes", requirePermission("vehicles:view"), async (req, res) => {
     try {
