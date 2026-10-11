@@ -12,10 +12,11 @@ import {
 import { setupTrialWatermarkOnAllPages } from "../services/pdf-watermark";
 
 export type ActaSiniestroEvidence = {
-  incidentId: string;
-  incidentDate: string;
-  vehiclePlate: string | null;
-  driverName: string | null;
+  meetingId: string;
+  scheduledDate: string;
+  meetingTopic: string | null;
+  meetingState: string;
+  frequency: string;
   actaId: string | null;
   numeroActa: number | null;
   fechaReunion: string | null;
@@ -45,13 +46,14 @@ export function buildActasSiniestrosExcelBuffer(
     ["COPIA DE ACTAS DEL COMITÉ PESV"],
     [`Empresa: ${company.name} · NIT: ${company.nit}`],
     [`Período trimestral: ${dateLabel(period.from)} al ${dateLabel(period.to)}`],
-    ["Las actas se relacionan con siniestros ocurridos en el período; una reunión posterior puede analizar un siniestro anterior."],
+    ["Actas vinculadas a reuniones del cronograma PESV programadas durante el trimestre seleccionado."],
     [],
-    ["Fecha del siniestro", "Vehículo", "Conductor", "Número del acta", "Fecha de reunión", "Estado del acta", "Temas de la reunión", "Investigación / desarrollo registrado", "Compromisos", "Observaciones"],
+    ["Fecha programada", "Frecuencia", "Tema de la reunión", "Estado de la reunión", "Número del acta", "Fecha real del acta", "Estado del acta", "Temas", "Investigación / desarrollo registrado", "Compromisos", "Observaciones"],
     ...records.map((record) => [
-      dateLabel(record.incidentDate),
-      record.vehiclePlate || "",
-      record.driverName || "",
+      dateLabel(record.scheduledDate),
+      record.frequency,
+      record.meetingTopic || "",
+      record.meetingState,
       record.numeroActa ?? "",
       dateLabel(record.fechaReunion),
       record.estado || "",
@@ -62,10 +64,10 @@ export function buildActasSiniestrosExcelBuffer(
     ]),
   ];
   const sheet = XLSX.utils.aoa_to_sheet(title);
-  sheet["!cols"] = [16, 16, 28, 16, 18, 16, 36, 48, 36, 36].map((wch) => ({ wch }));
-  sheet["!autofilter"] = { ref: `A6:J${Math.max(6, records.length + 6)}` };
+  sheet["!cols"] = [16, 15, 32, 18, 16, 18, 16, 36, 48, 36, 36].map((wch) => ({ wch }));
+  sheet["!autofilter"] = { ref: `A6:K${Math.max(6, records.length + 6)}` };
   sheet["!freeze"] = { xSplit: 0, ySplit: 6 };
-  for (let column = 0; column < 10; column += 1) {
+  for (let column = 0; column < 11; column += 1) {
     const cell = XLSX.utils.encode_cell({ r: 5, c: column });
     if (sheet[cell]) sheet[cell].s = {
       font: { name: "Arial", bold: true, color: { rgb: "FFFFFF" } },
@@ -100,7 +102,7 @@ export async function buildActasSiniestrosPdfBuffer(
     documentCode: "PESV-ACTAS-SINIESTROS-02",
   });
   y = addParagraph(doc, `Período: ${dateLabel(period.from)} al ${dateLabel(period.to)}`, { y, bold: true });
-  y = addParagraph(doc, "Actas vinculadas a siniestros ocurridos durante el trimestre. Se conserva el contenido registrado en el Comité PESV.", { y });
+  y = addParagraph(doc, "Copia de las actas vinculadas a reuniones del cronograma PESV del trimestre consultado. El resultado es un solo PDF para cargar ante la entidad.", { y });
   const unique = [...new Map(records.filter((record) => record.actaId).map((record) => [record.actaId, record])).values()];
   if (unique.length === 0) {
     y = addSectionBar(doc, "Resultado del período", y);
@@ -120,7 +122,10 @@ export async function buildActasSiniestrosPdfBuffer(
       ["Número del acta", String(record.numeroActa ?? "Pendiente")],
       ["Fecha de reunión", dateLabel(record.fechaReunion)],
       ["Estado", record.estado || "Sin estado"],
-      ["Siniestro relacionado", `${dateLabel(record.incidentDate)} · ${record.vehiclePlate || "Vehículo sin placa"} · ${record.driverName || "Conductor sin nombre"}`],
+      ["Fecha programada", dateLabel(record.scheduledDate)],
+      ["Frecuencia", record.frequency],
+      ["Tema de la reunión", record.meetingTopic || "—"],
+      ["Estado de la reunión", record.meetingState],
     ], { y, columnWidths: [190, doc.page.width - PDF_CONFIG.MARGIN * 2 - 190] });
     y = addSectionBar(doc, "Temas de la reunión", y);
     y = addParagraph(doc, record.temasOrdenDia || "No hay temas registrados.", { y });
