@@ -1908,6 +1908,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'alto-riesgo',
         'logos',
         'signatures',
+        'evidencias',
         'documentos',
         'programas-capacitacion',
         'copasst-actas',
@@ -1921,7 +1922,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if the path is a company-owned file type
       const isCompanyOwnedFile = companyOwnedPaths.some(pathSegment => objectPath.includes(pathSegment));
       
-      const companyIdMatch = objectPath.match(
+      const companyIdMatch = objectPath.match(/\/uploads\/([^/]+)\/evidencias\//) || objectPath.match(
         /\/(?:curso-50-horas|afiliaciones|alto-riesgo|logos|signatures|documentos|programas-capacitacion|copasst-actas|convivencia-actas|worker-photos|ticket-attachments)\/([^/]+)\//
       );
       const pathCompanyId = companyIdMatch?.[1] || null;

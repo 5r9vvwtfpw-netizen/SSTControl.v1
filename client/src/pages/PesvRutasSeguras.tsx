@@ -23,6 +23,7 @@ import { hasCompanyAdminAccess, canWrite } from "@shared/permissions";
 import { BackToPesvEvaluationButton } from "@/components/BackToPesvEvaluationButton";
 import { Link } from "wouter";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
+import { EvidenceFileInput } from "@/components/pesv/EvidenceFileInput";
 import { downloadAuthenticatedReport } from "@/lib/download-report";
 
 interface RutaPredefinida {
@@ -823,10 +824,13 @@ export default function PesvRutasSeguras() {
     isActive: 1 as number,
     observations: "",
     signageMeasures: "",
+    signageImplemented: 0,
     signageImplementationDate: "",
     signageResponsible: "",
     signageEvidenceReference: "",
     controlPoints: "",
+    controlImplemented: 0,
+    controlImplementationDate: "",
     controlFrequency: "",
     controlResponsible: "",
     controlEvidenceReference: "",
@@ -1026,10 +1030,13 @@ export default function PesvRutasSeguras() {
       mapUrl: formData.mapUrl || undefined,
       observations: formData.observations || undefined,
       signageMeasures: formData.signageMeasures || undefined,
+      signageImplemented: formData.signageImplemented,
       signageImplementationDate: formData.signageImplementationDate || undefined,
       signageResponsible: formData.signageResponsible || undefined,
       signageEvidenceReference: formData.signageEvidenceReference || undefined,
       controlPoints: formData.controlPoints || undefined,
+      controlImplemented: formData.controlImplemented,
+      controlImplementationDate: formData.controlImplementationDate || undefined,
       controlFrequency: formData.controlFrequency || undefined,
       controlResponsible: formData.controlResponsible || undefined,
       controlEvidenceReference: formData.controlEvidenceReference || undefined,
@@ -1062,10 +1069,13 @@ export default function PesvRutasSeguras() {
       isActive: route.isActive,
       observations: route.observations || "",
       signageMeasures: route.signageMeasures || "",
+      signageImplemented: route.signageImplemented || 0,
       signageImplementationDate: route.signageImplementationDate || "",
       signageResponsible: route.signageResponsible || "",
       signageEvidenceReference: route.signageEvidenceReference || "",
       controlPoints: route.controlPoints || "",
+      controlImplemented: route.controlImplemented || 0,
+      controlImplementationDate: route.controlImplementationDate || "",
       controlFrequency: route.controlFrequency || "",
       controlResponsible: route.controlResponsible || "",
       controlEvidenceReference: route.controlEvidenceReference || "",
@@ -1099,10 +1109,13 @@ export default function PesvRutasSeguras() {
       isActive: 1,
       observations: "",
       signageMeasures: "",
+      signageImplemented: 0,
       signageImplementationDate: "",
       signageResponsible: "",
       signageEvidenceReference: "",
       controlPoints: "",
+      controlImplemented: 0,
+      controlImplementationDate: "",
       controlFrequency: "",
       controlResponsible: "",
       controlEvidenceReference: "",
@@ -1386,6 +1399,10 @@ export default function PesvRutasSeguras() {
                         <h3 className="font-medium">Señalización implementada</h3>
                         <p className="text-sm text-muted-foreground">Registre las señales instaladas para esta ruta y cómo se puede verificar su implementación.</p>
                       </div>
+                      <div className="flex items-center gap-2">
+                        <Checkbox checked={formData.signageImplemented === 1} onCheckedChange={(checked) => setFormData({ ...formData, signageImplemented: checked ? 1 : 0 })} />
+                        <Label>Confirmo que esta medida está implementada</Label>
+                      </div>
                       <Textarea
                         aria-label="Señalización implementada"
                         value={formData.signageMeasures}
@@ -1395,7 +1412,7 @@ export default function PesvRutasSeguras() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label>Fecha de implementación</Label>
-                          <Input type="date" value={formData.signageImplementationDate} onChange={(e) => setFormData({ ...formData, signageImplementationDate: e.target.value })} />
+                          <Input type="date" required={formData.signageImplemented === 1} value={formData.signageImplementationDate} onChange={(e) => setFormData({ ...formData, signageImplementationDate: e.target.value })} />
                         </div>
                         <div className="space-y-2">
                           <Label>Responsable de la señalización</Label>
@@ -1404,6 +1421,7 @@ export default function PesvRutasSeguras() {
                         <div className="space-y-2 md:col-span-2">
                           <Label>Referencia del soporte</Label>
                           <Input value={formData.signageEvidenceReference} onChange={(e) => setFormData({ ...formData, signageEvidenceReference: e.target.value })} placeholder="Nombre del documento, consecutivo o ubicación del soporte" />
+                          <EvidenceFileInput companyId={formData.companyId || currentCompany?.id} value={formData.signageEvidenceReference} label="Adjuntar evidencia de señalización" onUploaded={(path) => setFormData((previous) => ({ ...previous, signageEvidenceReference: path }))} />
                         </div>
                       </div>
                     </div>
@@ -1412,6 +1430,10 @@ export default function PesvRutasSeguras() {
                         <h3 className="font-medium">Puestos de control</h3>
                         <p className="text-sm text-muted-foreground">Registre los puntos y la frecuencia de control aplicados en esta ruta.</p>
                       </div>
+                      <div className="flex items-center gap-2">
+                        <Checkbox checked={formData.controlImplemented === 1} onCheckedChange={(checked) => setFormData({ ...formData, controlImplemented: checked ? 1 : 0 })} />
+                        <Label>Confirmo que estos puestos de control están implementados</Label>
+                      </div>
                       <Textarea
                         aria-label="Puestos de control"
                         value={formData.controlPoints}
@@ -1419,6 +1441,10 @@ export default function PesvRutasSeguras() {
                         placeholder="Ubicación de cada puesto y controles realizados"
                       />
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Fecha de implementación de los puestos</Label>
+                          <Input type="date" required={formData.controlImplemented === 1} value={formData.controlImplementationDate} onChange={(e) => setFormData({ ...formData, controlImplementationDate: e.target.value })} />
+                        </div>
                         <div className="space-y-2">
                           <Label>Frecuencia de control</Label>
                           <Input value={formData.controlFrequency} onChange={(e) => setFormData({ ...formData, controlFrequency: e.target.value })} placeholder="Ej.: en cada despacho" />
@@ -1430,6 +1456,7 @@ export default function PesvRutasSeguras() {
                         <div className="space-y-2 md:col-span-2">
                           <Label>Referencia del soporte</Label>
                           <Input value={formData.controlEvidenceReference} onChange={(e) => setFormData({ ...formData, controlEvidenceReference: e.target.value })} placeholder="Nombre del documento, consecutivo o ubicación del soporte" />
+                          <EvidenceFileInput companyId={formData.companyId || currentCompany?.id} value={formData.controlEvidenceReference} label="Adjuntar evidencia de puestos de control" onUploaded={(path) => setFormData((previous) => ({ ...previous, controlEvidenceReference: path }))} />
                         </div>
                       </div>
                     </div>

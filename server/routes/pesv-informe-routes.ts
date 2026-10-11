@@ -18,6 +18,7 @@ import {
   buildLeccionesPdfBuffer,
   type LeccionReportRow,
 } from "../reports/pesv-lecciones-aprendidas-report";
+import { buildMedidasPrevencionPdfBuffer } from "../reports/pesv-medidas-prevencion-report";
 
 type ReportDataset = {
   company: typeof schema.companies.$inferSelect;
@@ -205,6 +206,116 @@ function companyFileSlug(companyName: string): string {
 
 export function registerPesvInformeRoutes(app: Express) {
   const reportViewPermission = requirePermission("road_incidents:view");
+
+  async function loadQuarterlyMeasures(req: Request, res: Response) {
+    const period = parseReportPeriod(req, res);
+    if (!period?.from || !period.to) {
+      if (period) res.status(400).json({ message: "Selecciona el trimestre completo." });
+      return null;
+    }
+    const companyId = getAuthorizedReportCompanyId(req);
+    if (!companyId) {
+      res.status(403).json({ message: "Selecciona una empresa autorizada para consultar el informe." });
+      return null;
+    }
+    const [company] = await db.select().from(schema.companies).where(eq(schema.companies.id, companyId)).limit(1);
+    if (!company) {
+      res.status(404).json({ message: "No se encontró la empresa seleccionada." });
+      return null;
+    }
+    const allRoutes = await db.select().from(schema.safeRoutes).where(eq(schema.safeRoutes.companyId, companyId));
+    const incomplete: string[] = [];
+    const routes = allRoutes.filter((route) => {
+      const content = [route.routeName, route.observations, route.signageMeasures, route.controlPoints].join(" ").toUpperCase();
+      if (content.includes("PRUEBA FUNCIONAL")) return false;
+      let signageInPeriod = false;
+      let controlInPeriod = false;
+      if (route.signageImplemented === 1) {
+        if (!route.signageImplementationDate) incomplete.push(`${route.routeName}: indica la fecha de implementación de señalización en Rutas Seguras (H08).`);
+        else signageInPeriod = route.signageImplementationDate >= period.from! && route.signageImplementationDate <= period.to!;
+      }
+      if (route.controlImplemented === 1) {
+        if (!route.controlImplementationDate) incomplete.push(`${route.routeName}: indica la fecha de implementación de los puestos de control en Rutas Seguras (H08).`);
+        else controlInPeriod = route.controlImplementationDate >= period.from! && route.controlImplementationDate <= period.to!;
+      }
+      if (!signageInPeriod && !controlInPeriod) return false;
+      if (signageInPeriod && (!route.signageMeasures?.trim() || !route.signageEvidenceReference?.startsWith(`uploads/${companyId}/evidencias/`))) {
+        incomplete.push(`${route.routeName}: completa la descripción y adjunta el soporte de señalización en Rutas Seguras (H08).`);
+      }
+      if (controlInPeriod && (!route.controlPoints?.trim() || !route.controlEvidenceReference?.startsWith(`uploads/${companyId}/evidencias/`))) {
+        incomplete.push(`${route.routeName}: completa los puestos y adjunta el soporte de control en Rutas Seguras (H08).`);
+      }
+      return true;
+    });
+    const allExpenses = await db.select().from(schema.pesvGpsExpenses)
+      .where(and(
+        eq(schema.pesvGpsExpenses.companyId, companyId),
+        gte(schema.pesvGpsExpenses.expenseDate, period.from),
+        lte(schema.pesvGpsExpenses.expenseDate, period.to),
+      ));
+    const expenses = allExpenses.filter((expense) =>
+      ![expense.provider, expense.concept, expense.observations].join(" ").toUpperCase().includes("PRUEBA FUNCIONAL"));
+    const missing: string[] = [];
+    if (!company.legalRepName?.trim()) missing.push("Configura el nombre del Representante Legal en Empresas.");
+    if (!company.legalRepId?.trim()) missing.push("Configura la identificación del Representante Legal en Empresas.");
+    if (!company.legalRepSignatureUrl?.trim()) missing.push("Carga la firma del Representante Legal en Empresas.");
+    if (routes.length === 0 && expenses.length === 0) missing.push("Registra medidas implementadas en Rutas Seguras o gastos GPS del trimestre.");
+    missing.push(...incomplete);
+    for (const expense of expenses) if (!expense.supportReference?.startsWith(`uploads/${companyId}/evidencias/`)) {
+      missing.push(`${expense.provider} · ${expense.expenseDate}: adjunta la factura o el soporte en Monitoreo GPS (H07).`);
+    }
+    return { company, routes, expenses, period, missing };
+  }
+
+  app.get("/api/pesv/informes-trimestrales/medidas-prevencion/estado", authRequireAuth, reportViewPermission, async (req, res) => {
+    try {
+      const data = await loadQuarterlyMeasures(req, res);
+      if (!data) return;
+      res.json({
+        companyName: data.company.name,
+        companyNit: data.company.nit,
+        representativeName: data.company.legalRepName,
+        period: data.period,
+        routeMeasures: data.routes.length,
+        gpsExpenses: data.expenses.length,
+        gpsExpensesTotalCop: data.expenses.reduce((sum, row) => sum + row.amountCop, 0),
+        missing: data.missing,
+      });
+    } catch (error) {
+      console.error("Error consultando medidas preventivas trimestrales:", error);
+      res.status(500).json({ message: "No fue posible revisar los datos del informe." });
+    }
+  });
+
+  app.get("/api/pesv/informes-trimestrales/medidas-prevencion.pdf", authRequireAuth, reportViewPermission, async (req, res) => {
+    try {
+      if (req.query.confirm !== "1") {
+        return res.status(409).json({ message: "Confirma que revisaste los datos antes de generar la certificación." });
+      }
+      const data = await loadQuarterlyMeasures(req, res);
+      if (!data) return;
+      if (data.missing.length) {
+        return res.status(409).json({ message: "Completa los datos del informe antes de generar la certificación.", missing: data.missing });
+      }
+      const subscription = await storage.getSubscriptionByCompany(data.company.id);
+      const trialStatus = getTrialStatus(subscription?.status || "trial", subscription?.trialEnd || null, true, true);
+      const buffer = await buildMedidasPrevencionPdfBuffer(
+        data.company,
+        data.routes,
+        data.expenses,
+        { from: data.period.from!, to: data.period.to! },
+        trialStatus.requiresWatermark,
+      );
+      const filename = `certificacion_medidas_prevencion_${companyFileSlug(data.company.name)}_${data.period.from}_${data.period.to}.pdf`;
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+      res.setHeader("Content-Length", buffer.length);
+      res.send(buffer);
+    } catch (error) {
+      console.error("Error generando certificación trimestral de medidas preventivas:", error);
+      res.status(500).json({ message: "No fue posible generar la certificación PDF." });
+    }
+  });
 
   async function loadQuarterlyLessonsDataset(req: Request, res: Response) {
     const period = parseReportPeriod(req, res);

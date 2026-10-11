@@ -105,6 +105,7 @@ import PesvInformesTrimestrales from "@/pages/PesvInformesTrimestrales";
 import PesvInformeTrimestralSiniestros from "@/pages/PesvInformeTrimestralSiniestros";
 import PesvInformeTrimestralActas from "@/pages/PesvInformeTrimestralActas";
 import PesvInformeTrimestralLecciones from "@/pages/PesvInformeTrimestralLecciones";
+import PesvInformeTrimestralMedidas from "@/pages/PesvInformeTrimestralMedidas";
 import PesvMejoraContinua from "@/pages/PesvMejoraContinua";
 import PesvRevisionDireccion from "@/pages/PesvRevisionDireccion";
 import PesvCapacitaciones from "@/pages/PesvCapacitaciones";
@@ -429,6 +430,7 @@ function Router() {
       <SubscriptionProtectedRoute path="/pesv/informes-trimestrales/siniestros" component={PesvInformeTrimestralSiniestros} feature="hasPESV" featureName="Informe trimestral PESV - Siniestros" />
       <SubscriptionProtectedRoute path="/pesv/informes-trimestrales/actas-siniestros" component={PesvInformeTrimestralActas} feature="hasPESV" featureName="Informe trimestral PESV - Actas de siniestros" />
       <SubscriptionProtectedRoute path="/pesv/informes-trimestrales/lecciones-aprendidas" component={PesvInformeTrimestralLecciones} feature="hasPESV" featureName="Informe trimestral PESV - Lecciones aprendidas" />
+      <SubscriptionProtectedRoute path="/pesv/informes-trimestrales/medidas-prevencion" component={PesvInformeTrimestralMedidas} feature="hasPESV" featureName="Informe trimestral PESV - Medidas de prevención" />
       <SubscriptionProtectedRoute path="/pesv/capacitaciones" component={PesvCapacitaciones} feature="hasPESV" featureName="Módulo PESV - Capacitaciones" />
       <SubscriptionProtectedRoute path="/pesv/induccion-virtual" component={PesvInduccionVirtual} feature="hasPESV" featureName="Módulo PESV - Inducción Virtual" />
       <SubscriptionProtectedRoute path="/pesv/auditorias" component={PesvAuditorias} feature="hasPESV" featureName="Módulo PESV - Auditorías" />

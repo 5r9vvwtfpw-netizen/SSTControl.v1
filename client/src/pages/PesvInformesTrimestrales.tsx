@@ -20,7 +20,7 @@ export default function PesvInformesTrimestrales() {
           <h2 id="quarterly-report-list-title" className="text-lg font-semibold">
             Informes
           </h2>
-          <Badge variant="secondary">3 de 9 incorporados</Badge>
+          <Badge variant="secondary">4 de 9 incorporados</Badge>
         </div>
 
         <Card>
@@ -40,6 +40,29 @@ export default function PesvInformesTrimestrales() {
           <CardContent className="flex justify-end border-t pt-4">
             <Button asChild>
               <Link href="/pesv/informes-trimestrales/siniestros" data-testid="link-quarterly-siniestros-report">
+                Abrir informe
+                <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <div className="flex items-start gap-3">
+              <div className="rounded-md bg-primary/10 p-2 text-primary">
+                <FileText className="h-5 w-5" aria-hidden="true" />
+              </div>
+              <div className="space-y-1">
+                <CardTitle>Certificación de medidas para prevenir la accidentalidad</CardTitle>
+                <CardDescription>
+                  Certificación trimestral basada en medidas de Rutas Seguras y gastos GPS, con firma registrada del Representante Legal.
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="flex justify-end border-t pt-4">
+            <Button asChild>
+              <Link href="/pesv/informes-trimestrales/medidas-prevencion" data-testid="link-quarterly-prevention-measures">
                 Abrir informe
                 <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
               </Link>

@@ -25,6 +25,7 @@ import { hasCompanyAdminAccess, canWrite } from "@shared/permissions";
 import { EvaluacionPesvContextHeader } from "@/components/EvaluacionPesvContextHeader";
 import { useParams, Link } from "wouter";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
+import { EvidenceFileInput } from "@/components/pesv/EvidenceFileInput";
 
 export default function PesvMonitoreoGps() {
   const { user } = useAuth();
@@ -1665,6 +1666,7 @@ function GpsExpenseSection({ companyId, canManage }: { companyId: string | null;
             <Input aria-label="Inicio del periodo GPS" type="date" value={form.periodStart} onChange={e => set("periodStart", e.target.value)} />
             <Input aria-label="Fin del periodo GPS" type="date" value={form.periodEnd} onChange={e => set("periodEnd", e.target.value)} />
             <Input aria-label="Referencia del soporte GPS" placeholder="Factura o referencia del soporte" value={form.supportReference} onChange={e => set("supportReference", e.target.value)} />
+            <EvidenceFileInput companyId={companyId} value={form.supportReference} label="Adjuntar factura o soporte GPS" onUploaded={(path) => set("supportReference", path)} />
             <div className="md:col-span-2 xl:col-span-3 flex gap-2">
               <Input aria-label="Observaciones del gasto GPS" placeholder="Observaciones" value={form.observations} onChange={e => set("observations", e.target.value)} />
               <Button type="submit" disabled={saveMutation.isPending}>{editingId ? "Actualizar" : "Registrar gasto"}</Button>
@@ -1684,7 +1686,7 @@ function GpsExpenseSection({ companyId, canManage }: { companyId: string | null;
                   <TableCell><div className="font-medium">{row.provider}</div><div className="text-sm text-muted-foreground">{row.expenseType}: {row.concept}</div>{row.coverage && <div className="text-xs text-muted-foreground">{row.coverage}</div>}</TableCell>
                   <TableCell>{row.periodStart || "—"}{row.periodEnd ? ` a ${row.periodEnd}` : ""}</TableCell>
                   <TableCell>{new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(row.amountCop)}</TableCell>
-                  <TableCell>{row.supportReference || "—"}</TableCell>
+                  <TableCell>{row.supportReference?.startsWith("uploads/") ? <a className="text-primary underline" href={`/objects/${row.supportReference}`} target="_blank" rel="noreferrer">Abrir soporte</a> : row.supportReference || "—"}</TableCell>
                   {canManage && <TableCell className="whitespace-nowrap"><Button size="sm" variant="outline" onClick={() => edit(row)}>Editar</Button><Button size="icon" variant="ghost" aria-label="Eliminar gasto GPS" onClick={() => { if (confirm("¿Eliminar este gasto GPS?")) deleteMutation.mutate(row.id); }}><Trash2 className="h-4 w-4" /></Button></TableCell>}
                 </TableRow>
               ))}</TableBody>

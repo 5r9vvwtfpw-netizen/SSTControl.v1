@@ -11189,10 +11189,13 @@ export const safeRoutes = pgTable("safe_routes", {
   isActive: integer("is_active").notNull().default(1), // 0=no, 1=sí
   observations: text("observations"),
   signageMeasures: text("signage_measures"),
+  signageImplemented: integer("signage_implemented").notNull().default(0),
   signageImplementationDate: date("signage_implementation_date"),
   signageResponsible: text("signage_responsible"),
   signageEvidenceReference: text("signage_evidence_reference"),
   controlPoints: text("control_points"),
+  controlImplemented: integer("control_implemented").notNull().default(0),
+  controlImplementationDate: date("control_implementation_date"),
   controlFrequency: text("control_frequency"),
   controlResponsible: text("control_responsible"),
   controlEvidenceReference: text("control_evidence_reference"),

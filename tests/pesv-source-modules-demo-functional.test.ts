@@ -136,6 +136,13 @@ test("DEMO-PRUEBA: captura, consulta y edición de Rutas Seguras y gastos GPS", 
     });
     assert.equal(updatedExpense.observations, `${marker} · edición verificada; no es un gasto real`);
     outcomes.push("Monitoreo GPS: consulta y edición correctas");
+
+    const reportState = await api<{ routeMeasures: number; gpsExpenses: number }>(
+      `/api/pesv/informes-trimestrales/medidas-prevencion/estado?from=${date.slice(0, 4)}-01-01&to=${date.slice(0, 4)}-12-31`,
+    );
+    assert.equal(typeof reportState.routeMeasures, "number");
+    assert.equal(typeof reportState.gpsExpenses, "number");
+    outcomes.push("Generador trimestral: consulta autenticada del estado y aislamiento de datos de prueba correctos");
   } finally {
     if (temporaryAccountPrepared) {
       await db.update(schema.users).set({
