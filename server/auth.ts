@@ -17,6 +17,7 @@ import { isIP } from "net";
 import { loginRateLimiter, passwordResetRateLimiter, registrationRateLimiter } from "./middleware/rate-limit";
 import logger from "./lib/logger";
 import { enrichSessionLocation, processSecurityAlert } from "./services/security-access";
+import { isInternalTestCompany } from "./lib/internal-test-company";
 
 // ── Monitoreo de sesiones ─────────────────────────────────────────────────────
 // La sesión se cierra únicamente después de 8 horas sin actividad.
@@ -162,6 +163,99 @@ function destroyStoredSession(sessionId: string): Promise<void> {
         logger.error({ err: error, sessionId }, "[SESSION] Error destruyendo sesión simultánea");
       }
       resolve();
+    });
+  });
+}
+
+const SUBSCRIPTION_EXEMPT_ROLES = new Set([
+  "superadmin",
+  "soporte",
+  "lso",
+  "lso_externo",
+  "trabajador",
+]);
+
+function isSubscriptionExempt(user: SelectUser): boolean {
+  return SUBSCRIPTION_EXEMPT_ROLES.has(user.role) ||
+    Boolean(user.companyId && isInternalTestCompany(user.companyId));
+}
+
+async function getUserSubscriptionAccess(user: SelectUser) {
+  if (!user.companyId || isSubscriptionExempt(user)) {
+    return {
+      isValid: true,
+      status: "not_applicable",
+      code: "SUBSCRIPTION_NOT_REQUIRED",
+      message: "",
+    };
+  }
+  return verifySubscriptionStatus(user.companyId);
+}
+
+async function revokeCompanySessions(companyId: string): Promise<void> {
+  const activeSessions = await db.execute(sql`
+    SELECT s.session_id
+    FROM user_sessions_log s
+    INNER JOIN users u ON u.id = s.user_id
+    WHERE u.company_id = ${companyId}
+      AND s.is_active = true
+      AND s.session_id IS NOT NULL
+  `);
+  const sessionIds = ((activeSessions as any).rows ?? [])
+    .map((row: { session_id: string | null }) => row.session_id)
+    .filter((sessionId: string | null): sessionId is string => Boolean(sessionId));
+
+  await db.execute(sql`
+    UPDATE user_sessions_log
+    SET is_active = false,
+        logout_at = COALESCE(logout_at, now()),
+        duration_minutes = EXTRACT(EPOCH FROM (COALESCE(logout_at, now()) - login_at)) / 60
+    WHERE user_id IN (SELECT id FROM users WHERE company_id = ${companyId})
+      AND is_active = true
+  `);
+
+  await Promise.all(sessionIds.map(destroyStoredSession));
+}
+
+async function rejectBlockedCompanyUser(user: SelectUser, req: Request, res: Response): Promise<boolean> {
+  try {
+    const subscription = await getUserSubscriptionAccess(user);
+    if (subscription.isValid) return false;
+
+    if (user.companyId) await revokeCompanySessions(user.companyId);
+    if (req.isAuthenticated?.() && (req.user as SelectUser | undefined)?.id === user.id) {
+      await destroyRequestSession(req, res);
+    }
+    res.status(403).json({
+      error: subscription.message || "El acceso de esta empresa está bloqueado.",
+      code: "SUBSCRIPTION_BLOCKED",
+      subscriptionStatus: subscription.status,
+    });
+    return true;
+  } catch (error) {
+    logger.error({ err: error, userId: user.id, companyId: user.companyId }, "[AUTH] Error comprobando acceso por suscripción");
+    res.status(503).json({
+      error: "No se pudo verificar si la empresa tiene el acceso habilitado. Intenta nuevamente.",
+      code: "SUBSCRIPTION_CHECK_ERROR",
+    });
+    return true;
+  }
+}
+
+async function destroyRequestSession(req: Request, res: Response): Promise<void> {
+  await new Promise<void>((resolve) => {
+    req.logout((logoutError) => {
+      if (logoutError) logger.error({ err: logoutError }, "[SESSION] Error cerrando sesión bloqueada");
+      if (!req.session) {
+        res.clearCookie("connect.sid");
+        resolve();
+        return;
+      }
+      req.session.destroy((destroyError) => {
+        if (destroyError) logger.error({ err: destroyError }, "[SESSION] Error destruyendo sesión bloqueada");
+        res.clearCookie("connect.sid");
+        resolve();
+      });
     });
   });
 }
@@ -423,9 +517,28 @@ async function enforceAuthenticatedSessionActivity(req: Request, res: Response, 
       return;
     }
 
+    // /api/user must remain readable so the frontend can show the suspension
+    // notice. Logout is also always allowed. Every other authenticated API
+    // request is checked here, including routes that only use requireAuth.
+    const isSubscriptionStatusRead = req.method === "GET" && req.path === "/api/user";
+    const isProtectedResource =
+      req.path.startsWith("/api/") ||
+      req.path.startsWith("/objects/") ||
+      req.path.startsWith("/uploads/");
+    if (isProtectedResource && !isSubscriptionStatusRead) {
+      const blocked = await rejectBlockedCompanyUser(req.user as SelectUser, req, res);
+      if (blocked) return;
+    }
+
     return next();
   } catch (error) {
-    logger.error({ error }, "[SESSION] Error validando actividad; se conserva la sesión");
+    logger.error({ error }, "[SESSION] Error validando actividad o suscripción");
+    if (req.path.startsWith("/api/") || req.path.startsWith("/objects/") || req.path.startsWith("/uploads/")) {
+      return res.status(503).json({
+        error: "No se pudo verificar si la empresa tiene el acceso habilitado. Intenta nuevamente.",
+        code: "SUBSCRIPTION_CHECK_ERROR",
+      });
+    }
     return next();
   }
 }
@@ -873,6 +986,8 @@ export function setupAuth(app: Express) {
         return res.status(401).json({ error: "Usuario o contraseña incorrectos" });
       }
 
+      if (await rejectBlockedCompanyUser(user, req, res)) return;
+
       try {
         if (await isRetiredWorkerPortalUser(user)) {
           return res.status(403).json({ error: RETIRED_WORKER_PORTAL_MESSAGE, code: "WORKER_RETIRED" });
@@ -1057,6 +1172,8 @@ export function setupAuth(app: Express) {
         return res.status(403).json({ error: "Esta verificación no corresponde al portal de soporte." });
       }
 
+      if (await rejectBlockedCompanyUser(user, req, res)) return;
+
       const consumed = await db.execute(sql`
         UPDATE login_verification_challenges
         SET used_at = now()
@@ -1158,6 +1275,10 @@ export function setupAuth(app: Express) {
         subscriptionStatus = await getSubscriptionStatus(user.companyId);
       } catch (error) {
         logger.error({ error }, "Error getting subscription status");
+        return res.status(503).json({
+          error: "No se pudo verificar si la empresa tiene el acceso habilitado.",
+          code: "SUBSCRIPTION_CHECK_ERROR",
+        });
       }
     }
     

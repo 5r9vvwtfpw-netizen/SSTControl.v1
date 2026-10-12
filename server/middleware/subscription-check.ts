@@ -53,14 +53,14 @@ export async function getSubscriptionStatus(companyId: string): Promise<Subscrip
       .limit(1);
     subscription = result;
   } catch (error: any) {
-    logger.error({ error: error.message, companyId }, "Error querying subscription status - allowing access as fallback");
+    logger.error({ error: error.message, companyId }, "Error querying subscription status - blocking access until verified");
     return {
-      isActive: true,
-      isBlocked: false,
+      isActive: false,
+      isBlocked: true,
       isTrial: false,
       trialEndsAt: null,
-      subscriptionStatus: "active",
-      blockedReason: null,
+      subscriptionStatus: "verification_error",
+      blockedReason: "No se pudo verificar el estado de acceso de la empresa. Intenta nuevamente más tarde.",
       daysRemaining: null,
     };
   }
@@ -188,14 +188,15 @@ export async function getSubscriptionStatus(companyId: string): Promise<Subscrip
   const trialEndsAt = subscription.trialEndsAt ? new Date(subscription.trialEndsAt) : null;
   const status = subscription.subscriptionStatus || "trial";
 
-  if (status === "blocked" || subscription.blockedAt) {
+  if (status === "blocked" || status === "suspended" || subscription.blockedAt) {
     return {
       isActive: false,
       isBlocked: true,
       isTrial: false,
       trialEndsAt,
-      subscriptionStatus: "blocked",
-      blockedReason: subscription.blockedReason || "Suscripción bloqueada por falta de pago",
+      subscriptionStatus: status === "suspended" ? "suspended" : "blocked",
+      blockedReason: subscription.blockedReason ||
+        (status === "suspended" ? "El acceso de la empresa está suspendido." : "Suscripción bloqueada por falta de pago"),
       daysRemaining: null,
     };
   }
