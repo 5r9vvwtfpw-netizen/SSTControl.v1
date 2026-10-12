@@ -5,7 +5,7 @@ import test from "node:test";
 
 const enabled = process.env.RUN_PESV_PREVENTION_DEMO_FUNCTIONAL === "1";
 const companyId = "demo-company-001";
-const marker = `PRUEBA FUNCIONAL H07-H08 DEMO-PRUEBA ${new Date().toISOString().slice(0, 10)} ${randomBytes(4).toString("hex")}`;
+const marker = `PRUEBA FUNCIONAL H07-H08 DEMO-PRUEBA ${new Date().toISOString().slice(0, 10)}`;
 
 function currentQuarter() {
   const now = new Date();
@@ -100,6 +100,7 @@ test("DEMO-PRUEBA: módulos H07/H08 alimentan el informe trimestral y conservan 
 
     const vehicles = await api<Array<{ id: string; plate: string; observations?: string | null }>>("/api/vehicles");
     const testVehicle = vehicles.find((item) => item.observations?.includes(marker))
+      ?? vehicles.find((item) => item.observations?.includes("PRUEBA FUNCIONAL H07-H08 DEMO-PRUEBA"))
       ?? await api<{ id: string; plate: string }>("/api/vehicles", {
         method: "POST",
         body: JSON.stringify({
@@ -151,6 +152,17 @@ test("DEMO-PRUEBA: módulos H07/H08 alimentan el informe trimestral y conservan 
           controlEvidenceReference: uploaded.objectPath,
         }),
       });
+    if (route.id) {
+      await api(`/api/safe-routes/${route.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          signageResponsible: marker,
+          controlResponsible: marker,
+          signageEvidenceReference: uploaded.objectPath,
+          controlEvidenceReference: uploaded.objectPath,
+        }),
+      });
+    }
 
     const expenses = await api<Array<{ id: string; concept: string }>>("/api/pesv/gps-expenses");
     const existingExpense = expenses.find((item) => item.concept === "Monitoreo GPS — registro de validación");
@@ -182,19 +194,26 @@ test("DEMO-PRUEBA: módulos H07/H08 alimentan el informe trimestral y conservan 
           }),
         });
 
-    const tracking = await api<{ id: string; speedExceeded: number }>("/api/vehicle-gps-tracking", {
-      method: "POST",
-      body: JSON.stringify({
-        companyId,
-        vehicleId: testVehicle.id,
-        trackingDate: period.today,
-        trackingTime: "10:15",
-        speed: 67,
-        maxSpeedAllowed: 50,
-        speedExceeded: 1,
-        observations: `Validación trimestral vinculada al vehículo ${testVehicle.plate}`,
-      }),
-    });
+    const expectedTrackingNote = `Validación trimestral vinculada al vehículo ${testVehicle.plate}`;
+    const priorTrackingRows = await api<Array<{ id: string; trackingDate: string; trackingTime: string | null; speedExceeded: number | null; observations: string | null }>>("/api/vehicle-gps-tracking");
+    const existingTracking = priorTrackingRows.find((row) => row.trackingDate === period.today
+      && row.trackingTime === "10:15"
+      && row.observations === expectedTrackingNote);
+    const tracking = existingTracking
+      ? { id: existingTracking.id, speedExceeded: existingTracking.speedExceeded || 0 }
+      : await api<{ id: string; speedExceeded: number }>("/api/vehicle-gps-tracking", {
+          method: "POST",
+          body: JSON.stringify({
+            companyId,
+            vehicleId: testVehicle.id,
+            trackingDate: period.today,
+            trackingTime: "10:15",
+            speed: 67,
+            maxSpeedAllowed: 50,
+            speedExceeded: 1,
+            observations: expectedTrackingNote,
+          }),
+        });
     assert.equal(tracking.speedExceeded, 1, "El registro debe identificar el exceso de velocidad.");
 
     const query = new URLSearchParams({ from: period.from, to: period.to }).toString();
@@ -227,11 +246,12 @@ test("DEMO-PRUEBA: módulos H07/H08 alimentan el informe trimestral y conservan 
         return { name: pair.slice(0, separator), value: pair.slice(separator + 1), url: browserBaseUrl };
       }));
       const page = await context.newPage();
+      await page.setViewportSize({ width: 1280, height: 1400 });
       const pageErrors: string[] = [];
       page.on("pageerror", (error) => pageErrors.push(error.message));
       await page.goto(`${browserBaseUrl}/pesv/informes-trimestrales/medidas-prevencion`, { waitUntil: "domcontentloaded" });
       await page.getByRole("heading", { name: /Certificación de medidas para prevenir/i }).waitFor({ timeout: 20_000 });
-      await page.getByText("DEMO-PRUEBA", { exact: false }).waitFor({ timeout: 20_000 });
+      await page.getByText("Medidas registradas en Rutas Seguras", { exact: false }).waitFor({ timeout: 20_000 });
       await page.screenshot({
         path: `attached_assets/DEMO-PRUEBA_informe_medidas_T${period.quarter}_${period.year}_prueba_funcional.png`,
         fullPage: true,
