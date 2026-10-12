@@ -151,6 +151,34 @@ export default function PesvInformeTrimestralMedidas() {
                 <div className="rounded-md border p-3"><span className="text-sm text-muted-foreground">Gastos GPS registrados</span><p className="text-xl font-semibold">{data.gpsExpenses}</p></div>
                 <div className="rounded-md border p-3"><span className="text-sm text-muted-foreground">Total GPS del período</span><p className="text-xl font-semibold">{new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(data.gpsExpensesTotalCop)}</p></div>
               </div>
+              <Card className="bg-muted/20">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Módulos donde se gestiona esta información</CardTitle>
+                  <CardDescription>Accede a los módulos fuente desde aquí, aunque no haya pendientes señalados.</CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-3 md:grid-cols-3">
+                  <div className="space-y-2 rounded-md border bg-background p-3">
+                    <p className="font-medium">Rutas Seguras</p>
+                    <p className="text-sm text-muted-foreground"><strong>Paso del PESV:</strong> H08 — Rutas seguras.</p>
+                    <p className="text-sm text-muted-foreground"><strong>Ruta:</strong> PESV &gt; Hacer &gt; Rutas Seguras.</p>
+                    <p className="text-sm">Medidas del período: {data.routeMeasures}</p>
+                    <Button variant="outline" size="sm" asChild><Link href="/pesv/rutas-seguras">Abrir Rutas Seguras (H08)</Link></Button>
+                  </div>
+                  <div className="space-y-2 rounded-md border bg-background p-3">
+                    <p className="font-medium">Monitoreo GPS</p>
+                    <p className="text-sm text-muted-foreground"><strong>Paso del PESV:</strong> H07 — Gestión de la velocidad segura.</p>
+                    <p className="text-sm text-muted-foreground"><strong>Ruta:</strong> PESV &gt; Hacer &gt; Monitoreo GPS.</p>
+                    <p className="text-sm">Registros: {data.gpsMonitoringRecords} · Alertas: {data.speedAlerts} · Gastos: {data.gpsExpenses}</p>
+                    <Button variant="outline" size="sm" asChild><Link href="/pesv/monitoreo-gps">Abrir Monitoreo GPS (H07)</Link></Button>
+                  </div>
+                  <div className="space-y-2 rounded-md border bg-background p-3">
+                    <p className="font-medium">Datos del Representante Legal</p>
+                    <p className="text-sm text-muted-foreground"><strong>Origen:</strong> ficha de la empresa; se usa para firmar la certificación.</p>
+                    <p className="text-sm text-muted-foreground"><strong>Ruta:</strong> Administración Global &gt; Empresas &gt; Editar empresa.</p>
+                    <Button variant="outline" size="sm" asChild><Link href="/empresas">Abrir Empresas</Link></Button>
+                  </div>
+                </CardContent>
+              </Card>
               {data.missing.length > 0 && (
                 <Alert>
                   <AlertTriangle className="h-4 w-4" />
