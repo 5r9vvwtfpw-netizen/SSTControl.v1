@@ -118,8 +118,11 @@ export const routePermissions: Record<string, Permission[]> = {
   "/pesv/inspecciones": ["vehicle_inspections:view"],
   "/pesv/siniestros": ["road_incidents:view"],
   "/pesv/informes": ["road_incidents:view"],
-  "/pesv/informes-trimestrales": ["road_incidents:view"],
-  "/pesv/informes-trimestrales/medidas-prevencion": ["road_incidents:view"],
+  "/pesv/informes-trimestrales": ["billing:global_view"], // Oculto para clientes hasta completar los informes
+  "/pesv/informes-trimestrales/siniestros": ["billing:global_view"],
+  "/pesv/informes-trimestrales/actas-siniestros": ["billing:global_view"],
+  "/pesv/informes-trimestrales/lecciones-aprendidas": ["billing:global_view"],
+  "/pesv/informes-trimestrales/medidas-prevencion": ["billing:global_view"],
   "/pesv/capacitaciones": ["road_trainings:view", "road_safety_trainings:view"],
   "/pesv/induccion-virtual": ["road_trainings:view", "road_safety_trainings:view"],
   "/pesv/auditorias": ["pesv_audits:view"],
