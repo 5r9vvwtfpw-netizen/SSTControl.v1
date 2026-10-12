@@ -310,7 +310,6 @@ export function PHVANavigation() {
 
   const filteredPesvNavItems = useMemo(() => {
     return pesvNavMenuItems.filter(item => {
-      if (item.path === "/pesv/informes-trimestrales" && !import.meta.env.DEV) return false;
       if (user?.role === 'tecnico_mecanico' && item.path === '/pesv') return false;
       return canAccessRoute(userPermissions, item.path);
     });

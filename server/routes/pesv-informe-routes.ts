@@ -205,12 +205,6 @@ function companyFileSlug(companyName: string): string {
 }
 
 export function registerPesvInformeRoutes(app: Express) {
-  app.use("/api/pesv/informes-trimestrales", (_req, res, next) => {
-    if (process.env.NODE_ENV === "production") {
-      return res.status(404).json({ message: "No encontrado." });
-    }
-    next();
-  });
   const reportViewPermission = requirePermission("road_incidents:view");
 
   async function loadQuarterlyMeasures(req: Request, res: Response) {

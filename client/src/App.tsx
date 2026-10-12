@@ -426,11 +426,11 @@ function Router() {
       <SubscriptionProtectedRoute path="/pesv/inspecciones" component={PesvInspecciones} feature="hasPESV" featureName="Módulo PESV - Inspecciones" />
       <SubscriptionProtectedRoute path="/pesv/siniestros" component={PesvSiniestros} feature="hasPESV" featureName="Módulo PESV - Siniestros" />
       <SubscriptionProtectedRoute path="/pesv/informes" component={PesvInformes} feature="hasPESV" featureName="Informes PESV" />
-      <DevelopmentOnlyQuarterlyRoute path="/pesv/informes-trimestrales" component={PesvInformesTrimestrales} featureName="Informes trimestrales PESV" />
-      <DevelopmentOnlyQuarterlyRoute path="/pesv/informes-trimestrales/siniestros" component={PesvInformeTrimestralSiniestros} featureName="Informe trimestral PESV - Siniestros" />
-      <DevelopmentOnlyQuarterlyRoute path="/pesv/informes-trimestrales/actas-siniestros" component={PesvInformeTrimestralActas} featureName="Informe trimestral PESV - Actas de siniestros" />
-      <DevelopmentOnlyQuarterlyRoute path="/pesv/informes-trimestrales/lecciones-aprendidas" component={PesvInformeTrimestralLecciones} featureName="Informe trimestral PESV - Lecciones aprendidas" />
-      <DevelopmentOnlyQuarterlyRoute path="/pesv/informes-trimestrales/medidas-prevencion" component={PesvInformeTrimestralMedidas} featureName="Informe trimestral PESV - Medidas de prevención" />
+      <SubscriptionProtectedRoute path="/pesv/informes-trimestrales" component={PesvInformesTrimestrales} feature="hasPESV" featureName="Informes trimestrales PESV" />
+      <SubscriptionProtectedRoute path="/pesv/informes-trimestrales/siniestros" component={PesvInformeTrimestralSiniestros} feature="hasPESV" featureName="Informe trimestral PESV - Siniestros" />
+      <SubscriptionProtectedRoute path="/pesv/informes-trimestrales/actas-siniestros" component={PesvInformeTrimestralActas} feature="hasPESV" featureName="Informe trimestral PESV - Actas de siniestros" />
+      <SubscriptionProtectedRoute path="/pesv/informes-trimestrales/lecciones-aprendidas" component={PesvInformeTrimestralLecciones} feature="hasPESV" featureName="Informe trimestral PESV - Lecciones aprendidas" />
+      <SubscriptionProtectedRoute path="/pesv/informes-trimestrales/medidas-prevencion" component={PesvInformeTrimestralMedidas} feature="hasPESV" featureName="Informe trimestral PESV - Medidas de prevención" />
       <SubscriptionProtectedRoute path="/pesv/capacitaciones" component={PesvCapacitaciones} feature="hasPESV" featureName="Módulo PESV - Capacitaciones" />
       <SubscriptionProtectedRoute path="/pesv/induccion-virtual" component={PesvInduccionVirtual} feature="hasPESV" featureName="Módulo PESV - Inducción Virtual" />
       <SubscriptionProtectedRoute path="/pesv/auditorias" component={PesvAuditorias} feature="hasPESV" featureName="Módulo PESV - Auditorías" />
@@ -701,29 +701,6 @@ function ConditionalChatBot() {
   if (!user) return null;
   if (user.role === "trabajador") return null;
   return <ChatBot />;
-}
-
-function DevelopmentOnlyQuarterlyRoute({
-  path,
-  component: Component,
-  featureName,
-}: {
-  path: string;
-  component: () => React.JSX.Element;
-  featureName: string;
-}) {
-  if (!import.meta.env.DEV) {
-    const HiddenQuarterlyPage = () => <Redirect to="/pesv" />;
-    return <ProtectedRoute path={path} component={HiddenQuarterlyPage} />;
-  }
-  return (
-    <SubscriptionProtectedRoute
-      path={path}
-      component={Component}
-      feature="hasPESV"
-      featureName={featureName}
-    />
-  );
 }
 
 export default function App() {
