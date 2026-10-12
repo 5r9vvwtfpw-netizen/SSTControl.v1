@@ -28,6 +28,7 @@ export function ChapterGate({ children }: ChapterGateProps) {
     selectedCompanyId,
     selectedCompany,
     selectedCompanyScope,
+    currentAccessSession,
     isLoading,
   } = useCompanyContext();
 
@@ -49,9 +50,14 @@ export function ChapterGate({ children }: ChapterGateProps) {
 
   const publicRoutes = ["/induccion-virtual", "/login", "/auth", "/pricing", "/terminos-servicio", "/politica-privacidad", "/politica-cookies", "/contrato-saas", "/recuperar-contrasena", "/restablecer-contrasena", "/demo", "/recomendar", "/portal-empleados", "/portal-licenciado", "/configuracion-induccion", "/mi-suscripcion", "/checkout", "/pago-pse", "/planes-suscripcion"];
   const isPublicRoute = publicRoutes.some(r => location === r || location.startsWith(r + "/"));
+  const hasAuditedSuperadminCompanyAccess =
+    user?.role === "superadmin" &&
+    !!selectedCompanyId &&
+    currentAccessSession?.companyId === selectedCompanyId;
 
   const isAllowed = import.meta.env.DEV
     || isPublicRoute
+    || hasAuditedSuperadminCompanyAccess
     || (user?.role === "tecnico_mecanico"
       ? location === "/" || isMechanicRouteAllowed(location, selectedCompanyScope)
       : effectiveChapter === null
