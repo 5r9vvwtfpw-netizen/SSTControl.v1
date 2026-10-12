@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { QuarterlyReportMissingGuide, type QuarterlyReportMissingGuideData } from "@/components/pesv/QuarterlyReportMissingGuide";
 import { apiRequest, buildHeaders, getSelectedCompanyId } from "@/lib/queryClient";
 import { useCompanyContext } from "@/hooks/use-company-context";
 import { useToast } from "@/hooks/use-toast";
@@ -27,6 +28,54 @@ function quarterDates(year: number, quarter: number) {
   const firstMonth = (quarter - 1) * 3;
   const format = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
   return { from: format(new Date(year, firstMonth, 1)), to: format(new Date(year, firstMonth + 3, 0)) };
+}
+
+function getMeasureMissingGuide(item: string, index: number): QuarterlyReportMissingGuideData {
+  if (item.includes("Representante Legal")) {
+    return {
+      key: `representante-${index}`,
+      title: "Datos del Representante Legal",
+      missing: [item],
+      step: "Configuración de la empresa — datos de firma, no corresponde a un paso PESV.",
+      route: "Administración Global > Empresas > Editar empresa > Representante Legal",
+      instruction: "Completa el dato solicitado en la ficha de la empresa y vuelve a consultar el informe.",
+      actions: [{ href: "/empresas", label: "Abrir Empresas" }],
+    };
+  }
+  if (item.includes("H08")) {
+    return {
+      key: `rutas-${index}`,
+      title: "Medidas de señalización y puestos de control",
+      missing: [item],
+      step: "H08 — Gestión de rutas seguras",
+      route: "PESV > Hacer > Rutas Seguras (H08)",
+      instruction: "Completa la medida, su fecha de implementación y vigencia, el responsable y el soporte correspondiente.",
+      actions: [{ href: "/pesv/rutas-seguras", label: "Abrir Rutas Seguras (H08)" }],
+    };
+  }
+  if (item.includes("H07")) {
+    return {
+      key: `gps-${index}`,
+      title: "Gastos y operación GPS",
+      missing: [item],
+      step: "H07 — Operación y monitoreo GPS",
+      route: "PESV > Hacer > Monitoreo GPS (H07)",
+      instruction: "Completa el registro del gasto GPS y adjunta su soporte; luego vuelve a consultar el informe.",
+      actions: [{ href: "/pesv/monitoreo-gps", label: "Abrir Monitoreo GPS (H07)" }],
+    };
+  }
+  return {
+    key: `medidas-${index}`,
+    title: "Medidas implementadas en el trimestre",
+    missing: [item],
+    step: "H08 — Gestión de rutas seguras; H07 — Operación y monitoreo GPS",
+    route: "PESV > Hacer > Rutas Seguras (H08) o Monitoreo GPS (H07)",
+    instruction: "Registra las medidas y la operación GPS que efectivamente se implementaron en el período.",
+    actions: [
+      { href: "/pesv/rutas-seguras", label: "Abrir Rutas Seguras (H08)" },
+      { href: "/pesv/monitoreo-gps", label: "Abrir Monitoreo GPS (H07)" },
+    ],
+  };
 }
 
 export default function PesvInformeTrimestralMedidas() {
@@ -102,7 +151,18 @@ export default function PesvInformeTrimestralMedidas() {
                 <div className="rounded-md border p-3"><span className="text-sm text-muted-foreground">Gastos GPS registrados</span><p className="text-xl font-semibold">{data.gpsExpenses}</p></div>
                 <div className="rounded-md border p-3"><span className="text-sm text-muted-foreground">Total GPS del período</span><p className="text-xl font-semibold">{new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 0 }).format(data.gpsExpensesTotalCop)}</p></div>
               </div>
-              {data.missing.length > 0 && <Alert><AlertTriangle className="h-4 w-4" /><AlertTitle>Falta completar información</AlertTitle><AlertDescription><ul className="list-disc space-y-1 pl-5">{data.missing.map((item) => <li key={item}>{item}</li>)}</ul><div className="mt-3 flex flex-wrap gap-2"><Button asChild size="sm" variant="outline"><Link href="/pesv/rutas-seguras">Abrir Rutas Seguras (H08)</Link></Button><Button asChild size="sm" variant="outline"><Link href="/pesv/monitoreo-gps">Abrir Monitoreo GPS (H07)</Link></Button><Button asChild size="sm" variant="outline"><Link href="/empresas">Abrir Empresas</Link></Button></div></AlertDescription></Alert>}
+              {data.missing.length > 0 && (
+                <Alert>
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>No se habilita la descarga hasta completar los datos pendientes.</AlertTitle>
+                  <AlertDescription className="space-y-3">
+                    <p>Cada pendiente indica el paso y módulo PESV donde completarlo. Luego regresa al informe para verificarlo.</p>
+                    {data.missing.map((item, index) => (
+                      <QuarterlyReportMissingGuide key={`${item}-${index}`} guide={getMeasureMissingGuide(item, index)} />
+                    ))}
+                  </AlertDescription>
+                </Alert>
+              )}
               <div className="flex items-start gap-3 rounded-md border p-3">
                 <Checkbox id="confirm-measures-report" checked={confirmed} onCheckedChange={(value) => setConfirmed(value === true)} />
                 <Label htmlFor="confirm-measures-report" className="leading-5">Confirmo que el Representante Legal verificó las medidas y gastos de este período y autoriza emitir la certificación con la firma registrada para la empresa.</Label>

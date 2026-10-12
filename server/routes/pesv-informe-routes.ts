@@ -400,6 +400,18 @@ export function registerPesvInformeRoutes(app: Express) {
     return { company, rows: rows as LeccionReportRow[], period };
   }
 
+  function getQuarterlyLessonsMissing(rows: LeccionReportRow[]): string[] {
+    const missing = new Set<string>();
+    if (rows.length === 0) missing.add("No hay comunicaciones PESV de lecciones aprendidas en el trimestre.");
+    for (const row of rows) {
+      if (!row.leccionAprendida?.trim()) missing.add("Completa la lección aprendida en la investigación del siniestro (V02).");
+      if (!row.trabajador?.trim()) missing.add("Asocia destinatarios a la divulgación desde Comunicación SST.");
+      if (!row.fechaLectura) missing.add("Falta confirmación de lectura de uno o más destinatarios en el Portal de Empleados.");
+      if (!row.retroalimentacion?.trim()) missing.add("Falta la retroalimentación de uno o más destinatarios.");
+    }
+    return [...missing];
+  }
+
   app.get("/api/pesv/informes-trimestrales/lecciones-aprendidas/estado", authRequireAuth, reportViewPermission, async (req, res) => {
     try {
       const dataset = await loadQuarterlyLessonsDataset(req, res);
@@ -410,6 +422,7 @@ export function registerPesvInformeRoutes(app: Express) {
         total: dataset.rows.length,
         read: dataset.rows.filter((row) => row.fechaLectura).length,
         feedback: dataset.rows.filter((row) => row.retroalimentacion?.trim()).length,
+        missing: getQuarterlyLessonsMissing(dataset.rows),
         records: dataset.rows,
         period: dataset.period,
       });
@@ -423,6 +436,10 @@ export function registerPesvInformeRoutes(app: Express) {
     try {
       const dataset = await loadQuarterlyLessonsDataset(req, res);
       if (!dataset) return;
+      const missing = getQuarterlyLessonsMissing(dataset.rows);
+      if (missing.length) {
+        return res.status(409).json({ message: "Completa la evidencia pendiente antes de descargar el informe.", missing });
+      }
       const buffer = buildLeccionesExcelBuffer(dataset.company, dataset.rows, dataset.period as {from:string;to:string});
       res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
       res.setHeader("Content-Disposition", `attachment; filename="evidencia_lecciones_aprendidas_${companyFileSlug(dataset.company.name)}_${dataset.period.from}_${dataset.period.to}.xlsx"`);
@@ -438,6 +455,10 @@ export function registerPesvInformeRoutes(app: Express) {
     try {
       const dataset = await loadQuarterlyLessonsDataset(req, res);
       if (!dataset) return;
+      const missing = getQuarterlyLessonsMissing(dataset.rows);
+      if (missing.length) {
+        return res.status(409).json({ message: "Completa la evidencia pendiente antes de descargar el informe.", missing });
+      }
       const subscription = await storage.getSubscriptionByCompany(dataset.company.id);
       const trial = getTrialStatus(subscription?.status || "trial", subscription?.trialEnd || null, true, true);
       const buffer = await buildLeccionesPdfBuffer(dataset.company, dataset.rows, dataset.period as {from:string;to:string}, trial.requiresWatermark);

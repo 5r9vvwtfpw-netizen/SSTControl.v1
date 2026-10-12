@@ -5,6 +5,7 @@ import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { QuarterlyReportMissingGuide } from "@/components/pesv/QuarterlyReportMissingGuide";
 import { Input } from "@/components/ui/input";
 import { useCompanyContext } from "@/hooks/use-company-context";
 import { useToast } from "@/hooks/use-toast";
@@ -16,6 +17,7 @@ type LessonReport = {
   total: number;
   read: number;
   feedback: number;
+  missing: string[];
   period: { from: string; to: string };
   records: Array<{
     asunto: string;
@@ -57,6 +59,49 @@ export default function PesvInformeTrimestralLecciones() {
       return response.json();
     },
   });
+  const incompleteGuides = data?.records.flatMap((row, index) => {
+    const guides = [];
+    if (!row.leccionAprendida?.trim()) {
+      guides.push({
+        key: `leccion-${index}`,
+        title: `${row.asunto} · Investigación del siniestro`,
+        missing: ["La lección aprendida de la investigación no está disponible."],
+        step: "Paso 21 (V02) — Verificar: Registro y análisis de siniestros viales",
+        route: "PESV > Evaluaciones PESV > Paso 21 (V02) > Investigación de accidentes viales",
+        instruction: "Completa la investigación y registra la lección aprendida; después vuelve a consultar este informe.",
+        actions: [{ href: "/investigacion-accidentes", label: "Abrir Investigación de Accidentes (V02)" }],
+      });
+    }
+    const communicationMissing = [
+      ...(!row.trabajador?.trim() ? ["No hay un destinatario asociado a la divulgación."] : []),
+      ...(!row.fechaLectura ? ["El destinatario no ha confirmado la lectura en el Portal de Empleados."] : []),
+      ...(!row.retroalimentacion?.trim() ? ["No hay retroalimentación registrada."] : []),
+    ];
+    if (communicationMissing.length) {
+      guides.push({
+        key: `divulgacion-${index}`,
+        title: `${row.asunto} · Divulgación y respuesta`,
+        missing: communicationMissing,
+        step: "Evidencia de divulgación de lecciones aprendidas y retroalimentación",
+        route: "Comunicación SST > comunicaciones PESV > seguimiento en el Portal de Empleados",
+        instruction: "Revisa los destinatarios y la divulgación en Comunicación SST. Solicita a los trabajadores confirmar la lectura y dejar su retroalimentación en el Portal de Empleados.",
+        actions: [{ href: "/comunicacion-sst", label: "Abrir Comunicación SST" }],
+      });
+    }
+    return guides;
+  }) ?? [];
+  const noLessonRecordsGuide = {
+    key: "sin-lecciones",
+    title: "Lecciones aprendidas y divulgación del trimestre",
+    missing: ["No hay comunicaciones PESV de lecciones aprendidas para el período seleccionado."],
+    step: "Paso 21 (V02) — Verificar: Registro y análisis de siniestros viales; evidencia de divulgación y retroalimentación",
+    route: "PESV > Evaluaciones PESV > Paso 21 (V02) > Investigación de accidentes; luego Comunicación SST > Portal de Empleados",
+    instruction: "Verifica si hay investigaciones con lecciones por divulgar; registra la lección y envíala a los trabajadores desde Comunicación SST.",
+    actions: [
+      { href: "/investigacion-accidentes", label: "Abrir Investigación de Accidentes (V02)" },
+      { href: "/comunicacion-sst", label: "Abrir Comunicación SST" },
+    ],
+  };
 
   const download = async (format: "pdf" | "xlsx") => {
     try {
@@ -111,7 +156,21 @@ export default function PesvInformeTrimestralLecciones() {
           </div>
           {isLoading && <p className="text-sm text-muted-foreground">Consultando comunicaciones…</p>}
           {isError && <div role="alert"><p>No se pudo consultar la información del trimestre.</p><Button variant="outline" onClick={() => refetch()}>Reintentar</Button></div>}
-          {data?.total === 0 && <p className="rounded-md border border-dashed p-4">No hay comunicaciones de lecciones aprendidas registradas para este trimestre.</p>}
+          {data?.total === 0 && (
+            <div className="space-y-3 rounded-md border border-dashed p-4">
+              <p className="font-medium">No hay comunicaciones de lecciones aprendidas registradas para este trimestre.</p>
+              <QuarterlyReportMissingGuide guide={noLessonRecordsGuide} />
+            </div>
+          )}
+          {data && incompleteGuides.length > 0 && (
+            <div className="space-y-3">
+              <div className="rounded-md border border-amber-300 bg-amber-50 p-4 text-amber-950">
+                <p className="font-semibold">Hay información de lecciones aprendidas o de su divulgación pendiente.</p>
+                <p className="mt-1 text-sm">Cada pendiente señala el paso y módulo donde completarlo. Luego regresa al informe para verificar los cambios.</p>
+              </div>
+              {incompleteGuides.map((guide) => <QuarterlyReportMissingGuide key={guide.key} guide={guide} />)}
+            </div>
+          )}
           {data && data.records.length > 0 && (
             <div className="overflow-x-auto rounded-md border">
               <table className="w-full text-sm">
@@ -126,9 +185,15 @@ export default function PesvInformeTrimestralLecciones() {
               </table>
             </div>
           )}
+          {data && data.missing.length > 0 && (
+            <div className="rounded-md border border-amber-300 bg-amber-50 p-4 text-amber-950">
+              <p className="font-semibold">No se habilita la descarga hasta completar la evidencia pendiente.</p>
+              <p className="mt-1 text-sm">Completa cada punto en el paso o módulo indicado y vuelve a consultar este informe.</p>
+            </div>
+          )}
           <div className="flex flex-wrap gap-2 border-t pt-4">
-            <Button onClick={() => download("xlsx")}><FileSpreadsheet className="mr-2 h-4 w-4"/>Descargar Excel</Button>
-            <Button variant="outline" onClick={() => download("pdf")}><FileText className="mr-2 h-4 w-4"/>Descargar PDF</Button>
+            <Button onClick={() => download("xlsx")} disabled={!data || data.missing.length > 0}><FileSpreadsheet className="mr-2 h-4 w-4"/>Descargar Excel</Button>
+            <Button variant="outline" onClick={() => download("pdf")} disabled={!data || data.missing.length > 0}><FileText className="mr-2 h-4 w-4"/>Descargar PDF</Button>
           </div>
         </CardContent>
       </Card>

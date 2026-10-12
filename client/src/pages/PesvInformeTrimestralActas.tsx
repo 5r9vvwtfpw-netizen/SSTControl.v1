@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { QuarterlyReportMissingGuide } from "@/components/pesv/QuarterlyReportMissingGuide";
 import { useCompanyContext } from "@/hooks/use-company-context";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, buildHeaders, getSelectedCompanyId } from "@/lib/queryClient";
@@ -152,7 +153,15 @@ export default function PesvInformeTrimestralActas() {
           {data && data.total === 0 && (
             <div className="space-y-3 rounded-md border border-dashed p-5">
               <p className="font-medium">No hay reuniones programadas en el Cronograma PESV para el trimestre consultado.</p>
-              <Button asChild size="sm" variant="outline"><Link href="/pesv/comite?tab=cronograma">Revisar Cronograma del Comité PESV (P01)</Link></Button>
+              <QuarterlyReportMissingGuide guide={{
+                key: "actas-sin-reuniones",
+                title: "Cronograma trimestral del Comité PESV",
+                missing: ["No hay reuniones programadas para este período."],
+                step: "Paso 1 (P01) — Planear: Conformación del equipo de trabajo",
+                route: "PESV > Evaluaciones PESV > Paso 1 (P01) > Comité PESV > Cronograma",
+                instruction: "Verifica y registra las reuniones del trimestre en el cronograma; luego vuelve a consultar este informe.",
+                actions: [{ href: "/pesv/comite?tab=cronograma", label: "Abrir Cronograma del Comité PESV (P01)" }],
+              }} />
             </div>
           )}
 
@@ -165,10 +174,19 @@ export default function PesvInformeTrimestralActas() {
               {data.incomplete.map((incident) => (
                 <div key={incident.meetingId} className="rounded-md border p-4">
                   <p className="font-medium">{displayDate(incident.scheduledDate)} · {incident.meetingTopic || "Reunión del Comité PESV"}</p>
-                  <ul className="mt-2 list-disc pl-5 text-sm">{incident.missing.map((field) => <li key={field}>{field}</li>)}</ul>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <Button asChild size="sm" variant="outline"><Link href="/pesv/comite?tab=cronograma">Abrir Cronograma del Comité PESV (P01)</Link></Button>
-                    <Button asChild size="sm" variant="outline"><Link href="/pesv/comite?tab=actas">Abrir Actas del Comité PESV (P01)</Link></Button>
+                  <div className="mt-3">
+                    <QuarterlyReportMissingGuide guide={{
+                      key: `acta-${incident.meetingId}`,
+                      title: "Acta oficial de esta reunión",
+                      missing: incident.missing,
+                      step: "Paso 1 (P01) — Planear: Conformación del equipo de trabajo",
+                      route: "PESV > Evaluaciones PESV > Paso 1 (P01) > Comité PESV > Cronograma y Actas",
+                      instruction: "Marca la reunión como realizada, completa el acta, apruébala y vincúlala a esta fecha del cronograma.",
+                      actions: [
+                        { href: "/pesv/comite?tab=cronograma", label: "Abrir Cronograma del Comité PESV (P01)" },
+                        { href: "/pesv/comite?tab=actas", label: "Abrir Actas del Comité PESV (P01)" },
+                      ],
+                    }} />
                   </div>
                 </div>
               ))}
@@ -191,7 +209,7 @@ export default function PesvInformeTrimestralActas() {
                       <td className="p-3">{record.numeroActa ?? "—"} · {displayDate(record.fechaReunion)}</td>
                       <td className="p-3">{record.estado}</td>
                       <td className="p-3">
-                        {record.actaId ? (
+                        {record.actaId && !data.incomplete.some((item) => item.meetingId === record.meetingId) ? (
                           <Button size="sm" variant="outline" onClick={() => downloadActa(record)} disabled={downloadingActaId !== null}>
                             <Download className="mr-2 h-4 w-4" />
                             {downloadingActaId === record.actaId ? "Descargando…" : "Descargar acta oficial"}
