@@ -13,7 +13,7 @@ const annualCertifications = [
   {
     href: "/pesv/informes-anuales/resolucion-40595-2022",
     title: "Certificación del PESV — Resolución 40595 de 2022",
-    description: "Declaración independiente del Representante Legal: PESV implementado o en desarrollo, según el segundo punto SISI/PESV.",
+    description: "Declaración independiente del Representante Legal",
   },
 ];
 
