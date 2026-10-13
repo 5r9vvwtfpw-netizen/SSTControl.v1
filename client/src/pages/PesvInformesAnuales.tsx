@@ -15,6 +15,11 @@ const annualCertifications = [
     title: "Designación del Responsable del PESV",
     description: "Acta de designación con poder de decisión y articulación con el SG-SST",
   },
+  {
+    href: "/pesv/informes-anuales/comite-seguridad-vial",
+    title: "Existencia del Comité de Seguridad Vial",
+    description: "Consulta la conformación del comité y adjunta el acta original del máximo órgano social",
+  },
 ];
 
 export default function PesvInformesAnuales() {
@@ -31,7 +36,7 @@ export default function PesvInformesAnuales() {
       <section aria-labelledby="annual-pesv-reports-title" className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 id="annual-pesv-reports-title" className="text-lg font-semibold">Informes</h2>
-          <Badge variant="secondary">2 informes incorporados</Badge>
+          <Badge variant="secondary">3 informes incorporados</Badge>
         </div>
         {annualCertifications.map((report) => (
           <Card key={report.href}>

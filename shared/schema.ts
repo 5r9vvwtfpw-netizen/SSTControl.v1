@@ -10905,6 +10905,8 @@ export const actosAdministrativosPesv = pgTable("actos_administrativos_pesv", {
   articulado: text("articulado"),
   estado: estadoActoAdministrativoEnum("estado").notNull().default("vigente"),
   observaciones: text("observaciones"),
+  actaMaximoOrganoUrl: text("acta_maximo_organo_url"),
+  actaMaximoOrganoFileName: text("acta_maximo_organo_file_name"),
 
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
   updatedAt: timestamp("updated_at").notNull().default(sql`now()`),

@@ -57688,8 +57688,17 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     try {
       const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(400).json({ error: "Se requiere companyId" });
+      const {
+        actaMaximoOrganoUrl: _ignoredUrl,
+        actaMaximoOrganoFileName: _ignoredFileName,
+        ...editableFields
+      } = req.body;
+      const validated = schema.insertActoAdministrativoPesvSchema
+        .omit({ actaMaximoOrganoUrl: true, actaMaximoOrganoFileName: true })
+        .partial()
+        .parse(editableFields);
       const [result] = await db.update(actosAdministrativosPesv)
-        .set({ ...req.body, updatedAt: new Date() })
+        .set({ ...validated, updatedAt: new Date() })
         .where(and(eq(actosAdministrativosPesv.id, req.params.id), eq(actosAdministrativosPesv.companyId, companyId)))
         .returning();
       if (!result) return res.status(404).json({ error: "Acto administrativo no encontrado" });
@@ -57699,6 +57708,61 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       res.status(400).json({ error: error.message });
     }
   });
+
+  app.post(
+    "/api/pesv/comite/actos-administrativos/:id/acta-maximo-organo",
+    requireAuth,
+    requirePermission("sst_management:edit"),
+    secureUpload.single("file"),
+    async (req, res) => {
+      const cleanupTempFile = () => {
+        if (req.file?.path && fs.existsSync(req.file.path)) {
+          try { fs.unlinkSync(req.file.path); } catch {}
+        }
+      };
+      try {
+        const companyId = getEffectiveCompanyId(req);
+        if (!companyId) {
+          cleanupTempFile();
+          return res.status(400).json({ error: "Se requiere una empresa activa" });
+        }
+        if (!req.file) return res.status(400).json({ error: "Adjunta el acta en PDF" });
+        if (
+          path.extname(req.file.originalname).toLowerCase() !== ".pdf" ||
+          req.file.mimetype !== "application/pdf" ||
+          !validateFileMagicBytes(fs.readFileSync(req.file.path), ".pdf")
+        ) {
+          cleanupTempFile();
+          return res.status(400).json({ error: "El archivo debe ser un PDF válido" });
+        }
+        const [acto] = await db.select().from(actosAdministrativosPesv)
+          .where(and(eq(actosAdministrativosPesv.id, req.params.id), eq(actosAdministrativosPesv.companyId, companyId)))
+          .limit(1);
+        if (!acto) {
+          cleanupTempFile();
+          return res.status(404).json({ error: "Acto de conformación no encontrado para esta empresa" });
+        }
+        const objectPath = `uploads/${companyId}/evidencias/${crypto.randomUUID()}.pdf`;
+        await objectStorageService.uploadObject(objectPath, fs.readFileSync(req.file.path), "application/pdf");
+        cleanupTempFile();
+        const fileName = req.file.originalname.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9._-]/g, "_").substring(0, 100);
+        const [updated] = await db.update(actosAdministrativosPesv)
+          .set({ actaMaximoOrganoUrl: `/objects/${objectPath}`, actaMaximoOrganoFileName: fileName, updatedAt: new Date() })
+          .where(and(eq(actosAdministrativosPesv.id, acto.id), eq(actosAdministrativosPesv.companyId, companyId)))
+          .returning();
+        if (acto.actaMaximoOrganoUrl?.startsWith(`/objects/uploads/${companyId}/evidencias/`)) {
+          try { await objectStorageService.deleteObject(acto.actaMaximoOrganoUrl); } catch (error) {
+            console.warn("[PESV] Could not remove replaced maximum-organ document", error);
+          }
+        }
+        res.json(updated);
+      } catch (error: any) {
+        cleanupTempFile();
+        console.error("Error uploading maximum social body minutes:", error);
+        res.status(400).json({ error: error.message || "No fue posible guardar el acta" });
+      }
+    },
+  );
 
   app.delete("/api/pesv/comite/actos-administrativos/:id", requireAuth, async (req, res) => {
     try {

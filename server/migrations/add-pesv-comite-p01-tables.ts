@@ -46,6 +46,8 @@ export async function addPesvComiteP01Tables() {
       updated_at timestamp NOT NULL DEFAULT now()
     )
   `));
+  await db.execute(sql.raw(`ALTER TABLE actos_administrativos_pesv ADD COLUMN IF NOT EXISTS acta_maximo_organo_url text`));
+  await db.execute(sql.raw(`ALTER TABLE actos_administrativos_pesv ADD COLUMN IF NOT EXISTS acta_maximo_organo_file_name text`));
 
   await db.execute(sql.raw(`
     CREATE TABLE IF NOT EXISTS cronograma_reuniones_pesv (
