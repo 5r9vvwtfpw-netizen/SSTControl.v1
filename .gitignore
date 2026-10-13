@@ -8,3 +8,4 @@ vite.config.ts.*
 *.zip
 *.tar.gz
 sst-colombia-*
+/generated-artifacts/
