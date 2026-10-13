@@ -66,6 +66,10 @@ self.addEventListener('push', (event) => {
     icon: '/sst-colombia-logo.png',
     badge: '/favicon.svg',
     tag: typeof data.tag === 'string' ? data.tag : 'sst-portal',
+    renotify: true,
+    vibrate: [200, 100, 200, 100, 200],
+    requireInteraction: true,
+    silent: false,
     data: { url: portalPath(data.url) },
   };
   event.waitUntil(Promise.all([
