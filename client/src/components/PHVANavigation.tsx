@@ -161,11 +161,12 @@ const phvaTabs: { key: PHVASection; label: string; icon?: typeof Settings }[] = 
   { key: "actuar", label: "Actuar", icon: RefreshCw },
 ];
 
-const pesvNavMenuItems: { label: string; path: string; group?: string }[] = [
+const pesvNavMenuItems: { label: string; path: string; group?: string; disabled?: boolean }[] = [
   { label: "Panel de Control", path: "/pesv" },
   { label: "Evaluaciones PESV", path: "/pesv/evaluaciones" },
-  { label: "Informe mensual Superintendencia", path: "/pesv/informes" },
-  { label: "Informe trimestral Superintendencia", path: "/pesv/informes-trimestrales" },
+  { label: "Informe mensual (SISI/PESV)", path: "/pesv/informes" },
+  { label: "Informe trimestral (SISI/PESV)", path: "/pesv/informes-trimestrales" },
+  { label: "Informe anual SISI/PESV", path: "/pesv/informes-anuales", disabled: true },
 ];
 
 export function PHVANavigation() {
@@ -310,6 +311,7 @@ export function PHVANavigation() {
 
   const filteredPesvNavItems = useMemo(() => {
     return pesvNavMenuItems.filter(item => {
+      if (item.path === "/pesv/informes-anuales" && !import.meta.env.DEV) return false;
       if (user?.role === 'tecnico_mecanico' && item.path === '/pesv') return false;
       return canAccessRoute(userPermissions, item.path);
     });
@@ -780,7 +782,11 @@ export function PHVANavigation() {
                           elements.push(<DropdownMenuLabel key={`label-${item.group}`} className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2 py-1">{item.group}</DropdownMenuLabel>);
                           lastGroup = item.group;
                         }
-                        elements.push(
+                        elements.push(item.disabled ? (
+                          <DropdownMenuItem key={item.path} disabled data-testid={`link${item.path.replace(/\//g, "-")}`}>
+                            {item.label}
+                          </DropdownMenuItem>
+                        ) : (
                           <DropdownMenuItem key={item.path} asChild>
                             <Link
                               href={item.path}
@@ -794,7 +800,7 @@ export function PHVANavigation() {
                               {item.label}
                             </Link>
                           </DropdownMenuItem>
-                        );
+                        ));
                         return elements;
                       });
                     })()}
