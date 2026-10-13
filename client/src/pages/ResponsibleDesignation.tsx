@@ -220,7 +220,7 @@ const POSITION_RESPONSIBILITIES: Record<string, string[]> = {
     "Garantizar la trazabilidad y documentación de todos los procesos según la normativa vigente.",
   ],
 
-  "Líder del PESV": [
+  "Responsable del PESV": [
     "Liderar el diseño, implementación, seguimiento y mejora continua del Plan Estratégico de Seguridad Vial (PESV).",
     "Velar por el cumplimiento de las etapas del PESV: planificación, implementación, seguimiento, evaluación y mejora.",
     "Diligenciar el reporte de autogestión anual del PESV ante las autoridades competentes.",
@@ -231,6 +231,8 @@ const POSITION_RESPONSIBILITIES: Record<string, string[]> = {
     "Gestionar los recursos necesarios para la implementación efectiva del PESV.",
     "Coordinar con el Comité de Seguridad Vial (si aplica) las acciones y decisiones relacionadas con seguridad vial.",
     "Promover la cultura de seguridad vial y hábitos de conducción seguros en toda la organización.",
+    "Ejercer las facultades de decisión que le delegue la empresa en asuntos de seguridad vial.",
+    "Articular el PESV con el SG-SST y coordinar las acciones correspondientes con su responsable.",
   ],
 };
 
@@ -405,7 +407,7 @@ export default function ResponsibleDesignationPage() {
       workerId: designation.workerId || undefined,
       jobProfileId: designation.jobProfileId || undefined,
       designationDate: designation.designationDate,
-      position: designation.position,
+      position: designation.position === "Líder del PESV" ? "Responsable del PESV" : designation.position,
       responsibilities: designation.responsibilities,
       signatureUrl: designation.signatureUrl || "",
       status: designation.status,
@@ -477,6 +479,7 @@ export default function ResponsibleDesignationPage() {
   const selectedPosition = form.watch("position");
   const positionAllowsExternalLso =
     selectedPosition === "Responsable del SG-SST" ||
+    selectedPosition === "Responsable del PESV" ||
     selectedPosition === "Líder del PESV";
   const availableResponsibilities = selectedPosition ? POSITION_RESPONSIBILITIES[selectedPosition] : [];
   const selectedResponsibilities = form.watch("responsibilities") || [];
@@ -510,7 +513,7 @@ export default function ResponsibleDesignationPage() {
     }
     
     // Manejar LSO externo según el cargo seleccionado
-    if ((position === "Responsable del SG-SST" || position === "Líder del PESV") && lsoAssignment) {
+    if ((position === "Responsable del SG-SST" || position === "Responsable del PESV" || position === "Líder del PESV") && lsoAssignment) {
       setUseExternalLso(true);
       form.setValue("isExternalLso", true);
       form.setValue("externalLsoName", lsoAssignment.name);
@@ -888,7 +891,7 @@ export default function ResponsibleDesignationPage() {
                               </SelectItem>
                               <SelectItem value="Vigía de Seguridad y Salud">Vigía de Seguridad y Salud</SelectItem>
                               <SelectItem value="Brigadista de Emergencias">Brigadista de Emergencias</SelectItem>
-                              <SelectItem value="Líder del PESV">Líder del PESV</SelectItem>
+                              <SelectItem value="Responsable del PESV">Responsable del PESV</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -1230,7 +1233,7 @@ export default function ResponsibleDesignationPage() {
                         </div>
                       </TableCell>
                       <TableCell data-testid={`text-position-${designation.id}`}>
-                        {designation.position}
+                        {designation.position === "Líder del PESV" ? "Responsable del PESV" : designation.position}
                       </TableCell>
                       <TableCell data-testid={`text-responsibilities-${designation.id}`}>
                         <Badge variant="secondary">

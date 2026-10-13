@@ -102,4 +102,4 @@
 - [Generador de informes regulatorios PESV](pesv-superintendencia-report-generator.md) — informes trimestrales desde módulos fuente; implementar de uno en uno y esperar aprobación.
 - [Secuencia de informes PESV trimestrales](pesv-quarterly-report-sequencing.md) — implementar el siguiente informe descrito usando módulos existentes, sin diseñar por adelantado los restantes.
 - [Auditoría antes de implementar](implementation-before-existing-audit.md) — revisar primero rutas, controles y flujos existentes para corregir vacíos sin duplicar funcionalidades.
-- [Certificaciones anuales SISI/PESV](sisi-pesv-annual-certifications.md) — conservar por separado la norma y el alcance que exige cada punto anual; no unificar certificados.
+- [Certificaciones anuales SISI/PESV](sisi-pesv-annual-certifications.md) — incluir solo puntos con evidencia verificable; la designación anual usa el acta real del Responsable del PESV.

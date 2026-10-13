@@ -14590,7 +14590,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // For external LSO, workerId is null - use designation data instead
       const isExternalLso = designation.isExternalLso || !designation.workerId;
-      const isPesvDesignation = designation.position?.trim().toLocaleLowerCase('es-CO') === 'líder del pesv';
+      const normalizedDesignationPosition = designation.position?.trim().toLocaleLowerCase('es-CO');
+      const isPesvDesignation = normalizedDesignationPosition === 'responsable del pesv' || normalizedDesignationPosition === 'líder del pesv';
       
       // Build designee info (works for both internal workers and external LSOs)
       const designeeInfo = {
@@ -14672,7 +14673,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Set response headers
       res.setHeader('Content-Type', 'application/pdf');
       const designationFilename = isPesvDesignation
-        ? `Acta-Designacion-Lider-PESV-${designation.id.substring(0, 8)}.pdf`
+         ? `Acta-Designacion-Responsable-PESV-${designation.id.substring(0, 8)}.pdf`
         : `Acta-Designacion-Responsable-SST-${designation.id.substring(0, 8)}.pdf`;
       res.setHeader('Content-Disposition', `attachment; filename="${designationFilename}"`);
       
@@ -14695,7 +14696,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         doc,
         company,
         documentTitle: isPesvDesignation
-          ? 'ACTA DE DESIGNACIÓN DEL LÍDER DEL PESV'
+          ? 'ACTA DE DESIGNACIÓN DEL RESPONSABLE DEL PESV'
           : 'ACTA DE DESIGNACIÓN RESPONSABLE SST',
         documentCode: `${isPesvDesignation ? 'PESV-DES' : 'SST-DES'}-${designation.id.substring(0, 8)}`,
         version: '1.0',
@@ -14745,7 +14746,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (isPesvDesignation) {
         doc.fontSize(9).text(
-          `En la ciudad de ${city}, a los ${formattedDate}, la empresa ${company.name}, identificada con NIT ${company.nit || '____________'}, designa formalmente a la persona identificada en la presente acta como Líder del Plan Estratégico de Seguridad Vial (PESV), para dirigir, coordinar y hacer seguimiento a su diseño, implementación, evaluación y mejora, de conformidad con la Ley 1503 de 2011, el Decreto 1252 de 2021, la Resolución 40595 de 2022 del Ministerio de Transporte y las demás normas aplicables en materia de seguridad vial.`,
+          `En la ciudad de ${city}, a los ${formattedDate}, la empresa ${company.name}, identificada con NIT ${company.nit || '____________'}, designa formalmente a la persona identificada en la presente acta como Responsable del Plan Estratégico de Seguridad Vial (PESV), con poder de decisión en los asuntos de seguridad vial delegados por la empresa, para liderar su diseño e implementación y articularlo con el Sistema de Gestión de Seguridad y Salud en el Trabajo (SG-SST), de conformidad con la Ley 1503 de 2011, el Decreto 1252 de 2021, la Resolución 40595 de 2022 del Ministerio de Transporte y las demás normas aplicables en materia de seguridad vial.`,
           margin, currentY, { width: contentWidth, align: 'justify' }
         );
       } else if (isLsoDesignation) {
@@ -14764,7 +14765,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Position box
       const positionTitle = isPesvDesignation
-        ? 'LÍDER DEL PLAN ESTRATÉGICO DE SEGURIDAD VIAL (PESV)'
+        ? 'RESPONSABLE DEL PLAN ESTRATÉGICO DE SEGURIDAD VIAL (PESV)'
         : isLsoDesignation
         ? 'PROFESIONAL LICENCIADO EN SEGURIDAD Y SALUD EN EL TRABAJO'
         : (designation.position || '').toUpperCase();
@@ -14778,7 +14779,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const workerBoxPadding = 10;
       
       const designeeSectionTitle = isPesvDesignation
-        ? 'DATOS DEL LÍDER DEL PESV DESIGNADO'
+        ? 'DATOS DEL RESPONSABLE DEL PESV DESIGNADO'
         : isLsoDesignation
           ? 'DATOS DEL PROFESIONAL DESIGNADO'
           : 'DATOS DEL DESIGNADO';
@@ -14792,7 +14793,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       doc.text(`Documento de Identidad: CC ${designeeInfo.identificationNumber}`, margin + workerBoxPadding, currentY);
       currentY = doc.y + 4;
       
-      doc.text(`Cargo o rol designado: ${isPesvDesignation ? 'Líder del PESV' : designeeInfo.position || (isLsoDesignation ? 'Profesional Licenciado SST' : 'No especificado')}`, margin + workerBoxPadding, currentY);
+      doc.text(`Cargo o rol designado: ${isPesvDesignation ? 'Responsable del PESV' : designeeInfo.position || (isLsoDesignation ? 'Profesional Licenciado SST' : 'No especificado')}`, margin + workerBoxPadding, currentY);
       currentY = doc.y + 4;
       
       // License info
@@ -14849,7 +14850,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Responsibilities section
       const responsibilitiesTitle = isPesvDesignation
-        ? 'FUNCIONES Y RESPONSABILIDADES DEL LÍDER DEL PESV:'
+        ? 'FUNCIONES Y RESPONSABILIDADES DEL RESPONSABLE DEL PESV:'
         : isLsoDesignation
           ? 'FUNCIONES Y RESPONSABILIDADES DEL PROFESIONAL SST:'
           : 'RESPONSABILIDADES ASIGNADAS:';
@@ -14858,7 +14859,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const respFontSize = 8;
       doc.font('Helvetica').fontSize(respFontSize);
-      const responsibilities = designation.responsibilities || [];
+      const responsibilities = [...(designation.responsibilities || [])];
+      if (isPesvDesignation) {
+        for (const requiredResponsibility of [
+          'Ejercer las facultades de decisión que le delegue la empresa en asuntos de seguridad vial.',
+          'Articular el PESV con el SG-SST y coordinar las acciones correspondientes con su responsable.',
+        ]) {
+          if (!responsibilities.includes(requiredResponsibility)) responsibilities.push(requiredResponsibility);
+        }
+      }
       let respNum = 1;
       for (const resp of responsibilities) {
         const respText = isPesvDesignation || isLsoDesignation ? `${respNum}. ${resp}` : `• ${resp}`;
@@ -14885,9 +14894,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const obligaciones = isPesvDesignation
           ? [
               'Asignar los recursos financieros, técnicos y humanos necesarios para el diseño, implementación, seguimiento y mejora del PESV.',
-              'Facilitar al Líder del PESV el acceso a la información, procesos, instalaciones, vehículos y personal requeridos para el cumplimiento de sus funciones.',
+              'Facilitar al Responsable del PESV el acceso a la información, procesos, instalaciones, vehículos y personal requeridos para el cumplimiento de sus funciones.',
               'Promover la participación de conductores, contratistas y demás actores viales de la organización en las actividades del PESV.',
-              'Respaldar las decisiones y acciones preventivas propuestas por el Líder del PESV para gestionar los riesgos de seguridad vial.',
+              'Respaldar las decisiones y acciones preventivas del Responsable del PESV para gestionar los riesgos de seguridad vial.',
               'Mantener la responsabilidad institucional sobre el cumplimiento y mejora continua del PESV.'
             ]
           : [
@@ -14919,7 +14928,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (isPesvDesignation) {
         doc.fontSize(8).text(
-          `El Líder del PESV contará con la autoridad y el respaldo de la alta dirección para coordinar las áreas involucradas, solicitar información, gestionar recursos y proponer las acciones necesarias para prevenir siniestros viales y cumplir los objetivos del Plan Estratégico de Seguridad Vial. Esta designación no exime a la organización de sus responsabilidades legales frente al diseño, implementación, seguimiento y mejora del PESV.`,
+          `El Responsable del PESV contará con la autoridad y el respaldo de la alta dirección para tomar las decisiones que le hayan sido delegadas en seguridad vial, coordinar las áreas involucradas, solicitar información y articular el PESV con el SG-SST. La empresa mantiene sus responsabilidades legales frente al diseño, implementación, seguimiento y mejora del PESV.`,
           margin, currentY, { width: contentWidth, align: 'justify' }
         );
       } else if (isLsoDesignation) {
@@ -14942,6 +14951,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       doc.fontSize(8).text('En constancia de lo anterior, se firma la presente acta:', margin, currentY, { lineBreak: false });
       currentY += 20;
+      if (isPesvDesignation) {
+        doc.font('Helvetica').fontSize(8).text(
+          'La persona designada declara que recibe la notificación de este nombramiento y acepta las funciones y facultades aquí asignadas.',
+          margin, currentY, { width: contentWidth, align: 'justify' }
+        );
+        currentY = doc.y + 12;
+      }
       
       const signatureWidth = (contentWidth - 40) / 2;
       const sigImgHeight = 50;
@@ -14968,8 +14984,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Load LSO digital signature image if signed
       let lsoSigBuffer: Buffer | null = null;
-      if (designation.lsoSignatureUrl) {
-        lsoSigBuffer = await loadSigBuf(designation.lsoSignatureUrl as string);
+      const designeeSignatureUrl = designation.signatureUrl || designation.lsoSignatureUrl;
+      if (designeeSignatureUrl) {
+        lsoSigBuffer = await loadSigBuf(designeeSignatureUrl as string);
       }
 
       // Load legal representative signature image

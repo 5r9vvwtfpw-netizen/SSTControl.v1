@@ -3,8 +3,8 @@ name: Certificaciones anuales SISI/PESV
 description: Mantener separadas las certificaciones anuales solicitadas con referencias normativas distintas.
 ---
 
-El informe anual del software debe incluir solo la certificación PESV basada en la Resolución 40595 de 2022. El usuario decidió excluir por completo la certificación del punto 1 que menciona la Resolución 1565 de 2014, pues está derogada y el sistema no evalúa esa metodología.
+El informe anual debe incluir únicamente evidencias que el sistema pueda respaldar. No incluir el punto 1 basado en la Resolución 1565 de 2014 porque está derogada y el sistema no evalúa esa metodología. El punto 2 de designación se sustenta en el registro de Responsable del PESV y su acta real, con firma del representante legal y aceptación firmada por la persona designada.
 
-**Why:** La Resolución 40595 derogó expresamente la 1565 en su artículo 5, y la página actual de SISI/PESV de Supertransporte remite a la 40595 o a sus modificaciones. El usuario prefiere no emitir desde un sistema nuevo una certificación de una metodología que no verifica.
+**Why:** La Resolución 40595 derogó expresamente la 1565 en su artículo 5, y no se debe certificar algo que el sistema no comprueba. La designación exige evidencia de una persona con poder de decisión y articulación entre PESV y SG-SST, no solo un título de cargo.
 
-**How to apply:** No volver a agregar al informe anual del software una certificación 1565 ni inferir cumplimiento de ella a partir de los módulos actuales. Mantener referencias históricas a la norma solo donde sean necesarias para describir antecedentes o su derogatoria; la certificación anual implementada corresponde a 40595.
+**How to apply:** No volver a agregar una certificación 1565 ni inferir su cumplimiento desde los módulos actuales. Para la designación, reutilizar el registro y acta oficiales existentes, nombrar el cargo “Responsable del PESV”, conservar compatibilidad con “Líder del PESV” en registros históricos y exigir que las firmas consten en el acta.

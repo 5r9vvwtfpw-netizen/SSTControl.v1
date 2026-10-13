@@ -10,6 +10,11 @@ const annualCertifications = [
     title: "Certificación del PESV — Resolución 40595 de 2022",
     description: "Declaración independiente del Representante Legal",
   },
+  {
+    href: "/pesv/informes-anuales/responsable-pesv",
+    title: "Designación del Responsable del PESV",
+    description: "Acta de designación con poder de decisión y articulación con el SG-SST",
+  },
 ];
 
 export default function PesvInformesAnuales() {
@@ -19,14 +24,14 @@ export default function PesvInformesAnuales() {
         <p className="text-sm font-medium text-primary">PESV · SISI/PESV</p>
         <h1 className="text-2xl font-bold md:text-3xl">Informe anual SISI/PESV</h1>
         <p className="max-w-3xl text-muted-foreground">
-          Certificación anual del PESV conforme a la Resolución 40595 de 2022.
+          Consulta los informes anuales SISI/PESV y la evidencia que corresponde a cada punto.
         </p>
       </header>
 
       <section aria-labelledby="annual-pesv-reports-title" className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 id="annual-pesv-reports-title" className="text-lg font-semibold">Certificaciones</h2>
-          <Badge variant="secondary">1 informe incorporado</Badge>
+          <h2 id="annual-pesv-reports-title" className="text-lg font-semibold">Informes</h2>
+          <Badge variant="secondary">2 informes incorporados</Badge>
         </div>
         {annualCertifications.map((report) => (
           <Card key={report.href}>
@@ -43,7 +48,7 @@ export default function PesvInformesAnuales() {
             </CardHeader>
             <CardContent className="flex justify-end border-t pt-4">
               <Button asChild>
-                <Link href={report.href}>Abrir certificación <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" /></Link>
+                <Link href={report.href}>Abrir informe <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" /></Link>
               </Button>
             </CardContent>
           </Card>
