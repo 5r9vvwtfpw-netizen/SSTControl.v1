@@ -1,9 +1,12 @@
 import type { Express, Request, Response } from "express";
 import { and, desc, eq, gte, lte, ne, or } from "drizzle-orm";
+import multer from "multer";
+import { randomUUID } from "node:crypto";
 import * as schema from "@shared/schema";
 import { db } from "../db";
 import { requireAuth as authRequireAuth, requirePermission } from "../auth";
 import { getAuthorizedReportCompanyId } from "../lib/report-company-context";
+import { objectStorageService } from "../objectStorage";
 import {
   buildSiniestrosExcelBuffer,
   buildSiniestrosPdfBuffer,
@@ -225,12 +228,101 @@ function companyFileSlug(companyName: string): string {
 
 export function registerPesvInformeRoutes(app: Express) {
   const reportViewPermission = requirePermission("road_incidents:view");
+  const annualEvidenceUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024, files: 1 },
+  }).single("file");
   app.use("/api/pesv/informes-anuales", (_req, res, next) => {
     if (process.env.NODE_ENV === "production") {
       return res.status(404).json({ message: "No encontrado." });
     }
     next();
   });
+
+  app.get(
+    "/api/pesv/informes-anuales/comite-seguridad-vial/evidencia",
+    authRequireAuth,
+    reportViewPermission,
+    async (req, res) => {
+      const companyId = getAuthorizedReportCompanyId(req);
+      if (!companyId) return res.status(403).json({ message: "Selecciona una empresa autorizada." });
+      const [company] = await db.select({ name: schema.companies.name, nit: schema.companies.nit })
+        .from(schema.companies).where(eq(schema.companies.id, companyId)).limit(1);
+      if (!company) return res.status(404).json({ message: "No se encontró la empresa seleccionada." });
+      const [evidence] = await db.select().from(schema.pesvInformeAnualEvidencias).where(and(
+        eq(schema.pesvInformeAnualEvidencias.companyId, companyId),
+        eq(schema.pesvInformeAnualEvidencias.reportCode, "comite-seguridad-vial"),
+      )).limit(1);
+      res.json({ companyName: company.name, companyNit: company.nit, evidence: evidence ?? null });
+    },
+  );
+
+  app.post(
+    "/api/pesv/informes-anuales/comite-seguridad-vial/evidencia",
+    authRequireAuth,
+    requirePermission("sst_management:edit"),
+    annualEvidenceUpload,
+    async (req: Request, res: Response) => {
+      let uploadedObjectPath: string | null = null;
+      try {
+        const companyId = getAuthorizedReportCompanyId(req);
+        if (!companyId) return res.status(403).json({ message: "Selecciona una empresa autorizada." });
+        const file = req.file;
+        if (!file) return res.status(400).json({ message: "Adjunta la copia del acta en PDF." });
+        if (
+          file.mimetype !== "application/pdf" ||
+          !file.originalname.toLowerCase().endsWith(".pdf") ||
+          file.buffer.length < 5 ||
+          file.buffer.subarray(0, 5).toString("ascii") !== "%PDF-"
+        ) {
+          return res.status(400).json({ message: "El archivo debe ser un PDF válido." });
+        }
+        const [company] = await db.select({ id: schema.companies.id }).from(schema.companies)
+          .where(eq(schema.companies.id, companyId)).limit(1);
+        if (!company) return res.status(404).json({ message: "No se encontró la empresa seleccionada." });
+
+        uploadedObjectPath = `uploads/${companyId}/evidencias/pesv-informes-anuales/comite-seguridad-vial/${randomUUID()}.pdf`;
+        await objectStorageService.uploadObject(uploadedObjectPath, file.buffer, "application/pdf");
+        const previous = await db.select().from(schema.pesvInformeAnualEvidencias).where(and(
+          eq(schema.pesvInformeAnualEvidencias.companyId, companyId),
+          eq(schema.pesvInformeAnualEvidencias.reportCode, "comite-seguridad-vial"),
+        )).limit(1);
+        const fileName = file.originalname.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+          .replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 120);
+        const [saved] = await db.insert(schema.pesvInformeAnualEvidencias).values({
+          companyId,
+          reportCode: "comite-seguridad-vial",
+          fileUrl: `/objects/${uploadedObjectPath}`,
+          fileName,
+          fileSize: file.size,
+          contentType: "application/pdf",
+          uploadedBy: (req as any).user?.id ?? null,
+        }).onConflictDoUpdate({
+          target: [schema.pesvInformeAnualEvidencias.companyId, schema.pesvInformeAnualEvidencias.reportCode],
+          set: {
+            fileUrl: `/objects/${uploadedObjectPath}`,
+            fileName,
+            fileSize: file.size,
+            contentType: "application/pdf",
+            uploadedBy: (req as any).user?.id ?? null,
+            uploadedAt: new Date(),
+          },
+        }).returning();
+        if (previous[0]?.fileUrl) {
+          try { await objectStorageService.deleteObject(previous[0].fileUrl); } catch (deleteError) {
+            console.warn("[PESV annual report] Could not remove replaced evidence object", deleteError);
+          }
+        }
+        res.json(saved);
+      } catch (error) {
+        if (uploadedObjectPath) {
+          try { await objectStorageService.deleteObject(uploadedObjectPath); } catch {}
+        }
+        console.error("Error uploading annual PESV evidence:", error);
+        res.status(500).json({ message: "No fue posible guardar el PDF de evidencia." });
+      }
+    },
+  );
 
   async function loadAnnualCertification(req: Request, res: Response) {
     const reportCode = req.params.reportCode as AnnualCertificationCode;

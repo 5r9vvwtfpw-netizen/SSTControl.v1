@@ -546,28 +546,6 @@ function ActoAdministrativoTab({ isAdmin, toast }: { isAdmin: boolean; toast: an
     onError: (e: Error) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
-  const uploadMinutesMutation = useMutation({
-    mutationFn: async ({ id, file }: { id: string; file: File }) => {
-      const body = new FormData();
-      body.append("file", file);
-      const response = await fetch(`/api/pesv/comite/actos-administrativos/${id}/acta-maximo-organo`, {
-        method: "POST",
-        body,
-        credentials: "include",
-      });
-      if (!response.ok) {
-        const payload = await response.json().catch(() => null);
-        throw new Error(payload?.error || "No fue posible adjuntar el acta");
-      }
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/pesv/comite/actos-administrativos"] });
-      toast({ title: "Acta adjunta", description: "Se guardó el PDF original del máximo órgano social." });
-    },
-    onError: (error: Error) => toast({ title: "Error al adjuntar el acta", description: error.message, variant: "destructive" }),
-  });
-
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => { await apiRequest("DELETE", `/api/pesv/comite/actos-administrativos/${id}`); },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["/api/pesv/comite/actos-administrativos"] }); queryClient.invalidateQueries({ queryKey: ["/api/pesv/comite/verificacion-p01"] }); toast({ title: "Acto eliminado" }); },
@@ -777,44 +755,6 @@ function ActoAdministrativoTab({ isAdmin, toast }: { isAdmin: boolean; toast: an
                   <div><span className="font-medium">Objeto:</span> {a.objetoConformacion}</div>
                   {a.considerandos && <div><span className="font-medium">Considerandos:</span><pre className="whitespace-pre-wrap text-muted-foreground mt-1">{a.considerandos}</pre></div>}
                   {a.articulado && <div><span className="font-medium">Articulado:</span><pre className="whitespace-pre-wrap text-muted-foreground mt-1">{a.articulado}</pre></div>}
-                    <div className="rounded-md border p-3 space-y-2">
-                      <div className="font-medium">Acta del máximo órgano social (evidencia del informe anual)</div>
-                      {a.actaMaximoOrganoUrl ? (
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-muted-foreground">{a.actaMaximoOrganoFileName || "PDF adjunto"}</span>
-                          <Button size="sm" variant="outline" onClick={() => openCompanyDocument(a.actaMaximoOrganoUrl!)}>
-                            <FileDown className="h-4 w-4 mr-2" />Abrir PDF original
-                          </Button>
-                        </div>
-                      ) : (
-                        <p className="text-muted-foreground">Aún no se ha adjuntado la copia del acta del máximo órgano social. El PDF de este acto administrativo no la reemplaza.</p>
-                      )}
-                      {isAdmin && (
-                        <div className="space-y-1">
-                          <Label htmlFor={`input-acta-maximo-organo-${a.id}`}>
-                            {a.actaMaximoOrganoUrl ? "Reemplazar PDF original" : "Adjuntar PDF original"}
-                          </Label>
-                          <Input
-                            id={`input-acta-maximo-organo-${a.id}`}
-                            type="file"
-                            accept=".pdf,application/pdf"
-                            disabled={uploadMinutesMutation.isPending}
-                            data-testid={`input-acta-maximo-organo-${a.id}`}
-                            onChange={(event) => {
-                              const file = event.target.files?.[0];
-                              event.target.value = "";
-                              if (!file) return;
-                              if (file.type !== "application/pdf" || !file.name.toLowerCase().endsWith(".pdf")) {
-                                toast({ title: "Archivo no válido", description: "Selecciona un documento PDF.", variant: "destructive" });
-                                return;
-                              }
-                              uploadMinutesMutation.mutate({ id: a.id, file });
-                            }}
-                          />
-                          <p className="text-xs text-muted-foreground">Adjunta el documento auténtico expedido por la Asamblea, Junta u órgano social correspondiente. Se conservará sin cambios para proteger su contenido y firmas.</p>
-                        </div>
-                      )}
-                    </div>
                 </div>
               </CardContent>
             </Card>

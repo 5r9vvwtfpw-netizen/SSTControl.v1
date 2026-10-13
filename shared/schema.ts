@@ -10905,8 +10905,6 @@ export const actosAdministrativosPesv = pgTable("actos_administrativos_pesv", {
   articulado: text("articulado"),
   estado: estadoActoAdministrativoEnum("estado").notNull().default("vigente"),
   observaciones: text("observaciones"),
-  actaMaximoOrganoUrl: text("acta_maximo_organo_url"),
-  actaMaximoOrganoFileName: text("acta_maximo_organo_file_name"),
 
   createdAt: timestamp("created_at").notNull().default(sql`now()`),
   updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
@@ -10916,6 +10914,19 @@ export const insertActoAdministrativoPesvSchema = createInsertSchema(actosAdmini
   .omit({ id: true, createdAt: true, updatedAt: true, companyId: true });
 export type InsertActoAdministrativoPesv = z.infer<typeof insertActoAdministrativoPesvSchema>;
 export type ActoAdministrativoPesv = typeof actosAdministrativosPesv.$inferSelect;
+
+export const pesvInformeAnualEvidencias = pgTable("pesv_informe_anual_evidencias", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+  reportCode: varchar("report_code").notNull(),
+  fileUrl: text("file_url").notNull(),
+  fileName: text("file_name").notNull(),
+  fileSize: integer("file_size").notNull(),
+  contentType: varchar("content_type").notNull().default("application/pdf"),
+  uploadedBy: varchar("uploaded_by"),
+  uploadedAt: timestamp("uploaded_at").notNull().default(sql`now()`),
+});
+export type PesvInformeAnualEvidencia = typeof pesvInformeAnualEvidencias.$inferSelect;
 
 // Cronograma de Reuniones del Comité PESV
 // Resolución 40595/2022 - Planificación de reuniones periódicas

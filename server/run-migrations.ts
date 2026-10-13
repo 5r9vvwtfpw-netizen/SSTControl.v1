@@ -35,6 +35,7 @@ import { createPesvCriteriosEvidencias } from './migrations/create-pesv-criterio
 import { createPesvFatigaAlcoholTables } from './migrations/create-pesv-fatiga-alcohol-tables';
 import { migratePesvVictimasTable } from './migrations/create-pesv-victimas-table';
 import { addPesvComiteP01Tables } from './migrations/add-pesv-comite-p01-tables';
+import { createPesvInformeAnualEvidencias } from './migrations/create-pesv-informe-anual-evidencias';
 import { syncMatrizLegalNormas } from './migrations/sync-matriz-legal-normas';
 import { syncOnboardingColumns } from './migrations/sync-onboarding-columns';
 import { createPesvEncuestaConductorTable } from './migrations/create-pesv-encuesta-conductor';
@@ -124,6 +125,7 @@ export async function runMigrations() {
     await syncLoginTrackingColumns();
     await syncCompanySedes();
     await addPesvComiteP01Tables();
+    await createPesvInformeAnualEvidencias();
     await syncMatrizLegalNormas();
     await createPesvCriteriosEvidencias();
     await createPesvFatigaAlcoholTables();

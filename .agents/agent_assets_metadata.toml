@@ -909,3 +909,31 @@ mtime_ms = 1791816506772
 storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/80ede352-d406-412e-8ca3-4d405c351181/7cc11505-eaf5-426a-aa96-b07c628c8051"
 storage_version_token = "1791816530266109"
 content_type = "text/plain"
+
+[[outputs]]
+id = "FgcfelRud39lpRG183lIn"
+uri = "file://generated-artifacts/pesv-comite-demo-prueba/informe-prueba-funcional.html"
+type = "html"
+title = "Evidencia funcional — Comité SISI/PESV"
+description = "Prueba completada en DEMO-PRUEBA: carga y lectura de PDF, vista del informe anual y captura de P01 sin el campo mal ubicado."
+logical_id = "4a06727f-b629-4c14-b584-ea978a6afff3"
+content_hash = "sha256:3c3442b4a6499c541aa7148068e44e7ec933b6399d0d6300a742c23a28a9c5b1"
+size = 580939
+mtime_ms = 1791888163750
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/4a06727f-b629-4c14-b584-ea978a6afff3/e985df96-3dcb-4f16-b3a6-0c67c3729c48"
+storage_version_token = "1791888233904736"
+content_type = "text/html"
+
+[[outputs]]
+id = "gQ5RdD-eIOiG0akhztzB7"
+uri = "file://generated-artifacts/pesv-comite-demo-prueba/PRUEBA-FUNCIONAL-NO-ACTA-ORGANOSOCIAL.pdf"
+type = "pdf"
+title = "PDF de prueba cargado en DEMO-PRUEBA"
+description = "Muestra estandarizada y marcada expresamente como no válida; no es un acta ni acredita cumplimiento."
+logical_id = "1de7fb18-9ac6-44e5-8b36-a8d47c05b087"
+content_hash = "sha256:9eac8d6228e2e1d1973c17dcf3a62027fd36a8a78d6e34627961e91548880f69"
+size = 179606
+mtime_ms = 1791888135326
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/1de7fb18-9ac6-44e5-8b36-a8d47c05b087/594910c4-ea6f-4d12-8b64-a67cb9fedb44"
+storage_version_token = "1791888234601089"
+content_type = "application/pdf"
