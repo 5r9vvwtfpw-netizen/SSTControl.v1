@@ -57716,6 +57716,38 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     }
   });
 
+  // Acta del máximo órgano social: documento distinto a las actas del comité y al acto P01.
+  app.get("/api/pesv/comite/acta-maximo-organo", requireAuth, requirePermission("sst_management:view"), async (req, res) => {
+    try {
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(400).json({ error: "Se requiere companyId" });
+      const rows = await db.select().from(schema.actasMaximoOrganoPesv)
+        .where(eq(schema.actasMaximoOrganoPesv.companyId, companyId))
+        .orderBy(desc(schema.actasMaximoOrganoPesv.fechaReunion), desc(schema.actasMaximoOrganoPesv.createdAt));
+      res.json(rows);
+    } catch (error: any) {
+      console.error("Error consultando actas del máximo órgano:", error);
+      res.status(500).json({ error: "No se pudieron consultar las actas" });
+    }
+  });
+
+  app.post("/api/pesv/comite/acta-maximo-organo", requireAuth, requirePermission("sst_management:edit"), async (req, res) => {
+    try {
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(400).json({ error: "Se requiere companyId" });
+      const payload = schema.insertActaMaximoOrganoPesvSchema.parse(req.body);
+      const [created] = await db.insert(schema.actasMaximoOrganoPesv).values({
+        ...payload,
+        companyId,
+        createdBy: req.user?.id ? String(req.user.id) : null,
+      }).returning();
+      res.status(201).json(created);
+    } catch (error: any) {
+      console.error("Error creando acta del máximo órgano:", error);
+      res.status(400).json({ error: error.message || "No se pudo guardar el acta" });
+    }
+  });
+
   // ========== PESV - Cronograma de Reuniones (Res. 40595/2022) ==========
 
   app.get("/api/pesv/comite/cronograma", requireAuth, async (req, res) => {

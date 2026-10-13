@@ -115,6 +115,58 @@ export function registerPesvPdfRoutes(app: Express) {
     }
   });
 
+  app.get('/api/pesv/comite/acta-maximo-organo/:id/pdf', requireAuth, viewPermission, async (req: Request, res: Response) => {
+    try {
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(403).send('Empresa no identificada');
+      const [company] = await db.select().from(schema.companies).where(eq(schema.companies.id, companyId)).limit(1);
+      if (!company) return res.status(404).send('Empresa no encontrada');
+      const [acta] = await db.select().from(schema.actasMaximoOrganoPesv).where(and(
+        eq(schema.actasMaximoOrganoPesv.id, req.params.id),
+        eq(schema.actasMaximoOrganoPesv.companyId, companyId),
+      )).limit(1);
+      if (!acta) return res.status(404).send('Acta no encontrada');
+
+      await withPdfSemaphore(async () => {
+        const { default: PDFDocument } = await import('pdfkit');
+        const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
+        const subscription = await storage.getSubscriptionByCompany(companyId);
+        const trialStatus = getTrialStatus(subscription?.status || 'trial', subscription?.trialEnd || null, true, true);
+        setupTrialWatermarkOnAllPages(doc, trialStatus.requiresWatermark);
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `inline; filename="acta-maximo-organo-social-${acta.numeroActa.replace(/[^a-zA-Z0-9_-]/g, '-')}.pdf"`);
+        doc.pipe(res);
+        const logoBuffer = await loadCompanyLogo(company.logoUrl);
+        let y = await addStandardHeader({
+          doc, company, documentTitle: 'ACTA DEL MÁXIMO ÓRGANO SOCIAL',
+          documentCode: `PESV-MOS-${acta.numeroActa}`, logoBuffer,
+        });
+        y = addSectionBar(doc, 'Datos de la sesión', y);
+        y = addLabeledField(doc, 'Acta No.', acta.numeroActa, { y });
+        y = addLabeledField(doc, 'Órgano social', acta.organoSocial, { y });
+        y = addLabeledField(doc, 'Tipo de sesión', acta.tipoSesion, { y });
+        y = addLabeledField(doc, 'Fecha', formatDate(acta.fechaReunion), { y });
+        y = addLabeledField(doc, 'Lugar o modalidad', acta.lugar, { y });
+        y = addSectionBar(doc, 'Asistentes y quórum', y);
+        y = addParagraph(doc, acta.asistentes, { y });
+        y = addLabeledField(doc, 'Quórum', acta.quorum, { y });
+        y = addSectionBar(doc, 'Decisión sobre el PESV', y);
+        y = addParagraph(doc, acta.decision, { y });
+        y = checkPageBreak(doc, 100, y);
+        doc.moveTo(70, y + 55).lineTo(260, y + 55).stroke();
+        doc.moveTo(340, y + 55).lineTo(530, y + 55).stroke();
+        doc.fontSize(9).fillColor(PDF_COLORS.BLACK);
+        doc.text(acta.presidenteNombre, 70, y + 60, { width: 190, align: 'center' });
+        doc.text('Presidente de la sesión', 70, y + 74, { width: 190, align: 'center' });
+        doc.text(acta.secretarioNombre, 340, y + 60, { width: 190, align: 'center' });
+        doc.text('Secretario de la sesión', 340, y + 74, { width: 190, align: 'center' });
+        doc.end();
+      });
+    } catch (error) {
+      handlePdfError(error, res, 'pesv-acta-maximo-organo');
+    }
+  });
+
   // 1b. GET /api/pesv/comite/actos-administrativos/:id/pdf
   app.get('/api/pesv/comite/actos-administrativos/:id/pdf', requireAuth, viewPermission, async (req: Request, res: Response) => {
     try {

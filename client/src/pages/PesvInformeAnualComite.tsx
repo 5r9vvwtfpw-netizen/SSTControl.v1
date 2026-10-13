@@ -88,7 +88,7 @@ export default function PesvInformeAnualComite() {
 
               <div className="flex justify-end">
                 <Button variant="outline" asChild>
-                  <Link href="/pesv/comite?tab=acto-administrativo">Gestionar P01</Link>
+                  <Link href="/pesv/comite?tab=acta-organo-social">Gestionar acta del órgano social en P01</Link>
                 </Button>
               </div>
             </CardContent>

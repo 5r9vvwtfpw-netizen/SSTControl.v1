@@ -3,7 +3,7 @@ import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import { and, eq, like } from "drizzle-orm";
 import { chromium } from "playwright";
 import { db } from "../server/db";
-import { companies, pesvInformeAnualEvidencias, users } from "../shared/schema";
+import { actasMaximoOrganoPesv, companies, pesvInformeAnualEvidencias, users } from "../shared/schema";
 import { storage } from "../server/storage";
 import { objectStorageService } from "../server/objectStorage";
 
@@ -28,6 +28,7 @@ for (const sample of oldSamples) {
   await db.delete(pesvInformeAnualEvidencias).where(eq(pesvInformeAnualEvidencias.id, sample.id));
 }
 await unlink(`${evidenceDir}/PRUEBA-FUNCIONAL-NO-ACTA-ORGANOSOCIAL.pdf`).catch(() => undefined);
+await unlink(`${evidenceDir}/PRUEBA-FUNCIONAL-ACTA-MAXIMO-ORGANO.pdf`).catch(() => undefined);
 
 const browser = await chromium.launch({
   executablePath: "/nix/store/zi4f80l169xlmivz8vja8wlphq74qqk0-chromium-125.0.6422.141/bin/chromium",
@@ -67,38 +68,43 @@ try {
   const acts = await actsResponse.json() as Array<{ estado: string }>;
   const currentAct = acts.find((act) => act.estado === "vigente") as { id: string; estado: string } | undefined;
   if (!currentAct) throw new Error("No hay un acto vigente para mostrar el contexto del informe.");
-  checks.push("El informe consulta el acto vigente de P01 sin modificarlo.");
-  const reportPage = await context.newPage();
-  await reportPage.goto("/pesv/informes-anuales/comite-seguridad-vial", { waitUntil: "commit", timeout: 60000 });
-  await reportPage.getByTestId("annual-pesv-committee-report").waitFor({ timeout: 60000 });
-  await reportPage.getByText("DEMO-PRUEBA", { exact: false }).waitFor({ timeout: 60000 });
-  await reportPage.getByText("Datos de conformación del módulo P01.", { exact: false }).waitFor({ timeout: 60000 });
-  await reportPage.getByRole("link", { name: "Gestionar P01" }).waitFor({ timeout: 60000 });
-  if (await reportPage.getByRole("button", { name: /Abrir PDF del acto administrativo P01|Generar evidencia PDF/ }).count() > 0) {
-    throw new Error("El informe anual no debe presentar el PDF administrativo P01 como la evidencia solicitada.");
-  }
-  if (await reportPage.locator('input[type="file"]').count() !== 0) {
-    throw new Error("La pantalla anual todavía muestra un selector para cargar archivos.");
-  }
-  checks.push("El informe anual no muestra selector ni solicita cargar archivos.");
-  const cookieButton = reportPage.getByRole("button", { name: "Solo esenciales", exact: true });
-  if (await cookieButton.isVisible()) await cookieButton.click();
-  await reportPage.screenshot({ path: `${evidenceDir}/01-informe-anual-sin-carga.png`, fullPage: true });
-
   const p01Page = await context.newPage();
-  await p01Page.goto("/pesv/comite?tab=acto-administrativo", { waitUntil: "commit", timeout: 60000 });
-  await p01Page.getByText("Acto Administrativo", { exact: true }).waitFor({ timeout: 60000 });
-  await p01Page.screenshot({ path: `${evidenceDir}/02-p01-contexto.png`, fullPage: true });
-  checks.push("P01 conserva su función de conformación y acto administrativo.");
-
-  const generatedPdfResponse = await context.request.get(`/api/pesv/comite/actos-administrativos/${currentAct.id}/pdf`);
-  const generatedPdf = Buffer.from(await generatedPdfResponse.body());
-  if (!generatedPdfResponse.ok() || !generatedPdfResponse.headers()["content-type"]?.includes("application/pdf")
-      || generatedPdf.subarray(0, 5).toString("ascii") !== "%PDF-") {
-    throw new Error(`No se generó el PDF desde P01: HTTP ${generatedPdfResponse.status()}`);
+  await p01Page.goto("/pesv/comite?tab=acta-organo-social", { waitUntil: "commit", timeout: 60000 });
+  await p01Page.getByText("Acta del máximo órgano social", { exact: true }).waitFor({ timeout: 60000 });
+  if (await p01Page.locator('input[type="file"]').count() !== 0) {
+    throw new Error("P01 no debe solicitar archivos para generar esta evidencia.");
   }
-  await writeFile(`${evidenceDir}/Evidencia-Comite-PESV-DEMO-PRUEBA.pdf`, generatedPdf);
-  checks.push("P01 genera su PDF administrativo por separado; el informe anual no lo presenta como acta del máximo órgano social.");
+  await p01Page.screenshot({ path: `${evidenceDir}/01-p01-acta-organo-social.png`, fullPage: true });
+  checks.push("P01 incluye un formulario propio para el acta del máximo órgano social, sin carga de archivos.");
+
+  const generatedActaResponse = await context.request.post("/api/pesv/comite/acta-maximo-organo", {
+    data: {
+      numeroActa: `PRUEBA-FUNCIONAL-${new Date().toISOString().slice(0, 10)}`,
+      organoSocial: "PRUEBA FUNCIONAL — no usar como acta societaria",
+      tipoSesion: "Ordinaria",
+      fechaReunion: new Date().toISOString().slice(0, 10),
+      lugar: "Prueba de funcionamiento",
+      asistentes: "Registro temporal para validar la generación del documento.",
+      quorum: "Dato de prueba; no representa una reunión real.",
+      decision: "Validación funcional de la creación del PDF desde P01.",
+      presidenteNombre: "Prueba Funcional",
+      secretarioNombre: "Prueba Funcional",
+    },
+  });
+  if (!generatedActaResponse.ok()) throw new Error(`No se pudo crear el registro de prueba: HTTP ${generatedActaResponse.status()} ${await generatedActaResponse.text()}`);
+  const generatedActa = await generatedActaResponse.json() as { id: string };
+  try {
+    const generatedPdfResponse = await context.request.get(`/api/pesv/comite/acta-maximo-organo/${generatedActa.id}/pdf`);
+    const generatedPdf = Buffer.from(await generatedPdfResponse.body());
+    if (!generatedPdfResponse.ok() || !generatedPdfResponse.headers()["content-type"]?.includes("application/pdf")
+        || generatedPdf.subarray(0, 5).toString("ascii") !== "%PDF-") {
+      throw new Error(`No se generó el PDF del acta del órgano social: HTTP ${generatedPdfResponse.status()}`);
+    }
+    await writeFile(`${evidenceDir}/PRUEBA-FUNCIONAL-ACTA-MAXIMO-ORGANO.pdf`, generatedPdf);
+  } finally {
+    await db.delete(actasMaximoOrganoPesv).where(eq(actasMaximoOrganoPesv.id, generatedActa.id));
+  }
+  checks.push("El sistema creó el acta de prueba y generó un PDF estandarizado; el registro de prueba se eliminó y el PDF quedó marcado PRUEBA FUNCIONAL.");
 } catch (error) {
   failure = error;
 } finally {
@@ -125,15 +131,13 @@ if (failure) {
   process.exitCode = 1;
 } else {
   const escape = (text: string) => text.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
-  const image = await readFile(`${evidenceDir}/01-informe-anual-sin-carga.png`);
-  const p01Image = await readFile(`${evidenceDir}/02-p01-contexto.png`);
+  const p01Image = await readFile(`${evidenceDir}/01-p01-acta-organo-social.png`);
   const html = `<!doctype html><html lang="es"><meta charset="utf-8"><title>Verificación sin cargas — DEMO-PRUEBA</title>
 <style>body{font:16px/1.55 system-ui,sans-serif;color:#183127;background:#f4f8f5;margin:0 auto;padding:36px;max-width:1100px}h1{font-size:2rem}.tag{display:inline-block;background:#d8efe1;border-radius:30px;padding:6px 12px}li{margin:8px 0}figure{background:#fff;border:1px solid #dae7de;padding:12px;margin:22px 0;border-radius:12px}img{display:block;width:100%;height:auto}.note{padding:16px;border-left:4px solid #a36b00;background:#fff6d9}</style>
-<h1>Verificación funcional del punto anual PESV</h1><p class="tag">DEMO-PRUEBA · Desarrollo · ${new Date().toISOString().slice(0, 10)} · COMPLETADA</p>
-<p>Se verificó que el punto consulta los datos de P01, no solicita cargar archivos y no presenta el PDF administrativo P01 como si fuera el acta del máximo órgano social.</p><ul>${checks.map((check) => `<li>${escape(check)}</li>`).join("")}</ul>
-<p class="note"><b>Resultado:</b> el sistema todavía no genera el acta del máximo órgano social solicitada para este punto.</p>
-<figure><img src="data:image/png;base64,${image.toString("base64")}" alt="Informe anual PESV en DEMO-PRUEBA sin selector de archivos"><figcaption>Datos consultados en P01; el acta solicitada no está implementada.</figcaption></figure>
-<figure><img src="data:image/png;base64,${p01Image.toString("base64")}" alt="Módulo P01 con la conformación del equipo PESV"><figcaption>P01 mantiene el registro de conformación del equipo.</figcaption></figure></html>`;
+<h1>Verificación funcional del acta del máximo órgano social en P01</h1><p class="tag">DEMO-PRUEBA · Desarrollo · ${new Date().toISOString().slice(0, 10)} · COMPLETADA</p>
+<p>Se verificó el flujo en desarrollo con la empresa DEMO-PRUEBA. La muestra PDF se conserva claramente marcada como prueba funcional; el registro de prueba fue eliminado.</p><ul>${checks.map((check) => `<li>${escape(check)}</li>`).join("")}</ul>
+<p class="note"><b>Resultado:</b> P01 genera el PDF desde los datos registrados; no se solicita cargar archivos. La muestra no es un acta societaria válida.</p>
+<figure><img src="data:image/png;base64,${p01Image.toString("base64")}" alt="P01 contiene el formulario para generar el acta del máximo órgano social"><figcaption>Formulario nuevo en el módulo P01.</figcaption></figure></html>`;
   await writeFile(`${evidenceDir}/informe-prueba-funcional.html`, html);
   await writeFile(`${evidenceDir}/resultado.json`, JSON.stringify({
     result: "COMPLETADA",
@@ -141,7 +145,8 @@ if (failure) {
     environment: "development",
     checks,
     fileUploadControl: "REMOVIDO",
-    note: "La verificación no afirma que el acto P01 sustituya el acta del máximo órgano social.",
+    samplePdf: "PRUEBA-FUNCIONAL-ACTA-MAXIMO-ORGANO.pdf",
+    note: "La muestra PDF es únicamente una prueba funcional; no constituye acta societaria real.",
   }, null, 2));
   console.log(JSON.stringify({ result: "COMPLETADA", checks, evidenceDir, fileUploadControl: "REMOVIDO" }, null, 2));
 }

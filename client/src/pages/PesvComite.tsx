@@ -22,6 +22,7 @@ import { hasCompanyAdminAccess, canWrite } from "@shared/permissions";
 import { Link } from "wouter";
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
 import { BackToPesvEvaluationButton } from "@/components/BackToPesvEvaluationButton";
+import ActaMaximoOrganoTab from "@/components/pesv/ActaMaximoOrganoTab";
 
 type RolComite = "presidente" | "secretario" | "representante_direccion" | "representante_trabajadores" | "lider_pesv" | "coordinador_sst" | "otro";
 type EstadoIntegrante = "activo" | "inactivo";
@@ -129,7 +130,7 @@ export default function PesvComite() {
       <VerificacionP01Banner />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4 max-w-2xl">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 max-w-5xl">
           <TabsTrigger value="integrantes" data-testid="tab-integrantes">
             <Users className="h-4 w-4 mr-2" />
             Integrantes
@@ -145,6 +146,10 @@ export default function PesvComite() {
           <TabsTrigger value="actas" data-testid="tab-actas">
             <FileText className="h-4 w-4 mr-2" />
             Actas
+          </TabsTrigger>
+          <TabsTrigger value="acta-organo-social" data-testid="tab-acta-organo-social">
+            <FileText className="h-4 w-4 mr-2" />
+            Acta órgano social
           </TabsTrigger>
         </TabsList>
 
@@ -162,6 +167,10 @@ export default function PesvComite() {
 
         <TabsContent value="actas" className="mt-6">
           <ActasTab isAdmin={isAdmin} toast={toast} />
+        </TabsContent>
+
+        <TabsContent value="acta-organo-social" className="mt-6">
+          <ActaMaximoOrganoTab isAdmin={isAdmin} />
         </TabsContent>
       </Tabs>
     </div>
