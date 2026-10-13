@@ -115,6 +115,12 @@ doc.end();
 
 Los PDF expuestos en la biblioteca de informes no deben limitarse a usar el encabezado y la firma estándar: todo el cuerpo variable debe construirse con `addSectionBar`, `addSimpleTable`, `addParagraph`, `addLabeledField` y `checkPageBreak`, propagando siempre el valor `y` retornado.
 
+Los documentos generados por el sistema deben seguir la estandarización institucional. Los PDF originales aportados como evidencia deben conservarse sin alteraciones para no modificar el contenido ni invalidar firmas; se abren como el archivo original, no como una versión reconstruida.
+
+**Why:** El usuario indicó que todos los PDF del sistema deben respetar la estandarización; los soportes fuente firmados también deben mantener su autenticidad.
+
+**How to apply:** Aplicar el estándar común a todo PDF que el sistema componga. Para evidencia PDF cargada por la empresa, preservar el archivo original byte por byte y aclarar que no se modifica.
+
 **Why:** Los bloques manuales con `doc.rect`, alturas fijas y coordenadas incrementadas a mano llegaron a producir texto superpuesto aunque la descarga respondiera HTTP 200 y el archivo tuviera una firma PDF válida.
 
 **How to apply:** Al crear o modificar un informe, validar tanto la integridad del archivo (`%PDF-` y `%%EOF`) como su renderizado visual con datos largos, múltiples filas, saltos de página y la tabla de firmas.

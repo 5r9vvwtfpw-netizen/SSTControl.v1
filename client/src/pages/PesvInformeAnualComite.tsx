@@ -81,6 +81,7 @@ export default function PesvInformeAnualComite() {
                 <AlertTitle>Documento solicitado por el informe</AlertTitle>
                 <AlertDescription>
                   La evidencia debe ser el acta original del máximo órgano social de la empresa. El acto administrativo PESV generado por el sistema y las actas de reuniones del comité no reemplazan ese documento.
+                  El PDF original se conserva sin cambios; los documentos que genera el sistema siguen la estandarización institucional.
                 </AlertDescription>
               </Alert>
 

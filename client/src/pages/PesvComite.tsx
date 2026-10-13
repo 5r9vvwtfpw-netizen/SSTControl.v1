@@ -811,7 +811,7 @@ function ActoAdministrativoTab({ isAdmin, toast }: { isAdmin: boolean; toast: an
                               uploadMinutesMutation.mutate({ id: a.id, file });
                             }}
                           />
-                          <p className="text-xs text-muted-foreground">Adjunta el documento auténtico expedido por la Asamblea, Junta u órgano social correspondiente.</p>
+                          <p className="text-xs text-muted-foreground">Adjunta el documento auténtico expedido por la Asamblea, Junta u órgano social correspondiente. Se conservará sin cambios para proteger su contenido y firmas.</p>
                         </div>
                       )}
                     </div>
