@@ -231,6 +231,12 @@ function companyFileSlug(companyName: string): string {
 
 export function registerPesvInformeRoutes(app: Express) {
   const reportViewPermission = requirePermission("road_incidents:view");
+  app.use("/api/pesv/informes-anuales", (_req, res, next) => {
+    if (process.env.NODE_ENV === "production") {
+      return res.status(404).json({ message: "No encontrado." });
+    }
+    next();
+  });
 
   async function loadAnnualCertification(req: Request, res: Response) {
     const reportCode = req.params.reportCode as AnnualCertificationCode;

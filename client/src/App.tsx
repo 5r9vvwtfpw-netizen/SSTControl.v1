@@ -102,6 +102,8 @@ import PesvAtencionVictimas from "@/pages/PesvAtencionVictimas";
 import PesvSiniestros from "@/pages/PesvSiniestros";
 import PesvInformes from "@/pages/PesvInformes";
 import PesvInformesTrimestrales from "@/pages/PesvInformesTrimestrales";
+import PesvInformesAnuales from "@/pages/PesvInformesAnuales";
+import { PesvInformeAnual1565, PesvInformeAnual40595 } from "@/pages/PesvInformeAnualCertificacion";
 import PesvInformeTrimestralSiniestros from "@/pages/PesvInformeTrimestralSiniestros";
 import PesvInformeTrimestralActas from "@/pages/PesvInformeTrimestralActas";
 import PesvInformeTrimestralLecciones from "@/pages/PesvInformeTrimestralLecciones";
@@ -431,6 +433,9 @@ function Router() {
       <SubscriptionProtectedRoute path="/pesv/informes-trimestrales/actas-siniestros" component={PesvInformeTrimestralActas} feature="hasPESV" featureName="Informe trimestral PESV - Actas de siniestros" />
       <SubscriptionProtectedRoute path="/pesv/informes-trimestrales/lecciones-aprendidas" component={PesvInformeTrimestralLecciones} feature="hasPESV" featureName="Informe trimestral PESV - Lecciones aprendidas" />
       <SubscriptionProtectedRoute path="/pesv/informes-trimestrales/medidas-prevencion" component={PesvInformeTrimestralMedidas} feature="hasPESV" featureName="Informe trimestral PESV - Medidas de prevención" />
+      <DevelopmentOnlyAnnualRoute path="/pesv/informes-anuales" component={PesvInformesAnuales} featureName="Informe anual SISI/PESV" />
+      <DevelopmentOnlyAnnualRoute path="/pesv/informes-anuales/resolucion-1565-2014" component={PesvInformeAnual1565} featureName="Certificación anual PESV — Resolución 1565 de 2014" />
+      <DevelopmentOnlyAnnualRoute path="/pesv/informes-anuales/resolucion-40595-2022" component={PesvInformeAnual40595} featureName="Certificación anual PESV — Resolución 40595 de 2022" />
       <SubscriptionProtectedRoute path="/pesv/capacitaciones" component={PesvCapacitaciones} feature="hasPESV" featureName="Módulo PESV - Capacitaciones" />
       <SubscriptionProtectedRoute path="/pesv/induccion-virtual" component={PesvInduccionVirtual} feature="hasPESV" featureName="Módulo PESV - Inducción Virtual" />
       <SubscriptionProtectedRoute path="/pesv/auditorias" component={PesvAuditorias} feature="hasPESV" featureName="Módulo PESV - Auditorías" />
@@ -701,6 +706,29 @@ function ConditionalChatBot() {
   if (!user) return null;
   if (user.role === "trabajador") return null;
   return <ChatBot />;
+}
+
+function DevelopmentOnlyAnnualRoute({
+  path,
+  component: Component,
+  featureName,
+}: {
+  path: string;
+  component: () => React.JSX.Element;
+  featureName: string;
+}) {
+  if (!import.meta.env.DEV) {
+    const HiddenAnnualPage = () => <Redirect to="/pesv" />;
+    return <ProtectedRoute path={path} component={HiddenAnnualPage} />;
+  }
+  return (
+    <SubscriptionProtectedRoute
+      path={path}
+      component={Component}
+      feature="hasPESV"
+      featureName={featureName}
+    />
+  );
 }
 
 export default function App() {

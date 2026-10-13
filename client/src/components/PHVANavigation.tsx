@@ -166,7 +166,7 @@ const pesvNavMenuItems: { label: string; path: string; group?: string; disabled?
   { label: "Evaluaciones PESV", path: "/pesv/evaluaciones" },
   { label: "Informe mensual (SISI/PESV)", path: "/pesv/informes" },
   { label: "Informe trimestral (SISI/PESV)", path: "/pesv/informes-trimestrales" },
-  { label: "Informe anual SISI/PESV", path: "/pesv/informes-anuales", disabled: true },
+  { label: "Informe anual SISI/PESV", path: "/pesv/informes-anuales" },
 ];
 
 export function PHVANavigation() {
