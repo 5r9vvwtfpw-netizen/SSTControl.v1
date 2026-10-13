@@ -10910,6 +10910,28 @@ export const actosAdministrativosPesv = pgTable("actos_administrativos_pesv", {
   updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
 });
 
+export const actasMaximoOrganoPesv = pgTable("actas_maximo_organo_pesv", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  companyId: varchar("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+  numeroActa: varchar("numero_acta").notNull(),
+  organoSocial: text("organo_social").notNull(),
+  tipoSesion: text("tipo_sesion").notNull(),
+  fechaReunion: date("fecha_reunion").notNull(),
+  lugar: text("lugar").notNull(),
+  asistentes: text("asistentes").notNull(),
+  quorum: text("quorum").notNull(),
+  decision: text("decision").notNull(),
+  presidenteNombre: text("presidente_nombre").notNull(),
+  secretarioNombre: text("secretario_nombre").notNull(),
+  estado: text("estado").notNull().default("borrador"),
+  createdBy: varchar("created_by"),
+  createdAt: timestamp("created_at").notNull().default(sql`now()`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`now()`),
+});
+export const insertActaMaximoOrganoPesvSchema = createInsertSchema(actasMaximoOrganoPesv)
+  .omit({ id: true, createdAt: true, updatedAt: true, companyId: true, createdBy: true });
+export type ActaMaximoOrganoPesv = typeof actasMaximoOrganoPesv.$inferSelect;
+
 export const insertActoAdministrativoPesvSchema = createInsertSchema(actosAdministrativosPesv)
   .omit({ id: true, createdAt: true, updatedAt: true, companyId: true });
 export type InsertActoAdministrativoPesv = z.infer<typeof insertActoAdministrativoPesvSchema>;
