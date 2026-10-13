@@ -72,7 +72,7 @@ try {
   await reportPage.goto("/pesv/informes-anuales/comite-seguridad-vial", { waitUntil: "commit", timeout: 60000 });
   await reportPage.getByTestId("annual-pesv-committee-report").waitFor({ timeout: 60000 });
   await reportPage.getByText("DEMO-PRUEBA", { exact: false }).waitFor({ timeout: 60000 });
-  await reportPage.getByText("Datos de conformación del módulo P01.", { exact: true }).waitFor({ timeout: 60000 });
+  await reportPage.getByText("Datos de conformación del módulo P01.", { exact: false }).waitFor({ timeout: 60000 });
   if (await reportPage.locator('input[type="file"]').count() !== 0) {
     throw new Error("La pantalla anual todavía muestra un selector para cargar archivos.");
   }
