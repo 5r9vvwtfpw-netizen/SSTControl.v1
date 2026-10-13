@@ -11,8 +11,8 @@ import { apiRequest, buildHeaders, getSelectedCompanyId } from "@/lib/queryClien
 import { useCompanyContext } from "@/hooks/use-company-context";
 import { useToast } from "@/hooks/use-toast";
 
-type ReportCode = "resolucion-1565-2014" | "resolucion-40595-2022";
-type Answer = "implemented" | "not-implemented" | "in-development";
+type ReportCode = "resolucion-40595-2022";
+type Answer = "implemented" | "in-development";
 type ReportState = {
   title: string;
   question: string;
@@ -29,23 +29,13 @@ type ReportState = {
 
 const reportConfigs: Record<ReportCode, {
   answerLabels: Partial<Record<Answer, string>>;
-  reportRoute: string;
   note: string;
 }> = {
-  "resolucion-1565-2014": {
-    answerLabels: {
-      implemented: "Sí, la empresa cuenta con un PESV implementado conforme a la Resolución 1565 de 2014.",
-      "not-implemented": "No, la empresa no cuenta con un PESV implementado conforme a la Resolución 1565 de 2014.",
-    },
-    reportRoute: "/pesv/informes-anuales/resolucion-1565-2014",
-    note: "Esta certificación mantiene la referencia de 2014 que solicita este punto. La evaluación del sistema bajo la metodología de 2022 no se usa para inferir ni reemplazar esta declaración.",
-  },
   "resolucion-40595-2022": {
     answerLabels: {
       implemented: "La empresa cuenta con un PESV implementado conforme a la Resolución 40595 de 2022.",
       "in-development": "La empresa está desarrollando su PESV conforme a la Resolución 40595 de 2022.",
     },
-    reportRoute: "/pesv/informes-anuales/resolucion-40595-2022",
     note: "La evaluación PESV registrada se muestra como información de consulta. La condición del informe la confirma expresamente el Representante Legal.",
   },
 };
@@ -93,7 +83,7 @@ export default function PesvInformeAnualCertificacion({ reportCode }: { reportCo
           <Link href="/pesv/informes-anuales"><ArrowLeft className="mr-2 h-4 w-4" />Volver a informes anuales</Link>
         </Button>
         <p className="text-sm font-medium text-primary">PESV · Informe anual SISI/PESV</p>
-        <h1 className="mt-1 text-2xl font-bold md:text-3xl">{config.reportRoute.endsWith("1565-2014") ? "Certificación conforme a la Resolución 1565 de 2014" : "Certificación conforme a la Resolución 40595 de 2022"}</h1>
+        <h1 className="mt-1 text-2xl font-bold md:text-3xl">Certificación conforme a la Resolución 40595 de 2022</h1>
         <p className="mt-2 max-w-3xl text-muted-foreground">{config.note}</p>
       </header>
 
@@ -185,10 +175,6 @@ export default function PesvInformeAnualCertificacion({ reportCode }: { reportCo
       )}
     </main>
   );
-}
-
-export function PesvInformeAnual1565() {
-  return <PesvInformeAnualCertificacion reportCode="resolucion-1565-2014" />;
 }
 
 export function PesvInformeAnual40595() {

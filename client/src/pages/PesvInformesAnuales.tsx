@@ -6,11 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 const annualCertifications = [
   {
-    href: "/pesv/informes-anuales/resolucion-1565-2014",
-    title: "Certificación de implementación del PESV — Resolución 1565 de 2014",
-    description: "Declaración independiente del Representante Legal sobre la pregunta específica del primer punto SISI/PESV.",
-  },
-  {
     href: "/pesv/informes-anuales/resolucion-40595-2022",
     title: "Certificación del PESV — Resolución 40595 de 2022",
     description: "Declaración independiente del Representante Legal",
@@ -24,14 +19,14 @@ export default function PesvInformesAnuales() {
         <p className="text-sm font-medium text-primary">PESV · SISI/PESV</p>
         <h1 className="text-2xl font-bold md:text-3xl">Informe anual SISI/PESV</h1>
         <p className="max-w-3xl text-muted-foreground">
-          Cada punto genera su propia certificación PDF. Se conserva la normatividad que solicita ese punto y la declaración requiere confirmación del Representante Legal.
+          Certificación anual del PESV conforme a la Resolución 40595 de 2022.
         </p>
       </header>
 
       <section aria-labelledby="annual-pesv-reports-title" className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 id="annual-pesv-reports-title" className="text-lg font-semibold">Certificaciones</h2>
-          <Badge variant="secondary">2 informes incorporados</Badge>
+          <Badge variant="secondary">1 informe incorporado</Badge>
         </div>
         {annualCertifications.map((report) => (
           <Card key={report.href}>

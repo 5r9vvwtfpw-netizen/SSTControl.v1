@@ -14,8 +14,8 @@ import {
 import { setupTrialWatermarkOnAllPages } from "../services/pdf-watermark";
 import { objectStorageService } from "../objectStorage";
 
-export type AnnualCertificationCode = "resolucion-1565-2014" | "resolucion-40595-2022";
-export type AnnualCertificationAnswer = "implemented" | "not-implemented" | "in-development";
+export type AnnualCertificationCode = "resolucion-40595-2022";
+export type AnnualCertificationAnswer = "implemented" | "in-development";
 
 type CompanyForPdf = Company & { address?: string | null };
 
@@ -26,17 +26,6 @@ const certificationDetails: Record<AnnualCertificationCode, {
   resolution: string;
   answers: Record<AnnualCertificationAnswer, string>;
 }> = {
-  "resolucion-1565-2014": {
-    documentTitle: "Certificación anual del PESV — Resolución 1565 de 2014",
-    documentCode: "SISI-PESV-ANUAL-01",
-    question: "¿La empresa cuenta con un PESV implementado conforme a la Resolución 1565 de 2014?",
-    resolution: "Resolución 1565 de 2014",
-    answers: {
-      implemented: "La empresa cuenta con un PESV implementado conforme a la Resolución 1565 de 2014.",
-      "not-implemented": "La empresa no cuenta con un PESV implementado conforme a la Resolución 1565 de 2014.",
-      "in-development": "",
-    },
-  },
   "resolucion-40595-2022": {
     documentTitle: "Certificación anual del PESV — Resolución 40595 de 2022",
     documentCode: "SISI-PESV-ANUAL-02",
@@ -44,7 +33,6 @@ const certificationDetails: Record<AnnualCertificationCode, {
     resolution: "Resolución 40595 de 2022",
     answers: {
       implemented: "La empresa cuenta con un PESV implementado conforme a la Resolución 40595 de 2022.",
-      "not-implemented": "",
       "in-development": "La empresa se encuentra desarrollando su PESV conforme a la Resolución 40595 de 2022.",
     },
   },

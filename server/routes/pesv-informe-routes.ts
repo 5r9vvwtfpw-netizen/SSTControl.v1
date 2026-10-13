@@ -31,12 +31,6 @@ const ANNUAL_PESV_CERTIFICATIONS: Record<AnnualCertificationCode, {
   resolution: string;
   answers: AnnualCertificationAnswer[];
 }> = {
-  "resolucion-1565-2014": {
-    title: "Certificación PESV — Resolución 1565 de 2014",
-    question: "¿La empresa cuenta con un PESV implementado conforme a la Resolución 1565 de 2014?",
-    resolution: "Resolución 1565 de 2014",
-    answers: ["implemented", "not-implemented"],
-  },
   "resolucion-40595-2022": {
     title: "Certificación PESV — Resolución 40595 de 2022",
     question: "¿La empresa cuenta con un PESV implementado conforme a la Resolución 40595 de 2022 o lo está desarrollando?",
