@@ -19,6 +19,31 @@ import {
   type LeccionReportRow,
 } from "../reports/pesv-lecciones-aprendidas-report";
 import { buildMedidasPrevencionPdfBuffer } from "../reports/pesv-medidas-prevencion-report";
+import {
+  buildAnnualCertificationPdfBuffer,
+  type AnnualCertificationAnswer,
+  type AnnualCertificationCode,
+} from "../reports/pesv-annual-certification-report";
+
+const ANNUAL_PESV_CERTIFICATIONS: Record<AnnualCertificationCode, {
+  title: string;
+  question: string;
+  resolution: string;
+  answers: AnnualCertificationAnswer[];
+}> = {
+  "resolucion-1565-2014": {
+    title: "Certificación PESV — Resolución 1565 de 2014",
+    question: "¿La empresa cuenta con un PESV implementado conforme a la Resolución 1565 de 2014?",
+    resolution: "Resolución 1565 de 2014",
+    answers: ["implemented", "not-implemented"],
+  },
+  "resolucion-40595-2022": {
+    title: "Certificación PESV — Resolución 40595 de 2022",
+    question: "¿La empresa cuenta con un PESV implementado conforme a la Resolución 40595 de 2022 o lo está desarrollando?",
+    resolution: "Resolución 40595 de 2022",
+    answers: ["implemented", "in-development"],
+  },
+};
 
 type ReportDataset = {
   company: typeof schema.companies.$inferSelect;
@@ -206,6 +231,102 @@ function companyFileSlug(companyName: string): string {
 
 export function registerPesvInformeRoutes(app: Express) {
   const reportViewPermission = requirePermission("road_incidents:view");
+
+  async function loadAnnualCertification(req: Request, res: Response) {
+    const reportCode = req.params.reportCode as AnnualCertificationCode;
+    const definition = ANNUAL_PESV_CERTIFICATIONS[reportCode];
+    if (!definition) {
+      res.status(404).json({ message: "No se encontró esta certificación anual." });
+      return null;
+    }
+    const companyId = getAuthorizedReportCompanyId(req);
+    if (!companyId) {
+      res.status(403).json({ message: "Selecciona una empresa autorizada para consultar el informe." });
+      return null;
+    }
+    const [company] = await db.select().from(schema.companies).where(eq(schema.companies.id, companyId)).limit(1);
+    if (!company) {
+      res.status(404).json({ message: "No se encontró la empresa seleccionada." });
+      return null;
+    }
+
+    const missing: string[] = [];
+    if (!company.legalRepName?.trim()) missing.push("Registra el nombre del Representante Legal en Empresas.");
+    if (!company.legalRepId?.trim()) missing.push("Registra la identificación del Representante Legal en Empresas.");
+    if (!company.legalRepSignatureUrl?.trim()) missing.push("Carga la firma del Representante Legal en Empresas.");
+
+    let latestEvaluation: typeof schema.evaluacionesPesv.$inferSelect | null = null;
+    if (reportCode === "resolucion-40595-2022") {
+      [latestEvaluation] = await db.select().from(schema.evaluacionesPesv)
+        .where(eq(schema.evaluacionesPesv.companyId, companyId))
+        .orderBy(desc(schema.evaluacionesPesv.createdAt))
+        .limit(1);
+      latestEvaluation ??= null;
+    }
+
+    return { company, definition, missing, latestEvaluation, reportCode };
+  }
+
+  app.get("/api/pesv/informes-anuales/:reportCode/estado", authRequireAuth, reportViewPermission, async (req, res) => {
+    try {
+      const data = await loadAnnualCertification(req, res);
+      if (!data) return;
+      res.json({
+        reportCode: data.reportCode,
+        title: data.definition.title,
+        question: data.definition.question,
+        resolution: data.definition.resolution,
+        answers: data.definition.answers,
+        companyName: data.company.name,
+        companyNit: data.company.nit,
+        representativeName: data.company.legalRepName,
+        representativeId: data.company.legalRepId,
+        hasSignature: Boolean(data.company.legalRepSignatureUrl?.trim()),
+        latestEvaluation: data.latestEvaluation ? {
+          year: data.latestEvaluation.anio,
+          status: data.latestEvaluation.estado,
+          completion: data.latestEvaluation.porcentajeCumplimiento,
+        } : null,
+        missing: data.missing,
+      });
+    } catch (error) {
+      console.error("Error consultando certificación anual PESV:", error);
+      res.status(500).json({ message: "No fue posible consultar los datos de la certificación." });
+    }
+  });
+
+  app.get("/api/pesv/informes-anuales/:reportCode.pdf", authRequireAuth, reportViewPermission, async (req, res) => {
+    try {
+      if (req.query.confirm !== "1") {
+        return res.status(409).json({ message: "Confirma expresamente la declaración del Representante Legal antes de generar el PDF." });
+      }
+      const data = await loadAnnualCertification(req, res);
+      if (!data) return;
+      if (data.missing.length) {
+        return res.status(409).json({ message: "Completa los datos del Representante Legal antes de generar el PDF.", missing: data.missing });
+      }
+      const answer = typeof req.query.answer === "string" ? req.query.answer as AnnualCertificationAnswer : null;
+      if (!answer || !data.definition.answers.includes(answer)) {
+        return res.status(400).json({ message: "Selecciona una respuesta válida para esta certificación." });
+      }
+      const subscription = await storage.getSubscriptionByCompany(data.company.id);
+      const trialStatus = getTrialStatus(subscription?.status || "trial", subscription?.trialEnd || null, true, true);
+      const buffer = await buildAnnualCertificationPdfBuffer(
+        data.company,
+        data.reportCode,
+        answer,
+        trialStatus.requiresWatermark,
+      );
+      const filename = `certificacion_pesv_${data.reportCode}_${companyFileSlug(data.company.name)}.pdf`;
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+      res.setHeader("Content-Length", buffer.length);
+      res.send(buffer);
+    } catch (error) {
+      console.error("Error generando certificación anual PESV:", error);
+      res.status(500).json({ message: error instanceof Error ? error.message : "No fue posible generar el PDF." });
+    }
+  });
 
   async function loadQuarterlyMeasures(req: Request, res: Response) {
     const period = parseReportPeriod(req, res);
