@@ -914,14 +914,14 @@ content_type = "text/plain"
 id = "FgcfelRud39lpRG183lIn"
 uri = "file://generated-artifacts/pesv-comite-demo-prueba/informe-prueba-funcional.html"
 type = "html"
-title = "Revisión funcional — sin carga de archivos"
-description = "DEMO-PRUEBA en desarrollo: confirma que la página consulta P01 y ya no muestra un selector de archivos; incluye capturas."
+title = "Prueba funcional del informe — DEMO-PRUEBA"
+description = "Capturas y resultados: generación del PDF desde el informe anual, controles de P01 y ausencia de carga de archivos."
 logical_id = "4a06727f-b629-4c14-b584-ea978a6afff3"
-content_hash = "sha256:9be2d482cda5718a6ac6b459e3e5999162bf04f9dcf36b9e5ca7a769d09a5f89"
-size = 539544
-mtime_ms = 1791918856153
-storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/4a06727f-b629-4c14-b584-ea978a6afff3/b2b3d4e2-acf3-4cc9-a360-3663441e2ac8"
-storage_version_token = "1791918949144839"
+content_hash = "sha256:e9af8b996d0c9e29687bdad9b4cc7d03f239b2158b1aa30ea4f774c5cf144230"
+size = 455702
+mtime_ms = 1791919633347
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/4a06727f-b629-4c14-b584-ea978a6afff3/af6ea39c-a4ae-4bae-9e2a-5d23242b61a8"
+storage_version_token = "1791919736477548"
 content_type = "text/html"
 
 [[outputs]]
@@ -936,4 +936,18 @@ size = 179606
 mtime_ms = 1791888135326
 storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/1de7fb18-9ac6-44e5-8b36-a8d47c05b087/594910c4-ea6f-4d12-8b64-a67cb9fedb44"
 storage_version_token = "1791888234601089"
+content_type = "application/pdf"
+
+[[outputs]]
+id = "Ib5zeZNCUGsvgZ_CcQ4PI"
+uri = "file://generated-artifacts/pesv-comite-demo-prueba/Evidencia-Comite-PESV-DEMO-PRUEBA.pdf"
+type = "pdf"
+title = "Evidencia PDF generada desde P01 — DEMO-PRUEBA"
+description = "PDF de dos páginas creado por el sistema desde el acto administrativo vigente y los seis integrantes activos de DEMO-PRUEBA."
+logical_id = "4c4019b6-b733-4808-969e-f3b664248fe2"
+content_hash = "sha256:aa8a170b7a0853c060cadb101c31b0420e9a9bc30c90d680be7546319b03af49"
+size = 768938
+mtime_ms = 1791919627976
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/4c4019b6-b733-4808-969e-f3b664248fe2/27d50078-3f67-4ac9-bfe1-8159f637fe0b"
+storage_version_token = "1791919735461540"
 content_type = "application/pdf"
