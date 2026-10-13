@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, FileText, TriangleAlert } from "lucide-react";
+import { ArrowLeft, TriangleAlert } from "lucide-react";
 import { Link } from "wouter";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -44,7 +44,7 @@ export default function PesvInformeAnualComite() {
         <p className="text-sm font-medium text-primary">PESV · Informe anual SISI/PESV</p>
         <h1 className="text-2xl font-bold md:text-3xl">Existencia del Comité de Seguridad Vial</h1>
         <p className="max-w-3xl text-muted-foreground">
-          Revisa la conformación registrada en el PESV y consulta la evidencia exacta que solicita el informe: copia del acta del máximo órgano social en PDF.
+          Consulta la conformación registrada para el Comité de Seguridad Vial.
         </p>
       </header>
 
@@ -65,7 +65,7 @@ export default function PesvInformeAnualComite() {
                   <CardTitle>{evidenceState?.companyName || selectedCompany?.name || "Empresa"}</CardTitle>
                   <CardDescription>
                     {evidenceState?.companyNit ? `NIT ${evidenceState.companyNit} · ` : ""}
-                    Información de conformación tomada de P01; la evidencia se conserva en este informe anual.
+                    Datos de conformación del módulo P01.
                   </CardDescription>
                 </div>
                 {currentAct && activeMembers.length > 0
@@ -86,22 +86,6 @@ export default function PesvInformeAnualComite() {
                 </div>
               </div>
 
-              <Alert>
-                <FileText className="h-4 w-4" />
-                <AlertTitle>Documento solicitado por el informe</AlertTitle>
-                <AlertDescription>
-                  La evidencia debe ser el acta original del máximo órgano social de la empresa. El acto administrativo PESV generado por el sistema y las actas de reuniones del comité no reemplazan ese documento.
-                  El PDF original se conserva sin cambios; los documentos que genera el sistema siguen la estandarización institucional.
-                </AlertDescription>
-              </Alert>
-
-              <Alert>
-                <TriangleAlert className="h-4 w-4" />
-                <AlertTitle>Información consultada desde P01</AlertTitle>
-                <AlertDescription>
-                  Este punto muestra la conformación y el acto administrativo registrados en el sistema. No se deben cargar archivos aquí. El acta del máximo órgano social que menciona la guía no se genera actualmente desde P01, por lo que estos datos no se presentan como sustituto de esa acta.
-                </AlertDescription>
-              </Alert>
               <div className="flex justify-end">
                 <Button variant="outline" asChild>
                   <Link href="/pesv/comite?tab=acto-administrativo">Consultar conformación del comité en P01</Link>
