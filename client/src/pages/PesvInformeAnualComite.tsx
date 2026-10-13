@@ -1,13 +1,12 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, FileDown, TriangleAlert } from "lucide-react";
+import { ArrowLeft, TriangleAlert } from "lucide-react";
 import { Link } from "wouter";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCompanyContext } from "@/hooks/use-company-context";
-import { openCompanyDocument } from "@/lib/company-context-url";
 import { formatDateCO } from "@/lib/utils/formatters";
 import type { ActoAdministrativoPesv, ComiteIntegrantePesv } from "@shared/schema";
 
@@ -70,7 +69,7 @@ export default function PesvInformeAnualComite() {
                   </CardDescription>
                 </div>
                 {currentAct && activeMembers.length > 0
-                  ? <Badge>Conformación registrada</Badge>
+                  ? <Badge>Datos registrados en P01</Badge>
                   : <Badge variant="secondary">Registro incompleto</Badge>}
               </div>
             </CardHeader>
@@ -88,16 +87,9 @@ export default function PesvInformeAnualComite() {
               </div>
 
               <div className="flex justify-end">
-                <div className="flex flex-wrap justify-end gap-2">
-                  {currentAct && (
-                    <Button onClick={() => openCompanyDocument(`/api/pesv/comite/actos-administrativos/${currentAct.id}/pdf`)}>
-                      <FileDown className="mr-2 h-4 w-4" />Generar evidencia PDF
-                    </Button>
-                  )}
-                  <Button variant="outline" asChild>
-                    <Link href="/pesv/comite?tab=acto-administrativo">Gestionar P01</Link>
-                  </Button>
-                </div>
+                <Button variant="outline" asChild>
+                  <Link href="/pesv/comite?tab=acto-administrativo">Gestionar P01</Link>
+                </Button>
               </div>
             </CardContent>
           </Card>

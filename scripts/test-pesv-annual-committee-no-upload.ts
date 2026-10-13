@@ -73,7 +73,10 @@ try {
   await reportPage.getByTestId("annual-pesv-committee-report").waitFor({ timeout: 60000 });
   await reportPage.getByText("DEMO-PRUEBA", { exact: false }).waitFor({ timeout: 60000 });
   await reportPage.getByText("Datos de conformación del módulo P01.", { exact: false }).waitFor({ timeout: 60000 });
-  await reportPage.getByRole("button", { name: "Generar evidencia PDF" }).waitFor({ timeout: 60000 });
+  await reportPage.getByRole("link", { name: "Gestionar P01" }).waitFor({ timeout: 60000 });
+  if (await reportPage.getByRole("button", { name: /Abrir PDF del acto administrativo P01|Generar evidencia PDF/ }).count() > 0) {
+    throw new Error("El informe anual no debe presentar el PDF administrativo P01 como la evidencia solicitada.");
+  }
   if (await reportPage.locator('input[type="file"]').count() !== 0) {
     throw new Error("La pantalla anual todavía muestra un selector para cargar archivos.");
   }
@@ -95,7 +98,7 @@ try {
     throw new Error(`No se generó el PDF desde P01: HTTP ${generatedPdfResponse.status()}`);
   }
   await writeFile(`${evidenceDir}/Evidencia-Comite-PESV-DEMO-PRUEBA.pdf`, generatedPdf);
-  checks.push("P01 generó la evidencia en PDF, sin pedir carga de archivos.");
+  checks.push("P01 genera su PDF administrativo por separado; el informe anual no lo presenta como acta del máximo órgano social.");
 } catch (error) {
   failure = error;
 } finally {
@@ -127,9 +130,9 @@ if (failure) {
   const html = `<!doctype html><html lang="es"><meta charset="utf-8"><title>Verificación sin cargas — DEMO-PRUEBA</title>
 <style>body{font:16px/1.55 system-ui,sans-serif;color:#183127;background:#f4f8f5;margin:0 auto;padding:36px;max-width:1100px}h1{font-size:2rem}.tag{display:inline-block;background:#d8efe1;border-radius:30px;padding:6px 12px}li{margin:8px 0}figure{background:#fff;border:1px solid #dae7de;padding:12px;margin:22px 0;border-radius:12px}img{display:block;width:100%;height:auto}.note{padding:16px;border-left:4px solid #a36b00;background:#fff6d9}</style>
 <h1>Verificación funcional del punto anual PESV</h1><p class="tag">DEMO-PRUEBA · Desarrollo · ${new Date().toISOString().slice(0, 10)} · COMPLETADA</p>
-<p>Se verificó que el punto usa la información registrada en P01, genera el PDF desde el sistema y no pide cargar archivos.</p><ul>${checks.map((check) => `<li>${escape(check)}</li>`).join("")}</ul>
-<p class="note"><b>Documento generado:</b> el PDF adjunto a este informe se obtiene del acto administrativo vigente y los integrantes registrados en P01; no se modificaron esos datos.</p>
-<figure><img src="data:image/png;base64,${image.toString("base64")}" alt="Informe anual PESV en DEMO-PRUEBA con generación PDF y sin selector de archivos"><figcaption>Punto anual con generación de evidencia desde P01, sin carga de archivos.</figcaption></figure>
+<p>Se verificó que el punto consulta los datos de P01, no solicita cargar archivos y no presenta el PDF administrativo P01 como si fuera el acta del máximo órgano social.</p><ul>${checks.map((check) => `<li>${escape(check)}</li>`).join("")}</ul>
+<p class="note"><b>Resultado:</b> el sistema todavía no genera el acta del máximo órgano social solicitada para este punto.</p>
+<figure><img src="data:image/png;base64,${image.toString("base64")}" alt="Informe anual PESV en DEMO-PRUEBA sin selector de archivos"><figcaption>Datos consultados en P01; el acta solicitada no está implementada.</figcaption></figure>
 <figure><img src="data:image/png;base64,${p01Image.toString("base64")}" alt="Módulo P01 con la conformación del equipo PESV"><figcaption>P01 mantiene el registro de conformación del equipo.</figcaption></figure></html>`;
   await writeFile(`${evidenceDir}/informe-prueba-funcional.html`, html);
   await writeFile(`${evidenceDir}/resultado.json`, JSON.stringify({

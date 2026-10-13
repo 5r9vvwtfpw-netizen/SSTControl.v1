@@ -18,7 +18,7 @@ const annualCertifications = [
   {
     href: "/pesv/informes-anuales/comite-seguridad-vial",
     title: "Existencia del Comité de Seguridad Vial",
-    description: "Consulta la conformación del comité y adjunta el acta original del máximo órgano social",
+    description: "Consulta los datos de conformación registrados en P01",
   },
 ];
 
