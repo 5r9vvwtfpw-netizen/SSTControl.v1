@@ -57735,12 +57735,26 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     try {
       const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(400).json({ error: "Se requiere companyId" });
-      const payload = schema.insertActaMaximoOrganoPesvSchema.parse(req.body);
-      const [created] = await db.insert(schema.actasMaximoOrganoPesv).values({
-        ...payload,
-        companyId,
-        createdBy: req.user?.id ? String(req.user.id) : null,
-      }).returning();
+      const payload = schema.insertActaMaximoOrganoPesvSchema.omit({ numeroActa: true }).parse(req.body);
+      const created = await db.transaction(async (tx) => {
+        await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${companyId}), hashtext('pesv_acta_maximo_organo'))`);
+        const existingActs = await tx.select({ numeroActa: schema.actasMaximoOrganoPesv.numeroActa })
+          .from(schema.actasMaximoOrganoPesv)
+          .where(eq(schema.actasMaximoOrganoPesv.companyId, companyId));
+        const year = new Date(`${payload.fechaReunion}T12:00:00`).getFullYear();
+        const maxNumber = existingActs.reduce((max, act) => {
+          const match = act.numeroActa.match(/^(\d+)-(\d{4})$/);
+          return match?.[2] === String(year) ? Math.max(max, Number(match[1])) : max;
+        }, 0);
+        const numeroActa = `${String(maxNumber + 1).padStart(3, "0")}-${year}`;
+        const [row] = await tx.insert(schema.actasMaximoOrganoPesv).values({
+          ...payload,
+          numeroActa,
+          companyId,
+          createdBy: req.user?.id ? String(req.user.id) : null,
+        }).returning();
+        return row;
+      });
       res.status(201).json(created);
     } catch (error: any) {
       console.error("Error creando acta del máximo órgano:", error);

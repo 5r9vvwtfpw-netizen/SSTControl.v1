@@ -965,3 +965,31 @@ mtime_ms = 1791925061012
 storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/8cab3dd8-de00-4950-b848-eec1eaf537cd/e606ed07-687b-4ec6-97a4-d80b6bbc8765"
 storage_version_token = "1791925188594746"
 content_type = "application/pdf"
+
+[[outputs]]
+id = "W4Hqn1iRfiNw2jgyry5PY"
+uri = "file://generated-artifacts/pesv-comite-demo-prueba/PRUEBA-FUNCIONAL-ACTA-AUTOMATIZADA.pdf"
+type = "pdf"
+title = "Acta de prueba — DEMO-PRUEBA"
+description = "PDF generado por P01 en desarrollo. Está marcado como prueba funcional y no representa un acta societaria real."
+logical_id = "4065fa56-7414-46b2-9f26-b6e19a8c266e"
+content_hash = "sha256:c2bf418df1256b7c9c1d0115bac88816dfb4ddb81d37c3e66771aa57f046fc7c"
+size = 179919
+mtime_ms = 1791972113859
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/4065fa56-7414-46b2-9f26-b6e19a8c266e/5f05060c-f9a5-40b0-a22e-cc203c5e3b8d"
+storage_version_token = "1791972207255351"
+content_type = "application/pdf"
+
+[[outputs]]
+id = "tpGFZaaC75uaCRtzwMqQa"
+uri = "file://generated-artifacts/pesv-comite-demo-prueba/04-p01-formulario-superior.png"
+type = "image"
+title = "Formulario automatizado en P01"
+description = "Captura en desarrollo del formulario y su consecutivo automático de vista previa."
+logical_id = "a8aafa4a-5182-4a23-86dd-220496c9d926"
+content_hash = "sha256:786474d10962701daf58a2cd6f66b620507738fd843479a0f86207d142cbd98d"
+size = 177390
+mtime_ms = 1791972113331
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/a8aafa4a-5182-4a23-86dd-220496c9d926/f36279a9-17f0-4e85-8050-ba0f15853398"
+storage_version_token = "1791972208320801"
+content_type = "image/png"

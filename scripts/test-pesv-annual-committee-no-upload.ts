@@ -32,6 +32,7 @@ const passwordHash = `${scryptSync(tempPassword, salt, 64).toString("hex")}.${sa
 const testUsername = `qa-pesv-no-upload-${randomBytes(5).toString("hex")}`;
 let tempUserId: string | undefined;
 let failure: unknown;
+let verifiedActNumber: string | undefined;
 const checks: string[] = [];
 
 try {
@@ -65,25 +66,51 @@ try {
   checks.push("P01 incluye un formulario propio para el acta del máximo órgano social, sin carga de archivos.");
   checks.push("El informe anual incluye el botón para descargar el PDF del acta registrada.");
 
-  const persistentActNumber = `PRUEBA-FUNCIONAL-DESCARGA-${new Date().toISOString().slice(0, 10)}`;
+  const page = await context.newPage();
+  await page.goto("/pesv/comite?tab=acta-organo-social", { waitUntil: "commit", timeout: 60000 });
+  try {
+    await page.getByTestId("input-auto-act-number").waitFor({ timeout: 60000 });
+  } catch {
+    const pageText = (await page.locator("body").innerText()).slice(0, 600);
+    throw new Error(`No apareció el formulario P01. Ruta visible: ${page.url()}. Contenido: ${pageText}`);
+  }
+  const numberPreview = await page.getByTestId("input-auto-act-number").inputValue();
+  if (!/^\d{3}-\d{4}$/.test(numberPreview)) throw new Error(`P01 no muestra el consecutivo automático esperado: ${numberPreview}`);
+  const dropdownChecks = [
+    ["select-social-body", "Junta de Socios"],
+    ["select-session-type", "Ordinaria"],
+    ["select-meeting-mode", "Virtual"],
+    ["select-quorum-outcome", "Quórum verificado"],
+    ["select-decision-outcome", "Aprobada"],
+  ] as const;
+  for (const [testId, optionName] of dropdownChecks) {
+    await page.getByTestId(testId).click();
+    await page.getByRole("option", { name: optionName, exact: true }).waitFor({ timeout: 5000 });
+    await page.keyboard.press("Escape");
+  }
+  await page.screenshot({ path: `${evidenceDir}/03-p01-formulario-automatizado.png`, fullPage: true });
+  await page.getByTestId("input-auto-act-number").scrollIntoViewIfNeeded();
+  await page.screenshot({ path: `${evidenceDir}/04-p01-formulario-superior.png` });
+  checks.push("El formulario cargó en P01; se verificaron las cinco listas desplegables y la vista previa del consecutivo.");
+
+  const testBodyName = "PRUEBA FUNCIONAL — formulario automatizado P01";
   const [savedTestAct] = await db.select().from(actasMaximoOrganoPesv).where(and(
     eq(actasMaximoOrganoPesv.companyId, company.id),
-    eq(actasMaximoOrganoPesv.numeroActa, persistentActNumber),
+    eq(actasMaximoOrganoPesv.organoSocial, testBodyName),
   )).limit(1);
   let generatedActa = savedTestAct;
   if (!generatedActa) {
     const generatedActaResponse = await context.request.post("/api/pesv/comite/acta-maximo-organo", {
       data: {
-      numeroActa: persistentActNumber,
-      organoSocial: "PRUEBA FUNCIONAL — no usar como acta societaria",
-      tipoSesion: "Ordinaria",
-      fechaReunion: new Date().toISOString().slice(0, 10),
-      lugar: "Prueba de funcionamiento",
-      asistentes: "Registro temporal para validar la generación del documento.",
-      quorum: "Dato de prueba; no representa una reunión real.",
-      decision: "Validación funcional de la creación del PDF desde P01.",
-      presidenteNombre: "Prueba Funcional",
-      secretarioNombre: "Prueba Funcional",
+        organoSocial: testBodyName,
+        tipoSesion: "Ordinaria",
+        fechaReunion: new Date().toISOString().slice(0, 10),
+        lugar: "Presencial — Sala de prueba funcional",
+        asistentes: "Registro de prueba funcional; no representa asistentes a una reunión real.",
+        quorum: "Quórum verificado — registro de prueba funcional, sin efecto societario.",
+        decision: "Aprobada — validación de generación del PDF desde P01; sin efecto societario.",
+        presidenteNombre: "Prueba Funcional",
+        secretarioNombre: "Prueba Funcional",
       },
     });
     if (!generatedActaResponse.ok()) throw new Error(`No se pudo crear el registro de prueba: HTTP ${generatedActaResponse.status()} ${await generatedActaResponse.text()}`);
@@ -92,6 +119,10 @@ try {
     checks.push("Se reutilizó el acta funcional persistente existente; no se creó un duplicado.");
   }
   if (!generatedActa) throw new Error("No se encontró ni creó el acta funcional persistente.");
+  if (!/^\d+-\d{4}$/.test(generatedActa.numeroActa)) {
+    throw new Error(`El número de acta no parece consecutivo y automático: ${generatedActa.numeroActa}`);
+  }
+  verifiedActNumber = generatedActa.numeroActa;
   const generatedPdfResponse = await context.request.get(`/api/pesv/comite/acta-maximo-organo/${generatedActa.id}/pdf?download=1`);
   const generatedPdf = Buffer.from(await generatedPdfResponse.body());
   if (!generatedPdfResponse.ok() || !generatedPdfResponse.headers()["content-type"]?.includes("application/pdf")
@@ -99,8 +130,9 @@ try {
       || generatedPdf.subarray(0, 5).toString("ascii") !== "%PDF-") {
     throw new Error(`No se generó el PDF del acta del órgano social: HTTP ${generatedPdfResponse.status()}`);
   }
-  await writeFile(`${evidenceDir}/PRUEBA-FUNCIONAL-ACTA-MAXIMO-ORGANO.pdf`, generatedPdf);
+  await writeFile(`${evidenceDir}/PRUEBA-FUNCIONAL-ACTA-AUTOMATIZADA.pdf`, generatedPdf);
   checks.push("El acta de prueba y el PDF se conservaron en DEMO-PRUEBA para revisión; ambos están marcados como prueba funcional.");
+  checks.push(`El servidor asignó el consecutivo automático ${generatedActa.numeroActa}.`);
 } catch (error) {
   failure = error;
 } finally {
@@ -132,7 +164,7 @@ if (failure) {
 <style>body{font:16px/1.55 system-ui,sans-serif;color:#183127;background:#f4f8f5;margin:0 auto;padding:36px;max-width:1100px}h1{font-size:2rem}.tag{display:inline-block;background:#d8efe1;border-radius:30px;padding:6px 12px}li{margin:8px 0}figure{background:#fff;border:1px solid #dae7de;padding:12px;margin:22px 0;border-radius:12px}img{display:block;width:100%;height:auto}.note{padding:16px;border-left:4px solid #a36b00;background:#fff6d9}</style>
 <h1>Verificación funcional del acta del máximo órgano social en P01</h1><p class="tag">DEMO-PRUEBA · Desarrollo · ${new Date().toISOString().slice(0, 10)} · COMPLETADA</p>
  <p>Se verificó el flujo en desarrollo con la empresa DEMO-PRUEBA. El registro del acta y el PDF se conservaron para revisión.</p><ul>${checks.map((check) => `<li>${escape(check)}</li>`).join("")}</ul>
-<p class="note"><b>Resultado:</b> P01 genera el PDF desde los datos registrados; no se solicita cargar archivos. La muestra no es un acta societaria válida.</p>
+ <p class="note"><b>Resultado:</b> P01 asigna el número y genera el PDF desde los datos registrados; no se solicita cargar archivos. La muestra no es un acta societaria válida.</p>
 <figure><img src="data:image/png;base64,${p01Image.toString("base64")}" alt="P01 contiene el formulario para generar el acta del máximo órgano social"><figcaption>Formulario nuevo en el módulo P01.</figcaption></figure></html>`;
   await writeFile(`${evidenceDir}/informe-prueba-funcional.html`, html);
   await writeFile(`${evidenceDir}/resultado.json`, JSON.stringify({
@@ -141,8 +173,8 @@ if (failure) {
     environment: "development",
     checks,
     fileUploadControl: "REMOVIDO",
-    samplePdf: "PRUEBA-FUNCIONAL-ACTA-MAXIMO-ORGANO.pdf",
-    actNumber: `PRUEBA-FUNCIONAL-DESCARGA-${new Date().toISOString().slice(0, 10)}`,
+    samplePdf: "PRUEBA-FUNCIONAL-ACTA-AUTOMATIZADA.pdf",
+    actNumber: verifiedActNumber,
     note: "El registro y el PDF están marcados PRUEBA FUNCIONAL y no constituyen evidencia societaria real.",
   }, null, 2));
   console.log(JSON.stringify({ result: "COMPLETADA", checks, evidenceDir, fileUploadControl: "REMOVIDO" }, null, 2));
