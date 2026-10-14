@@ -35,7 +35,7 @@ export default function ActaMaximoOrganoTab({ isAdmin }: { isAdmin: boolean }) {
     onSuccess: (acta: ActaMaximoOrganoPesv) => {
       queryClient.invalidateQueries({ queryKey: ["/api/pesv/comite/acta-maximo-organo"] });
       setForm(emptyForm);
-      window.open(`/api/pesv/comite/acta-maximo-organo/${acta.id}/pdf`, "_blank", "noopener,noreferrer");
+      window.open(`/api/pesv/comite/acta-maximo-organo/${acta.id}/pdf?download=1`, "_blank", "noopener,noreferrer");
       toast({ title: "Acta generada", description: "El PDF se abrió en una pestaña nueva." });
     },
     onError: (error: Error) => toast({ title: "No se pudo generar el acta", description: error.message, variant: "destructive" }),
@@ -93,8 +93,8 @@ export default function ActaMaximoOrganoTab({ isAdmin }: { isAdmin: boolean }) {
                   <div className="font-medium">Acta {acta.numeroActa} · {acta.organoSocial}</div>
                   <div className="text-sm text-muted-foreground">{acta.tipoSesion} · {acta.fechaReunion} · {acta.estado}</div>
                 </div>
-                <Button variant="outline" onClick={() => window.open(`/api/pesv/comite/acta-maximo-organo/${acta.id}/pdf`, "_blank", "noopener,noreferrer")}>
-                  <FileDown className="mr-2 h-4 w-4" />Abrir PDF
+                <Button variant="outline" onClick={() => window.open(`/api/pesv/comite/acta-maximo-organo/${acta.id}/pdf?download=1`, "_blank", "noopener,noreferrer")}>
+                  <FileDown className="mr-2 h-4 w-4" />Descargar PDF
                 </Button>
               </div>
             ))}

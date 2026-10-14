@@ -94,9 +94,10 @@ try {
   if (!generatedActaResponse.ok()) throw new Error(`No se pudo crear el registro de prueba: HTTP ${generatedActaResponse.status()} ${await generatedActaResponse.text()}`);
   const generatedActa = await generatedActaResponse.json() as { id: string };
   try {
-    const generatedPdfResponse = await context.request.get(`/api/pesv/comite/acta-maximo-organo/${generatedActa.id}/pdf`);
+    const generatedPdfResponse = await context.request.get(`/api/pesv/comite/acta-maximo-organo/${generatedActa.id}/pdf?download=1`);
     const generatedPdf = Buffer.from(await generatedPdfResponse.body());
     if (!generatedPdfResponse.ok() || !generatedPdfResponse.headers()["content-type"]?.includes("application/pdf")
+        || !generatedPdfResponse.headers()["content-disposition"]?.includes("attachment")
         || generatedPdf.subarray(0, 5).toString("ascii") !== "%PDF-") {
       throw new Error(`No se generó el PDF del acta del órgano social: HTTP ${generatedPdfResponse.status()}`);
     }

@@ -134,7 +134,8 @@ export function registerPesvPdfRoutes(app: Express) {
         const trialStatus = getTrialStatus(subscription?.status || 'trial', subscription?.trialEnd || null, true, true);
         setupTrialWatermarkOnAllPages(doc, trialStatus.requiresWatermark);
         res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `inline; filename="acta-maximo-organo-social-${acta.numeroActa.replace(/[^a-zA-Z0-9_-]/g, '-')}.pdf"`);
+        const disposition = req.query.download === '1' ? 'attachment' : 'inline';
+        res.setHeader('Content-Disposition', `${disposition}; filename="acta-maximo-organo-social-${acta.numeroActa.replace(/[^a-zA-Z0-9_-]/g, '-')}.pdf"`);
         doc.pipe(res);
         const logoBuffer = await loadCompanyLogo(company.logoUrl);
         let y = await addStandardHeader({

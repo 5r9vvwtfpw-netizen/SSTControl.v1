@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, TriangleAlert } from "lucide-react";
+import { ArrowLeft, Download, TriangleAlert } from "lucide-react";
 import { Link } from "wouter";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCompanyContext } from "@/hooks/use-company-context";
 import { formatDateCO } from "@/lib/utils/formatters";
-import type { ActoAdministrativoPesv, ComiteIntegrantePesv } from "@shared/schema";
+import type { ActaMaximoOrganoPesv, ActoAdministrativoPesv, ComiteIntegrantePesv } from "@shared/schema";
 
 type AnnualEvidenceState = {
   companyName: string;
@@ -23,6 +23,9 @@ export default function PesvInformeAnualComite() {
   const { data: members = [], isLoading: membersLoading, isError: membersError } = useQuery<ComiteIntegrantePesv[]>({
     queryKey: ["/api/pesv/comite/integrantes"],
   });
+  const { data: socialBodyMinutes = [], isLoading: minutesLoading, isError: minutesError } = useQuery<ActaMaximoOrganoPesv[]>({
+    queryKey: ["/api/pesv/comite/acta-maximo-organo"],
+  });
   const { data: evidenceState, isLoading: evidenceLoading } = useQuery<AnnualEvidenceState>({
     queryKey: ["/api/pesv/informes-anuales/comite-seguridad-vial/evidencia"],
   });
@@ -32,8 +35,11 @@ export default function PesvInformeAnualComite() {
     [acts],
   );
   const activeMembers = members.filter((member) => member.estado === "activo");
-  const loading = actsLoading || membersLoading || evidenceLoading;
-  const hasError = actsError || membersError;
+  const latestSocialBodyMinute = [...socialBodyMinutes].sort((a, b) =>
+    new Date(b.fechaReunion).getTime() - new Date(a.fechaReunion).getTime() || b.createdAt.getTime() - a.createdAt.getTime(),
+  )[0];
+  const loading = actsLoading || membersLoading || evidenceLoading || minutesLoading;
+  const hasError = actsError || membersError || minutesError;
 
   return (
     <main className="mx-auto max-w-5xl space-y-6 p-4 md:p-6" data-testid="annual-pesv-committee-report">
@@ -87,10 +93,28 @@ export default function PesvInformeAnualComite() {
               </div>
 
               <div className="flex justify-end">
-                <Button variant="outline" asChild>
-                  <Link href="/pesv/comite?tab=acta-organo-social">Gestionar acta del órgano social en P01</Link>
-                </Button>
+                <div className="flex flex-wrap justify-end gap-2">
+                  <Button
+                    asChild={!!latestSocialBodyMinute}
+                    disabled={!latestSocialBodyMinute}
+                    data-testid="button-download-annual-social-act"
+                  >
+                    {latestSocialBodyMinute
+                      ? <a href={`/api/pesv/comite/acta-maximo-organo/${latestSocialBodyMinute.id}/pdf?download=1`}><Download className="mr-2 h-4 w-4" />Descargar acta PDF</a>
+                      : <span><Download className="mr-2 h-4 w-4" />Descargar acta PDF</span>}
+                  </Button>
+                  <Button variant="outline" asChild>
+                    <Link href="/pesv/comite?tab=acta-organo-social">
+                      {latestSocialBodyMinute ? "Gestionar acta en P01" : "Generar acta en P01"}
+                    </Link>
+                  </Button>
+                </div>
               </div>
+              {!latestSocialBodyMinute && (
+                <p className="text-sm text-muted-foreground text-right" data-testid="text-annual-act-download-requirement">
+                  Registra el acta en P01; después podrás descargarla aquí para presentarla en SISI/PESV.
+                </p>
+              )}
             </CardContent>
           </Card>
         </>
