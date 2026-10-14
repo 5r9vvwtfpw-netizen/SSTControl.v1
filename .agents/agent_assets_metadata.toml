@@ -1021,3 +1021,17 @@ mtime_ms = 1791973592615
 storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/d8d82efa-f4c1-4e4d-a5b5-4f5bc2c93b26/d0f98a03-0248-4e8f-865f-f5df8124932e"
 storage_version_token = "1791973667044998"
 content_type = "image/png"
+
+[[outputs]]
+id = "0zUsqOfMAMjiBDiGYdvlF"
+uri = "file://generated-artifacts/pesv-comite-demo-prueba/PRUEBA-FUNCIONAL-ACTA-CSV-FIRMA-REPRESENTANTE-LEGAL.pdf"
+type = "pdf"
+title = "Acta actualizada con firma del representante legal"
+description = "PDF de prueba funcional en desarrollo. Añade un bloque para la firma física del representante legal, con su nombre e identificación tomados de la ficha de la empresa. No es un acta real ni queda firmada automáticamente."
+logical_id = "18bc11db-0d6e-4364-a48d-304c4874d740"
+content_hash = "sha256:ffe103b49843ee6d5744e5a14fddf8a84fd20f16a3895bb112e2464309d4da39"
+size = 180118
+mtime_ms = 1791990912194
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/18bc11db-0d6e-4364-a48d-304c4874d740/0aaf61ff-3ed9-46c5-b9b9-56cc4ac34983"
+storage_version_token = "1791991006520493"
+content_type = "application/pdf"

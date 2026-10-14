@@ -155,14 +155,31 @@ export function registerPesvPdfRoutes(app: Express) {
         y = addLabeledField(doc, 'Quórum', acta.quorum, { y });
         y = addSectionBar(doc, 'Decisión sobre el PESV', y);
         y = addParagraph(doc, acta.decision, { y });
-        y = checkPageBreak(doc, 100, y);
-        doc.moveTo(70, y + 55).lineTo(260, y + 55).stroke();
-        doc.moveTo(340, y + 55).lineTo(530, y + 55).stroke();
-        doc.fontSize(9).fillColor(PDF_COLORS.BLACK);
-        doc.text(acta.presidenteNombre, 70, y + 60, { width: 190, align: 'center' });
-        doc.text('Presidente de la sesión', 70, y + 74, { width: 190, align: 'center' });
-        doc.text(acta.secretarioNombre, 340, y + 60, { width: 190, align: 'center' });
-        doc.text('Secretario de la sesión', 340, y + 74, { width: 190, align: 'center' });
+        y = checkPageBreak(doc, 110, y);
+        const signatureY = y + 42;
+        const signatureBlocks = [
+          { x: 45, width: 172, name: acta.presidenteNombre, role: 'Presidente de la sesión' },
+          { x: 220, width: 172, name: acta.secretarioNombre, role: 'Secretario de la sesión' },
+          {
+            x: 395,
+            width: 172,
+            name: company.legalRepName || 'Nombre no registrado en Empresas',
+            identification: company.legalRepId ? `C.C. ${company.legalRepId}` : '',
+            role: 'Representante legal',
+          },
+        ];
+        doc.fontSize(8).fillColor(PDF_COLORS.BLACK);
+        for (const signer of signatureBlocks) {
+          doc.moveTo(signer.x, signatureY).lineTo(signer.x + signer.width, signatureY).stroke();
+          doc.text(signer.name, signer.x, signatureY + 5, { width: signer.width, align: 'center' });
+          if ('identification' in signer && signer.identification) {
+            doc.fontSize(7).text(signer.identification, signer.x, signatureY + 18, { width: signer.width, align: 'center' });
+            doc.fontSize(7).text(signer.role, signer.x, signatureY + 30, { width: signer.width, align: 'center' });
+          } else {
+            doc.fontSize(7).text(signer.role, signer.x, signatureY + 20, { width: signer.width, align: 'center' });
+          }
+          doc.fontSize(8);
+        }
         doc.end();
       });
     } catch (error) {

@@ -20,7 +20,7 @@
 - [GitHub connectors](github-connector-vs-source-control.md) — Replit separa GitHub general de GitHub Source Control; la sincronización del repositorio usa la tarjeta Source Control.
 - [Committee actas document policy](committee-actas-document-policy.md) — el informe trimestral enlaza a la descarga PDF oficial del acta P01; no generar un PDF derivado ni Excel.
 - [Committee actas portal boundary](committee-actas-portal-boundary.md) — las actas se gestionan fuera del Portal de Empleados; ese portal solo participa en votaciones.
-- [Committee acta signature roles](committee-acta-signature-roles.md) — el bloque de firmas usa Presidente/Secretario, no Principal/Suplente como cargos formales.
+- [Committee acta signature roles](committee-acta-signature-roles.md) — el acta del máximo órgano social requiere firma del Representante Legal además de Presidente y Secretario.
 - [Resolución 3461 de 2025 — Comité de Convivencia Laboral](resolucion-3461-2025-ccl.md) — CCL preventivo y confidencial, con plazos y ruta separada para acoso sexual; no aplica al COPASST.
 - [Driver–vehicle assignment policy](driver-vehicle-assignment-policy.md) — relación PESV muchos-a-muchos con vigencia e historial; finalizar no borra y el fallback de flota solo aplica antes de la primera asignación.
 - [PESV en el Portal de Empleados](pesv-portal-driver-visibility.md) — un trabajador no conductor no debe ver el grupo PESV; contratos antiguos o registros inactivos no acreditan que conduzca hoy.
