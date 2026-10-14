@@ -1,11 +1,10 @@
 import { randomBytes, scryptSync } from "node:crypto";
-import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
-import { and, eq, like } from "drizzle-orm";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { and, eq } from "drizzle-orm";
 import { chromium } from "playwright";
 import { db } from "../server/db";
-import { actasMaximoOrganoPesv, companies, pesvInformeAnualEvidencias, users } from "../shared/schema";
+import { actasMaximoOrganoPesv, companies, users } from "../shared/schema";
 import { storage } from "../server/storage";
-import { objectStorageService } from "../server/objectStorage";
 
 if (process.env.NODE_ENV !== "development" || process.env.RUN_PESV_ANNUAL_NO_UPLOAD_TEST !== "1") {
   throw new Error("Solo se permite en desarrollo con RUN_PESV_ANNUAL_NO_UPLOAD_TEST=1");
@@ -16,19 +15,6 @@ if (!company || company.name !== "DEMO-PRUEBA") throw new Error("La empresa DEMO
 
 const evidenceDir = "generated-artifacts/pesv-comite-demo-prueba";
 await mkdir(evidenceDir, { recursive: true });
-
-// Remove only the clearly named sample created by the earlier upload-flow test.
-const oldSamples = await db.select().from(pesvInformeAnualEvidencias).where(and(
-  eq(pesvInformeAnualEvidencias.companyId, company.id),
-  eq(pesvInformeAnualEvidencias.reportCode, "comite-seguridad-vial"),
-  like(pesvInformeAnualEvidencias.fileName, "PRUEBA-FUNCIONAL-%"),
-));
-for (const sample of oldSamples) {
-  await objectStorageService.deleteObjectByUrl(sample.fileUrl).catch(() => false);
-  await db.delete(pesvInformeAnualEvidencias).where(eq(pesvInformeAnualEvidencias.id, sample.id));
-}
-await unlink(`${evidenceDir}/PRUEBA-FUNCIONAL-NO-ACTA-ORGANOSOCIAL.pdf`).catch(() => undefined);
-await unlink(`${evidenceDir}/PRUEBA-FUNCIONAL-ACTA-MAXIMO-ORGANO.pdf`).catch(() => undefined);
 
 const browser = await chromium.launch({
   executablePath: "/nix/store/zi4f80l169xlmivz8vja8wlphq74qqk0-chromium-125.0.6422.141/bin/chromium",
@@ -79,9 +65,16 @@ try {
   checks.push("P01 incluye un formulario propio para el acta del máximo órgano social, sin carga de archivos.");
   checks.push("El informe anual incluye el botón para descargar el PDF del acta registrada.");
 
-  const generatedActaResponse = await context.request.post("/api/pesv/comite/acta-maximo-organo", {
-    data: {
-      numeroActa: `PRUEBA-FUNCIONAL-${new Date().toISOString().slice(0, 10)}`,
+  const persistentActNumber = `PRUEBA-FUNCIONAL-DESCARGA-${new Date().toISOString().slice(0, 10)}`;
+  const [savedTestAct] = await db.select().from(actasMaximoOrganoPesv).where(and(
+    eq(actasMaximoOrganoPesv.companyId, company.id),
+    eq(actasMaximoOrganoPesv.numeroActa, persistentActNumber),
+  )).limit(1);
+  let generatedActa = savedTestAct;
+  if (!generatedActa) {
+    const generatedActaResponse = await context.request.post("/api/pesv/comite/acta-maximo-organo", {
+      data: {
+      numeroActa: persistentActNumber,
       organoSocial: "PRUEBA FUNCIONAL — no usar como acta societaria",
       tipoSesion: "Ordinaria",
       fechaReunion: new Date().toISOString().slice(0, 10),
@@ -91,23 +84,23 @@ try {
       decision: "Validación funcional de la creación del PDF desde P01.",
       presidenteNombre: "Prueba Funcional",
       secretarioNombre: "Prueba Funcional",
-    },
-  });
-  if (!generatedActaResponse.ok()) throw new Error(`No se pudo crear el registro de prueba: HTTP ${generatedActaResponse.status()} ${await generatedActaResponse.text()}`);
-  const generatedActa = await generatedActaResponse.json() as { id: string };
-  try {
-    const generatedPdfResponse = await context.request.get(`/api/pesv/comite/acta-maximo-organo/${generatedActa.id}/pdf?download=1`);
-    const generatedPdf = Buffer.from(await generatedPdfResponse.body());
-    if (!generatedPdfResponse.ok() || !generatedPdfResponse.headers()["content-type"]?.includes("application/pdf")
-        || !generatedPdfResponse.headers()["content-disposition"]?.includes("attachment")
-        || generatedPdf.subarray(0, 5).toString("ascii") !== "%PDF-") {
-      throw new Error(`No se generó el PDF del acta del órgano social: HTTP ${generatedPdfResponse.status()}`);
-    }
-    await writeFile(`${evidenceDir}/PRUEBA-FUNCIONAL-ACTA-MAXIMO-ORGANO.pdf`, generatedPdf);
-  } finally {
-    await db.delete(actasMaximoOrganoPesv).where(eq(actasMaximoOrganoPesv.id, generatedActa.id));
+      },
+    });
+    if (!generatedActaResponse.ok()) throw new Error(`No se pudo crear el registro de prueba: HTTP ${generatedActaResponse.status()} ${await generatedActaResponse.text()}`);
+    generatedActa = await generatedActaResponse.json() as typeof generatedActa;
+  } else {
+    checks.push("Se reutilizó el acta funcional persistente existente; no se creó un duplicado.");
   }
-  checks.push("El sistema creó el acta de prueba y generó un PDF estandarizado; el registro de prueba se eliminó y el PDF quedó marcado PRUEBA FUNCIONAL.");
+  if (!generatedActa) throw new Error("No se encontró ni creó el acta funcional persistente.");
+  const generatedPdfResponse = await context.request.get(`/api/pesv/comite/acta-maximo-organo/${generatedActa.id}/pdf?download=1`);
+  const generatedPdf = Buffer.from(await generatedPdfResponse.body());
+  if (!generatedPdfResponse.ok() || !generatedPdfResponse.headers()["content-type"]?.includes("application/pdf")
+      || !generatedPdfResponse.headers()["content-disposition"]?.includes("attachment")
+      || generatedPdf.subarray(0, 5).toString("ascii") !== "%PDF-") {
+    throw new Error(`No se generó el PDF del acta del órgano social: HTTP ${generatedPdfResponse.status()}`);
+  }
+  await writeFile(`${evidenceDir}/PRUEBA-FUNCIONAL-ACTA-MAXIMO-ORGANO.pdf`, generatedPdf);
+  checks.push("El acta de prueba y el PDF se conservaron en DEMO-PRUEBA para revisión; ambos están marcados como prueba funcional.");
 } catch (error) {
   failure = error;
 } finally {
@@ -138,7 +131,7 @@ if (failure) {
   const html = `<!doctype html><html lang="es"><meta charset="utf-8"><title>Verificación sin cargas — DEMO-PRUEBA</title>
 <style>body{font:16px/1.55 system-ui,sans-serif;color:#183127;background:#f4f8f5;margin:0 auto;padding:36px;max-width:1100px}h1{font-size:2rem}.tag{display:inline-block;background:#d8efe1;border-radius:30px;padding:6px 12px}li{margin:8px 0}figure{background:#fff;border:1px solid #dae7de;padding:12px;margin:22px 0;border-radius:12px}img{display:block;width:100%;height:auto}.note{padding:16px;border-left:4px solid #a36b00;background:#fff6d9}</style>
 <h1>Verificación funcional del acta del máximo órgano social en P01</h1><p class="tag">DEMO-PRUEBA · Desarrollo · ${new Date().toISOString().slice(0, 10)} · COMPLETADA</p>
-<p>Se verificó el flujo en desarrollo con la empresa DEMO-PRUEBA. La muestra PDF se conserva claramente marcada como prueba funcional; el registro de prueba fue eliminado.</p><ul>${checks.map((check) => `<li>${escape(check)}</li>`).join("")}</ul>
+ <p>Se verificó el flujo en desarrollo con la empresa DEMO-PRUEBA. El registro del acta y el PDF se conservaron para revisión.</p><ul>${checks.map((check) => `<li>${escape(check)}</li>`).join("")}</ul>
 <p class="note"><b>Resultado:</b> P01 genera el PDF desde los datos registrados; no se solicita cargar archivos. La muestra no es un acta societaria válida.</p>
 <figure><img src="data:image/png;base64,${p01Image.toString("base64")}" alt="P01 contiene el formulario para generar el acta del máximo órgano social"><figcaption>Formulario nuevo en el módulo P01.</figcaption></figure></html>`;
   await writeFile(`${evidenceDir}/informe-prueba-funcional.html`, html);
@@ -149,7 +142,8 @@ if (failure) {
     checks,
     fileUploadControl: "REMOVIDO",
     samplePdf: "PRUEBA-FUNCIONAL-ACTA-MAXIMO-ORGANO.pdf",
-    note: "La muestra PDF es únicamente una prueba funcional; no constituye acta societaria real.",
+    actNumber: `PRUEBA-FUNCIONAL-DESCARGA-${new Date().toISOString().slice(0, 10)}`,
+    note: "El registro y el PDF están marcados PRUEBA FUNCIONAL y no constituyen evidencia societaria real.",
   }, null, 2));
   console.log(JSON.stringify({ result: "COMPLETADA", checks, evidenceDir, fileUploadControl: "REMOVIDO" }, null, 2));
 }
