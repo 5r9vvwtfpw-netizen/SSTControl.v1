@@ -1,5 +1,5 @@
 import { randomBytes, scryptSync } from "node:crypto";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import { and, eq } from "drizzle-orm";
 import { chromium } from "playwright";
 import { db } from "../server/db";
@@ -15,6 +15,15 @@ if (!company || company.name !== "DEMO-PRUEBA") throw new Error("La empresa DEMO
 
 const evidenceDir = "generated-artifacts/pesv-comite-demo-prueba";
 await mkdir(evidenceDir, { recursive: true });
+const writeIfMissing = async (path: string, content: Buffer) => {
+  try {
+    await access(path);
+    return false;
+  } catch {
+    await writeFile(path, content);
+    return true;
+  }
+};
 
 const browser = await chromium.launch({
   executablePath: "/nix/store/zi4f80l169xlmivz8vja8wlphq74qqk0-chromium-125.0.6422.141/bin/chromium",
@@ -78,6 +87,7 @@ try {
   if (!/^\d{3}-\d{4}$/.test(numberPreview)) throw new Error(`P01 no muestra el consecutivo automático esperado: ${numberPreview}`);
   const dropdownChecks = [
     ["select-social-body", "Junta de Socios"],
+    ["select-csv-exists", "Sí"],
     ["select-session-type", "Ordinaria"],
     ["select-meeting-mode", "Virtual"],
     ["select-quorum-outcome", "Quórum verificado"],
@@ -88,21 +98,25 @@ try {
     await page.getByRole("option", { name: optionName, exact: true }).waitFor({ timeout: 5000 });
     await page.keyboard.press("Escape");
   }
-  await page.screenshot({ path: `${evidenceDir}/03-p01-formulario-automatizado.png`, fullPage: true });
+  const p01FullPage = Buffer.from(await page.screenshot({ fullPage: true }));
+  await writeIfMissing(`${evidenceDir}/05-p01-formulario-csv-full.png`, p01FullPage);
   await page.getByTestId("input-auto-act-number").scrollIntoViewIfNeeded();
-  await page.screenshot({ path: `${evidenceDir}/04-p01-formulario-superior.png` });
-  checks.push("El formulario cargó en P01; se verificaron las cinco listas desplegables y la vista previa del consecutivo.");
+  const p01FormImage = Buffer.from(await page.screenshot());
+  await writeIfMissing(`${evidenceDir}/06-p01-formulario-csv.png`, p01FormImage);
+  checks.push("El formulario cargó en P01; se verificaron las seis listas desplegables y la vista previa del consecutivo.");
 
   const testBodyName = "PRUEBA FUNCIONAL — formulario automatizado P01";
   const [savedTestAct] = await db.select().from(actasMaximoOrganoPesv).where(and(
     eq(actasMaximoOrganoPesv.companyId, company.id),
     eq(actasMaximoOrganoPesv.organoSocial, testBodyName),
+    eq(actasMaximoOrganoPesv.existeCsv, true),
   )).limit(1);
   let generatedActa = savedTestAct;
   if (!generatedActa) {
     const generatedActaResponse = await context.request.post("/api/pesv/comite/acta-maximo-organo", {
       data: {
         organoSocial: testBodyName,
+        existeCsv: true,
         tipoSesion: "Ordinaria",
         fechaReunion: new Date().toISOString().slice(0, 10),
         lugar: "Presencial — Sala de prueba funcional",
@@ -122,6 +136,7 @@ try {
   if (!/^\d+-\d{4}$/.test(generatedActa.numeroActa)) {
     throw new Error(`El número de acta no parece consecutivo y automático: ${generatedActa.numeroActa}`);
   }
+  if (generatedActa.existeCsv !== true) throw new Error("El acta no conserva la declaración explícita de existencia del CSV.");
   verifiedActNumber = generatedActa.numeroActa;
   const generatedPdfResponse = await context.request.get(`/api/pesv/comite/acta-maximo-organo/${generatedActa.id}/pdf?download=1`);
   const generatedPdf = Buffer.from(await generatedPdfResponse.body());
@@ -130,9 +145,16 @@ try {
       || generatedPdf.subarray(0, 5).toString("ascii") !== "%PDF-") {
     throw new Error(`No se generó el PDF del acta del órgano social: HTTP ${generatedPdfResponse.status()}`);
   }
-  await writeFile(`${evidenceDir}/PRUEBA-FUNCIONAL-ACTA-AUTOMATIZADA.pdf`, generatedPdf);
+  await writeIfMissing(`${evidenceDir}/PRUEBA-FUNCIONAL-ACTA-CSV-DECLARACION.pdf`, generatedPdf);
   checks.push("El acta de prueba y el PDF se conservaron en DEMO-PRUEBA para revisión; ambos están marcados como prueba funcional.");
   checks.push(`El servidor asignó el consecutivo automático ${generatedActa.numeroActa}.`);
+  checks.push("El registro conserva la respuesta explícita sobre la existencia del CSV.");
+  await page.goto("/pesv/informes-anuales/comite-seguridad-vial", { waitUntil: "commit", timeout: 60000 });
+  await page.getByText("Sí, según el acta del máximo órgano social", { exact: true }).waitFor({ timeout: 30000 });
+  await page.getByText("Acta de prueba funcional", { exact: true }).waitFor({ timeout: 10000 });
+  const annualReportImage = Buffer.from(await page.screenshot());
+  await writeIfMissing(`${evidenceDir}/08-informe-anual-respuesta-csv.png`, annualReportImage);
+  checks.push("El informe anual muestra la respuesta explícita y enlaza la descarga del acta.");
 } catch (error) {
   failure = error;
 } finally {
@@ -173,7 +195,7 @@ if (failure) {
     environment: "development",
     checks,
     fileUploadControl: "REMOVIDO",
-    samplePdf: "PRUEBA-FUNCIONAL-ACTA-AUTOMATIZADA.pdf",
+    samplePdf: "PRUEBA-FUNCIONAL-ACTA-CSV-DECLARACION.pdf",
     actNumber: verifiedActNumber,
     note: "El registro y el PDF están marcados PRUEBA FUNCIONAL y no constituyen evidencia societaria real.",
   }, null, 2));

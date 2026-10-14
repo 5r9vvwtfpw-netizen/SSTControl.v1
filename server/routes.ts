@@ -57735,7 +57735,10 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     try {
       const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(400).json({ error: "Se requiere companyId" });
-      const payload = schema.insertActaMaximoOrganoPesvSchema.omit({ numeroActa: true }).parse(req.body);
+      const payload = schema.insertActaMaximoOrganoPesvSchema
+        .omit({ numeroActa: true })
+        .extend({ existeCsv: z.boolean() })
+        .parse(req.body);
       const created = await db.transaction(async (tx) => {
         await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${companyId}), hashtext('pesv_acta_maximo_organo'))`);
         const existingActs = await tx.select({ numeroActa: schema.actasMaximoOrganoPesv.numeroActa })

@@ -145,6 +145,8 @@ export function registerPesvPdfRoutes(app: Express) {
         y = addSectionBar(doc, 'Datos de la sesión', y);
         y = addLabeledField(doc, 'Acta No.', acta.numeroActa, { y });
         y = addLabeledField(doc, 'Órgano social', acta.organoSocial, { y });
+        y = addSectionBar(doc, 'Existencia del Comité de Seguridad Vial', y);
+        y = addLabeledField(doc, '¿Existe el CSV?', acta.existeCsv === null ? 'No declarado en esta acta' : acta.existeCsv ? 'Sí' : 'No', { y });
         y = addLabeledField(doc, 'Tipo de sesión', acta.tipoSesion, { y });
         y = addLabeledField(doc, 'Fecha', formatDate(acta.fechaReunion), { y });
         y = addLabeledField(doc, 'Lugar o modalidad', acta.lugar, { y });

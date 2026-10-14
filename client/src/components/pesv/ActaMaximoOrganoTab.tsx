@@ -24,6 +24,7 @@ const getLocalDate = () => {
 
 const createEmptyForm = () => ({
   organoSocial: "",
+  existeCsv: "",
   tipoSesion: "",
   fechaReunion: getLocalDate(),
   modalidad: "Presencial",
@@ -52,6 +53,7 @@ export default function ActaMaximoOrganoTab({ isAdmin }: { isAdmin: boolean }) {
       const lugar = `${form.modalidad}${form.lugar.trim() ? ` — ${form.lugar.trim()}` : ""}`;
       return (await apiRequest("POST", "/api/pesv/comite/acta-maximo-organo", {
         organoSocial,
+        existeCsv: form.existeCsv === "true",
         tipoSesion: form.tipoSesion,
         fechaReunion: form.fechaReunion,
         lugar,
@@ -83,11 +85,12 @@ export default function ActaMaximoOrganoTab({ isAdmin }: { isAdmin: boolean }) {
     if (
       !form.organoSocial
       || (form.organoSocial === "Otro" && !form.organoSocialOtro.trim())
+      || !form.existeCsv
       || !form.tipoSesion
       || !form.quorumTipo
       || !form.decisionTipo
     ) {
-      toast({ title: "Completa las selecciones requeridas", description: "Selecciona el órgano social, el tipo de sesión, el quórum y el resultado de la decisión.", variant: "destructive" });
+      toast({ title: "Completa las selecciones requeridas", description: "Selecciona el órgano social, la existencia del CSV, el tipo de sesión, el quórum y el resultado de la decisión.", variant: "destructive" });
       return;
     }
     save.mutate();
@@ -116,6 +119,16 @@ export default function ActaMaximoOrganoTab({ isAdmin }: { isAdmin: boolean }) {
                     <SelectContent>
                       {organosSociales.map(organo => <SelectItem key={organo} value={organo}>{organo}</SelectItem>)}
                       <SelectItem value="Otro">Otro</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>¿Existe el Comité de Seguridad Vial (CSV)?</Label>
+                  <Select value={form.existeCsv} onValueChange={v => set("existeCsv", v)}>
+                    <SelectTrigger data-testid="select-csv-exists"><SelectValue placeholder="Seleccionar respuesta" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="true">Sí</SelectItem>
+                      <SelectItem value="false">No</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

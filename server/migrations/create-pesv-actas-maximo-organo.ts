@@ -23,6 +23,10 @@ export async function createPesvActasMaximoOrgano() {
     )
   `));
   await db.execute(sql.raw(`
+    ALTER TABLE actas_maximo_organo_pesv
+    ADD COLUMN IF NOT EXISTS existe_csv boolean
+  `));
+  await db.execute(sql.raw(`
     CREATE INDEX IF NOT EXISTS idx_actas_maximo_organo_pesv_company_date
     ON actas_maximo_organo_pesv (company_id, fecha_reunion DESC)
   `));

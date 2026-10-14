@@ -10915,6 +10915,7 @@ export const actasMaximoOrganoPesv = pgTable("actas_maximo_organo_pesv", {
   companyId: varchar("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
   numeroActa: varchar("numero_acta").notNull(),
   organoSocial: text("organo_social").notNull(),
+  existeCsv: boolean("existe_csv"),
   tipoSesion: text("tipo_sesion").notNull(),
   fechaReunion: date("fecha_reunion").notNull(),
   lugar: text("lugar").notNull(),

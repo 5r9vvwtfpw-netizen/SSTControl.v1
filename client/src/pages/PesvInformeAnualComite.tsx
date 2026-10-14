@@ -39,6 +39,7 @@ export default function PesvInformeAnualComite() {
     new Date(b.fechaReunion).getTime() - new Date(a.fechaReunion).getTime()
       || new Date(String(b.createdAt)).getTime() - new Date(String(a.createdAt)).getTime(),
   )[0];
+  const latestActIsFunctionalTest = latestSocialBodyMinute?.organoSocial.startsWith("PRUEBA FUNCIONAL") ?? false;
   const loading = actsLoading || membersLoading || evidenceLoading || minutesLoading;
   const hasError = actsError || membersError || minutesError;
 
@@ -91,6 +92,17 @@ export default function PesvInformeAnualComite() {
                   <p className="font-semibold">{currentAct ? `${currentAct.tipoDocumento} No. ${currentAct.numeroDocumento}` : "No registrado"}</p>
                   {currentAct && <p className="text-sm text-muted-foreground">Expedido el {formatDateCO(currentAct.fechaExpedicion)}</p>}
                 </div>
+              </div>
+              <div className="rounded-md border p-4" data-testid="annual-csv-existence">
+                <p className="text-sm text-muted-foreground">¿Existe el Comité de Seguridad Vial (CSV)?</p>
+                <p className="font-semibold">
+                  {latestSocialBodyMinute?.existeCsv === true
+                    ? "Sí, según el acta del máximo órgano social"
+                    : latestSocialBodyMinute?.existeCsv === false
+                      ? "No, según el acta del máximo órgano social"
+                      : "El acta registrada no declara expresamente si existe"}
+                </p>
+                {latestActIsFunctionalTest && <Badge variant="outline" className="mt-2">Acta de prueba funcional</Badge>}
               </div>
 
               <div className="flex justify-end">
