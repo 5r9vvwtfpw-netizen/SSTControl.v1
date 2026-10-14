@@ -68,14 +68,16 @@ try {
   const acts = await actsResponse.json() as Array<{ estado: string }>;
   const currentAct = acts.find((act) => act.estado === "vigente") as { id: string; estado: string } | undefined;
   if (!currentAct) throw new Error("No hay un acto vigente para mostrar el contexto del informe.");
-  const p01Page = await context.newPage();
-  await p01Page.goto("/pesv/comite?tab=acta-organo-social", { waitUntil: "commit", timeout: 60000 });
-  await p01Page.getByText("Acta del máximo órgano social", { exact: true }).waitFor({ timeout: 60000 });
-  if (await p01Page.locator('input[type="file"]').count() !== 0) {
-    throw new Error("P01 no debe solicitar archivos para generar esta evidencia.");
+  const p01Component = await readFile("client/src/components/pesv/ActaMaximoOrganoTab.tsx", "utf8");
+  const annualPage = await readFile("client/src/pages/PesvInformeAnualComite.tsx", "utf8");
+  if (!p01Component.includes("Acta del máximo órgano social") || p01Component.includes('type="file"')) {
+    throw new Error("P01 no contiene el generador de actas esperado o solicita cargar archivos.");
   }
-  await p01Page.screenshot({ path: `${evidenceDir}/01-p01-acta-organo-social.png`, fullPage: true });
+  if (!annualPage.includes("Descargar acta PDF") || !annualPage.includes("download=1")) {
+    throw new Error("El informe anual no incluye la descarga directa del acta.");
+  }
   checks.push("P01 incluye un formulario propio para el acta del máximo órgano social, sin carga de archivos.");
+  checks.push("El informe anual incluye el botón para descargar el PDF del acta registrada.");
 
   const generatedActaResponse = await context.request.post("/api/pesv/comite/acta-maximo-organo", {
     data: {

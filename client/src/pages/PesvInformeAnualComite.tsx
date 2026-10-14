@@ -36,7 +36,8 @@ export default function PesvInformeAnualComite() {
   );
   const activeMembers = members.filter((member) => member.estado === "activo");
   const latestSocialBodyMinute = [...socialBodyMinutes].sort((a, b) =>
-    new Date(b.fechaReunion).getTime() - new Date(a.fechaReunion).getTime() || b.createdAt.getTime() - a.createdAt.getTime(),
+    new Date(b.fechaReunion).getTime() - new Date(a.fechaReunion).getTime()
+      || new Date(String(b.createdAt)).getTime() - new Date(String(a.createdAt)).getTime(),
   )[0];
   const loading = actsLoading || membersLoading || evidenceLoading || minutesLoading;
   const hasError = actsError || membersError || minutesError;
