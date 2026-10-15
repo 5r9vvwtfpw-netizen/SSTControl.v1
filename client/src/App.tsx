@@ -110,6 +110,7 @@ import PesvInformeTrimestralSiniestros from "@/pages/PesvInformeTrimestralSinies
 import PesvInformeTrimestralActas from "@/pages/PesvInformeTrimestralActas";
 import PesvInformeTrimestralLecciones from "@/pages/PesvInformeTrimestralLecciones";
 import PesvInformeTrimestralMedidas from "@/pages/PesvInformeTrimestralMedidas";
+import PesvInformeTrimestralPolitica from "@/pages/PesvInformeTrimestralPolitica";
 import PesvMejoraContinua from "@/pages/PesvMejoraContinua";
 import PesvRevisionDireccion from "@/pages/PesvRevisionDireccion";
 import PesvCapacitaciones from "@/pages/PesvCapacitaciones";
@@ -435,6 +436,7 @@ function Router() {
       <SubscriptionProtectedRoute path="/pesv/informes-trimestrales/actas-siniestros" component={PesvInformeTrimestralActas} feature="hasPESV" featureName="Informe trimestral PESV - Actas de siniestros" />
       <SubscriptionProtectedRoute path="/pesv/informes-trimestrales/lecciones-aprendidas" component={PesvInformeTrimestralLecciones} feature="hasPESV" featureName="Informe trimestral PESV - Lecciones aprendidas" />
       <SubscriptionProtectedRoute path="/pesv/informes-trimestrales/medidas-prevencion" component={PesvInformeTrimestralMedidas} feature="hasPESV" featureName="Informe trimestral PESV - Medidas de prevención" />
+      <SubscriptionProtectedRoute path="/pesv/informes-trimestrales/politica-seguridad-vial" component={PesvInformeTrimestralPolitica} feature="hasPESV" featureName="Informe trimestral PESV - Política de Seguridad Vial" />
       <DevelopmentOnlyAnnualRoute path="/pesv/informes-anuales" component={PesvInformesAnuales} featureName="Informe anual SISI/PESV" />
       <DevelopmentOnlyAnnualRoute path="/pesv/informes-anuales/resolucion-40595-2022" component={PesvInformeAnual40595} featureName="Certificación anual PESV — Resolución 40595 de 2022" />
       <DevelopmentOnlyAnnualRoute path="/pesv/informes-anuales/responsable-pesv" component={PesvInformeAnualResponsable} featureName="Designación del Responsable del PESV" />
