@@ -477,29 +477,53 @@ export function registerPesvPdfRoutes(app: Express) {
         documentCode: `PESV-RD-${revision.codigo}`, logoBuffer
       });
 
-      y = addSectionBar(doc, 'Información General', y);
-      y = addLabeledField(doc, 'Código', revision.codigo, { y });
-      y = addLabeledField(doc, 'Fecha Revisión', formatDate(revision.fechaRevision), { y });
-      y = addLabeledField(doc, 'Presidida Por', revision.presididaPor, { y });
-      y = addLabeledField(doc, 'Participantes', revision.participantes || 'N/A', { y });
-      y = addLabeledField(doc, 'Estado', revision.estado || 'N/A', { y });
-      if (isApproved) {
-        y = addLabeledField(doc, 'Aprobada por', approver?.fullName || approver?.username || 'Usuario registrado', { y });
-        y = addLabeledField(doc, 'Fecha de aprobación', formatDate(revision.fechaAprobacion), { y });
-      } else {
-        y = addParagraph(doc, 'BORRADOR: esta revisión no tiene aprobación registrada y no debe presentarse como acta aprobada.', { y });
+      if (revision.codigo.startsWith('PRUEBA-A02-')) {
+        y = addParagraph(
+          doc,
+          'DOCUMENTO DE PRUEBA — Esta acta se generó para validar la presentación del informe. No corresponde a una reunión real ni debe presentarse como evidencia oficial.',
+          { y, bold: true, fontSize: 9 },
+        );
       }
+
+      y = addSectionBar(doc, 'Información General', y);
+      const generalInformationRows: string[][] = [
+        ['Código del acta', revision.codigo],
+        ['Fecha de revisión', formatDate(revision.fechaRevision)],
+        ['Presidida por', revision.presididaPor || 'No registrada'],
+        ['Participantes', revision.participantes || 'No registrados'],
+        ['Estado', revision.estado === 'aprobada' ? 'Aprobada' : revision.estado || 'No registrado'],
+      ];
+      if (isApproved) {
+        generalInformationRows.push(
+          ['Aprobada por', approver?.fullName || approver?.username || 'Usuario registrado'],
+          ['Fecha de aprobación', formatDate(revision.fechaAprobacion)],
+        );
+      } else {
+        generalInformationRows.push(['Aprobación', 'Pendiente; este documento corresponde a un borrador.']);
+      }
+      const contentWidth = doc.page.width - PDF_CONFIG.MARGIN * 2;
+      const labelColumnWidth = 150;
+      y = addSimpleTable(doc, ['Campo', 'Detalle'], generalInformationRows, {
+        y,
+        columnWidths: [labelColumnWidth, contentWidth - labelColumnWidth],
+      });
 
       y = addSectionBar(doc, 'Temas Revisados', y);
       const temaRevisado = (value: number) => value === 1 ? 'Sí' : 'Sin registro de revisión';
-      y = addLabeledField(doc, 'Indicadores', temaRevisado(revision.revisionIndicadores), { y });
-      y = addLabeledField(doc, 'Auditorías', temaRevisado(revision.revisionAuditorias), { y });
-      y = addLabeledField(doc, 'Siniestros', temaRevisado(revision.revisionSiniestros), { y });
-      y = addLabeledField(doc, 'Acciones de Mejora', temaRevisado(revision.revisionAccionesMejora), { y });
-      y = addLabeledField(doc, 'Cumplimiento Legal', temaRevisado(revision.revisionCumplimientoLegal), { y });
-      y = addLabeledField(doc, 'Recursos', temaRevisado(revision.revisionRecursos), { y });
-      y = addLabeledField(doc, 'Capacitaciones', temaRevisado(revision.revisionCapacitaciones), { y });
-      y = addLabeledField(doc, 'Inspecciones', temaRevisado(revision.revisionInspecciones), { y });
+      const reviewedTopics: string[][] = [
+        ['Indicadores', temaRevisado(revision.revisionIndicadores)],
+        ['Auditorías', temaRevisado(revision.revisionAuditorias)],
+        ['Siniestros', temaRevisado(revision.revisionSiniestros)],
+        ['Acciones de mejora', temaRevisado(revision.revisionAccionesMejora)],
+        ['Cumplimiento legal', temaRevisado(revision.revisionCumplimientoLegal)],
+        ['Recursos', temaRevisado(revision.revisionRecursos)],
+        ['Capacitaciones', temaRevisado(revision.revisionCapacitaciones)],
+        ['Inspecciones', temaRevisado(revision.revisionInspecciones)],
+      ];
+      y = addSimpleTable(doc, ['Aspecto revisado', 'Resultado'], reviewedTopics, {
+        y,
+        columnWidths: [contentWidth * 0.42, contentWidth * 0.58],
+      });
 
       y = addSectionBar(doc, 'Análisis', y);
       if (revision.resumenIndicadores) y = addLabeledField(doc, 'Indicadores', revision.resumenIndicadores, { y });
