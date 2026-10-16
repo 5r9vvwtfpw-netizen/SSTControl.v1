@@ -525,6 +525,19 @@ export function registerPesvPdfRoutes(app: Express) {
         columnWidths: [contentWidth * 0.42, contentWidth * 0.58],
       });
 
+      const remainingSectionsReserve = 280;
+      if (y + remainingSectionsReserve > doc.page.height - PDF_CONFIG.FOOTER_HEIGHT) {
+        doc.addPage();
+        y = await addStandardHeader({
+          doc,
+          company,
+          documentTitle: 'REVISIÓN POR LA DIRECCIÓN - PESV',
+          documentCode: `PESV-RD-${revision.codigo}`,
+          date: new Date(revision.fechaRevision),
+          logoBuffer,
+        });
+      }
+
       y = addSectionBar(doc, 'Análisis', y);
       if (revision.resumenIndicadores) y = addLabeledField(doc, 'Indicadores', revision.resumenIndicadores, { y });
       if (revision.resumenAuditorias) y = addLabeledField(doc, 'Auditorías', revision.resumenAuditorias, { y });

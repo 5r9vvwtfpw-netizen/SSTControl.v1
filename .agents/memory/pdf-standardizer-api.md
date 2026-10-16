@@ -117,6 +117,12 @@ Los PDF expuestos en la biblioteca de informes no deben limitarse a usar el enca
 
 Los documentos generados por el sistema deben seguir la estandarización institucional. Los PDF originales aportados como evidencia deben conservarse sin alteraciones para no modificar el contenido ni invalidar firmas; se abren como el archivo original, no como una versión reconstruida.
 
+Para secciones de datos con valores largos o multilínea, evitar `addLabeledField` en flujo continuado: puede ajustar el valor al ancho de la etiqueta y dejar gran parte de la página vacía. Usar una tabla de dos columnas a ancho completo (`Campo` / `Detalle`) y reservar `addParagraph` para narrativa.
+
+**Why:** La inspección visual del A02 mostró campos comprimidos en el tercio izquierdo aunque la extracción de texto y el PDF fueran válidos.
+
+**How to apply:** Renderizar cada página tras cambios de contenido; si los valores se apilan en una columna angosta, cambiar esos campos a una tabla con anchos de columna explícitos.
+
 **Why:** El usuario indicó que todos los PDF del sistema deben respetar la estandarización; los soportes fuente firmados también deben mantener su autenticidad.
 
 **How to apply:** Aplicar el estándar común a todo PDF que el sistema componga. Para evidencia PDF cargada por la empresa, preservar el archivo original byte por byte y aclarar que no se modifica.

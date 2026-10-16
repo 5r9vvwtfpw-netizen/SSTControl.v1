@@ -8,6 +8,13 @@ import { and, desc, eq, like } from "drizzle-orm";
 const enabled = process.env.RUN_PESV_ANNUAL_DIRECTOR_DEMO_FUNCTIONAL === "1";
 const companyId = "demo-company-001";
 const marker = "PRUEBA FUNCIONAL INFORME ANUAL SISI/PESV A02 DEMO-PRUEBA — NO ES REUNIÓN REAL";
+const testReviewContent = {
+  presididaPor: "Alta Dirección — registro de validación; no corresponde a una reunión real.",
+  participantes: "PRUEBA FUNCIONAL — Grupo de validación de DEMO-PRUEBA. Sin asistentes reales.",
+  analisisGeneral: "PRUEBA FUNCIONAL — Se revisa la presentación de los componentes del informe A02 y la generación del PDF. No se incorporan resultados operacionales reales.",
+  decisiones: "Sin decisión empresarial registrada. Esta validación se limita a comprobar la presentación del informe.",
+  compromisos: "Sin compromisos empresariales. La prueba técnica no sustituye el seguimiento formal del PESV.",
+};
 const evidenceDir = "generated-artifacts/pesv-a02-demo-prueba";
 const baseUrl = "http://127.0.0.1:5000";
 
@@ -80,6 +87,8 @@ test("DEMO-PRUEBA: informe anual A02 muestra y abre el acta aprobada", { skip: !
       evaluationId = existingTest.evaluacionPesvId || undefined;
       code = existingTest.codigo;
       assert.ok(evaluationId, "El acta de prueba conservada debe seguir vinculada a una evaluación PESV.");
+      await db.update(schema.revisionesDireccionPesv).set(testReviewContent)
+        .where(eq(schema.revisionesDireccionPesv.id, revisionId));
       checks.push("Se reutilizó el acta A02 de prueba ya conservada; no se creó un duplicado.");
     } else {
       let [evaluation] = await db.select().from(schema.evaluacionesPesv)
@@ -105,8 +114,7 @@ test("DEMO-PRUEBA: informe anual A02 muestra y abre el acta aprobada", { skip: !
           body: JSON.stringify({
             codigo: code,
             fechaRevision,
-            presididaPor: "Alta Dirección — registro de prueba funcional, no corresponde a persona real",
-            participantes: marker,
+            ...testReviewContent,
             revisionIndicadores: 0,
             revisionAuditorias: 0,
             revisionSiniestros: 0,
@@ -115,9 +123,6 @@ test("DEMO-PRUEBA: informe anual A02 muestra y abre el acta aprobada", { skip: !
             revisionRecursos: 0,
             revisionCapacitaciones: 0,
             revisionInspecciones: 0,
-            analisisGeneral: `${marker}. Contenido sintético para verificar la visualización y el PDF.`,
-            decisiones: `${marker}. Sin decisión empresarial real.`,
-            compromisos: `${marker}. Sin compromiso empresarial real.`,
             estado: "aprobada",
             aprobadoPor: accountId,
             fechaAprobacion: new Date().toISOString(),
