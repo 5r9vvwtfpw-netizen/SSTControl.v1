@@ -25,6 +25,11 @@ const annualCertifications = [
     title: "Política de Seguridad Vial",
     description: "Política fuente con trazabilidad entre PESV P02 y el estándar SST 2.1.1",
   },
+  {
+    href: "/pesv/informes-anuales/seguimiento-direccion",
+    title: "Actas de seguimiento al PESV por la Alta Dirección",
+    description: "Descarga las actas A02 aprobadas y registradas en la aplicación",
+  },
 ];
 
 export default function PesvInformesAnuales() {

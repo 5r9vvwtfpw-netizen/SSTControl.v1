@@ -20,6 +20,7 @@ import { EvaluacionPesvContextHeader } from "@/components/EvaluacionPesvContextH
 import { TrazabilidadPesvBanner } from "@/components/pesv/TrazabilidadPesvBanner";
 import { apiRequest, queryClient, buildHeaders } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { usePermissions } from "@/hooks/use-permissions";
 import { EvaluacionPesv, RevisionDireccionPesv, RevisionDireccion, DecisionRevisionPesv } from "@shared/schema";
 
 interface ResumenRevision {
@@ -280,6 +281,8 @@ function DecisionItem({
 }
 
 export default function PesvRevisionDireccion() {
+  const { checkPermission } = usePermissions();
+  const canApprovePesvReview = checkPermission("management_review:approve") || checkPermission("sst_management:edit");
   const params = useParams<{ evaluacionId: string }>();
   // Cuando se navega desde el flujo PESV normal (/pesv/revision-direccion),
   // no hay :evaluacionId en la URL — se lee del sessionStorage igual que otros módulos PESV.
@@ -378,6 +381,17 @@ export default function PesvRevisionDireccion() {
       toast({ title: "Revisión registrada", description: "La revisión por la alta dirección se registró exitosamente" });
     },
     onError: (error: Error) => toast({ title: "Error", description: error.message, variant: "destructive" }),
+  });
+
+  const approveMutation = useMutation({
+    mutationFn: async (revision: RevisionDireccionPesv) => {
+      await apiRequest("POST", `/api/evaluaciones-pesv/${evaluacionId}/revisiones-direccion/${revision.id}/aprobar`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/evaluaciones-pesv", evaluacionId, "revisiones-direccion"] });
+      toast({ title: "Revisión aprobada", description: "La aprobación quedó registrada con el usuario y la fecha." });
+    },
+    onError: (error: Error) => toast({ title: "No se pudo aprobar", description: error.message, variant: "destructive" }),
   });
 
   const createDecisionMutation = useMutation({
@@ -792,22 +806,6 @@ export default function PesvRevisionDireccion() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="estado">Estado</Label>
-                    <Select
-                      value={formData.estado}
-                      onValueChange={val => setFormData(prev => ({ ...prev, estado: val }))}
-                    >
-                      <SelectTrigger data-testid="select-estado">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="borrador">Borrador</SelectItem>
-                        <SelectItem value="aprobada">Aprobada</SelectItem>
-                        <SelectItem value="cerrada">Cerrada</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
                     <Label htmlFor="fechaProximaRevision">Fecha Próxima Revisión</Label>
                     <Input
                       id="fechaProximaRevision"
@@ -852,7 +850,9 @@ export default function PesvRevisionDireccion() {
                           <Calendar className="h-4 w-4" />
                           <span>{revision.fechaRevision}</span>
                         </div>
-                        {getEstadoBadge(revision.estado)}
+                        {revision.estado === "aprobada" && (!revision.aprobadoPor || !revision.fechaAprobacion)
+                          ? <Badge variant="secondary">Aprobación por registrar</Badge>
+                          : getEstadoBadge(revision.estado)}
                         {revision.vinculacionRevisionSstId && (
                           <Badge className="bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs gap-1">
                             <Link2 className="h-3 w-3" />SST vinculada
@@ -860,6 +860,21 @@ export default function PesvRevisionDireccion() {
                         )}
                       </div>
                       <div className="flex gap-2">
+                        {canApprovePesvReview && (!revision.aprobadoPor || !revision.fechaAprobacion) && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              if (window.confirm("¿Aprobar esta revisión por la Alta Dirección? La aprobación quedará registrada con tu usuario y fecha.")) {
+                                approveMutation.mutate(revision);
+                              }
+                            }}
+                            disabled={approveMutation.isPending}
+                            data-testid={`button-approve-revision-${revision.id}`}
+                          >
+                            <CheckCircle2 className="h-4 w-4 mr-1" /> {revision.estado === "aprobada" ? "Registrar aprobación" : "Aprobar"}
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="icon"

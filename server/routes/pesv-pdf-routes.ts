@@ -440,6 +440,9 @@ export function registerPesvPdfRoutes(app: Express) {
 
       const [revision] = await db.select().from(schema.revisionesDireccionPesv).where(and(eq(schema.revisionesDireccionPesv.id, id), eq(schema.revisionesDireccionPesv.companyId, companyId)));
       if (!revision) return res.status(404).send('Revisión no encontrada');
+      const [approver] = revision.aprobadoPor
+        ? await db.select({ fullName: schema.users.fullName, username: schema.users.username }).from(schema.users).where(eq(schema.users.id, revision.aprobadoPor)).limit(1)
+        : [];
 
       const { default: PDFDocument } = await import('pdfkit');
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
@@ -453,7 +456,6 @@ export function registerPesvPdfRoutes(app: Express) {
       doc.pipe(res);
 
       const logoBuffer = await loadCompanyLogo(company.logoUrl);
-      const signers = await getSignersForCompany(companyId, true);
 
       let y = await addStandardHeader({
         doc, company, documentTitle: 'REVISIÓN POR LA DIRECCIÓN - PESV',
@@ -466,16 +468,23 @@ export function registerPesvPdfRoutes(app: Express) {
       y = addLabeledField(doc, 'Presidida Por', revision.presididaPor, { y });
       y = addLabeledField(doc, 'Participantes', revision.participantes || 'N/A', { y });
       y = addLabeledField(doc, 'Estado', revision.estado || 'N/A', { y });
+      if (revision.fechaAprobacion) {
+        y = addLabeledField(doc, 'Aprobada por', approver?.fullName || approver?.username || 'Usuario registrado', { y });
+        y = addLabeledField(doc, 'Fecha de aprobación', formatDate(revision.fechaAprobacion), { y });
+      } else {
+        y = addParagraph(doc, 'BORRADOR: esta revisión no tiene aprobación registrada y no debe presentarse como acta aprobada.', { y });
+      }
 
       y = addSectionBar(doc, 'Temas Revisados', y);
-      y = addLabeledField(doc, 'Indicadores', revision.revisionIndicadores ? 'Sí' : 'No', { y });
-      y = addLabeledField(doc, 'Auditorías', revision.revisionAuditorias ? 'Sí' : 'No', { y });
-      y = addLabeledField(doc, 'Siniestros', revision.revisionSiniestros ? 'Sí' : 'No', { y });
-      y = addLabeledField(doc, 'Acciones de Mejora', revision.revisionAccionesMejora ? 'Sí' : 'No', { y });
-      y = addLabeledField(doc, 'Cumplimiento Legal', revision.revisionCumplimientoLegal ? 'Sí' : 'No', { y });
-      y = addLabeledField(doc, 'Recursos', revision.revisionRecursos ? 'Sí' : 'No', { y });
-      y = addLabeledField(doc, 'Capacitaciones', revision.revisionCapacitaciones ? 'Sí' : 'No', { y });
-      y = addLabeledField(doc, 'Inspecciones', revision.revisionInspecciones ? 'Sí' : 'No', { y });
+      const temaRevisado = (value: number) => value === 1 ? 'Sí' : 'Sin registro de revisión';
+      y = addLabeledField(doc, 'Indicadores', temaRevisado(revision.revisionIndicadores), { y });
+      y = addLabeledField(doc, 'Auditorías', temaRevisado(revision.revisionAuditorias), { y });
+      y = addLabeledField(doc, 'Siniestros', temaRevisado(revision.revisionSiniestros), { y });
+      y = addLabeledField(doc, 'Acciones de Mejora', temaRevisado(revision.revisionAccionesMejora), { y });
+      y = addLabeledField(doc, 'Cumplimiento Legal', temaRevisado(revision.revisionCumplimientoLegal), { y });
+      y = addLabeledField(doc, 'Recursos', temaRevisado(revision.revisionRecursos), { y });
+      y = addLabeledField(doc, 'Capacitaciones', temaRevisado(revision.revisionCapacitaciones), { y });
+      y = addLabeledField(doc, 'Inspecciones', temaRevisado(revision.revisionInspecciones), { y });
 
       y = addSectionBar(doc, 'Análisis', y);
       if (revision.resumenIndicadores) y = addLabeledField(doc, 'Indicadores', revision.resumenIndicadores, { y });
@@ -494,7 +503,6 @@ export function registerPesvPdfRoutes(app: Express) {
         y = addLabeledField(doc, 'Próxima Revisión', formatDate(revision.fechaProximaRevision), { y });
       }
 
-      await addSignatureFooter(doc, signers, true);
       doc.end();
     } catch (error) {
       handlePdfError(error, res, 'pesv-revision-direccion');

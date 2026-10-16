@@ -59460,6 +59460,31 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     }
   });
 
+  app.get('/api/pesv/informes-anuales/seguimiento-direccion/evidencias', requireAuth, requirePermission('sst_management:view'), async (req, res) => {
+    try {
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(403).send("Empresa no identificada");
+      const revisions = await db.select({
+        id: revisionesDireccionPesv.id,
+        evaluacionPesvId: revisionesDireccionPesv.evaluacionPesvId,
+        codigo: revisionesDireccionPesv.codigo,
+        fechaRevision: revisionesDireccionPesv.fechaRevision,
+        presididaPor: revisionesDireccionPesv.presididaPor,
+        aprobadoPor: revisionesDireccionPesv.aprobadoPor,
+        fechaAprobacion: revisionesDireccionPesv.fechaAprobacion,
+      }).from(revisionesDireccionPesv).where(and(
+        eq(revisionesDireccionPesv.companyId, companyId),
+        eq(revisionesDireccionPesv.estado, "aprobada"),
+      )).orderBy(desc(revisionesDireccionPesv.fechaRevision));
+      res.json(revisions
+        .filter((revision) => revision.evaluacionPesvId && revision.aprobadoPor && revision.fechaAprobacion)
+        .map(({ aprobadoPor: _aprobadoPor, ...revision }) => revision));
+    } catch (error: any) {
+      console.error("Error fetching approved PESV director reviews:", error);
+      res.status(500).send(error.message);
+    }
+  });
+
   // POST /api/evaluaciones-pesv/:id/revisiones-direccion - Create management review
   app.post('/api/evaluaciones-pesv/:id/revisiones-direccion', requireAuth, requirePermission('sst_management:create'), async (req, res) => {
     try {
@@ -59485,7 +59510,10 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       
       const validatedData = insertRevisionDireccionPesvSchema.parse({
         ...req.body,
-        evaluacionPesvId: req.params.id
+        evaluacionPesvId: req.params.id,
+        estado: "borrador",
+        aprobadoPor: null,
+        fechaAprobacion: null,
       });
       
       const [revision] = await db.insert(revisionesDireccionPesv)
@@ -59524,6 +59552,16 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         const lsoChk6 = await assertLsoAssignedToCompany(req.user!.id, evaluacion.companyId);
         if (!lsoChk6) return res.status(403).send("No tienes acceso a esta empresa");
       }
+
+      const [currentRevision] = await db.select().from(revisionesDireccionPesv).where(and(
+        eq(revisionesDireccionPesv.id, req.params.revisionId),
+        eq(revisionesDireccionPesv.evaluacionPesvId, req.params.id),
+        eq(revisionesDireccionPesv.companyId, evaluacion.companyId),
+      ));
+      if (!currentRevision) return res.status(404).send("Revisión por la dirección no encontrada");
+      if (currentRevision.estado === "aprobada") {
+        return res.status(409).send("Una revisión aprobada no se puede modificar. Registra una nueva revisión para conservar la trazabilidad.");
+      }
       
       const revisionPatchSchema = insertRevisionDireccionPesvSchema.partial();
       const validatedBody = revisionPatchSchema.parse(req.body);
@@ -59537,7 +59575,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
         'resumenIndicadores', 'resumenAuditorias', 'resumenSiniestros',
         'resumenAccionesMejora', 'analisisGeneral',
         'decisiones', 'compromisos', 'vinculacionRevisionSstId',
-        'estado', 'fechaProximaRevision'
+        'fechaProximaRevision'
       ];
       
       for (const field of allowedFields) {
@@ -59558,6 +59596,45 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       res.json(updated);
     } catch (error: any) {
       console.error('Error updating revisión dirección PESV:', error);
+      res.status(400).send(error.message);
+    }
+  });
+
+  // La aprobación es una acción explícita; el estado no se puede asignar al crear o editar.
+  app.post('/api/evaluaciones-pesv/:id/revisiones-direccion/:revisionId/aprobar', requireAuth, requireAnyPermission(['management_review:approve', 'sst_management:edit']), async (req, res) => {
+    try {
+      const userRole = req.user!.role;
+      const [evaluacion] = await db.select().from(evaluacionesPesv).where(eq(evaluacionesPesv.id, req.params.id));
+      if (!evaluacion) return res.status(404).send("Evaluación PESV no encontrada");
+      if (!hasGlobalAccess(userRole) && getEffectiveCompanyId(req) !== evaluacion.companyId) {
+        return res.status(403).send("No tienes acceso a esta evaluación");
+      }
+      if (userRole === "lso" && !(await assertLsoAssignedToCompany(req.user!.id, evaluacion.companyId))) {
+        return res.status(403).send("No tienes acceso a esta empresa");
+      }
+
+      const [revision] = await db.select().from(revisionesDireccionPesv).where(and(
+        eq(revisionesDireccionPesv.id, req.params.revisionId),
+        eq(revisionesDireccionPesv.evaluacionPesvId, req.params.id),
+        eq(revisionesDireccionPesv.companyId, evaluacion.companyId),
+      ));
+      if (!revision) return res.status(404).send("Revisión por la dirección no encontrada");
+      if (!revision.presididaPor.trim() || !revision.participantes?.trim() ||
+          !revision.analisisGeneral?.trim() ||
+          (!revision.decisiones?.trim() && !revision.compromisos?.trim())) {
+        return res.status(400).send("Completa quién presidió, los participantes, el análisis general y las decisiones o compromisos antes de aprobar.");
+      }
+      if (revision.estado === "aprobada" && revision.aprobadoPor && revision.fechaAprobacion) {
+        return res.status(409).send("Esta revisión ya tiene una aprobación registrada.");
+      }
+
+      const [approved] = await db.update(revisionesDireccionPesv)
+        .set({ estado: "aprobada", aprobadoPor: req.user!.id, fechaAprobacion: new Date(), updatedAt: new Date() })
+        .where(eq(revisionesDireccionPesv.id, revision.id))
+        .returning();
+      res.json(approved);
+    } catch (error: any) {
+      console.error("Error approving PESV management review:", error);
       res.status(400).send(error.message);
     }
   });

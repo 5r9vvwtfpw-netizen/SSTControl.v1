@@ -10258,6 +10258,8 @@ export const revisionesDireccionPesv = pgTable("revisiones_direccion_pesv", {
   
   // Estado
   estado: varchar("estado").notNull().default("borrador"), // borrador, aprobada, cerrada
+  aprobadoPor: varchar("aprobado_por").references(() => users.id),
+  fechaAprobacion: timestamp("fecha_aprobacion"),
   
   // Próxima revisión
   fechaProximaRevision: date("fecha_proxima_revision"),
