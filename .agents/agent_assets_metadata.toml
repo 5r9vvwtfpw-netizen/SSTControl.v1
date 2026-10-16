@@ -1035,3 +1035,45 @@ mtime_ms = 1791990912194
 storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/18bc11db-0d6e-4364-a48d-304c4874d740/0aaf61ff-3ed9-46c5-b9b9-56cc4ac34983"
 storage_version_token = "1791991006520493"
 content_type = "application/pdf"
+
+[[outputs]]
+id = "d59Te0jd2j17D9XatRAKQ"
+uri = "file://generated-artifacts/pesv-politica-seguridad-vial/evidencia-prueba-funcional.html"
+type = "html"
+title = "Evidencia de prueba funcional — Política de Seguridad Vial"
+description = "Capturas del listado anual y del informe, resultado de las verificaciones y contexto de prueba en DEMO-PRUEBA."
+logical_id = "960afebe-15e2-4f50-848f-148ecad725e2"
+content_hash = "sha256:5c42de75a90bd9d4fd7e6b8f010634ef92b8f022f6c11199645abc35378f6a5e"
+size = 722372
+mtime_ms = 1792147919810
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/960afebe-15e2-4f50-848f-148ecad725e2/bfe9adbe-abc1-4cf6-9c67-69065fda060d"
+storage_version_token = "1792147963079748"
+content_type = "text/html"
+
+[[outputs]]
+id = "PHHAbjTmFfCR67ciFCpDA"
+uri = "file://generated-artifacts/pesv-politica-seguridad-vial/04-informe-anual-politica.pdf"
+type = "pdf"
+title = "Informe anual PESV — PDF de prueba"
+description = "PDF generado desde la prueba funcional en el entorno de desarrollo."
+logical_id = "2c5694b2-cc88-4fec-baab-49b9f5d1bd93"
+content_hash = "sha256:6af3f9d9a77eb72e1570680d5d9bf81285171157ebc2d0534a475b3853554495"
+size = 179650
+mtime_ms = 1792147919748
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/2c5694b2-cc88-4fec-baab-49b9f5d1bd93/aba5af24-3458-4d1c-b97a-95ed4a699dfb"
+storage_version_token = "1792147964295697"
+content_type = "application/pdf"
+
+[[outputs]]
+id = "0H4n1PFfHzedLUjVMFgzs"
+uri = "file://generated-artifacts/pesv-politica-seguridad-vial/05-informe-anual-politica.xlsx"
+type = "table"
+title = "Informe anual PESV — Excel de prueba"
+description = "Excel generado desde la prueba funcional en el entorno de desarrollo."
+logical_id = "554d7242-da9a-4cf8-88e1-05ead5ffe5bd"
+content_hash = "sha256:5d81b44309a68a801c7733a183e9a0235c53865d953a03293b1c3dc2daafe47f"
+size = 18011
+mtime_ms = 1792147919794
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/554d7242-da9a-4cf8-88e1-05ead5ffe5bd/ed66cb0f-e1bc-49e4-8d06-f8d2380586ee"
+storage_version_token = "1792147965148685"
+content_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
