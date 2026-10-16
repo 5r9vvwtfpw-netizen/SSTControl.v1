@@ -441,6 +441,7 @@ function Router() {
       <DevelopmentOnlyAnnualRoute path="/pesv/informes-anuales/resolucion-40595-2022" component={PesvInformeAnual40595} featureName="Certificación anual PESV — Resolución 40595 de 2022" />
       <DevelopmentOnlyAnnualRoute path="/pesv/informes-anuales/responsable-pesv" component={PesvInformeAnualResponsable} featureName="Designación del Responsable del PESV" />
       <DevelopmentOnlyAnnualRoute path="/pesv/informes-anuales/comite-seguridad-vial" component={PesvInformeAnualComite} featureName="Existencia del Comité de Seguridad Vial" />
+      <DevelopmentOnlyAnnualRoute path="/pesv/informes-anuales/politica-seguridad-vial" component={PesvInformeTrimestralPolitica} featureName="Política de Seguridad Vial" />
       <SubscriptionProtectedRoute path="/pesv/capacitaciones" component={PesvCapacitaciones} feature="hasPESV" featureName="Módulo PESV - Capacitaciones" />
       <SubscriptionProtectedRoute path="/pesv/induccion-virtual" component={PesvInduccionVirtual} feature="hasPESV" featureName="Módulo PESV - Inducción Virtual" />
       <SubscriptionProtectedRoute path="/pesv/auditorias" component={PesvAuditorias} feature="hasPESV" featureName="Módulo PESV - Auditorías" />

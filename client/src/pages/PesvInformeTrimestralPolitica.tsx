@@ -32,19 +32,23 @@ type RoadSafetyPolicyReport = {
 };
 
 export default function PesvInformeTrimestralPolitica() {
+  const annual = window.location.pathname.startsWith("/pesv/informes-anuales/");
+  const reportBase = "/api/pesv/informes-trimestrales/politica-seguridad-vial";
+  const reportLabel = annual ? "Informe anual SISI/PESV" : "Informe trimestral PESV";
+  const backHref = annual ? "/pesv/informes-anuales" : "/pesv/informes-trimestrales";
   const { selectedCompany } = useCompanyContext();
   const { toast } = useToast();
   const [downloading, setDownloading] = useState("");
   const companyKey = selectedCompany?.id || getSelectedCompanyId() || "empresa-activa";
   const { data, isLoading, isError, refetch } = useQuery<RoadSafetyPolicyReport>({
-    queryKey: ["/api/pesv/informes-trimestrales/politica-seguridad-vial/estado", companyKey],
-    queryFn: async () => (await apiRequest("GET", "/api/pesv/informes-trimestrales/politica-seguridad-vial/estado")).json(),
+    queryKey: [`${reportBase}/estado`, companyKey],
+    queryFn: async () => (await apiRequest("GET", `${reportBase}/estado`)).json(),
   });
 
   const download = async (format: "pdf" | "xlsx" | "policy") => {
     const path = format === "policy"
       ? `/api/politicas-sst/${encodeURIComponent(data?.policy?.id || "")}/pdf`
-      : `/api/pesv/informes-trimestrales/politica-seguridad-vial.${format}`;
+      : `${reportBase}.${format}${annual ? "?period=annual" : ""}`;
     const label = format === "xlsx" ? "Excel" : "PDF";
     setDownloading(format);
     try {
@@ -75,9 +79,9 @@ export default function PesvInformeTrimestralPolitica() {
 
   return (
     <main className="mx-auto max-w-5xl space-y-6 p-4 md:p-6" data-testid="pesv-quarterly-policy-report">
-      <Button variant="ghost" size="sm" asChild><Link href="/pesv/informes-trimestrales"><ArrowLeft className="mr-2 h-4 w-4" />Volver a informes trimestrales</Link></Button>
+      <Button variant="ghost" size="sm" asChild><Link href={backHref}><ArrowLeft className="mr-2 h-4 w-4" />Volver a {annual ? "informes anuales" : "informes trimestrales"}</Link></Button>
       <header className="space-y-2">
-        <p className="text-sm font-medium text-primary">PESV · Informe trimestral</p>
+        <p className="text-sm font-medium text-primary">PESV · {reportLabel}</p>
         <h1 className="text-2xl font-bold md:text-3xl">Política de Seguridad Vial</h1>
         <p className="max-w-3xl text-muted-foreground">Verifica si hay una política de Seguridad Vial vigente registrada y descarga su copia aprobada en PDF.</p>
       </header>

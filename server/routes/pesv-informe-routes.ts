@@ -299,7 +299,7 @@ export function registerPesvInformeRoutes(app: Express) {
     try {
       const data = await loadRoadSafetyPolicyReport(req, res);
       if (!data) return;
-      const buffer = buildPesvRoadSafetyPolicyExcel(data.company, data.policy);
+      const buffer = buildPesvRoadSafetyPolicyExcel(data.company, data.policy, new Date(), req.query.period === "annual");
       res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
       res.setHeader("Content-Disposition", `attachment; filename="politica_seguridad_vial_${companyFileSlug(data.company.name)}.xlsx"`);
       res.setHeader("Content-Length", buffer.length);
@@ -316,7 +316,7 @@ export function registerPesvInformeRoutes(app: Express) {
       if (!data) return;
       const subscription = await storage.getSubscriptionByCompany(data.company.id);
       const trialStatus = getTrialStatus(subscription?.status || "trial", subscription?.trialEnd || null, true, true);
-      const buffer = await buildPesvRoadSafetyPolicyPdf(data.company, data.policy, trialStatus.requiresWatermark);
+      const buffer = await buildPesvRoadSafetyPolicyPdf(data.company, data.policy, trialStatus.requiresWatermark, new Date(), req.query.period === "annual");
       res.setHeader("Content-Type", "application/pdf");
       res.setHeader("Content-Disposition", `attachment; filename="politica_seguridad_vial_${companyFileSlug(data.company.name)}.pdf"`);
       res.setHeader("Content-Length", buffer.length);

@@ -24,9 +24,9 @@ function policyRows(policy: PolicyRecord | null, issuedAt: Date) {
   ];
 }
 
-export function buildPesvRoadSafetyPolicyExcel(company: ReportCompany, policy: PolicyRecord | null, issuedAt = new Date()): Buffer {
+export function buildPesvRoadSafetyPolicyExcel(company: ReportCompany, policy: PolicyRecord | null, issuedAt = new Date(), annual = false): Buffer {
   const worksheet = XLSX.utils.aoa_to_sheet([
-    ["INFORME TRIMESTRAL PESV — POLÍTICA DE SEGURIDAD VIAL"],
+    [`${annual ? "INFORME ANUAL SISI/PESV" : "INFORME TRIMESTRAL PESV"} — POLÍTICA DE SEGURIDAD VIAL`],
     [`Empresa: ${company.name} · NIT: ${company.nit}`],
     ...policyRows(policy, issuedAt),
     [],
@@ -39,7 +39,7 @@ export function buildPesvRoadSafetyPolicyExcel(company: ReportCompany, policy: P
   return XLSX.write(workbook, { type: "buffer", bookType: "xlsx" }) as Buffer;
 }
 
-export async function buildPesvRoadSafetyPolicyPdf(company: ReportCompany, policy: PolicyRecord | null, watermark = false, issuedAt = new Date()): Promise<Buffer> {
+export async function buildPesvRoadSafetyPolicyPdf(company: ReportCompany, policy: PolicyRecord | null, watermark = false, issuedAt = new Date(), annual = false): Promise<Buffer> {
   const doc = new PDFDocument({ margin: 35, size: "LETTER" });
   setupTrialWatermarkOnAllPages(doc, watermark);
   const chunks: Buffer[] = [];
@@ -48,7 +48,12 @@ export async function buildPesvRoadSafetyPolicyPdf(company: ReportCompany, polic
     doc.on("end", () => resolve(Buffer.concat(chunks)));
     doc.on("error", reject);
   });
-  let y = await addStandardHeader({ doc, company, documentTitle: "Informe trimestral PESV — Política de Seguridad Vial", documentCode: "PESV-INFO-TRI-05" });
+  let y = await addStandardHeader({
+    doc,
+    company,
+    documentTitle: `${annual ? "Informe anual SISI/PESV" : "Informe trimestral PESV"} — Política de Seguridad Vial`,
+    documentCode: annual ? "PESV-INFO-ANUAL-04" : "PESV-INFO-TRI-05",
+  });
   y = addParagraph(doc, `Fecha de consulta: ${issuedAt.toLocaleDateString("es-CO")}`, { y, bold: true });
   y = addParagraph(doc, "Este informe presenta el estado vigente consultado en el módulo fuente. No reconstruye la vigencia histórica de trimestres anteriores.", { y });
   y = addSectionBar(doc, "Respuesta del informe", y);
