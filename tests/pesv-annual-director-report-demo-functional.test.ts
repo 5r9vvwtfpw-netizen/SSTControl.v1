@@ -168,12 +168,14 @@ test("DEMO-PRUEBA: informe anual A02 muestra y abre el acta aprobada", { skip: !
     await writeFile(`${evidenceDir}/informe-anual-a02-en-pantalla.png`, screenshot);
     checks.push("La interfaz autenticada muestra la empresa, el estado, el código de acta aprobada, fechas y el botón Abrir PDF.");
 
-    const [popup] = await Promise.all([
-      page.waitForEvent("popup", { timeout: 15000 }),
+    const pdfPath = `/api/evaluaciones-pesv/${evaluationId}/revisiones-direccion/${revisionId}/pdf`;
+    const [pdfRequest] = await Promise.all([
+      page.waitForRequest((request) => request.url().includes(pdfPath), { timeout: 15000 }),
       page.getByTestId(`download-approved-acta-${revisionId}`).click(),
     ]);
-    await popup.waitForLoadState("domcontentloaded", { timeout: 20000 }).catch(() => undefined);
-    assert.match(popup.url(), new RegExp(`/api/evaluaciones-pesv/${evaluationId}/revisiones-direccion/${revisionId}/pdf`));
+    const browserPdfResponse = await pdfRequest.response();
+    assert.equal(browserPdfResponse?.status(), 200, "El clic debe abrir el PDF oficial desde la interfaz.");
+    assert.match(browserPdfResponse?.headers()["content-type"] || "", /application\/pdf/);
     assert.deepEqual(pageErrors, [], "La página no debe producir errores de JavaScript.");
     checks.push("Al pulsar Abrir PDF desde el informe, el navegador abre el endpoint del acta fuente.");
     await context.close();
