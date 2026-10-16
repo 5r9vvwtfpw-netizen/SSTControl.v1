@@ -5,7 +5,7 @@ import type { PoliticaSst } from "@shared/schema";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCompanyContext } from "@/hooks/use-company-context";
 import { openCompanyDocument } from "@/lib/company-context-url";
 
@@ -43,7 +43,7 @@ export default function PesvInformeAnualPolitica() {
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <CardTitle>{selectedCompany?.name || "Empresa"}</CardTitle>
-                <p className="mt-1 text-sm text-muted-foreground">PESV P02 · Estándar SG-SST 2.1.1</p>
+                <CardDescription>PESV P02 · Estándar SG-SST 2.1.1</CardDescription>
               </div>
               <Badge>Política fuente registrada</Badge>
             </div>
