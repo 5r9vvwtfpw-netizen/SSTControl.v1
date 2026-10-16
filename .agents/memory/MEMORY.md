@@ -101,5 +101,5 @@
 - [Informe de inspección de maquinaria PESV](pesv-machinery-inspection-report.md) — compartir el checklist H06 entre captura, detalle administrativo y PDF; filtrar cada PDF por registro y empresa autorizada.
 - [Generador de informes regulatorios PESV](pesv-superintendencia-report-generator.md) — informes trimestrales desde módulos fuente; implementar de uno en uno y esperar aprobación.
 - [Secuencia de informes PESV trimestrales](pesv-quarterly-report-sequencing.md) — implementar el siguiente informe descrito usando módulos existentes, sin diseñar por adelantado los restantes.
-- [Auditoría antes de implementar](implementation-before-existing-audit.md) — revisar primero rutas, controles y flujos existentes para corregir vacíos sin duplicar funcionalidades.
+- [Auditoría y patrón de informes](implementation-before-existing-audit.md) — auditar fuentes y comparar con informes de la misma familia antes de implementar; conservar empresa, estado, faltantes y enlace a la fuente.
 - [Certificaciones anuales SISI/PESV](sisi-pesv-annual-certifications.md) — incluir solo evidencias verificables y mantener aparte el acta del órgano social frente a P01.
