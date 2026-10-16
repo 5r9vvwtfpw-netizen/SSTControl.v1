@@ -310,6 +310,64 @@ export async function addStandardHeader(options: StandardHeaderOptions): Promise
   return doc.y;
 }
 
+export async function loadSignatureImageBuffer(signatureUrl: string): Promise<Buffer | null> {
+  try {
+    if (signatureUrl.startsWith('/uploads/') || signatureUrl.startsWith('/objects/uploads/')) {
+      const localPath = path.join(process.cwd(), 'public', signatureUrl);
+      if (fs.existsSync(localPath)) return fs.readFileSync(localPath);
+      return await objectStorageService.getObjectBuffer(signatureUrl);
+    }
+    if (signatureUrl.startsWith('http')) {
+      const response = await fetch(signatureUrl);
+      return response.ok ? Buffer.from(await response.arrayBuffer()) : null;
+    }
+    if (signatureUrl.startsWith('/replit-objstore-')) {
+      const { objectStorageClient } = await import('../replit_integrations/object_storage');
+      const parts = signatureUrl.split('/').filter(Boolean);
+      const bucket = objectStorageClient.bucket(parts[0]);
+      const file = bucket.file(parts.slice(1).join('/'));
+      const [exists] = await file.exists();
+      if (!exists) return null;
+      const [data] = await file.download();
+      return data as Buffer;
+    }
+    return await objectStorageService.getObjectBuffer(signatureUrl);
+  } catch (error: any) {
+    console.error('[PdfStandardizer] Error loading signature image:', error.message);
+    return null;
+  }
+}
+
+export function addLegalRepresentativeSignatureBlock(
+  doc: typeof PDFDocument.prototype,
+  signer: { name: string; identification: string; signatureBuffer: Buffer },
+  startY?: number,
+): number {
+  const width = 330;
+  const height = 112;
+  const x = (doc.page.width - width) / 2;
+  const y = checkPageBreak(doc, height + 16, startY ?? doc.y + 16, 65);
+  const headerHeight = 20;
+
+  doc.rect(x, y, width, height).stroke(PDF_COLORS.GREEN_PRIMARY);
+  doc.rect(x, y, width, headerHeight).fill(PDF_COLORS.GREEN_PRIMARY);
+  doc.fontSize(9).font('Helvetica-Bold').fillColor(PDF_COLORS.WHITE)
+    .text('FIRMA DEL REPRESENTANTE LEGAL', x + 8, y + 5, { width: width - 16, align: 'center' });
+  doc.fillColor(PDF_COLORS.BLACK);
+  doc.image(signer.signatureBuffer, x + (width - 150) / 2, y + headerHeight + 5, {
+    fit: [150, 40],
+    align: 'center',
+    valign: 'center',
+  });
+  doc.moveTo(x + 35, y + 70).lineTo(x + width - 35, y + 70).stroke(PDF_COLORS.GREEN_PRIMARY);
+  doc.fontSize(8).font('Helvetica-Bold')
+    .text(signer.name, x + 10, y + 74, { width: width - 20, align: 'center' });
+  doc.fontSize(7).font('Helvetica')
+    .text(`C.C. ${signer.identification} · Representante Legal`, x + 10, y + 91, { width: width - 20, align: 'center' });
+  doc.y = y + height + 8;
+  return doc.y;
+}
+
 /**
  * Formatea fecha en formato colombiano DD/MM/YYYY
  */

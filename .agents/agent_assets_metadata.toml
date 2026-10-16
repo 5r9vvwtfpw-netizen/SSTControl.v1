@@ -1077,3 +1077,45 @@ mtime_ms = 1792147919794
 storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/554d7242-da9a-4cf8-88e1-05ead5ffe5bd/ed66cb0f-e1bc-49e4-8d06-f8d2380586ee"
 storage_version_token = "1792147965148685"
 content_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
+[[outputs]]
+id = "edbcJL15fsQ1_HKMFZpPF"
+uri = "file://generated-artifacts/pesv-a02-demo-prueba/acta-a02-prueba-funcional.pdf"
+type = "pdf"
+title = "Acta A02 de prueba firmada — DEMO-PRUEBA"
+description = "PDF validado de dos páginas, con la firma registrada del Representante Legal. Los datos están marcados como prueba y no deben presentarse como acta real."
+logical_id = "6ebda271-38bb-413a-b11c-9fcde300fb1c"
+content_hash = "sha256:a87bb4c2cef8d93789ad1b716fe4a90ac8b19f86062f24656ccc2f35d53ee4da"
+size = 474294
+mtime_ms = 1792161733832
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/6ebda271-38bb-413a-b11c-9fcde300fb1c/031498b9-be43-4d50-a361-8ebf8cbc114c"
+storage_version_token = "1792161895656010"
+content_type = "application/pdf"
+
+[[outputs]]
+id = "C8-wE7rzTbAe9C47nd8EC"
+uri = "file://generated-artifacts/pesv-a02-demo-prueba/informe-anual-a02-en-pantalla.png"
+type = "image"
+title = "Captura del informe anual A02"
+description = "Vista autenticada del informe en DEMO-PRUEBA con actas de prueba y botones para abrir el PDF."
+logical_id = "e0619d01-b00e-4be5-97cf-b153992b6766"
+content_hash = "sha256:d38c65400b39b7697a0f56688b621bdc0e6dae2e7bf8730a17aa40804972af20"
+size = 209712
+mtime_ms = 1792161476862
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/e0619d01-b00e-4be5-97cf-b153992b6766/ffc387f7-c099-4924-854d-06e517ce1af8"
+storage_version_token = "1792161896590872"
+content_type = "image/png"
+
+[[outputs]]
+id = "zgl7fduL6gg29p0zjzDM6"
+uri = "file://generated-artifacts/pesv-a02-demo-prueba/evidencia-prueba-funcional.html"
+type = "html"
+title = "Informe de evidencia funcional A02"
+description = "Resumen autocontenido de las comprobaciones, captura integrada y observación sobre la sesión de navegador."
+logical_id = "cd1e053d-d44c-4e08-b727-b37593c63674"
+content_hash = "sha256:ee0e730fda13930212089014b02c318a988b902dc5817235bfb27db4bf95f1b2"
+size = 282021
+mtime_ms = 1792161868435
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/cd1e053d-d44c-4e08-b727-b37593c63674/204b2bc8-1f74-4036-92d0-8ba9ac0a2747"
+storage_version_token = "1792161897371630"
+content_type = "text/html"

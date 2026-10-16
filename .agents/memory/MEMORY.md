@@ -6,6 +6,7 @@
 - [RBAC backend routes missing permissions](rbac-backend-missing-perms.md) — 10 mutating routes in routes.ts used requireAuth-only; fixed to use requirePermission. Pattern to watch: any new POST/PATCH/DELETE must not rely on requireAuth alone.
 - [Chatbot knowledge base must mirror real form fields](chatbot-knowledge-base-accuracy.md) — describing standards generically makes the AI assistant vague; copy exact form field names/dropdown options into APP_KNOWLEDGE_BASE.
 - [Production DB tool vs AWS RDS](production-db-tool-vs-aws-rds.md) — the production database skill's executeSql hits the wrong DB for this app; query real AWS RDS prod via a bash-run pg script instead.
+- [Neon WebSocket test instability](neon-websocket-test-instability.md) — development Neon can throw while handling a WebSocket ErrorEvent, leaving browser tests blank even when API checks passed.
 - [Development schema push drift](development-schema-push-drift.md) — inspect Drizzle's proposed diff; an enum-rename prompt may reveal broad dev schema drift, so do not accept unrelated changes.
 - [Compatibilidad de enums de roles](postgres-enum-compatibility.md) — el enum de AWS RDS puede carecer de roles que el código reconoce; filtros de lectura deben tolerar etiquetas ausentes.
 - [Subscription grace period](subscription-grace-period.md) — expired subscriptions don't auto-block; a daily cron with a configurable grace period flips status to past_due after current_period_end.

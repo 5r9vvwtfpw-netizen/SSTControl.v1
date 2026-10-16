@@ -4,7 +4,8 @@ import { eq, desc, and, inArray, sql } from 'drizzle-orm';
 import * as schema from '@shared/schema';
 import {
   addStandardHeader, addSectionBar, addSignatureFooter, addSimpleTable,
-  addParagraph, addLabeledField, checkPageBreak, formatDate,
+  addLegalRepresentativeSignatureBlock, addParagraph, addLabeledField, checkPageBreak, formatDate,
+  loadSignatureImageBuffer,
   getSignersForCompany, loadCompanyLogo, handlePdfError, PDF_COLORS, PDF_CONFIG
 } from '../services/pdf-standardizer';
 import { setupTrialWatermarkOnAllPages } from '../services/pdf-watermark';
@@ -443,6 +444,20 @@ export function registerPesvPdfRoutes(app: Express) {
       const [approver] = revision.aprobadoPor
         ? await db.select({ fullName: schema.users.fullName, username: schema.users.username }).from(schema.users).where(eq(schema.users.id, revision.aprobadoPor)).limit(1)
         : [];
+      const isApproved = revision.estado === 'aprobada' && Boolean(revision.aprobadoPor && revision.fechaAprobacion);
+      if (revision.estado === 'aprobada' && !isApproved) {
+        return res.status(409).send('La revisión no tiene una aprobación trazable. Completa la aprobación antes de generar el acta.');
+      }
+      let legalRepSignatureBuffer: Buffer | null = null;
+      if (isApproved) {
+        if (!company.legalRepName || !company.legalRepId || !company.legalRepSignatureUrl) {
+          return res.status(409).send('Configura el nombre, identificación y firma registrada del Representante Legal en Empresas antes de generar el acta aprobada.');
+        }
+        legalRepSignatureBuffer = await loadSignatureImageBuffer(company.legalRepSignatureUrl);
+        if (!legalRepSignatureBuffer) {
+          return res.status(409).send('No se pudo cargar la firma registrada del Representante Legal. Verifica su archivo en Empresas.');
+        }
+      }
 
       const { default: PDFDocument } = await import('pdfkit');
       const doc = new PDFDocument({ margin: 35, size: 'LETTER' });
@@ -468,7 +483,7 @@ export function registerPesvPdfRoutes(app: Express) {
       y = addLabeledField(doc, 'Presidida Por', revision.presididaPor, { y });
       y = addLabeledField(doc, 'Participantes', revision.participantes || 'N/A', { y });
       y = addLabeledField(doc, 'Estado', revision.estado || 'N/A', { y });
-      if (revision.fechaAprobacion) {
+      if (isApproved) {
         y = addLabeledField(doc, 'Aprobada por', approver?.fullName || approver?.username || 'Usuario registrado', { y });
         y = addLabeledField(doc, 'Fecha de aprobación', formatDate(revision.fechaAprobacion), { y });
       } else {
@@ -501,6 +516,15 @@ export function registerPesvPdfRoutes(app: Express) {
 
       if (revision.fechaProximaRevision) {
         y = addLabeledField(doc, 'Próxima Revisión', formatDate(revision.fechaProximaRevision), { y });
+      }
+
+      if (isApproved && legalRepSignatureBuffer) {
+        y = addSectionBar(doc, 'Firma de la empresa', y);
+        y = addLegalRepresentativeSignatureBlock(doc, {
+          name: company.legalRepName!,
+          identification: company.legalRepId!,
+          signatureBuffer: legalRepSignatureBuffer,
+        }, y);
       }
 
       doc.end();

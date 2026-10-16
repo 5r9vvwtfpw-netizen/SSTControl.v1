@@ -121,6 +121,12 @@ Los documentos generados por el sistema deben seguir la estandarización institu
 
 **How to apply:** Aplicar el estándar común a todo PDF que el sistema componga. Para evidencia PDF cargada por la empresa, preservar el archivo original byte por byte y aclarar que no se modifica.
 
+Para las actas A02 aprobadas, el PDF debe incluir la imagen de firma configurada del Representante Legal, su nombre completo e identificación. No sustituirla por el usuario que pulsa “aprobar” ni por el footer genérico con roles duplicados. Los borradores no llevan la firma; si faltan datos o no se puede cargar la imagen registrada, no generar un PDF aprobado sin firma.
+
+**Why:** El usuario indicó expresamente que el PDF A02 debe estar firmado por el Representante Legal; la aprobación de la aplicación es trazabilidad de flujo y no reemplaza esa firma.
+
+**How to apply:** Consultar los datos y la firma guardados en Empresas, renderizar un bloque dedicado dentro de la plantilla PDF estándar y comprobar en una descarga que la imagen, el nombre y la identificación aparecen.
+
 **Why:** Los bloques manuales con `doc.rect`, alturas fijas y coordenadas incrementadas a mano llegaron a producir texto superpuesto aunque la descarga respondiera HTTP 200 y el archivo tuviera una firma PDF válida.
 
 **How to apply:** Al crear o modificar un informe, validar tanto la integridad del archivo (`%PDF-` y `%%EOF`) como su renderizado visual con datos largos, múltiples filas, saltos de página y la tabla de firmas.
