@@ -22,8 +22,8 @@ const annualCertifications = [
   },
   {
     href: "/pesv/informes-anuales/politica-seguridad-vial",
-    title: "Política de Seguridad Vial",
-    description: "Confirma su aprobación y descarga la copia registrada en P03",
+    title: "P02 — Política de Seguridad Vial",
+    description: "Política fuente con trazabilidad entre PESV P02 y el estándar SST 2.1.1",
   },
 ];
 

@@ -19,7 +19,6 @@ import {
   type LeccionReportRow,
 } from "../reports/pesv-lecciones-aprendidas-report";
 import { buildMedidasPrevencionPdfBuffer } from "../reports/pesv-medidas-prevencion-report";
-import { buildPesvRoadSafetyPolicyExcel, buildPesvRoadSafetyPolicyPdf } from "../reports/pesv-politica-seguridad-vial-report";
 import {
   buildAnnualCertificationPdfBuffer,
   type AnnualCertificationAnswer,
@@ -226,107 +225,6 @@ function companyFileSlug(companyName: string): string {
 
 export function registerPesvInformeRoutes(app: Express) {
   const reportViewPermission = requirePermission("road_incidents:view");
-  async function loadRoadSafetyPolicyReport(req: Request, res: Response) {
-    const companyId = getAuthorizedReportCompanyId(req);
-    if (!companyId) {
-      res.status(403).json({ message: "Selecciona una empresa autorizada para consultar el informe." });
-      return null;
-    }
-    const [company] = await db.select().from(schema.companies)
-      .where(eq(schema.companies.id, companyId)).limit(1);
-    if (!company) {
-      res.status(404).json({ message: "No se encontró la empresa seleccionada." });
-      return null;
-    }
-    const documents = await db.select().from(schema.politicasSst)
-      .where(eq(schema.politicasSst.companyId, companyId))
-      .orderBy(desc(schema.politicasSst.fechaEmision), desc(schema.politicasSst.updatedAt));
-    const matching = documents.filter((document) =>
-      document.codigo === "POL-SEG-02"
-      || /pol[ií]tica.*seguridad vial/i.test(document.nombre || "")
-    );
-    const signedPolicy = matching.find((document) =>
-      document.estado === "vigente"
-      && !!document.representanteLegal?.trim()
-      && !!document.cedulaRepresentante?.trim()
-      && !!document.fechaFirma
-    ) || null;
-    const approvalIncomplete = !signedPolicy && matching.some((document) =>
-      document.estado === "vigente"
-      && (!document.representanteLegal?.trim() || !document.cedulaRepresentante?.trim() || !document.fechaFirma)
-    );
-    return {
-      company,
-      policy: signedPolicy,
-      draftExists: !signedPolicy && matching.some((document) => document.estado === "borrador"),
-      approvalIncomplete,
-      consultedAt: new Date().toISOString(),
-    };
-  }
-
-  app.get("/api/pesv/informes-trimestrales/politica-seguridad-vial/estado", authRequireAuth, reportViewPermission, async (req, res) => {
-    try {
-      const data = await loadRoadSafetyPolicyReport(req, res);
-      if (!data) return;
-      const { company, policy, draftExists, approvalIncomplete, consultedAt } = data;
-      res.json({
-        companyName: company.name,
-        companyNit: company.nit,
-        consultedAt,
-        hasApprovedPolicy: !!policy,
-        draftExists,
-        approvalIncomplete,
-        policy: policy ? {
-          id: policy.id,
-          nombre: policy.nombre,
-          codigo: policy.codigo,
-          version: policy.version,
-          estado: policy.estado,
-          fechaEmision: policy.fechaEmision,
-          fechaProximaRevision: policy.fechaProximaRevision,
-          representanteLegal: policy.representanteLegal,
-          cedulaRepresentante: policy.cedulaRepresentante,
-          fechaFirma: policy.fechaFirma,
-        } : null,
-      });
-    } catch (error) {
-      console.error("Error consultando política de seguridad vial PESV:", error);
-      res.status(500).json({ message: "No fue posible consultar la política de Seguridad Vial." });
-    }
-  });
-
-  app.get("/api/pesv/informes-trimestrales/politica-seguridad-vial.xlsx", authRequireAuth, reportViewPermission, async (req, res) => {
-    try {
-      const data = await loadRoadSafetyPolicyReport(req, res);
-      if (!data) return;
-      const buffer = buildPesvRoadSafetyPolicyExcel(data.company, data.policy, new Date(), req.query.period === "annual");
-      res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-      res.setHeader("Content-Disposition", `attachment; filename="politica_seguridad_vial_${companyFileSlug(data.company.name)}.xlsx"`);
-      res.setHeader("Content-Length", buffer.length);
-      res.send(buffer);
-    } catch (error) {
-      console.error("Error generando Excel de política de seguridad vial PESV:", error);
-      res.status(500).json({ message: "No fue posible generar el archivo Excel." });
-    }
-  });
-
-  app.get("/api/pesv/informes-trimestrales/politica-seguridad-vial.pdf", authRequireAuth, reportViewPermission, async (req, res) => {
-    try {
-      const data = await loadRoadSafetyPolicyReport(req, res);
-      if (!data) return;
-      const subscription = await storage.getSubscriptionByCompany(data.company.id);
-      const trialStatus = getTrialStatus(subscription?.status || "trial", subscription?.trialEnd || null, true, true);
-      const buffer = await buildPesvRoadSafetyPolicyPdf(data.company, data.policy, trialStatus.requiresWatermark, new Date(), req.query.period === "annual");
-      res.setHeader("Content-Type", "application/pdf");
-      res.setHeader("Content-Disposition", `attachment; filename="politica_seguridad_vial_${companyFileSlug(data.company.name)}.pdf"`);
-      res.setHeader("Content-Length", buffer.length);
-      res.send(buffer);
-    } catch (error) {
-      console.error("Error generando PDF de política de seguridad vial PESV:", error);
-      res.status(500).json({ message: "No fue posible generar el archivo PDF." });
-    }
-  });
-
   app.use("/api/pesv/informes-anuales", (_req, res, next) => {
     if (process.env.NODE_ENV === "production") {
       return res.status(404).json({ message: "No encontrado." });
