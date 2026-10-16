@@ -17,6 +17,7 @@ type RoadSafetyPolicyReport = {
   consultedAt: string;
   hasApprovedPolicy: boolean;
   draftExists: boolean;
+  approvalIncomplete: boolean;
   policy: null | {
     id: string;
     nombre: string | null;
@@ -102,6 +103,8 @@ export default function PesvInformeTrimestralPolitica() {
                   <div><dt className="text-muted-foreground">Fecha de firma registrada</dt><dd className="font-medium">{data.policy.fechaFirma}</dd></div>
                   <div><dt className="text-muted-foreground">Representante Legal</dt><dd className="font-medium">{data.policy.representanteLegal} · C.C. {data.policy.cedulaRepresentante}</dd></div>
                 </dl>
+              ) : data.approvalIncomplete ? (
+                <p className="mt-2 text-sm text-muted-foreground">Hay una política marcada como vigente, pero faltan datos de firma del Representante Legal o la fecha de firma para acreditarla como aprobada.</p>
               ) : data.draftExists ? (
                 <p className="mt-2 text-sm text-muted-foreground">Hay una política en borrador, pero no cuenta como política aprobada y vigente.</p>
               ) : null}
@@ -119,7 +122,9 @@ export default function PesvInformeTrimestralPolitica() {
               <QuarterlyReportMissingGuide guide={{
                 key: "politica-seguridad-vial",
                 title: "Política de Seguridad Vial aprobada",
-                missing: [data.draftExists ? "La política encontrada aún está en borrador." : "No se encontró una política de Seguridad Vial vigente."],
+                 missing: [data.approvalIncomplete
+                   ? "El registro vigente no tiene completos el nombre e identificación del Representante Legal y la fecha de firma."
+                   : data.draftExists ? "La política encontrada aún está en borrador." : "No se encontró una política de Seguridad Vial vigente."],
                 step: "P03 — Política de Seguridad Vial",
                 route: "PESV > Planear > Políticas SST",
                 instruction: "Registra o actualiza la política en el módulo fuente, apruébala y vuelve a consultar el informe. No se genera ni se supone una política por ausencia de datos.",

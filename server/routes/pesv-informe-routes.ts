@@ -245,11 +245,21 @@ export function registerPesvInformeRoutes(app: Express) {
       document.codigo === "POL-SEG-02"
       || /pol[ií]tica.*seguridad vial/i.test(document.nombre || "")
     );
-    const policy = matching.find((document) => document.estado === "vigente") || null;
+    const signedPolicy = matching.find((document) =>
+      document.estado === "vigente"
+      && !!document.representanteLegal?.trim()
+      && !!document.cedulaRepresentante?.trim()
+      && !!document.fechaFirma
+    ) || null;
+    const approvalIncomplete = !signedPolicy && matching.some((document) =>
+      document.estado === "vigente"
+      && (!document.representanteLegal?.trim() || !document.cedulaRepresentante?.trim() || !document.fechaFirma)
+    );
     return {
       company,
-      policy,
-      draftExists: !policy && matching.some((document) => document.estado === "borrador"),
+      policy: signedPolicy,
+      draftExists: !signedPolicy && matching.some((document) => document.estado === "borrador"),
+      approvalIncomplete,
       consultedAt: new Date().toISOString(),
     };
   }
@@ -258,13 +268,14 @@ export function registerPesvInformeRoutes(app: Express) {
     try {
       const data = await loadRoadSafetyPolicyReport(req, res);
       if (!data) return;
-      const { company, policy, draftExists, consultedAt } = data;
+      const { company, policy, draftExists, approvalIncomplete, consultedAt } = data;
       res.json({
         companyName: company.name,
         companyNit: company.nit,
         consultedAt,
         hasApprovedPolicy: !!policy,
         draftExists,
+        approvalIncomplete,
         policy: policy ? {
           id: policy.id,
           nombre: policy.nombre,

@@ -10,3 +10,9 @@ Implement only the next report the user has described and approved. Treat the re
 **How to apply:** For every quarterly report, pair missing-data guidance with a persistent source-module navigation section showing the PESV step, route, relevant counts, and direct link.
 
 **How to apply:** Before each next report, wait for its source requirement, inspect all relevant existing modules, identify missing source data there, and implement only that report in the quarterly generator. Do not design future reports in advance. Explain missing fields with a direct link to the relevant PESV step; for signed outputs, use the company's configured representative, show their correct role and identification, and request explicit confirmation. Do not claim a report is complete based only on a successful build.
+
+For the Road Safety Policy report, answer “Sí” only when a matching policy is current and has the Legal Representative's name, identification, and signature date recorded; link the original approved PDF from Políticas SST rather than creating a duplicate. If the source has no effective-date history, label the result as current status and never infer validity for a past quarter.
+
+**Why:** The regulator evidence asks both whether an approved Road Safety Policy exists and for its approved PDF. A current `vigente` flag alone cannot establish who signed it or when, and the policy source does not retain enough history to reconstruct prior quarters.
+
+**How to apply:** Keep the data-entry and official document in P03 / Políticas SST; show incomplete approval fields as missing evidence and direct the user to that source module.

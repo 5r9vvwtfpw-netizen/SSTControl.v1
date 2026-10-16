@@ -4,7 +4,7 @@ import type { Company, PoliticaSst } from "@shared/schema";
 import { addLabeledField, addParagraph, addSectionBar, addStandardHeader } from "../services/pdf-standardizer";
 import { setupTrialWatermarkOnAllPages } from "../services/pdf-watermark";
 
-type ReportCompany = Pick<Company, "name" | "nit" | "address" | "logoUrl">;
+type ReportCompany = Pick<Company, "id" | "name" | "nit" | "address" | "logoUrl">;
 type PolicyRecord = Pick<PoliticaSst, "id" | "codigo" | "nombre" | "version" | "estado" | "fechaEmision" | "fechaProximaRevision" | "representanteLegal" | "cedulaRepresentante" | "fechaFirma">;
 
 function policyRows(policy: PolicyRecord | null, issuedAt: Date) {
