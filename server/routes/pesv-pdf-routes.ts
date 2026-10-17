@@ -144,26 +144,41 @@ export function registerPesvPdfRoutes(app: Express) {
           documentCode: `PESV-MOS-${acta.numeroActa}`, logoBuffer,
         });
         y = addSectionBar(doc, 'Datos de la sesión', y);
-        y = addLabeledField(doc, 'Acta No.', acta.numeroActa, { y });
-        y = addLabeledField(doc, 'Órgano social', acta.organoSocial, { y });
+        const pageWidth = doc.page.width - PDF_CONFIG.MARGIN * 2;
+        const labelColumnWidth = 150;
+        y = addSimpleTable(doc, ['Campo', 'Detalle'], [
+          ['Acta No.', acta.numeroActa],
+          ['Órgano social', acta.organoSocial],
+          ['Tipo de sesión', acta.tipoSesion],
+          ['Fecha', formatDate(acta.fechaReunion)],
+          ['Lugar o modalidad', acta.lugar],
+        ], { y, columnWidths: [labelColumnWidth, pageWidth - labelColumnWidth] });
+
         y = addSectionBar(doc, 'Existencia del Comité de Seguridad Vial', y);
-        y = addLabeledField(doc, '¿Existe el CSV?', acta.existeCsv === null ? 'No declarado en esta acta' : acta.existeCsv ? 'Sí' : 'No', { y });
-        y = addLabeledField(doc, 'Tipo de sesión', acta.tipoSesion, { y });
-        y = addLabeledField(doc, 'Fecha', formatDate(acta.fechaReunion), { y });
-        y = addLabeledField(doc, 'Lugar o modalidad', acta.lugar, { y });
+        y = addSimpleTable(doc, ['Declaración', 'Resultado'], [[
+          '¿Existe el Comité de Seguridad Vial (CSV)?',
+          acta.existeCsv === null ? 'No declarado en esta acta' : acta.existeCsv ? 'Sí' : 'No',
+        ]], { y, columnWidths: [pageWidth * 0.62, pageWidth * 0.38] });
+
         y = addSectionBar(doc, 'Asistentes y quórum', y);
-        y = addParagraph(doc, acta.asistentes, { y });
-        y = addLabeledField(doc, 'Quórum', acta.quorum, { y });
+        y = addParagraph(doc, acta.asistentes, { y, fontSize: 9 });
+        y = addSimpleTable(doc, ['Verificación', 'Resultado'], [
+          ['Quórum', acta.quorum],
+        ], { y, columnWidths: [labelColumnWidth, pageWidth - labelColumnWidth] });
+
         y = addSectionBar(doc, 'Decisión sobre el PESV', y);
-        y = addParagraph(doc, acta.decision, { y });
-        y = checkPageBreak(doc, 110, y);
-        const signatureY = y + 42;
+        y = addParagraph(doc, acta.decision, { y, fontSize: 9 });
+        y = addSectionBar(doc, 'Firmas de la sesión', y);
+        y = checkPageBreak(doc, 76, y, 65);
+        const signatureY = y + 8;
+        const signatureMargin = PDF_CONFIG.MARGIN;
+        const signatureWidth = pageWidth / 3;
         const signatureBlocks = [
-          { x: 45, width: 172, name: acta.presidenteNombre, role: 'Presidente de la sesión' },
-          { x: 220, width: 172, name: acta.secretarioNombre, role: 'Secretario de la sesión' },
+          { x: signatureMargin, width: signatureWidth, name: acta.presidenteNombre, role: 'Presidente de la sesión' },
+          { x: signatureMargin + signatureWidth, width: signatureWidth, name: acta.secretarioNombre, role: 'Secretario de la sesión' },
           {
-            x: 395,
-            width: 172,
+            x: signatureMargin + signatureWidth * 2,
+            width: signatureWidth,
             name: company.legalRepName || 'Nombre no registrado en Empresas',
             identification: company.legalRepId ? `C.C. ${company.legalRepId}` : '',
             role: 'Representante legal',
@@ -172,12 +187,12 @@ export function registerPesvPdfRoutes(app: Express) {
         doc.fontSize(8).fillColor(PDF_COLORS.BLACK);
         for (const signer of signatureBlocks) {
           doc.moveTo(signer.x, signatureY).lineTo(signer.x + signer.width, signatureY).stroke();
-          doc.text(signer.name, signer.x, signatureY + 5, { width: signer.width, align: 'center' });
+          doc.font('Helvetica-Bold').text(signer.name, signer.x + 5, signatureY + 6, { width: signer.width - 10, align: 'center' });
           if ('identification' in signer && signer.identification) {
-            doc.fontSize(7).text(signer.identification, signer.x, signatureY + 18, { width: signer.width, align: 'center' });
-            doc.fontSize(7).text(signer.role, signer.x, signatureY + 30, { width: signer.width, align: 'center' });
+            doc.fontSize(7).font('Helvetica').text(signer.identification, signer.x + 5, signatureY + 21, { width: signer.width - 10, align: 'center' });
+            doc.text(signer.role, signer.x + 5, signatureY + 33, { width: signer.width - 10, align: 'center' });
           } else {
-            doc.fontSize(7).text(signer.role, signer.x, signatureY + 20, { width: signer.width, align: 'center' });
+            doc.fontSize(7).font('Helvetica').text(signer.role, signer.x + 5, signatureY + 23, { width: signer.width - 10, align: 'center' });
           }
           doc.fontSize(8);
         }

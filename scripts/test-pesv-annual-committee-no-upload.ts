@@ -145,7 +145,7 @@ try {
       || generatedPdf.subarray(0, 5).toString("ascii") !== "%PDF-") {
     throw new Error(`No se generó el PDF del acta del órgano social: HTTP ${generatedPdfResponse.status()}`);
   }
-  await writeIfMissing(`${evidenceDir}/PRUEBA-FUNCIONAL-ACTA-CSV-FIRMA-REPRESENTANTE-LEGAL.pdf`, generatedPdf);
+  await writeFile(`${evidenceDir}/PRUEBA-FUNCIONAL-ACTA-CSV-FIRMA-REPRESENTANTE-LEGAL.pdf`, generatedPdf);
   checks.push("El acta de prueba y el PDF se conservaron en DEMO-PRUEBA para revisión; ambos están marcados como prueba funcional.");
   checks.push(`El servidor asignó el consecutivo automático ${generatedActa.numeroActa}.`);
   checks.push("El registro conserva la respuesta explícita sobre la existencia del CSV.");
