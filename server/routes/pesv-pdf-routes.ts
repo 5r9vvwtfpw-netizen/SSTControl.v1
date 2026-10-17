@@ -168,9 +168,18 @@ export function registerPesvPdfRoutes(app: Express) {
 
         y = addSectionBar(doc, 'Decisión sobre el PESV', y);
         y = addParagraph(doc, acta.decision, { y, fontSize: 9 });
-        y = addSectionBar(doc, 'Firmas de la sesión', y);
-        y = checkPageBreak(doc, 76, y, 65);
-        const signatureY = y + 8;
+        const pageBeforeSignatures = doc.page;
+        const signatureStartY = checkPageBreak(doc, 165, y, 35);
+        if (doc.page !== pageBeforeSignatures) {
+          y = await addStandardHeader({
+            doc, company, documentTitle: 'ACTA DEL MÁXIMO ÓRGANO SOCIAL',
+            documentCode: `PESV-MOS-${acta.numeroActa}`, logoBuffer,
+          });
+        } else {
+          y = signatureStartY;
+        }
+        y = addSectionBar(doc, 'Firmas de la sesión', y, 35);
+        const signatureY = y + 80;
         const signatureMargin = PDF_CONFIG.MARGIN;
         const signatureWidth = pageWidth / 3;
         const signatureBlocks = [
