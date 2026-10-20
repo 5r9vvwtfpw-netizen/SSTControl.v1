@@ -719,17 +719,21 @@ export function setupAuth(app: Express) {
 
   passport.use(
     new LocalStrategy(async (username, password, done) => {
-      // Muchos usuarios escriben su correo en el campo "Usuario" por costumbre.
-      // Se busca primero por username exacto; si no existe, se intenta por email
-      // para no bloquear el acceso a quien no recuerda su nombre de usuario exacto.
-      let user = await storage.getUserByUsername(username);
-      if (!user && username.includes("@")) {
-        user = await storage.getUserByEmail(username);
-      }
-      if (!user || !(await comparePasswords(password, user.password))) {
-        return done(null, false);
-      } else {
+      try {
+        // Muchos usuarios escriben su correo en el campo "Usuario" por costumbre.
+        // Se busca primero por username exacto; si no existe, se intenta por email
+        // para no bloquear el acceso a quien no recuerda su nombre de usuario exacto.
+        let user = await storage.getUserByUsername(username);
+        if (!user && username.includes("@")) {
+          user = await storage.getUserByEmail(username);
+        }
+        if (!user || !(await comparePasswords(password, user.password))) {
+          return done(null, false);
+        }
         return done(null, user);
+      } catch (error) {
+        logger.error({ err: error }, "Credential lookup failed during login");
+        return done(error as Error);
       }
     }),
   );

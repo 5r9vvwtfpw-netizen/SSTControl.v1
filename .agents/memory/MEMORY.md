@@ -43,6 +43,7 @@
 - [Blank form validation](blank-form-validation.md) — los campos de negocio empiezan vacíos y los obligatorios requieren validación explícita antes de mutar.
 - [Mechanic tenant context](mechanic-tenant-context.md) — rutas por scopes activos, caché separada por empresa y selección persistida validada después de cargar autorizaciones.
 - [Safari login autofill](safari-login-autofill.md) — Safari puede mostrar credenciales que React no recibió; el submit debe leer los valores reales del formulario.
+- [Passport LocalStrategy failures](passport-local-error-handling.md) — capturar dentro del verificador las fallas async de BD y llamar `done(error)`; si no, el login puede quedar sin respuesta.
 - [Entrega de PDF en Safari](safari-pdf-delivery.md) — Guardar como en una vista previa de Replit guarda HTML; el buscador de Files no expone el menú del árbol.
 - [Vite and app WebSockets](vite-app-websockets.md) — un WebSocket con path sobre el servidor compartido puede rechazar HMR; aislar upgrades por ruta con noServer.
 - [Seguridad de la configuración Replit](replit-config-secret-hygiene.md) — .replit exige reemplazo validado; retirar secretos versionados no limpia el historial ni evita su rotación.

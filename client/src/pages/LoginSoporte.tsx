@@ -24,12 +24,25 @@ export default function LoginSoporte() {
   // Dedicated support login mutation - uses /api/support-login endpoint
   const supportLoginMutation = useMutation({
     mutationFn: async (credentials: { username: string; password: string }) => {
-      const res = await apiRequest("POST", "/api/support-login", credentials);
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Error de autenticación");
+      const controller = new AbortController();
+      const timeoutId = window.setTimeout(() => controller.abort(), 20_000);
+      try {
+        const res = await apiRequest("POST", "/api/support-login", credentials, {
+          signal: controller.signal,
+        });
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error || "Error de autenticación");
+        }
+        return await res.json();
+      } catch (error) {
+        if (error instanceof Error && error.name === "AbortError") {
+          throw new Error("El servidor no respondió a tiempo. Verifica la conexión y vuelve a intentar.");
+        }
+        throw error;
+      } finally {
+        window.clearTimeout(timeoutId);
       }
-      return await res.json();
     },
     onSuccess: (userData: User | { requiresVerification: true; challengeId: string; maskedEmail: string }) => {
       if ("requiresVerification" in userData) {
@@ -160,6 +173,8 @@ export default function LoginSoporte() {
                 <Label htmlFor="login-username">Usuario</Label>
                 <Input
                   id="login-username"
+                  name="username"
+                  autoComplete="username"
                   placeholder="Ingrese su usuario de soporte"
                   value={loginData.username}
                   onChange={(e) => setLoginData({ ...loginData, username: e.target.value })}
@@ -172,7 +187,9 @@ export default function LoginSoporte() {
                 <div className="relative">
                   <Input
                     id="login-password"
+                    name="password"
                     type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
                     placeholder="Ingrese su contraseña"
                     value={loginData.password}
                     onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}

@@ -150,12 +150,14 @@ export async function apiRequest(
   method: string,
   url: string,
   data?: unknown | undefined,
+  options?: Pick<RequestInit, "signal">,
 ): Promise<Response> {
   const res = await fetch(url, {
     method,
     headers: buildHeaders(!!data),
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
+    ...options,
   });
 
   await throwIfResNotOk(res);
