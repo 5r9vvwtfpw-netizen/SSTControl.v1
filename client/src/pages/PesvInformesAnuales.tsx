@@ -6,26 +6,31 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 const annualCertifications = [
   {
+    number: 2,
     href: "/pesv/informes-anuales/resolucion-40595-2022",
     title: "Certificación del PESV — Resolución 40595 de 2022",
     description: "Declaración independiente del Representante Legal",
   },
   {
+    number: 3,
     href: "/pesv/informes-anuales/responsable-pesv",
     title: "Designación del Responsable del PESV",
     description: "Acta de designación con poder de decisión y articulación con el SG-SST",
   },
   {
+    number: 4,
     href: "/pesv/informes-anuales/comite-seguridad-vial",
     title: "Existencia del Comité de Seguridad Vial",
     description: "Consulta los datos de conformación registrados en P01",
   },
   {
+    number: 5,
     href: "/pesv/informes-anuales/politica-seguridad-vial",
     title: "Política de Seguridad Vial",
     description: "Política fuente con trazabilidad entre PESV P02 y el estándar SST 2.1.1",
   },
   {
+    number: 6,
     href: "/pesv/informes-anuales/seguimiento-direccion",
     title: "Actas de seguimiento al PESV por la Alta Dirección",
     description: "Descarga las actas A02 aprobadas y registradas en la aplicación",
@@ -49,24 +54,32 @@ export default function PesvInformesAnuales() {
           <Badge variant="secondary">{annualCertifications.length} informes incorporados</Badge>
         </div>
         {annualCertifications.map((report) => (
-          <Card key={report.href}>
-            <CardHeader>
-              <div className="flex items-start gap-3">
-                <div className="rounded-md bg-primary/10 p-2 text-primary">
-                  <FileText className="h-5 w-5" aria-hidden="true" />
+          <div key={report.href} className="relative">
+            <span
+              className="absolute -left-2 top-5 z-10 text-3xl leading-none text-red-500"
+            >
+              <span aria-hidden="true">{report.number}</span>
+              <span className="sr-only">Punto {report.number}</span>
+            </span>
+            <Card>
+              <CardHeader>
+                <div className="flex items-start gap-3">
+                  <div className="rounded-md bg-primary/10 p-2 text-primary">
+                    <FileText className="h-5 w-5" aria-hidden="true" />
+                  </div>
+                  <div className="space-y-1">
+                    <CardTitle>{report.title}</CardTitle>
+                    <CardDescription>{report.description}</CardDescription>
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <CardTitle>{report.title}</CardTitle>
-                  <CardDescription>{report.description}</CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="flex justify-end border-t pt-4">
-              <Button asChild>
-                <Link href={report.href}>Abrir informe <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" /></Link>
-              </Button>
-            </CardContent>
-          </Card>
+              </CardHeader>
+              <CardContent className="flex justify-end border-t pt-4">
+                <Button asChild>
+                  <Link href={report.href}>Abrir informe <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" /></Link>
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         ))}
       </section>
     </main>
