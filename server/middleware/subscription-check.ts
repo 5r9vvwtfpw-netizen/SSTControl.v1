@@ -315,7 +315,7 @@ export function requireActiveSubscription(req: Request, res: Response, next: Nex
   const userRole = user.role;
   const companyId = user.companyId;
 
-  const exemptRoles = ['superadmin', 'soporte', 'lso_externo', 'lso', 'trabajador', 'admin'];
+  const exemptRoles = ['superadmin', 'soporte', 'lso_externo', 'lso', 'admin'];
   if (exemptRoles.includes(userRole)) {
     return next();
   }
@@ -333,6 +333,13 @@ export function requireActiveSubscription(req: Request, res: Response, next: Nex
           subscriptionStatus: status.subscriptionStatus,
           blockedReason: status.blockedReason,
         }, "Acceso bloqueado por suscripción inactiva");
+
+        if (userRole === "trabajador") {
+          return res.status(403).json({
+            error: "El acceso al portal está temporalmente bloqueado. Comunícate con el administrador de tu empresa.",
+            code: "EMPLOYEE_PORTAL_BLOCKED",
+          });
+        }
 
         return res.status(403).json({
           error: "subscription_blocked",

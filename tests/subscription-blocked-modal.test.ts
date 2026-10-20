@@ -31,3 +31,18 @@ test("induction approval keeps its distinct email action", () => {
   assert.match(html, /mailto:admin@sst-colombia\.com/);
   assert.doesNotMatch(html, /enlace|Activar Suscripción/i);
 });
+
+test("employee portal block hides subscription details and payment navigation", () => {
+  const html = renderToStaticMarkup(React.createElement(SubscriptionBlockedModal, {
+    subscriptionStatus: "past_due",
+    blockedReason: "Su período de suscripción ha vencido. Por favor renueve su suscripción.",
+    isEmployeePortal: true,
+    onActivateSubscription: () => {},
+  }));
+
+  assert.match(html, /Acceso bloqueado/);
+  assert.match(html, /administrador de tu empresa/);
+  assert.doesNotMatch(html, /Pago pendiente|suscripción ha vencido|Activar Suscripción|soporte@|mi-suscripcion/i);
+  assert.equal((html.match(/<button\b/g) || []).length, 0);
+  assert.equal((html.match(/<a\b/g) || []).length, 0);
+});

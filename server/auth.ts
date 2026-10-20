@@ -172,7 +172,6 @@ const SUBSCRIPTION_EXEMPT_ROLES = new Set([
   "soporte",
   "lso",
   "lso_externo",
-  "trabajador",
 ]);
 
 function isSubscriptionExempt(user: SelectUser): boolean {
@@ -221,6 +220,14 @@ async function rejectBlockedCompanyUser(user: SelectUser, req: Request, res: Res
   try {
     const subscription = await getUserSubscriptionAccess(user);
     if (subscription.isValid) return false;
+
+    if (user.role === "trabajador") {
+      res.status(403).json({
+        error: "El acceso al portal está temporalmente bloqueado. Comunícate con el administrador de tu empresa.",
+        code: "EMPLOYEE_PORTAL_BLOCKED",
+      });
+      return true;
+    }
 
     if (user.companyId) await revokeCompanySessions(user.companyId);
     if (req.isAuthenticated?.() && (req.user as SelectUser | undefined)?.id === user.id) {
@@ -521,11 +528,12 @@ async function enforceAuthenticatedSessionActivity(req: Request, res: Response, 
     // notice. Logout is also always allowed. Every other authenticated API
     // request is checked here, including routes that only use requireAuth.
     const isSubscriptionStatusRead = req.method === "GET" && req.path === "/api/user";
+    const isSessionActivityUpdate = req.method === "POST" && req.path === "/api/session/activity";
     const isProtectedResource =
       req.path.startsWith("/api/") ||
       req.path.startsWith("/objects/") ||
       req.path.startsWith("/uploads/");
-    if (isProtectedResource && !isSubscriptionStatusRead) {
+    if (isProtectedResource && !isSubscriptionStatusRead && !isSessionActivityUpdate) {
       const blocked = await rejectBlockedCompanyUser(req.user as SelectUser, req, res);
       if (blocked) return;
     }
@@ -990,7 +998,7 @@ export function setupAuth(app: Express) {
         return res.status(401).json({ error: "Usuario o contraseña incorrectos" });
       }
 
-      if (await rejectBlockedCompanyUser(user, req, res)) return;
+      if (user.role !== "trabajador" && await rejectBlockedCompanyUser(user, req, res)) return;
 
       try {
         if (await isRetiredWorkerPortalUser(user)) {
@@ -1176,7 +1184,7 @@ export function setupAuth(app: Express) {
         return res.status(403).json({ error: "Esta verificación no corresponde al portal de soporte." });
       }
 
-      if (await rejectBlockedCompanyUser(user, req, res)) return;
+      if (user.role !== "trabajador" && await rejectBlockedCompanyUser(user, req, res)) return;
 
       const consumed = await db.execute(sql`
         UPDATE login_verification_challenges
@@ -1284,6 +1292,16 @@ export function setupAuth(app: Express) {
           code: "SUBSCRIPTION_CHECK_ERROR",
         });
       }
+    }
+
+    if (user.role === "trabajador" && subscriptionStatus?.isBlocked) {
+      subscriptionStatus = {
+        ...subscriptionStatus,
+        subscriptionStatus: "blocked",
+        blockedReason: "El acceso al portal está temporalmente bloqueado. Comunícate con el administrador de tu empresa.",
+        trialEndsAt: null,
+        daysRemaining: null,
+      };
     }
     
     let isDemoSession = false;
@@ -1590,9 +1608,10 @@ export function requireActiveSubscription(req: Request, res: Response, next: Nex
 
   const user = req.user as SelectUser;
   
-  // Superadmin, soporte, LSO y trabajadores no requieren suscripción:
-  // los portales de LSO y empleados son totalmente gratuitos.
-  if (user.role === 'superadmin' || user.role === 'soporte' || user.role === 'lso' || user.role === 'lso_externo' || user.role === 'trabajador') {
+  // Superadmin, soporte y LSO no requieren suscripción.
+  // Los trabajadores pueden iniciar sesión para recibir el aviso neutral,
+  // pero sus solicitudes a recursos protegidos sí se validan por empresa.
+  if (user.role === 'superadmin' || user.role === 'soporte' || user.role === 'lso' || user.role === 'lso_externo') {
     return next();
   }
 
@@ -1609,6 +1628,12 @@ export function requireActiveSubscription(req: Request, res: Response, next: Nex
   verifySubscriptionStatus(user.companyId)
     .then(subscriptionStatus => {
       if (!subscriptionStatus.isValid) {
+        if (user.role === "trabajador") {
+          return res.status(403).json({
+            error: "El acceso al portal está temporalmente bloqueado. Comunícate con el administrador de tu empresa.",
+            code: "EMPLOYEE_PORTAL_BLOCKED",
+          });
+        }
         return res.status(403).json({ 
           error: "Suscripción inactiva",
           code: subscriptionStatus.code,
