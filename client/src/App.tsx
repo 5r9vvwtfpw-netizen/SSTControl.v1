@@ -608,6 +608,7 @@ function SupportRouter() {
 
 function SubscriptionGate({ children }: { children: React.ReactNode }) {
   const { shouldBlock, subscriptionStatus, isLoading, user } = useSubscriptionCheck();
+  const { logoutMutation } = useAuth();
   const [, navigate] = useLocation();
 
   if (isLoading) {
@@ -628,6 +629,8 @@ function SubscriptionGate({ children }: { children: React.ReactNode }) {
         blockedReason={subscriptionStatus.blockedReason || "Su acceso está bloqueado"}
         trialEndsAt={subscriptionStatus.trialEndsAt}
         isEmployeePortal={user?.role === "trabajador"}
+        onLogout={user?.role === "trabajador" ? () => logoutMutation.mutate() : undefined}
+        isLoggingOut={logoutMutation.isPending}
         onActivateSubscription={() => { window.location.href = "/mi-suscripcion"; }}
       />
     );

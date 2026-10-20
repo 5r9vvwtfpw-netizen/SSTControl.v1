@@ -9,6 +9,8 @@ interface SubscriptionBlockedModalProps {
   blockedReason: string;
   trialEndsAt?: string | null;
   isEmployeePortal?: boolean;
+  onLogout?: () => void;
+  isLoggingOut?: boolean;
   onActivateSubscription?: () => void;
 }
 
@@ -17,6 +19,8 @@ export function SubscriptionBlockedModal({
   blockedReason,
   trialEndsAt,
   isEmployeePortal = false,
+  onLogout,
+  isLoggingOut = false,
   onActivateSubscription,
 }: SubscriptionBlockedModalProps) {
   const isPendingTrainingApproval = blockedReason?.includes(TRAINING_APPROVAL_EMAIL);
@@ -44,6 +48,20 @@ export function SubscriptionBlockedModal({
               El Portal de Empleados no está disponible en este momento. Comunícate con el administrador de tu empresa.
             </p>
           </CardContent>
+          {onLogout && (
+            <CardFooter className="pt-0">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={onLogout}
+                disabled={isLoggingOut}
+                data-testid="button-employee-logout"
+              >
+                {isLoggingOut ? "Cerrando sesión..." : "Cerrar sesión"}
+              </Button>
+            </CardFooter>
+          )}
         </Card>
       </div>
     );

@@ -5,9 +5,9 @@ description: Neutral worker-facing block for an unpaid company, separate from LS
 
 The contracting company is responsible for the subscription. When its access is blocked for non-payment, a worker entering the Employee Portal must see a discreet, neutral "Acceso bloqueado" notice that directs them to their company administrator. Never expose subscription/payment details or a payment button to workers, and never send workers to the company's billing panel.
 
-**Why:** On 2026-10-20, the user reported that a worker saw a conspicuous payment modal and its button opened the company billing panel; the user requested a more subtle blocked message instead.
+**Why:** On 2026-10-20, the user reported that a worker saw a conspicuous payment modal and its button opened the company billing panel; the user requested a more subtle blocked message instead. A server restart does not clear stored browser sessions, so a full-screen blocked state must also let the worker log out.
 
-**How to apply:** In the worker portal, use only the neutral blocked state and do not expose subscription status reasons or payment navigation. Keep payment management restricted to company administrators. LSO and external LSO access remains governed separately by their assigned-company suspension policy. Review all duplicate exemption lists when changing subscription behavior:
+**How to apply:** In the worker portal, use only the neutral blocked state and do not expose subscription status reasons or payment navigation. Keep payment management restricted to company administrators, but provide a working logout action from the blocked state. LSO and external LSO access remains governed separately by their assigned-company suspension policy. Review all duplicate exemption lists when changing subscription behavior:
 - `client/src/hooks/useSubscriptionCheck.ts`
 - `server/middleware/subscription-check.ts`
 - `server/auth.ts`
