@@ -1,4 +1,4 @@
-import { AlertTriangle, CreditCard, Clock, XCircle, GraduationCap, Mail } from "lucide-react";
+import { AlertTriangle, CreditCard, Clock, XCircle, GraduationCap, Mail, LockKeyhole } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 
@@ -8,6 +8,7 @@ interface SubscriptionBlockedModalProps {
   subscriptionStatus: string;
   blockedReason: string;
   trialEndsAt?: string | null;
+  isEmployeePortal?: boolean;
   onActivateSubscription?: () => void;
 }
 
@@ -15,9 +16,38 @@ export function SubscriptionBlockedModal({
   subscriptionStatus,
   blockedReason,
   trialEndsAt,
+  isEmployeePortal = false,
   onActivateSubscription,
 }: SubscriptionBlockedModalProps) {
   const isPendingTrainingApproval = blockedReason?.includes(TRAINING_APPROVAL_EMAIL);
+
+  if (isEmployeePortal) {
+    return (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/35 p-4 backdrop-blur-[1px]"
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="employee-portal-blocked-title"
+        data-testid="subscription-blocked-modal"
+      >
+        <Card className="w-full max-w-md border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900">
+          <CardHeader className="items-center text-center pb-2">
+            <div className="mb-2 rounded-full bg-slate-100 p-3 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+              <LockKeyhole className="h-6 w-6" aria-hidden="true" />
+            </div>
+            <CardTitle id="employee-portal-blocked-title" className="text-xl font-semibold text-slate-800 dark:text-slate-100">
+              Acceso bloqueado
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pb-6 text-center">
+            <p className="text-sm leading-6 text-muted-foreground">
+              El Portal de Empleados no está disponible en este momento. Comunícate con el administrador de tu empresa.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const getStatusIcon = () => {
     if (isPendingTrainingApproval) {

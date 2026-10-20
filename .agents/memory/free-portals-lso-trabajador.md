@@ -1,17 +1,17 @@
 ---
-name: LSO and worker portals are free
-description: Los portales son gratuitos; una suspensión de empresa por superadmin limita al LSO solo respecto a esa empresa, no a su cuenta.
+name: Worker portal billing block and LSO access
+description: Neutral worker-facing block for an unpaid company, separate from LSO portal access and manual company suspension.
 ---
 
-The SST Colombia system charges only the contracting company (roles like superusuario, admin, responsable_sst, etc.). The LSO portal (`/portal-licenciado`) and the worker/employee portal (`/portal-empleados`) are completely free for those users. LSO accounts must remain able to sign in and access their portal even when one of their companies is suspended.
+The contracting company is responsible for the subscription. When its access is blocked for non-payment, a worker entering the Employee Portal must see a discreet, neutral "Acceso bloqueado" notice that directs them to their company administrator. Never expose subscription/payment details or a payment button to workers, and never send workers to the company's billing panel.
 
-**Why:** Confirmed explicitly by the user: "ni los empleados ni los lso pagan nada, los portales son totalmente gratis." A bug surfaced where the "Pago pendiente" subscription-blocked modal appeared for an LSO user because an `exemptRoles` allowlist was missing `lso`/`trabajador`.
+**Why:** On 2026-10-20, the user reported that a worker saw a conspicuous payment modal and its button opened the company billing panel; the user requested a more subtle blocked message instead.
 
-**How to apply:** Account-wide subscription/billing gating logic (frontend hooks, backend middleware, UI pages) must treat `lso`, `lso_externo`, and `trabajador` as always-exempt. This is distinct from the per-company manual suspension rule below. This codebase has multiple independent, duplicated exemption lists that can drift out of sync — when adding a new one, check and update all of them:
-- `client/src/hooks/useSubscriptionCheck.ts` (`exemptRoles`)
-- `server/middleware/subscription-check.ts` → `requireActiveSubscription` (`exemptRoles`)
-- `server/auth.ts` → `requireActiveSubscription` (inline role check)
-- `client/src/pages/MiSuscripcion.tsx` — shows company billing/invoice data; must render a "free access" message instead for lso/lso_externo/trabajador rather than the company's subscription/invoice data.
+**How to apply:** In the worker portal, use only the neutral blocked state and do not expose subscription status reasons or payment navigation. Keep payment management restricted to company administrators. LSO and external LSO access remains governed separately by their assigned-company suspension policy. Review all duplicate exemption lists when changing subscription behavior:
+- `client/src/hooks/useSubscriptionCheck.ts`
+- `server/middleware/subscription-check.ts`
+- `server/auth.ts`
+- `client/src/pages/MiSuscripcion.tsx`
 
 Separately, `server/middleware/feature-gate.ts` (`GLOBAL_ACCESS_ROLES`) and `server/middleware/subscription-limits.ts` gate specific premium *features* by plan (not payment status) — a different concern, not necessarily to be touched for pure "is my subscription paid" checks, but worth checking if LSO/trabajador ever hit a "Feature not available" 403.
 

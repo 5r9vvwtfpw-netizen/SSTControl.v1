@@ -51,7 +51,7 @@ export function useSubscriptionCheck() {
   );
 
   const isDevelopment = import.meta.env.DEV;
-  const exemptRoles = ['superadmin', 'soporte', 'lso_externo', 'lso', 'trabajador'];
+  const exemptRoles = ['superadmin', 'soporte', 'lso_externo', 'lso'];
   const isExemptRole = user?.role ? exemptRoles.includes(user.role) : false;
 
   const shouldBlock = !isDevelopment &&

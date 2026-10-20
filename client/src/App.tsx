@@ -607,7 +607,7 @@ function SupportRouter() {
 }
 
 function SubscriptionGate({ children }: { children: React.ReactNode }) {
-  const { shouldBlock, subscriptionStatus, isLoading } = useSubscriptionCheck();
+  const { shouldBlock, subscriptionStatus, isLoading, user } = useSubscriptionCheck();
   const [, navigate] = useLocation();
 
   if (isLoading) {
@@ -622,15 +622,24 @@ function SubscriptionGate({ children }: { children: React.ReactNode }) {
   }
 
   if (shouldBlock && subscriptionStatus) {
+    const blockedNotice = (
+      <SubscriptionBlockedModal
+        subscriptionStatus={subscriptionStatus.subscriptionStatus}
+        blockedReason={subscriptionStatus.blockedReason || "Su acceso está bloqueado"}
+        trialEndsAt={subscriptionStatus.trialEndsAt}
+        isEmployeePortal={user?.role === "trabajador"}
+        onActivateSubscription={() => { window.location.href = "/mi-suscripcion"; }}
+      />
+    );
+
+    if (user?.role === "trabajador") {
+      return blockedNotice;
+    }
+
     return (
       <>
         {children}
-        <SubscriptionBlockedModal
-          subscriptionStatus={subscriptionStatus.subscriptionStatus}
-          blockedReason={subscriptionStatus.blockedReason || "Su acceso está bloqueado"}
-          trialEndsAt={subscriptionStatus.trialEndsAt}
-          onActivateSubscription={() => { window.location.href = "/mi-suscripcion"; }}
-        />
+        {blockedNotice}
       </>
     );
   }
