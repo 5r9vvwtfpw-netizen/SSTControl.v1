@@ -54,32 +54,27 @@ export default function PesvInformesAnuales() {
           <Badge variant="secondary">{annualCertifications.length} informes incorporados</Badge>
         </div>
         {annualCertifications.map((report) => (
-          <div key={report.href} className="relative">
-            <span
-              className="absolute -left-2 top-5 z-10 text-3xl leading-none text-red-500"
-            >
-              <span aria-hidden="true">{report.number}</span>
-              <span className="sr-only">Punto {report.number}</span>
-            </span>
-            <Card>
-              <CardHeader>
-                <div className="flex items-start gap-3">
-                  <div className="rounded-md bg-primary/10 p-2 text-primary">
-                    <FileText className="h-5 w-5" aria-hidden="true" />
-                  </div>
-                  <div className="space-y-1">
-                    <CardTitle>{report.title}</CardTitle>
-                    <CardDescription>{report.description}</CardDescription>
-                  </div>
+          <Card key={report.href}>
+            <CardHeader>
+              <div className="flex items-start gap-3">
+                <div className="rounded-md bg-primary/10 p-2 text-primary">
+                  <FileText className="h-5 w-5" aria-hidden="true" />
                 </div>
-              </CardHeader>
-              <CardContent className="flex justify-end border-t pt-4">
-                <Button asChild>
-                  <Link href={report.href}>Abrir informe <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" /></Link>
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
+                <div className="space-y-1">
+                  <CardTitle>
+                    <span className="mr-2 text-base font-medium text-foreground">{report.number}.</span>
+                    {report.title}
+                  </CardTitle>
+                  <CardDescription>{report.description}</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="flex justify-end border-t pt-4">
+              <Button asChild>
+                <Link href={report.href}>Abrir informe <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" /></Link>
+              </Button>
+            </CardContent>
+          </Card>
         ))}
       </section>
     </main>
