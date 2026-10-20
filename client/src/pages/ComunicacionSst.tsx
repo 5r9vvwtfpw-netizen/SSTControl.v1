@@ -45,6 +45,8 @@ interface PrefilledFormData {
   publicoObjetivo: string;
 }
 
+type CompanyMember = Pick<User, "id" | "fullName" | "role">;
+
 export default function ComunicacionSst() {
   const [activeTab, setActiveTab] = useState("plan");
   const [prefilledData, setPrefilledData] = useState<PrefilledFormData | null>(null);
@@ -395,8 +397,8 @@ function PlanComunicacionTab() {
   });
 
   // Obtener lista de usuarios para los selectores (la tabla usa references a users, no workers)
-  const { data: users = [] } = useQuery<User[]>({
-    queryKey: ["/api/users"],
+  const { data: users = [] } = useQuery<CompanyMember[]>({
+    queryKey: ["/api/users/company-members"],
   });
 
   const form = useForm<z.infer<typeof formSchemaPlan>>({
@@ -521,7 +523,7 @@ function PlanComunicacionTab() {
   const getUserName = (userId: string | null | undefined): string => {
     if (!userId) return "No especificado";
     const user = users.find(u => u.id === userId);
-    return user ? (user.fullName || user.username) : userId;
+    return user ? (user.fullName || user.role) : userId;
   };
 
   const planVigente = planes.find(p => p.estado === "vigente");
@@ -639,7 +641,7 @@ function PlanComunicacionTab() {
                               <SelectContent>
                                 {users.map((user) => (
                                   <SelectItem key={user.id} value={user.id}>
-                                    {user.fullName || user.username}
+                                    {user.fullName || user.role}
                                   </SelectItem>
                                 ))}
                               </SelectContent>
@@ -663,7 +665,7 @@ function PlanComunicacionTab() {
                               <SelectContent>
                                 {users.map((user) => (
                                   <SelectItem key={user.id} value={user.id}>
-                                    {user.fullName || user.username}
+                                    {user.fullName || user.role}
                                   </SelectItem>
                                 ))}
                               </SelectContent>
@@ -816,7 +818,7 @@ function PlanComunicacionTab() {
                               <SelectContent>
                                 {users.map((user) => (
                                   <SelectItem key={user.id} value={user.id}>
-                                    {user.fullName || user.username}
+                                    {user.fullName || user.role}
                                   </SelectItem>
                                 ))}
                               </SelectContent>
@@ -840,7 +842,7 @@ function PlanComunicacionTab() {
                               <SelectContent>
                                 {users.map((user) => (
                                   <SelectItem key={user.id} value={user.id}>
-                                    {user.fullName || user.username}
+                                    {user.fullName || user.role}
                                   </SelectItem>
                                 ))}
                               </SelectContent>
@@ -864,7 +866,7 @@ function PlanComunicacionTab() {
                               <SelectContent>
                                 {users.map((user) => (
                                   <SelectItem key={user.id} value={user.id}>
-                                    {user.fullName || user.username}
+                                    {user.fullName || user.role}
                                   </SelectItem>
                                 ))}
                               </SelectContent>
@@ -1656,8 +1658,8 @@ function TrazabilidadTab() {
   });
 
   // Obtener lista de usuarios para el filtro
-  const { data: usuarios = [] } = useQuery<User[]>({
-    queryKey: ["/api/users"],
+  const { data: usuarios = [] } = useQuery<CompanyMember[]>({
+    queryKey: ["/api/users/company-members"],
   });
 
   const toggleExpanded = (id: string) => {
@@ -1764,7 +1766,7 @@ function TrazabilidadTab() {
                 <option value="">Todos los Usuarios</option>
                 {usuarios.map(user => (
                   <option key={user.id} value={user.id}>
-                    {user.fullName || user.email}
+                    {user.fullName || user.role}
                   </option>
                 ))}
               </select>

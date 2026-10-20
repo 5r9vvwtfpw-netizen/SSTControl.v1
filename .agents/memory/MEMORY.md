@@ -4,6 +4,7 @@
 - [ISO 9001 e ISO 14001 roadmap](iso-9001-14001-roadmap.md) — pendiente de implementar; documentado en docs/ROADMAP_ISO_9001_14001.md con módulos, estimaciones y orden sugerido.
 - [RBAC isAdmin pattern](rbac-isadmin-pattern.md) — use resource permissions for writes and the permission matrix for admin-panel visibility; avoid role allowlists that omit granted roles.
 - [RBAC backend routes missing permissions](rbac-backend-missing-perms.md) — 10 mutating routes in routes.ts used requireAuth-only; fixed to use requirePermission. Pattern to watch: any new POST/PATCH/DELETE must not rely on requireAuth alone.
+- [Acceso LSO a estándares SST](lso-standard-module-access.md) — gestión completa de 1.2.1 y 2.8.1 para LSO interno y externo, limitada a empresas asignadas.
 - [Chatbot knowledge base must mirror real form fields](chatbot-knowledge-base-accuracy.md) — describing standards generically makes the AI assistant vague; copy exact form field names/dropdown options into APP_KNOWLEDGE_BASE.
 - [Production DB tool vs AWS RDS](production-db-tool-vs-aws-rds.md) — the production database skill's executeSql hits the wrong DB for this app; query real AWS RDS prod via a bash-run pg script instead.
 - [Neon WebSocket test instability](neon-websocket-test-instability.md) — development Neon can throw while handling a WebSocket ErrorEvent, leaving browser tests blank even when API checks passed.
