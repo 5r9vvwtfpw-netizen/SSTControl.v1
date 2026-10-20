@@ -30,7 +30,10 @@ export default function PesvInformesTrimestrales() {
                 <FileText className="h-5 w-5" aria-hidden="true" />
               </div>
               <div className="space-y-1">
-                <CardTitle>Registro de vehículos siniestrados</CardTitle>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="outline">Informe 1 de 9</Badge>
+                  <CardTitle>Registro de vehículos siniestrados</CardTitle>
+                </div>
                 <CardDescription>
                   Informe trimestral basado en los siniestros, vehículos, conductores y actas del Comité PESV ya registrados.
                 </CardDescription>
@@ -53,7 +56,10 @@ export default function PesvInformesTrimestrales() {
                 <FileText className="h-5 w-5" aria-hidden="true" />
               </div>
               <div className="space-y-1">
-                <CardTitle>Copias de actas del Comité PESV</CardTitle>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="outline">Informe 2 de 9</Badge>
+                  <CardTitle>Copias de actas del Comité PESV</CardTitle>
+                </div>
                 <CardDescription>
                   Copias de las actas que registran la investigación interna de los siniestros del trimestre.
                 </CardDescription>
@@ -77,7 +83,10 @@ export default function PesvInformesTrimestrales() {
                 <FileText className="h-5 w-5" aria-hidden="true" />
               </div>
               <div className="space-y-1">
-                <CardTitle>Divulgación de lecciones aprendidas</CardTitle>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="outline">Informe 3 de 9</Badge>
+                  <CardTitle>Divulgación de lecciones aprendidas</CardTitle>
+                </div>
                 <CardDescription>
                   Evidencia trimestral de comunicaciones SST, lecturas y retroalimentación registrada por los trabajadores en el Portal de Empleados.
                 </CardDescription>
@@ -101,7 +110,10 @@ export default function PesvInformesTrimestrales() {
                 <FileText className="h-5 w-5" aria-hidden="true" />
               </div>
               <div className="space-y-1">
-                <CardTitle>Certificación de medidas para prevenir la accidentalidad</CardTitle>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="outline">Informe 4 de 9</Badge>
+                  <CardTitle>Certificación de medidas para prevenir la accidentalidad</CardTitle>
+                </div>
                 <CardDescription>
                   Certificación trimestral basada en medidas de Rutas Seguras y gastos GPS, con firma registrada del Representante Legal.
                 </CardDescription>
