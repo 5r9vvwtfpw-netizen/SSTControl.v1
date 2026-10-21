@@ -25,7 +25,7 @@ No se debe guardar una propuesta del asistente sin confirmación. El asistente n
 
 ## Avance de implementación
 
-### Implementado en la primera entrega
+### Implementado
 
 - Se conectó el catálogo de capacitaciones al formulario; seleccionar una plantilla precarga sus datos disponibles.
 - La categoría se convirtió en una selección controlada y se conservan valores históricos al editar.
@@ -34,14 +34,13 @@ No se debe guardar una propuesta del asistente sin confirmación. El asistente n
 - Se añadió una propuesta generada por IA que solo se aplica al formulario cuando la persona la acepta.
 - La propuesta no genera fundamento legal, instructor, fecha, asistencia, evaluación ni evidencias.
 - El endpoint del asistente requiere permiso de creación y contexto de empresa.
-
-### Pendiente para completar el alcance
-
-- Calcular estimados desde la población de trabajadores, cuando los datos disponibles permitan hacerlo con fiabilidad.
-- Conectar la asistencia individual existente con el registro de ejecución y calcular el total desde esa lista.
-- Proponer fechas según frecuencia y año del programa, sin elegirlas ni guardarlas sin confirmación.
-- Probar una sesión autenticada del asistente y el flujo completo en la interfaz; la comprobación visual disponible llegó a la pantalla de inicio de sesión.
-- Completar pruebas de aislamiento por empresa, errores del servicio de IA y conservación de datos de ejecución al editar programación.
+- Se calcula el estimado de asistentes únicamente para poblaciones que corresponden a toda la plantilla activa de la empresa, y se muestra su fuente; los demás grupos se ingresan manualmente.
+- La fecha sugerida depende de la frecuencia y el año del programa; se aplica solo cuando la persona pulsa el botón y puede revisarse.
+- La ejecución admite asistencia por trabajador, total derivado de la lista y total manual para registros sin detalle individual.
+- El servidor valida empresa, trabajador, permisos y rangos; el guardado de asistencia se realiza en transacción y no acepta trabajadores ajenos ni duplicados.
+- La pantalla muestra que la asistencia no registrada está pendiente, no como cero; editar la actividad conserva los datos de ejecución.
+- Se completó una prueba autenticada de la API y una comprobación de la interfaz con una cuenta técnica de desarrollo y la empresa DEMO-PRUEBA. La prueba también verifica aislamiento, asistencia, edición y propuesta del asistente.
+- La prueba temporal limpia el programa creado y degrada la cuenta técnica; no agrega registros de validación a producción.
 
 ## Secuencia de implementación
 
@@ -147,16 +146,25 @@ Después de guardar la programación, ofrecer la acción «Registrar ejecución�
 
 ### Paso 9. Verificar el flujo completo antes de publicar
 
-Recorrer como usuario autorizado:
+Verificación completada en desarrollo como usuario autorizado:
 
-1. abrir un programa anual;
-2. crear una actividad desde una plantilla;
-3. crear una actividad describiéndola al asistente;
-4. revisar y modificar las propuestas;
-5. guardar y comprobar su aparición en el cronograma;
-6. registrar la ejecución;
-7. comprobar conteos, estado, informe PDF y conservación de evidencias;
-8. confirmar que el flujo existente de capacitaciones y asistencia sigue funcionando.
+1. Se creó un programa anual y una actividad de prueba mediante la API autenticada.
+2. Se comprobó en navegador la carga del cronograma, la actividad, la asistencia pendiente y la apertura del formulario de ejecución.
+3. Se obtuvo una propuesta del asistente y se validó la respuesta estructurada.
+4. Se estimó la población objetivo, se guardó una lista individual de asistencia y se completó la ejecución.
+5. Se comprobó que editar la actividad conserva fecha real, asistencia y estado.
+6. Se generó el PDF autenticado del cronograma y se confirmó que incluye la actividad guardada.
+7. Se verificó el rechazo de un trabajador de otra empresa y se borraron los datos temporales de prueba.
+8. TypeScript, compilación de producción y `git diff --check` finalizaron correctamente.
+
+La verificación se hizo en desarrollo y no publica ni altera datos de producción.
+
+### Resultado de la validación
+
+- `npm run check`: correcto.
+- `npm run build`: correcto; permanecen advertencias preexistentes sobre tamaño de bundle y configuración PostCSS/Browserslist.
+- `RUN_PROGRAM_TRAINING_WORKFLOW_DEMO=1 node --import tsx --test tests/program-training-workflow-demo.test.ts`: correcto; el caso autenticado cubre API, asistente, estimado, ejecución, aislamiento, pantalla del cronograma y PDF.
+- `git diff --check`: correcto.
 
 ## Criterios de aceptación
 
@@ -170,6 +178,6 @@ Recorrer como usuario autorizado:
 - Las rutas y consultas respetan los permisos y el contexto de empresa.
 - Las pruebas confirman que el cronograma y sus informes conservan los datos guardados.
 
-## Orden recomendado
+## Orden ejecutado
 
-Completar primero los pasos 1 a 5 y validar el flujo determinista con el catálogo. Después añadir el asistente del paso 6. Por último, terminar y probar el registro de ejecución de los pasos 7 a 9. Así se obtiene reducción de digitación desde la primera fase y el asistente trabaja sobre datos y reglas ya verificados.
+Se completaron los pasos 1 a 9 en el orden previsto: primero fuentes y reglas, luego programación y catálogo, después sugerencias del asistente y finalmente ejecución, seguridad y verificación. No se ha publicado el cambio.

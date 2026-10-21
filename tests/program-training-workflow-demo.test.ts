@@ -97,13 +97,45 @@ test("DEMO-PRUEBA: flujo autenticado de programación, estimación, IA y asisten
     });
     assert.equal(training.actualAttendees, null, "Una actividad no ejecutada debe quedar pendiente.");
 
+    const subgroupEstimate = await api<{ available: boolean; message: string }>(
+      `/api/program-trainings/${programId}/attendee-estimate?targetAudience=${encodeURIComponent("Personal administrativo")}`,
+    );
+    assert.equal(subgroupEstimate.available, false, "No debe calcularse un subgrupo con datos insuficientes.");
+    assert.match(subgroupEstimate.message, /manualmente/i);
+
+    const { chromium } = await import("playwright");
+    const browser = await chromium.launch({ headless: true });
+    try {
+      const browserBaseUrl = "http://127.0.0.1:5000";
+      const context = await browser.newContext();
+      await context.addCookies(cookie.split("; ").map((pair) => {
+        const separator = pair.indexOf("=");
+        return { name: pair.slice(0, separator), value: pair.slice(separator + 1), url: browserBaseUrl };
+      }));
+      const page = await context.newPage();
+      const pageErrors: string[] = [];
+      page.on("pageerror", error => pageErrors.push(error.message));
+      await page.goto(`${browserBaseUrl}/programa-capacitacion-anual/${programId}/cronograma`, { waitUntil: "domcontentloaded" });
+      await page.getByRole("heading", { name: `${marker} · Programa` }).waitFor({ state: "visible", timeout: 20_000 });
+      await page.getByText(`${marker} · Actividad`, { exact: true }).waitFor({ state: "visible", timeout: 20_000 });
+      const renderedText = await page.locator("body").innerText();
+      assert.match(renderedText, /Pendiente/i, `El cronograma debe mostrar la ejecución como pendiente. Texto visible: ${renderedText}`);
+      await page.getByRole("button", { name: /Registrar ejecución/ }).click();
+      await page.getByText("Asistencia por trabajador", { exact: true }).waitFor({ state: "visible", timeout: 10_000 });
+      assert.deepEqual(pageErrors, [], "La pantalla del cronograma no debe producir errores JavaScript.");
+      await context.close();
+    } finally {
+      await browser.close();
+    }
+
     const roster = await api<Array<{ id: string; active: boolean }>>(`/api/program-training-attendance/${training.id}/roster`);
     const attendee = roster.find(worker => worker.active);
+    assert.ok(attendee, "DEMO-PRUEBA debe tener al menos una persona activa para validar asistencia individual.");
     const savedRoster = await api<{ total: number }>(`/api/program-training-attendance/${training.id}/roster`, {
       method: "PUT",
-      body: JSON.stringify(attendee ? [{ workerId: attendee.id, attended: 1 }] : []),
+      body: JSON.stringify([{ workerId: attendee.id, attended: 1 }]),
     });
-    assert.equal(savedRoster.total, attendee ? 1 : 0);
+    assert.equal(savedRoster.total, 1);
 
     const execution = await api<{ status: string; actualAttendees: number }>(`/api/program-trainings/${training.id}`, {
       method: "PATCH",
@@ -112,12 +144,33 @@ test("DEMO-PRUEBA: flujo autenticado de programación, estimación, IA y asisten
     assert.equal(execution.status, "completada");
     assert.equal(execution.actualAttendees, savedRoster.total);
 
+    const edited = await api<{ actualDate: string; actualAttendees: number; status: string }>(`/api/program-trainings/${training.id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ responsible: "Responsable actualizado en validación" }),
+    });
+    assert.equal(edited.actualDate.slice(0, 10), today, "Editar la programación debe conservar la fecha real.");
+    assert.equal(edited.actualAttendees, savedRoster.total, "Editar la programación debe conservar la asistencia.");
+    assert.equal(edited.status, "completada", "Editar la programación debe conservar el estado de ejecución.");
+
+    const pdfResponse = await fetch(`${baseUrl}/api/training-programs/${programId}/cronograma-pdf`, {
+      headers: { Cookie: cookie, "X-Company-Id": companyId },
+    });
+    assert.equal(pdfResponse.status, 200, "El cronograma debe permitir generar su PDF.");
+    assert.match(pdfResponse.headers.get("content-type") ?? "", /application\/pdf/i);
+    const pdfBuffer = Buffer.from(await pdfResponse.arrayBuffer());
+    assert.equal(pdfBuffer.subarray(0, 4).toString(), "%PDF", "La descarga debe ser un PDF válido.");
+    const { execFileSync } = await import("node:child_process");
+    const pdfText = execFileSync("pdftotext", ["-", "-"], { input: pdfBuffer, encoding: "utf8" }).replace(/\s+/g, " ");
+    assert.ok(pdfText.includes(marker), "El PDF debe contener la actividad guardada en el cronograma.");
+
+    const otherCompanyWorker = await db.execute(sql`SELECT id FROM workers WHERE company_id <> ${companyId} LIMIT 1`);
+    const invalidWorkerId = (otherCompanyWorker.rows[0] as { id?: string } | undefined)?.id ?? randomUUID();
     const invalidWorker = await fetch(`${baseUrl}/api/program-training-attendance/${training.id}/roster`, {
       method: "PUT",
       headers: { Cookie: cookie, "X-Company-Id": companyId, "Content-Type": "application/json" },
-      body: JSON.stringify([{ workerId: randomUUID(), attended: 1 }]),
+      body: JSON.stringify([{ workerId: invalidWorkerId, attended: 1 }]),
     });
-    assert.equal(invalidWorker.status, 400, "Debe rechazarse un trabajador ajeno o inexistente.");
+    assert.equal(invalidWorker.status, 400, "Debe rechazarse un trabajador de otra empresa o inexistente.");
 
     const suggestion = await api<{ topic: string; trainingCategory: string; targetAudience: string }>("/api/program-trainings/assistant-suggest", {
       method: "POST",
