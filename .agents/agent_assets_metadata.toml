@@ -1175,3 +1175,45 @@ mtime_ms = 1792249065433
 storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/7929d6e8-3def-4720-92bd-4c6a325226c2/1eb5abc2-8038-472e-915f-c31d75da2b22"
 storage_version_token = "1792249095040685"
 content_type = "image/png"
+
+[[outputs]]
+id = "R-lj-OtPKk-abUtzJNXk-"
+uri = "file://generated-artifacts/prueba-funcional-1-2-1-demo-prueba/informe-evidencia.pdf"
+type = "pdf"
+title = "Informe de evidencia — prueba funcional 1.2.1"
+description = "Resultados, capturas del flujo y comprobaciones realizadas en DEMO-PRUEBA. Los registros de prueba están conservados en el programa indicado en el informe."
+logical_id = "a46ef5ed-c1dc-454f-acbd-354e76245324"
+content_hash = "sha256:20629dd44b1e6bbc06c867c1bcf65058b8b5e41a9c47d5f0b69c90027cc759cf"
+size = 698313
+mtime_ms = 1792616853530
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/a46ef5ed-c1dc-454f-acbd-354e76245324/6cc96125-1e81-469d-8cb4-987ac471c5db"
+storage_version_token = "1792616922804226"
+content_type = "application/pdf"
+
+[[outputs]]
+id = "gcjLyUUtlx5Q3XJY_BqT8"
+uri = "file://generated-artifacts/prueba-funcional-1-2-1-demo-prueba/cronograma-prueba.pdf"
+type = "pdf"
+title = "PDF del cronograma generado durante la prueba"
+description = "PDF creado desde el módulo y verificado con las actividades marcadas como prueba funcional."
+logical_id = "7d16d3e4-d085-43c1-a960-dc4de88ff55b"
+content_hash = "sha256:b219985ad8185988b050f66aa829313171492102d1ca5fb3ecb363afd784fd0f"
+size = 769904
+mtime_ms = 1792616848046
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/7d16d3e4-d085-43c1-a960-dc4de88ff55b/65aecf86-508c-44fb-98dd-9e6a90aefc8e"
+storage_version_token = "1792616923715948"
+content_type = "application/pdf"
+
+[[outputs]]
+id = "h2GKlv-I1MUgXZXsrdFSb"
+uri = "file://generated-artifacts/prueba-funcional-1-2-1-demo-prueba/02-ejecucion-registrada.png"
+type = "image"
+title = "Captura — ejecución registrada"
+description = "Vista del cronograma en DEMO-PRUEBA después de registrar la asistencia desde la interfaz."
+logical_id = "5711e726-4a5a-48ba-9c70-fa03e4fdfc47"
+content_hash = "sha256:7f3250d51aaf2b8c5e221d1140effd6f9760c8b647f715150489c00a797d38b9"
+size = 145270
+mtime_ms = 1792616842310
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/5711e726-4a5a-48ba-9c70-fa03e4fdfc47/a43935a6-2167-4f80-920b-3aa5fa6438e8"
+storage_version_token = "1792616924394879"
+content_type = "image/png"

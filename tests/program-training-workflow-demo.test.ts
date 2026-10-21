@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { randomBytes, randomUUID } from "node:crypto";
+import { mkdir, writeFile } from "node:fs/promises";
 import test from "node:test";
 import { sql } from "drizzle-orm";
 
@@ -21,8 +22,10 @@ test("DEMO-PRUEBA: flujo autenticado de programación, estimación, IA y asisten
   const userId = randomUUID();
   const username = `program-training-${randomBytes(6).toString("hex")}`;
   const password = randomBytes(24).toString("base64url");
-  const marker = `VALIDACIÓN INTERNA ${new Date().toISOString()} ${randomBytes(4).toString("hex")}`;
+  const marker = `PRUEBA FUNCIONAL DEMO-PRUEBA · ESTÁNDAR 1.2.1 · NO ES ACTIVIDAD REAL · ${new Date().toISOString()} · ${randomBytes(4).toString("hex")}`;
+  const evidenceDir = "generated-artifacts/prueba-funcional-1-2-1-demo-prueba";
   let accountPrepared = false;
+  let preserveEvidence = false;
   let cookie = "";
   let programId = "";
 
@@ -38,6 +41,7 @@ test("DEMO-PRUEBA: flujo autenticado de programación, estimación, IA y asisten
   }
 
   try {
+    await mkdir(evidenceDir, { recursive: true });
     await db.insert(schema.users).values({
       id: userId,
       username,
@@ -120,6 +124,7 @@ test("DEMO-PRUEBA: flujo autenticado de programación, estimación, IA y asisten
       await page.getByText(`${marker} · Actividad`, { exact: true }).waitFor({ state: "visible", timeout: 20_000 });
       const renderedText = await page.locator("body").innerText();
       assert.match(renderedText, /Pendiente/i, `El cronograma debe mostrar la ejecución como pendiente. Texto visible: ${renderedText}`);
+      await page.screenshot({ path: `${evidenceDir}/01-cronograma-pendiente.png`, fullPage: true });
       await page.getByRole("button", { name: /Registrar ejecución/ }).click();
       await page.getByText("Asistencia por trabajador", { exact: true }).waitFor({ state: "visible", timeout: 10_000 });
       const executionDialog = page.getByRole("dialog");
@@ -129,6 +134,7 @@ test("DEMO-PRUEBA: flujo autenticado de programación, estimación, IA y asisten
       await workerCheckboxes.first().check();
       await executionDialog.getByRole("button", { name: "Guardar ejecución" }).click();
       await page.getByText("Completada", { exact: true }).waitFor({ state: "visible", timeout: 20_000 });
+      await page.screenshot({ path: `${evidenceDir}/02-ejecucion-registrada.png`, fullPage: true });
 
       await page.getByRole("button", { name: /Nueva actividad/ }).click();
       const dialog = page.getByRole("dialog");
@@ -138,12 +144,14 @@ test("DEMO-PRUEBA: flujo autenticado de programación, estimación, IA y asisten
       assert.equal(await dialog.locator('input[type="number"]').first().inputValue(), "4");
       assert.equal(await dialog.locator('input[type="date"]').inputValue(), "", "La plantilla no debe inventar una fecha.");
       assert.match(await dialog.locator("textarea").nth(1).inputValue(), /Generalidades de la empresa/);
+      await page.screenshot({ path: `${evidenceDir}/03-plantilla-precargada.png`, fullPage: true });
 
       await dialog.locator("#activity-assistant-request").fill("Charla breve de pausas activas para personal administrativo.");
       await dialog.getByRole("button", { name: "Preparar propuesta" }).click();
       const proposal = dialog.getByRole("status");
       await proposal.waitFor({ state: "visible", timeout: 20_000 });
       const proposedTopic = await proposal.locator("p").nth(1).innerText();
+      await page.screenshot({ path: `${evidenceDir}/04-propuesta-asistente.png`, fullPage: true });
       await proposal.getByRole("button", { name: "Usar propuesta" }).click();
       assert.equal(await dialog.locator('input[type="text"]').first().inputValue(), proposedTopic, "La propuesta solo se aplica después de confirmarla.");
       await dialog.locator('input[type="date"]').fill(today);
@@ -162,6 +170,7 @@ test("DEMO-PRUEBA: flujo autenticado de programación, estimación, IA y asisten
       await fallbackDialog.getByRole("button", { name: "Preparar propuesta" }).click();
       await page.getByText("No se pudo preparar la propuesta", { exact: true }).waitFor({ state: "visible", timeout: 10_000 });
       await fallbackDialog.getByRole("button", { name: "Programar actividad" }).waitFor({ state: "visible" });
+      await page.screenshot({ path: `${evidenceDir}/05-asistente-disponibilidad.png`, fullPage: true });
       await fallbackDialog.getByRole("button", { name: "Cancelar" }).click();
       await page.unroute("**/api/program-trainings/assistant-suggest");
 
@@ -225,6 +234,7 @@ test("DEMO-PRUEBA: flujo autenticado de programación, estimación, IA y asisten
     const { execFileSync } = await import("node:child_process");
     const pdfText = execFileSync("pdftotext", ["-", "-"], { input: pdfBuffer, encoding: "utf8" }).replace(/\s+/g, " ");
     assert.ok(pdfText.includes(marker), "El PDF debe contener la actividad guardada en el cronograma.");
+    await writeFile(`${evidenceDir}/cronograma-prueba.pdf`, pdfBuffer);
 
     const otherCompanyWorker = await db.execute(sql`SELECT id FROM workers WHERE company_id <> ${companyId} LIMIT 1`);
     const invalidWorkerId = (otherCompanyWorker.rows[0] as { id?: string } | undefined)?.id ?? randomUUID();
@@ -242,8 +252,71 @@ test("DEMO-PRUEBA: flujo autenticado de programación, estimación, IA y asisten
     assert.ok(suggestion.topic);
     assert.ok(suggestion.targetAudience);
     assert.ok(["Inducción", "Reinducción", "Capacitación", "Entrenamiento", "Simulacro", "Promoción y prevención", "COPASST", "Brigada", "Otra"].includes(suggestion.trainingCategory));
+
+    const savedTrainings = await api<Array<{ id: string; topic: string; status: string; actualAttendees: number | null }>>(`/api/program-trainings/${programId}`);
+    assert.ok(savedTrainings.length >= 3, "El cronograma debe conservar las actividades de la prueba.");
+    const report = [
+      "# Evidencia de prueba funcional — Estándar 1.2.1",
+      "",
+      `Empresa: DEMO-PRUEBA (${companyId})`,
+      `Marca de prueba: ${marker}`,
+      `Fecha de ejecución: ${new Date().toISOString()}`,
+      `Programa conservado: ${programId}`,
+      `Actividad principal: ${training.id}`,
+      `Asistentes reales en la actividad principal: ${savedRoster.total}`,
+      `Actividades conservadas: ${savedTrainings.length}`,
+      "",
+      "## Comprobaciones",
+      "- Plantilla de catálogo seleccionada y campos disponibles precargados; fecha permaneció en blanco.",
+      "- Propuesta de IA revisada, aplicada por confirmación y guardada desde la interfaz.",
+      "- Error del servicio de IA simulado en navegador; se mostró el aviso y el formulario siguió disponible.",
+      "- Estimado de plantilla completa calculado desde trabajadores activos; población parcial dejó el campo para digitación.",
+      "- Ejecución registrada desde la interfaz con un trabajador seleccionado; asistencia calculada desde la lista.",
+      "- Edición posterior conservó fecha real, estado y conteo de asistencia.",
+      "- Actividad con fecha pasada y cancelada fue aceptada.",
+      "- Trabajador de otra empresa fue rechazado.",
+      "- El PDF se generó y contiene la marca de prueba.",
+      "",
+      "## Evidencia adjunta",
+      "- 01-cronograma-pendiente.png",
+      "- 02-ejecucion-registrada.png",
+      "- 03-plantilla-precargada.png",
+      "- 04-propuesta-asistente.png",
+      "- 05-asistente-disponibilidad.png",
+      "- cronograma-prueba.pdf",
+      "",
+      "Los registros del cronograma se conservan en DEMO-PRUEBA para revisión. La cuenta temporal de validación se degradó y se revocó su acceso.",
+    ].join("\n");
+    await writeFile(`${evidenceDir}/README.md`, report, "utf8");
+
+    const PDFDocument = (await import("pdfkit")).default;
+    const doc = new PDFDocument({ size: "LETTER", margin: 48 });
+    const pdfChunks: Buffer[] = [];
+    doc.on("data", (chunk: Buffer) => pdfChunks.push(chunk));
+    const reportDone = new Promise<Buffer>((resolve, reject) => {
+      doc.on("end", () => resolve(Buffer.concat(pdfChunks)));
+      doc.on("error", reject);
+    });
+    doc.fontSize(18).text("Evidencia de prueba funcional", { align: "center" });
+    doc.moveDown().fontSize(13).text("Estándar 1.2.1 — Programa de actividades");
+    doc.moveDown().fontSize(10).text(report);
+    for (const [filename, caption] of [
+      ["01-cronograma-pendiente.png", "Cronograma con la actividad pendiente"],
+      ["02-ejecucion-registrada.png", "Ejecución registrada desde el portal"],
+      ["03-plantilla-precargada.png", "Datos precargados desde el catálogo"],
+      ["04-propuesta-asistente.png", "Propuesta del asistente antes de aplicarla"],
+      ["05-asistente-disponibilidad.png", "Aviso de error y formulario disponible"],
+    ]) {
+      doc.addPage().fontSize(12).text(caption, { align: "center" });
+      doc.moveDown();
+      doc.image(`${evidenceDir}/${filename}`, { fit: [510, 650], align: "center", valign: "center" });
+    }
+    doc.end();
+    await writeFile(`${evidenceDir}/informe-evidencia.pdf`, await reportDone);
+    preserveEvidence = true;
+    console.log(`EVIDENCIA_PRESERVADA: ${evidenceDir}; empresa=${companyId}; programa=${programId}; actividades=${savedTrainings.length}`);
   } finally {
-    if (programId) await db.execute(sql`DELETE FROM training_programs WHERE id = ${programId}`);
+    if (programId && !preserveEvidence) await db.execute(sql`DELETE FROM training_programs WHERE id = ${programId}`);
     if (accountPrepared) {
       await db.update(schema.users).set({
         role: "trabajador",
