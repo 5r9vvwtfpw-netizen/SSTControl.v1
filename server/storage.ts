@@ -908,6 +908,7 @@ export interface IStorage {
   updateProgramTrainingAttendance(id: string, attendance: Partial<InsertProgramTrainingAttendance>, companyId: string): Promise<ProgramTrainingAttendance | undefined>;
   deleteProgramTrainingAttendance(id: string, companyId: string): Promise<void>;
   bulkCreateProgramTrainingAttendance(attendances: InsertProgramTrainingAttendance[], companyId: string): Promise<ProgramTrainingAttendance[]>;
+  syncProgramTrainingAttendance(trainingId: string, attendances: { workerId: string; attended: number }[], companyId: string): Promise<ProgramTrainingAttendance[]>;
   
   // SVE Program methods (company-scoped) - Sistema de Vigilancia Epidemiológica Ocupacional
   getSvePrograms(companyId: string): Promise<SveProgram[]>;
@@ -6452,6 +6453,73 @@ export class DbStorage implements IStorage {
       .values(values)
       .returning();
     return created;
+  }
+
+  async syncProgramTrainingAttendance(trainingId: string, attendances: { workerId: string; attended: number }[], companyId: string): Promise<schema.ProgramTrainingAttendance[]> {
+    return db.transaction(async (tx) => {
+      const [training] = await tx.select({ id: schema.programTrainings.id })
+        .from(schema.programTrainings)
+        .where(and(
+          eq(schema.programTrainings.id, trainingId),
+          eq(schema.programTrainings.companyId, companyId),
+        ));
+      if (!training) throw new Error("Capacitación no encontrada");
+
+      const workerIds = [...new Set(attendances.map((item) => item.workerId))];
+      if (workerIds.length !== attendances.length) throw new Error("Hay trabajadores repetidos en la lista");
+      if (workerIds.length) {
+        const companyWorkers = await tx.select({ id: schema.workers.id })
+          .from(schema.workers)
+          .where(and(
+            eq(schema.workers.companyId, companyId),
+            inArray(schema.workers.id, workerIds),
+          ));
+        if (companyWorkers.length !== workerIds.length) throw new Error("La lista incluye trabajadores que no pertenecen a esta empresa");
+      }
+
+      const existing = await tx.select().from(schema.programTrainingAttendance)
+        .where(and(
+          eq(schema.programTrainingAttendance.trainingId, trainingId),
+          eq(schema.programTrainingAttendance.companyId, companyId),
+        ));
+      const existingByWorker = new Map<string, schema.ProgramTrainingAttendance[]>();
+      for (const row of existing) existingByWorker.set(row.workerId, [...(existingByWorker.get(row.workerId) ?? []), row]);
+
+      for (const item of attendances) {
+        const currentRows = existingByWorker.get(item.workerId);
+        if (currentRows?.length) {
+          for (const current of currentRows) {
+            await tx.update(schema.programTrainingAttendance)
+              .set({ attended: item.attended })
+              .where(and(
+                eq(schema.programTrainingAttendance.id, current.id),
+                eq(schema.programTrainingAttendance.companyId, companyId),
+              ));
+          }
+        } else {
+          await tx.insert(schema.programTrainingAttendance).values({
+            companyId,
+            trainingId,
+            workerId: item.workerId,
+            attended: item.attended,
+          });
+        }
+      }
+
+      const saved = await tx.select().from(schema.programTrainingAttendance)
+        .where(and(
+          eq(schema.programTrainingAttendance.trainingId, trainingId),
+          eq(schema.programTrainingAttendance.companyId, companyId),
+        ));
+      const attendedWorkerIds = new Set(saved.filter((row) => row.attended === 1).map((row) => row.workerId));
+      await tx.update(schema.programTrainings)
+        .set({ actualAttendees: attendedWorkerIds.size, updatedAt: sql`now()` })
+        .where(and(
+          eq(schema.programTrainings.id, trainingId),
+          eq(schema.programTrainings.companyId, companyId),
+        ));
+      return saved;
+    });
   }
 
   // Políticas SST methods implementation

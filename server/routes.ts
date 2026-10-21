@@ -25520,6 +25520,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/program-trainings/:programId/attendee-estimate", requirePermission("trainings:view"), async (req, res) => {
+    try {
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(403).send("Esta operación requiere pertenecer a una empresa");
+      const program = await storage.getTrainingProgram(req.params.programId, companyId);
+      if (!program) return res.status(404).send("Programa no encontrado");
+
+      const audience = String(req.query.targetAudience ?? "").toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "").replace(/\s+/g, " ").trim();
+      const allWorkersAudience = /^(todos los trabajadores( de la empresa)?|toda la poblacion trabajadora|todo el personal|personal completo)$/.test(audience);
+      if (!allWorkersAudience) {
+        return res.json({ available: false, count: null, source: null, message: "Esta población no coincide con un grupo que podamos contar con fiabilidad. Ingresa el estimado manualmente." });
+      }
+
+      const today = new Date().toISOString().slice(0, 10);
+      const workers = await storage.getWorkers(companyId);
+      const count = workers.filter(worker => worker.status === "activo" && (!worker.retirementDate || worker.retirementDate > today)).length;
+      res.json({ available: true, count, source: "Trabajadores activos registrados en esta empresa", programYear: program.year });
+    } catch (error: any) {
+      logger.error({ err: error }, "Error calculando asistentes estimados del programa");
+      res.status(500).send("No fue posible calcular el estimado");
+    }
+  });
+
   app.post("/api/program-trainings", requirePermission("trainings:create"), async (req, res) => {
     try {
       if (!getEffectiveCompanyId(req)) {
@@ -25529,6 +25552,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validation = insertProgramTrainingSchema.safeParse(req.body);
       if (!validation.success) {
         return res.status(400).send(validation.error.message);
+      }
+      const validCategories = ["Inducción", "Reinducción", "Capacitación", "Entrenamiento", "Simulacro", "Promoción y prevención", "COPASST", "Brigada", "Otra"];
+      if (!validCategories.includes(validation.data.trainingCategory)) return res.status(400).send("Selecciona una categoría válida");
+      if (validation.data.duration < 1 || (validation.data.estimatedAttendees ?? 0) < 0 || (validation.data.actualAttendees != null && validation.data.actualAttendees < 0) || (validation.data.evaluationScore != null && (validation.data.evaluationScore < 0 || validation.data.evaluationScore > 100))) {
+        return res.status(400).send("Revisa duración, asistentes y evaluación");
       }
 
       const training = await storage.createProgramTraining(validation.data, companyId);
@@ -25547,6 +25575,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validation = insertProgramTrainingSchema.partial().safeParse(req.body);
       if (!validation.success) {
         return res.status(400).send(validation.error.message);
+      }
+      const validCategories = ["Inducción", "Reinducción", "Capacitación", "Entrenamiento", "Simulacro", "Promoción y prevención", "COPASST", "Brigada", "Otra"];
+      if (validation.data.trainingCategory && !validCategories.includes(validation.data.trainingCategory)) {
+        const current = await storage.getProgramTraining(req.params.id, companyId);
+        if (!current) return res.status(404).send("Capacitación no encontrada");
+        if (validation.data.trainingCategory !== current.trainingCategory) return res.status(400).send("Selecciona una categoría válida");
+      }
+      const data = validation.data;
+      if ((data.duration != null && data.duration < 1) || (data.estimatedAttendees != null && data.estimatedAttendees < 0) || (data.actualAttendees != null && data.actualAttendees < 0) || (data.evaluationScore != null && (data.evaluationScore < 0 || data.evaluationScore > 100))) {
+        return res.status(400).send("Revisa duración, asistentes y evaluación");
+      }
+      if (data.actualDate && data.scheduledDate && data.actualDate < data.scheduledDate) {
+        return res.status(400).send("La fecha real no puede ser anterior a la fecha programada");
       }
 
       const training = await storage.updateProgramTraining(req.params.id, validation.data, companyId);
@@ -25583,6 +25624,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(attendance);
     } catch (error: any) {
       res.status(500).send(error.message);
+    }
+  });
+
+  app.get("/api/program-training-attendance/:trainingId/roster", requirePermission("trainings:view"), async (req, res) => {
+    try {
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(403).send("Esta operación requiere pertenecer a una empresa");
+      const training = await storage.getProgramTraining(req.params.trainingId, companyId);
+      if (!training) return res.status(404).send("Capacitación no encontrada");
+
+      const [allWorkers, attendance] = await Promise.all([
+        storage.getWorkers(companyId),
+        storage.getProgramTrainingAttendance(req.params.trainingId, companyId),
+      ]);
+      const today = new Date().toISOString().slice(0, 10);
+      const activeWorkers = allWorkers.filter(worker => worker.status === "activo" && (!worker.retirementDate || worker.retirementDate > today));
+      const attendanceByWorker = new Map<string, typeof attendance[number]>();
+      for (const row of attendance) attendanceByWorker.set(row.workerId, row);
+      const historicalIds = attendance.map(row => row.workerId).filter(workerId => !activeWorkers.some(worker => worker.id === workerId));
+      const historicalWorkers = await storage.getWorkersByIds([...new Set(historicalIds)], companyId);
+      const workersById = new Map([...activeWorkers, ...historicalWorkers].map(worker => [worker.id, worker]));
+
+      res.json([...workersById.values()].map(worker => ({
+        id: worker.id,
+        name: worker.name,
+        position: worker.position,
+        department: worker.department,
+        active: worker.status === "activo" && (!worker.retirementDate || worker.retirementDate > today),
+        attendanceId: attendanceByWorker.get(worker.id)?.id ?? null,
+        attended: attendanceByWorker.get(worker.id)?.attended ?? null,
+      })));
+    } catch (error: any) {
+      logger.error({ err: error }, "Error cargando lista de asistencia del programa");
+      res.status(500).send("No fue posible cargar la lista de trabajadores");
+    }
+  });
+
+  app.put("/api/program-training-attendance/:trainingId/roster", requirePermission("trainings:edit"), async (req, res) => {
+    try {
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(403).send("Esta operación requiere pertenecer a una empresa");
+      if (!Array.isArray(req.body) || req.body.length > 5000) {
+        return res.status(400).send("La lista de asistencia no es válida");
+      }
+      const entries: { workerId: string; attended: number }[] = [];
+      for (const item of req.body) {
+        if (!item || typeof item.workerId !== "string" || !item.workerId.trim() || ![0, 1, true, false].includes(item.attended)) {
+          return res.status(400).send("Cada registro debe incluir un trabajador y su asistencia");
+        }
+        entries.push({ workerId: item.workerId, attended: item.attended === true ? 1 : item.attended === false ? 0 : item.attended });
+      }
+      const attendance = await storage.syncProgramTrainingAttendance(req.params.trainingId, entries, companyId);
+      const total = new Set(attendance.filter(row => row.attended === 1).map(row => row.workerId)).size;
+      res.json({ attendance, total });
+    } catch (error: any) {
+      if (error.message === "Capacitación no encontrada") return res.status(404).send(error.message);
+      if (error.message.includes("trabajadores repetidos") || error.message.includes("no pertenecen")) return res.status(400).send(error.message);
+      logger.error({ err: error }, "Error guardando lista de asistencia del programa");
+      res.status(500).send("No fue posible guardar la lista de asistencia");
     }
   });
 

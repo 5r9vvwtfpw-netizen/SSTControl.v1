@@ -27,6 +27,11 @@ type TrainingForm = {
   materials: string; equipment: string; requiresEvaluation: string; evaluationScore: string;
   status: string; observations: string; attachmentUrl: string; evidenceUrl: string; isObligatory: string;
 };
+type AttendanceInput = { workerId: string; attended: number };
+type AttendanceRosterEntry = {
+  id: string; name: string; position: string; department: string;
+  active: boolean; attendanceId: string | null; attended: number | null;
+};
 
 const emptyForm: TrainingForm = {
   topic: "", description: "", trainingCategory: "", legalBasis: "", scheduledDate: "", scheduledTime: "",
@@ -54,6 +59,19 @@ function categoryForTemplate(template: CapacitacionPredefinida) {
 function dateValue(value?: string | Date | null) {
   if (!value) return "";
   return new Date(value).toISOString().slice(0, 10);
+}
+function suggestedDateForFrequency(year: number, frequency: string) {
+  const monthStep = frequency === "mensual" ? 1 : frequency === "trimestral" ? 3 : frequency === "semestral" ? 6 : frequency === "anual" ? 12 : 0;
+  if (!monthStep || year < new Date().getFullYear()) return "";
+  const toIsoDate = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+  const today = toIsoDate(new Date());
+  for (let month = 0; month < 12; month += monthStep) {
+    const firstWeekday = new Date(year, month, 1).getDay();
+    const firstMonday = 1 + ((8 - firstWeekday) % 7);
+    const candidate = toIsoDate(new Date(year, month, firstMonday));
+    if (candidate >= today) return candidate;
+  }
+  return "";
 }
 function statusTone(status: string) {
   return status === "completada" ? "default" : status === "cancelada" ? "destructive" : status === "en_curso" ? "secondary" : "outline";
@@ -85,10 +103,23 @@ export default function CronogramaProgramaCapacitacion() {
     openCompanyDocument(`/api/training-programs/${id}/cronograma-pdf`);
   };
   const saveMutation = useMutation({
-    mutationFn: async (payload: Record<string, unknown>) => editing
-      ? apiRequest("PATCH", `/api/program-trainings/${editing.id}`, payload)
-      : apiRequest("POST", "/api/program-trainings", { ...payload, programId: id }),
-    onSuccess: () => { refresh(); setDialogOpen(false); toast({ title: editing ? "Actividad actualizada" : "Actividad programada" }); },
+    mutationFn: async ({ payload, attendance }: { payload: Record<string, unknown>; attendance?: AttendanceInput[] }) => {
+      let finalPayload = payload;
+      if (editing && attendance?.length) {
+        const syncResponse = await apiRequest("PUT", `/api/program-training-attendance/${editing.id}/roster`, attendance);
+        const synced = await syncResponse.json() as { total: number };
+        finalPayload = { ...payload, actualAttendees: synced.total };
+      }
+      return editing
+        ? apiRequest("PATCH", `/api/program-trainings/${editing.id}`, finalPayload)
+        : apiRequest("POST", "/api/program-trainings", { ...finalPayload, programId: id });
+    },
+    onSuccess: () => {
+      refresh();
+      if (editing) queryClient.invalidateQueries({ queryKey: [`/api/program-training-attendance/${editing.id}/roster`] });
+      setDialogOpen(false);
+      toast({ title: editing ? "Actividad actualizada" : "Actividad programada" });
+    },
     onError: (error: Error) => toast({ title: "No se pudo guardar la actividad", description: error.message, variant: "destructive" }),
   });
   const deleteMutation = useMutation({
@@ -108,10 +139,10 @@ export default function CronogramaProgramaCapacitacion() {
     openEdit(training);
     setDialogMode("ejecucion");
   };
-  const submit = () => {
+  const submit = (attendance?: AttendanceInput[]) => {
     if (dialogMode === "ejecucion") {
-      if (!form.actualDate || form.actualAttendees === "") {
-        toast({ title: "Completa la ejecución", description: "Registra la fecha real y la cantidad de asistentes, aunque haya sido cero.", variant: "destructive" });
+      if (!form.actualDate || attendance === undefined) {
+        toast({ title: "Completa la ejecución", description: "Registra la fecha real y verifica la lista de asistencia.", variant: "destructive" });
         return;
       }
       if (form.actualDate < dateValue(editing?.scheduledDate)) {
@@ -129,13 +160,13 @@ export default function CronogramaProgramaCapacitacion() {
       frequency: form.frequency,
       isObligatory: Number(form.isObligatory),
       estimatedAttendees: Number(form.estimatedAttendees || 0),
-      actualAttendees: form.actualAttendees === "" ? null : Number(form.actualAttendees),
+      actualAttendees: dialogMode === "ejecucion" && attendance?.length ? new Set(attendance.filter(item => item.attended === 1).map(item => item.workerId)).size : form.actualAttendees === "" ? 0 : Number(form.actualAttendees),
       requiresEvaluation: Number(form.requiresEvaluation),
       evaluationScore: form.evaluationScore === "" ? null : Number(form.evaluationScore),
       status: dialogMode === "ejecucion" ? "completada" : form.status,
     };
     if (!form.actualDate) delete payload.actualDate;
-    saveMutation.mutate(payload);
+    saveMutation.mutate({ payload, attendance: dialogMode === "ejecucion" ? attendance ?? [] : undefined });
   };
 
   if (programQuery.isLoading || trainingsQuery.isLoading) return <div className="p-6 max-w-7xl mx-auto"><div className="h-8 w-72 animate-pulse rounded bg-muted mb-6" /><div className="h-32 animate-pulse rounded bg-muted" /></div>;
@@ -206,39 +237,79 @@ export default function CronogramaProgramaCapacitacion() {
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">{byMonth.map(month => <Card key={month.name} className={month.items.length ? "border-primary/30" : ""}><CardHeader className="pb-3"><CardTitle className="text-base flex justify-between">{month.name}<span className="text-xs font-normal text-muted-foreground">{month.items.length} actividad{month.items.length !== 1 ? "es" : ""}</span></CardTitle></CardHeader><CardContent className="space-y-2">{month.items.length ? month.items.map(t => <button key={t.id} onClick={() => openEdit(t)} className="w-full text-left rounded-md border p-3 hover:bg-muted/50"><div className="flex items-center justify-between gap-2"><span className="font-medium text-sm truncate">{t.topic}</span><span className={`h-2 w-2 rounded-full shrink-0 ${t.status === "completada" ? "bg-emerald-500" : t.status === "cancelada" ? "bg-red-500" : "bg-amber-500"}`} /></div><p className="text-xs text-muted-foreground mt-1">{dateValue(t.scheduledDate)} · {statusLabels[t.status]}</p></button>) : <p className="text-sm text-muted-foreground py-2">Sin actividades programadas.</p>}</CardContent></Card>)}</div>
       )}
     </div>
-     <TrainingDialog open={dialogOpen} onOpenChange={setDialogOpen} form={form} setForm={setForm} editing={!!editing} mode={dialogMode} onModeChange={setDialogMode} pending={saveMutation.isPending} onSubmit={submit} />
+     <TrainingDialog open={dialogOpen} onOpenChange={setDialogOpen} form={form} setForm={setForm} editing={!!editing} trainingId={editing?.id ?? null} programId={id ?? ""} programYear={program.year} mode={dialogMode} onModeChange={setDialogMode} pending={saveMutation.isPending} onSubmit={submit} />
     <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>¿Eliminar actividad?</AlertDialogTitle><AlertDialogDescription>Esta acción eliminará el registro del cronograma y no se puede deshacer.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction className="bg-destructive text-destructive-foreground" onClick={() => deleteId && deleteMutation.mutate(deleteId)}>Eliminar</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
   </div>;
 }
 
 function TrainingDialog({
-  open, onOpenChange, form, setForm, editing, mode, onModeChange, pending, onSubmit,
+  open, onOpenChange, form, setForm, editing, trainingId, programId, programYear, mode, onModeChange, pending, onSubmit,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   form: TrainingForm;
   setForm: React.Dispatch<React.SetStateAction<TrainingForm>>;
   editing: boolean;
+  trainingId: string | null;
+  programId: string;
+  programYear: number;
   mode: "programacion" | "ejecucion";
   onModeChange: (mode: "programacion" | "ejecucion") => void;
   pending: boolean;
-  onSubmit: () => void;
+  onSubmit: (attendance?: AttendanceInput[]) => void;
 }) {
   const { toast } = useToast();
   const [request, setRequest] = useState("");
   const [proposal, setProposal] = useState<Partial<TrainingForm> | null>(null);
+  const [estimateMessage, setEstimateMessage] = useState("");
+  const [selectedWorkerIds, setSelectedWorkerIds] = useState<Set<string>>(new Set());
+  const [workerSearch, setWorkerSearch] = useState("");
   const assistant = useMutation({
-    mutationFn: async (description: string) => apiRequest("POST", "/api/program-trainings/assistant-suggest", { description }),
+    mutationFn: async (description: string) => {
+      const response = await apiRequest("POST", "/api/program-trainings/assistant-suggest", { description });
+      return response.json();
+    },
     onSuccess: (data: any) => setProposal(data),
     onError: (error: Error) => toast({ title: "No se pudo preparar la propuesta", description: error.message, variant: "destructive" }),
+  });
+  const estimate = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("GET", `/api/program-trainings/${programId}/attendee-estimate?targetAudience=${encodeURIComponent(form.targetAudience)}`);
+      return response.json();
+    },
+    onSuccess: (data: any) => {
+      if (data.available) {
+        update("estimatedAttendees", String(data.count));
+        setEstimateMessage(`Estimado: ${data.count}. Fuente: ${data.source}.`);
+      } else setEstimateMessage(data.message);
+    },
+    onError: (error: Error) => toast({ title: "No se pudo calcular el estimado", description: error.message, variant: "destructive" }),
+  });
+  const rosterQuery = useQuery<AttendanceRosterEntry[]>({
+    queryKey: [`/api/program-training-attendance/${trainingId}/roster`],
+    enabled: open && mode === "ejecucion" && !!trainingId,
   });
   useEffect(() => {
     if (open) {
       setRequest("");
       setProposal(null);
+      setEstimateMessage("");
+      setWorkerSearch("");
     }
   }, [open]);
+  useEffect(() => {
+    if (rosterQuery.data) setSelectedWorkerIds(new Set(rosterQuery.data.filter(worker => worker.attended === 1).map(worker => worker.id)));
+  }, [rosterQuery.data]);
   const update = (key: keyof TrainingForm, value: string) => setForm(prev => ({ ...prev, [key]: value }));
+  const attendanceEntries = (rosterQuery.data ?? [])
+    .filter(worker => selectedWorkerIds.has(worker.id) || worker.attendanceId)
+    .map(worker => ({ workerId: worker.id, attended: selectedWorkerIds.has(worker.id) ? 1 : 0 }));
+  const hasDetailedAttendance = (rosterQuery.data ?? []).some(worker => worker.attendanceId);
+  const useManualAttendeeTotal = !hasDetailedAttendance && selectedWorkerIds.size === 0;
+  const visibleWorkers = (rosterQuery.data ?? []).filter(worker =>
+    `${worker.name} ${worker.position} ${worker.department}`.toLowerCase().includes(workerSearch.toLowerCase()),
+  );
+  const suggestedDate = suggestedDateForFrequency(programYear, form.frequency);
   const field = (key: keyof TrainingForm, label: string, required = false, type = "text") => (
     <div className="space-y-1.5" key={key}>
       <Label>{label}{required ? " *" : ""}</Label>
@@ -325,13 +396,24 @@ function TrainingDialog({
                   </SelectContent>
                 </Select>
               </div>
-              {field("scheduledDate", "Fecha programada", true, "date")}
+              <div className="space-y-1.5">
+                <Label>Fecha programada *</Label>
+                <Input type="date" value={form.scheduledDate} onChange={e => update("scheduledDate", e.target.value)} />
+                {suggestedDate ? <div className="flex items-center justify-between gap-2"><p className="text-xs text-muted-foreground">Sugerencia orientativa según la frecuencia; revísala con el calendario de la empresa.</p><Button type="button" size="sm" variant="outline" onClick={() => update("scheduledDate", suggestedDate)}>Sugerir {suggestedDate}</Button></div> : <p className="text-xs text-muted-foreground">Elige la fecha; no se asigna una fecha automática para una actividad única o un año pasado.</p>}
+              </div>
               {field("scheduledTime", "Hora programada", false, "time")}
               {field("duration", "Duración (horas)", true, "number")}
               {field("instructor", "Instructor", true)}
               {field("responsible", "Responsable")}
               {field("targetAudience", "Población objetivo", true)}
-              {field("estimatedAttendees", "Asistentes estimados", false, "number")}
+              <div className="space-y-1.5">
+                <Label>Asistentes estimados</Label>
+                <Input type="number" min={0} value={form.estimatedAttendees} onChange={e => update("estimatedAttendees", e.target.value)} />
+                <Button type="button" size="sm" variant="outline" disabled={!form.targetAudience.trim() || estimate.isPending} onClick={() => { setEstimateMessage(""); estimate.mutate(); }}>
+                  {estimate.isPending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Users className="h-4 w-4 mr-1" />}Calcular con trabajadores activos
+                </Button>
+                {estimateMessage && <p className="text-xs text-muted-foreground" role="status">{estimateMessage}</p>}
+              </div>
               {field("location", "Lugar")}
               {field("legalBasis", "Fundamento legal")}
               <div className="space-y-1.5">
@@ -365,7 +447,28 @@ function TrainingDialog({
           <div className="grid md:grid-cols-2 gap-4 py-3">
             {field("actualDate", "Fecha real", true, "date")}
             {field("actualTime", "Hora real", false, "time")}
-            {field("actualAttendees", "Asistentes reales", true, "number")}
+            <div className="md:col-span-2 space-y-2 rounded-lg border p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div><Label>Asistencia por trabajador</Label><p className="text-xs text-muted-foreground">Marca a quienes asistieron. El total se calcula desde la lista.</p></div>
+                <Badge variant="secondary">{useManualAttendeeTotal ? `${form.actualAttendees || "0"} asistentes · total manual` : `${selectedWorkerIds.size} asistentes reales`}</Badge>
+              </div>
+              {useManualAttendeeTotal && <div className="space-y-1"><Label htmlFor="manual-actual-attendees">Total real si no vas a detallar la lista</Label><Input id="manual-actual-attendees" type="number" min={0} value={form.actualAttendees} onChange={e => update("actualAttendees", e.target.value)} /><p className="text-xs text-muted-foreground">Si marcas trabajadores, el total se calcula desde sus registros y reemplaza este valor.</p></div>}
+              <Input value={workerSearch} onChange={e => setWorkerSearch(e.target.value)} placeholder="Buscar por nombre, cargo o área" />
+              {rosterQuery.isLoading ? <p className="text-sm text-muted-foreground py-3">Cargando trabajadores...</p> : rosterQuery.isError ? <div className="py-3"><p className="text-sm text-destructive">No se pudo cargar la lista. No guardes la ejecución hasta volver a intentarlo.</p><Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => rosterQuery.refetch()}>Reintentar</Button></div> : visibleWorkers.length === 0 ? <p className="text-sm text-muted-foreground py-3">No hay trabajadores que coincidan con la búsqueda.</p> : (
+                <div className="max-h-64 overflow-y-auto divide-y rounded-md border">
+                  {visibleWorkers.map(worker => (
+                    <label key={worker.id} className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-muted/40">
+                      <input type="checkbox" checked={selectedWorkerIds.has(worker.id)} onChange={e => setSelectedWorkerIds(previous => {
+                        const next = new Set(previous);
+                        if (e.target.checked) next.add(worker.id); else next.delete(worker.id);
+                        return next;
+                      })} />
+                      <span className="min-w-0 flex-1"><span className="block font-medium truncate">{worker.name}</span><span className="block text-xs text-muted-foreground truncate">{worker.position} · {worker.department}{worker.active ? "" : " · Registro histórico"}</span></span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
             {field("evaluationScore", "Evaluación (0–100)", false, "number")}
             {field("evidenceUrl", "Enlace de evidencia")}
             {field("equipment", "Equipos utilizados")}
@@ -375,7 +478,7 @@ function TrainingDialog({
 
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button type="button" onClick={onSubmit} disabled={pending}>{pending ? "Guardando..." : mode === "ejecucion" ? "Guardar ejecución" : editing ? "Guardar cambios" : "Programar actividad"}</Button>
+          <Button type="button" onClick={() => onSubmit(mode === "ejecucion" && rosterQuery.isSuccess ? attendanceEntries : undefined)} disabled={pending || (mode === "ejecucion" && !rosterQuery.isSuccess)}>{pending ? "Guardando..." : mode === "ejecucion" ? "Guardar ejecución" : editing ? "Guardar cambios" : "Programar actividad"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
