@@ -39,7 +39,7 @@ No se debe guardar una propuesta del asistente sin confirmación. El asistente n
 - La ejecución admite asistencia por trabajador, total derivado de la lista y total manual para registros sin detalle individual.
 - El servidor valida empresa, trabajador, permisos y rangos; el guardado de asistencia se realiza en transacción y no acepta trabajadores ajenos ni duplicados.
 - La pantalla muestra que la asistencia no registrada está pendiente, no como cero; editar la actividad conserva los datos de ejecución.
-- Se completó una prueba autenticada de la API y una comprobación de la interfaz con una cuenta técnica de desarrollo y la empresa DEMO-PRUEBA. La prueba también verifica aislamiento, asistencia, edición y propuesta del asistente.
+- Se completó una prueba autenticada de la API y de la interfaz con una cuenta técnica de desarrollo y la empresa DEMO-PRUEBA. Verifica aislamiento, asistencia, edición, selección de plantilla, propuesta confirmada, continuidad cuando falla el asistente y PDF.
 - La prueba temporal limpia el programa creado y degrada la cuenta técnica; no agrega registros de validación a producción.
 
 ## Secuencia de implementación
@@ -149,12 +149,12 @@ Después de guardar la programación, ofrecer la acción «Registrar ejecución�
 Verificación completada en desarrollo como usuario autorizado:
 
 1. Se creó un programa anual y una actividad de prueba mediante la API autenticada.
-2. Se comprobó en navegador la carga del cronograma, la actividad, la asistencia pendiente y la apertura del formulario de ejecución.
-3. Se obtuvo una propuesta del asistente y se validó la respuesta estructurada.
+2. Se comprobó en navegador la carga del cronograma, la asistencia pendiente y el registro de ejecución con selección de trabajadores.
+3. Se seleccionó una plantilla, se verificaron los campos precargados y que no asigna fecha, y se completó el flujo del asistente: revisar, aplicar y guardar la propuesta; además, se comprobó que un error del servicio muestra un aviso y permite continuar con el formulario.
 4. Se estimó la población objetivo, se guardó una lista individual de asistencia y se completó la ejecución.
 5. Se comprobó que editar la actividad conserva fecha real, asistencia y estado.
 6. Se generó el PDF autenticado del cronograma y se confirmó que incluye la actividad guardada.
-7. Se verificó el rechazo de un trabajador de otra empresa y se borraron los datos temporales de prueba.
+7. Se verificó el registro de una actividad con fecha pasada y estado cancelado, el rechazo de un trabajador de otra empresa y la limpieza de los datos temporales.
 8. TypeScript, compilación de producción y `git diff --check` finalizaron correctamente.
 
 La verificación se hizo en desarrollo y no publica ni altera datos de producción.
@@ -163,7 +163,7 @@ La verificación se hizo en desarrollo y no publica ni altera datos de producci�
 
 - `npm run check`: correcto.
 - `npm run build`: correcto; permanecen advertencias preexistentes sobre tamaño de bundle y configuración PostCSS/Browserslist.
-- `RUN_PROGRAM_TRAINING_WORKFLOW_DEMO=1 node --import tsx --test tests/program-training-workflow-demo.test.ts`: correcto; el caso autenticado cubre API, asistente, estimado, ejecución, aislamiento, pantalla del cronograma y PDF.
+- `RUN_PROGRAM_TRAINING_WORKFLOW_DEMO=1 node --import tsx --test tests/program-training-workflow-demo.test.ts`: correcto; el caso autenticado cubre API, plantilla, asistente y su error, estimado, ejecución, aislamiento, pantalla del cronograma y PDF.
 - `git diff --check`: correcto.
 
 ## Criterios de aceptación

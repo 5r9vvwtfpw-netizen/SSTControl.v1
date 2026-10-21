@@ -122,6 +122,49 @@ test("DEMO-PRUEBA: flujo autenticado de programación, estimación, IA y asisten
       assert.match(renderedText, /Pendiente/i, `El cronograma debe mostrar la ejecución como pendiente. Texto visible: ${renderedText}`);
       await page.getByRole("button", { name: /Registrar ejecución/ }).click();
       await page.getByText("Asistencia por trabajador", { exact: true }).waitFor({ state: "visible", timeout: 10_000 });
+      const executionDialog = page.getByRole("dialog");
+      await executionDialog.locator('input[type="date"]').fill(today);
+      const workerCheckboxes = executionDialog.locator('input[type="checkbox"]');
+      assert.ok(await workerCheckboxes.count() > 0, "La ejecución debe listar trabajadores.");
+      await workerCheckboxes.first().check();
+      await executionDialog.getByRole("button", { name: "Guardar ejecución" }).click();
+      await page.getByText("Completada", { exact: true }).waitFor({ state: "visible", timeout: 20_000 });
+
+      await page.getByRole("button", { name: /Nueva actividad/ }).click();
+      const dialog = page.getByRole("dialog");
+      await dialog.getByRole("combobox").first().click();
+      await page.getByRole("option", { name: "Inducción en Seguridad y Salud en el Trabajo", exact: true }).first().click();
+      assert.equal(await dialog.locator('input[type="text"]').first().inputValue(), "Inducción en Seguridad y Salud en el Trabajo");
+      assert.equal(await dialog.locator('input[type="number"]').first().inputValue(), "4");
+      assert.equal(await dialog.locator('input[type="date"]').inputValue(), "", "La plantilla no debe inventar una fecha.");
+      assert.match(await dialog.locator("textarea").nth(1).inputValue(), /Generalidades de la empresa/);
+
+      await dialog.locator("#activity-assistant-request").fill("Charla breve de pausas activas para personal administrativo.");
+      await dialog.getByRole("button", { name: "Preparar propuesta" }).click();
+      const proposal = dialog.getByRole("status");
+      await proposal.waitFor({ state: "visible", timeout: 20_000 });
+      const proposedTopic = await proposal.locator("p").nth(1).innerText();
+      await proposal.getByRole("button", { name: "Usar propuesta" }).click();
+      assert.equal(await dialog.locator('input[type="text"]').first().inputValue(), proposedTopic, "La propuesta solo se aplica después de confirmarla.");
+      await dialog.locator('input[type="date"]').fill(today);
+      await dialog.locator('input[type="text"]').nth(1).fill("Cuenta técnica temporal de validación");
+      await dialog.getByRole("button", { name: "Programar actividad" }).click();
+      await page.getByText(proposedTopic, { exact: true }).waitFor({ state: "visible", timeout: 20_000 });
+
+      await page.route("**/api/program-trainings/assistant-suggest", route => route.fulfill({
+        status: 502,
+        contentType: "application/json",
+        body: JSON.stringify({ error: "Servicio de propuestas no disponible para esta comprobación." }),
+      }));
+      await page.getByRole("button", { name: /Nueva actividad/ }).click();
+      const fallbackDialog = page.getByRole("dialog");
+      await fallbackDialog.locator("#activity-assistant-request").fill("Capacitación de prueba para verificar continuidad.");
+      await fallbackDialog.getByRole("button", { name: "Preparar propuesta" }).click();
+      await page.getByText("No se pudo preparar la propuesta", { exact: true }).waitFor({ state: "visible", timeout: 10_000 });
+      await fallbackDialog.getByRole("button", { name: "Programar actividad" }).waitFor({ state: "visible" });
+      await fallbackDialog.getByRole("button", { name: "Cancelar" }).click();
+      await page.unroute("**/api/program-trainings/assistant-suggest");
+
       assert.deepEqual(pageErrors, [], "La pantalla del cronograma no debe producir errores JavaScript.");
       await context.close();
     } finally {
@@ -151,6 +194,26 @@ test("DEMO-PRUEBA: flujo autenticado de programación, estimación, IA y asisten
     assert.equal(edited.actualDate.slice(0, 10), today, "Editar la programación debe conservar la fecha real.");
     assert.equal(edited.actualAttendees, savedRoster.total, "Editar la programación debe conservar la asistencia.");
     assert.equal(edited.status, "completada", "Editar la programación debe conservar el estado de ejecución.");
+
+    const pastDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const cancelled = await api<{ scheduledDate: string; status: string }>("/api/program-trainings", {
+      method: "POST",
+      body: JSON.stringify({
+        programId,
+        topic: `${marker} · Actividad histórica cancelada`,
+        trainingCategory: "Capacitación",
+        scheduledDate: pastDate,
+        duration: 1,
+        frequency: "unica",
+        instructor: "Cuenta técnica temporal de validación",
+        targetAudience: "Todos los trabajadores",
+        estimatedAttendees: estimate.count,
+        actualAttendees: null,
+        status: "cancelada",
+      }),
+    });
+    assert.equal(cancelled.scheduledDate.slice(0, 10), pastDate, "Debe permitirse registrar una fecha pasada.");
+    assert.equal(cancelled.status, "cancelada", "Debe conservarse el estado cancelado.");
 
     const pdfResponse = await fetch(`${baseUrl}/api/training-programs/${programId}/cronograma-pdf`, {
       headers: { Cookie: cookie, "X-Company-Id": companyId },
