@@ -69,7 +69,7 @@ import {
 } from "./services/reglamento-higiene-industrial";
 import { verifyQuote, getQuoteSummary, type NormalizedQuoteData } from "../plugins/landing-page-integration";
 import { registerInduccionVirtualRoutes } from "./induccion-virtual-routes";
-import { registerChatbotRoutes } from "./chatbot";
+import { registerChatbotRoutes, suggestProgramTrainingActivity } from "./chatbot";
 import { mechanicCompanyContextMiddleware } from "./middleware/mechanic-company-context";
 import { registerMechanicAccessRoutes } from "./routes/mechanic-access";
 import { checkWorkerLimit, checkUserLimit } from "./middleware/subscription-limits";
@@ -25497,6 +25497,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(training);
     } catch (error: any) {
       res.status(500).send(error.message);
+    }
+  });
+
+  app.post("/api/program-trainings/assistant-suggest", requirePermission("trainings:create"), async (req, res) => {
+    try {
+      if (!getEffectiveCompanyId(req)) {
+        return res.status(403).send("Esta operación requiere pertenecer a una empresa");
+      }
+      const description = req.body?.description;
+      if (typeof description !== "string" || !description.trim()) {
+        return res.status(400).json({ error: "Describe la actividad que quieres preparar." });
+      }
+      if (description.trim().length > 1200) {
+        return res.status(400).json({ error: "La descripción no puede superar 1200 caracteres." });
+      }
+      const suggestion = await suggestProgramTrainingActivity(description.trim());
+      res.json(suggestion);
+    } catch (error: any) {
+      logger.error({ err: error }, "Error al generar propuesta de actividad de capacitación");
+      res.status(502).json({ error: "No fue posible generar la propuesta. Puedes continuar con la plantilla o diligenciar el formulario." });
     }
   });
 

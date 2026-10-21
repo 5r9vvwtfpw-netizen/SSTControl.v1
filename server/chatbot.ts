@@ -11,6 +11,52 @@ const openai = new OpenAI({
   maxRetries: 1,
 });
 
+export async function suggestProgramTrainingActivity(description: string) {
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4o-mini",
+    response_format: { type: "json_object" },
+    temperature: 0.2,
+    max_completion_tokens: 700,
+    messages: [
+      {
+        role: "system",
+        content:
+          "Eres un asistente para preparar borradores de actividades de capacitación SST en Colombia. Devuelve únicamente un objeto JSON con las claves topic, description, trainingCategory y targetAudience, todas como texto. trainingCategory debe ser una de estas opciones exactas: Inducción, Reinducción, Capacitación, Entrenamiento, Simulacro, Promoción y prevención, COPASST, Brigada, Otra. No inventes fundamento legal, fechas, instructor, duración normativa, asistentes, evaluaciones ni evidencias. Si falta información, usa texto vacío. La descripción debe ser breve, concreta y coherente con lo pedido; no afirmes que la actividad ya ocurrió.",
+      },
+      {
+        role: "user",
+        content: description,
+      },
+    ],
+  });
+
+  const raw = completion.choices[0]?.message?.content;
+  if (!raw) throw new Error("El asistente no pudo preparar una propuesta");
+
+  const parsed = JSON.parse(raw) as Record<string, unknown>;
+  const allowedCategories = new Set([
+    "Inducción",
+    "Reinducción",
+    "Capacitación",
+    "Entrenamiento",
+    "Simulacro",
+    "Promoción y prevención",
+    "COPASST",
+    "Brigada",
+    "Otra",
+  ]);
+  const cleanText = (value: unknown, maxLength: number) =>
+    typeof value === "string" ? value.trim().slice(0, maxLength) : "";
+  const trainingCategory = cleanText(parsed.trainingCategory, 80);
+
+  return {
+    topic: cleanText(parsed.topic, 180),
+    description: cleanText(parsed.description, 2000),
+    trainingCategory: allowedCategories.has(trainingCategory) ? trainingCategory : "",
+    targetAudience: cleanText(parsed.targetAudience, 500),
+  };
+}
+
 const promptCache = new Map<string, { prompt: string; expiresAt: number }>();
 const PROMPT_CACHE_TTL = 5 * 60 * 1000;
 const companyNameCache = new Map<string, { name: string; expiresAt: number }>();

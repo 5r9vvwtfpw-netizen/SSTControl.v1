@@ -13,7 +13,7 @@ Reducir la digitación y los errores al programar actividades del Programa de Ca
 
 No se debe guardar una propuesta del asistente sin confirmación. El asistente no debe inventar fechas, instructores, asistentes, evaluaciones ni evidencias, ni reemplazar la revisión profesional del fundamento normativo.
 
-## Estado actual observado
+## Estado previo a la implementación
 
 - El formulario usa principalmente campos de texto libre.
 - La categoría es texto libre, aunque tiene que diligenciarse.
@@ -22,6 +22,26 @@ No se debe guardar una propuesta del asistente sin confirmación. El asistente n
 - El esquema ya contiene datos de frecuencia, población objetivo, duración, fundamento legal, modalidad, materiales, evaluación y asistencia individual.
 - El catálogo SST ya contiene plantillas con nombre, duración, frecuencia, población destinataria, contenido mínimo, fundamento normativo, obligatoriedad y modalidades.
 - El asistente de normativa que aparece en la página del programa no está conectado al formulario de esta actividad ni precarga sus campos.
+
+## Avance de implementación
+
+### Implementado en la primera entrega
+
+- Se conectó el catálogo de capacitaciones al formulario; seleccionar una plantilla precarga sus datos disponibles.
+- La categoría se convirtió en una selección controlada y se conservan valores históricos al editar.
+- Se eliminó la fecha fija del 15 de enero.
+- Se separó la programación del registro de ejecución; los asistentes reales quedan pendientes hasta registrar la ejecución.
+- Se añadió una propuesta generada por IA que solo se aplica al formulario cuando la persona la acepta.
+- La propuesta no genera fundamento legal, instructor, fecha, asistencia, evaluación ni evidencias.
+- El endpoint del asistente requiere permiso de creación y contexto de empresa.
+
+### Pendiente para completar el alcance
+
+- Calcular estimados desde la población de trabajadores, cuando los datos disponibles permitan hacerlo con fiabilidad.
+- Conectar la asistencia individual existente con el registro de ejecución y calcular el total desde esa lista.
+- Proponer fechas según frecuencia y año del programa, sin elegirlas ni guardarlas sin confirmación.
+- Probar una sesión autenticada del asistente y el flujo completo en la interfaz; la comprobación visual disponible llegó a la pantalla de inicio de sesión.
+- Completar pruebas de aislamiento por empresa, errores del servicio de IA y conservación de datos de ejecución al editar programación.
 
 ## Secuencia de implementación
 

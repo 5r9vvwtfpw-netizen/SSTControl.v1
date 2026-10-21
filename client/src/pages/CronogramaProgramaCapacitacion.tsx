@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useParams, Link } from "wouter";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -13,8 +13,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { ArrowLeft, CalendarDays, CheckCircle2, Clock3, Download, ExternalLink, LayoutList, Pencil, Plus, Trash2, Users } from "lucide-react";
+import { ArrowLeft, Bot, CalendarDays, CheckCircle2, Clock3, Download, ExternalLink, LayoutList, Loader2, Pencil, Plus, Sparkles, Trash2, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CAPACITACIONES_OBLIGATORIAS, type CapacitacionPredefinida } from "@/data/catalogos-sst";
 
 type TrainingForm = {
   topic: string; description: string; trainingCategory: string; legalBasis: string;
@@ -23,19 +25,31 @@ type TrainingForm = {
   instructor: string; instructorQualifications: string; responsible: string;
   targetAudience: string; estimatedAttendees: string; actualAttendees: string;
   materials: string; equipment: string; requiresEvaluation: string; evaluationScore: string;
-  status: string; observations: string; attachmentUrl: string; evidenceUrl: string;
+  status: string; observations: string; attachmentUrl: string; evidenceUrl: string; isObligatory: string;
 };
 
 const emptyForm: TrainingForm = {
   topic: "", description: "", trainingCategory: "", legalBasis: "", scheduledDate: "", scheduledTime: "",
   duration: "1", frequency: "unica", actualDate: "", actualTime: "", location: "", modality: "presencial",
-  instructor: "", instructorQualifications: "", responsible: "", targetAudience: "", estimatedAttendees: "0",
-  actualAttendees: "0", materials: "", equipment: "", requiresEvaluation: "1", evaluationScore: "",
-  status: "programada", observations: "", attachmentUrl: "", evidenceUrl: "",
+  instructor: "", instructorQualifications: "", responsible: "", targetAudience: "", estimatedAttendees: "",
+  actualAttendees: "", materials: "", equipment: "", requiresEvaluation: "1", evaluationScore: "",
+  status: "programada", observations: "", attachmentUrl: "", evidenceUrl: "", isObligatory: "0",
 };
 
 const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 const statusLabels: Record<string, string> = { programada: "Programada", en_curso: "En curso", completada: "Completada", cancelada: "Cancelada", reprogramada: "Reprogramada" };
+const categoryOptions = ["Inducción", "Reinducción", "Capacitación", "Entrenamiento", "Simulacro", "Promoción y prevención", "COPASST", "Brigada", "Otra"];
+
+function categoryForTemplate(template: CapacitacionPredefinida) {
+  const title = template.nombre.toLowerCase();
+  if (title.includes("inducción") && title.includes("reinducción")) return "Reinducción";
+  if (title.includes("inducción")) return "Inducción";
+  if (title.includes("brigada")) return "Brigada";
+  if (title.includes("simulacro")) return "Simulacro";
+  if (title.includes("copasst") || title.includes("vigía")) return "COPASST";
+  if (title.includes("entrenamiento") || title.includes("alturas")) return "Entrenamiento";
+  return "Capacitación";
+}
 
 function dateValue(value?: string | Date | null) {
   if (!value) return "";
@@ -51,6 +65,7 @@ export default function CronogramaProgramaCapacitacion() {
   const [view, setView] = useState<"detalle" | "matriz">("detalle");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<ProgramTraining | null>(null);
+  const [dialogMode, setDialogMode] = useState<"programacion" | "ejecucion">("programacion");
   const [form, setForm] = useState<TrainingForm>(emptyForm);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const programQuery = useQuery<TrainingProgram>({ queryKey: [`/api/training-programs/${id}`], enabled: !!id });
@@ -82,21 +97,44 @@ export default function CronogramaProgramaCapacitacion() {
     onError: (error: Error) => toast({ title: "No se pudo eliminar", description: error.message, variant: "destructive" }),
   });
 
-  const openCreate = () => { setEditing(null); setForm({ ...emptyForm, scheduledDate: `${programQuery.data?.year ?? new Date().getFullYear()}-01-15` }); setDialogOpen(true); };
+  const openCreate = () => { setEditing(null); setDialogMode("programacion"); setForm({ ...emptyForm }); setDialogOpen(true); };
   const openEdit = (training: ProgramTraining) => {
     setEditing(training);
+    setDialogMode("programacion");
     setForm(Object.fromEntries(Object.keys(emptyForm).map(key => [key, key === "scheduledDate" ? dateValue(training.scheduledDate) : key === "actualDate" ? dateValue(training.actualDate) : String((training as any)[key] ?? emptyForm[key as keyof TrainingForm])])) as TrainingForm);
     setDialogOpen(true);
   };
+  const openExecution = (training: ProgramTraining) => {
+    openEdit(training);
+    setDialogMode("ejecucion");
+  };
   const submit = () => {
-    const required: [keyof TrainingForm, string][] = [["topic", "tema"], ["trainingCategory", "categoría"], ["scheduledDate", "fecha programada"], ["duration", "duración"], ["instructor", "instructor"], ["targetAudience", "población objetivo"]];
-    const missing = required.find(([key]) => !String(form[key]).trim());
-    if (missing) { toast({ title: "Completa los campos obligatorios", description: `Indica la ${missing[1]}.`, variant: "destructive" }); return; }
-    if (!form.scheduledDate || (form.actualDate && form.actualDate < form.scheduledDate)) { toast({ title: "Revisa las fechas", description: "La fecha real no puede ser anterior a la fecha programada.", variant: "destructive" }); return; }
-    const payload: Record<string, unknown> = { ...form, duration: Number(form.duration), estimatedAttendees: Number(form.estimatedAttendees), actualAttendees: Number(form.actualAttendees), requiresEvaluation: Number(form.requiresEvaluation), evaluationScore: form.evaluationScore ? Number(form.evaluationScore) : null };
-    if (!form.actualDate) {
-      delete payload.actualDate;
+    if (dialogMode === "ejecucion") {
+      if (!form.actualDate || form.actualAttendees === "") {
+        toast({ title: "Completa la ejecución", description: "Registra la fecha real y la cantidad de asistentes, aunque haya sido cero.", variant: "destructive" });
+        return;
+      }
+      if (form.actualDate < dateValue(editing?.scheduledDate)) {
+        toast({ title: "Revisa la fecha real", description: "No puede ser anterior a la fecha programada.", variant: "destructive" });
+        return;
+      }
+    } else {
+      const required: [keyof TrainingForm, string][] = [["topic", "tema"], ["trainingCategory", "categoría"], ["scheduledDate", "fecha programada"], ["duration", "duración"], ["instructor", "instructor"], ["targetAudience", "población objetivo"]];
+      const missing = required.find(([key]) => !String(form[key]).trim());
+      if (missing) { toast({ title: "Completa los campos obligatorios", description: `Indica la ${missing[1]}.`, variant: "destructive" }); return; }
     }
+    const payload: Record<string, unknown> = {
+      ...form,
+      duration: Number(form.duration || 1),
+      frequency: form.frequency,
+      isObligatory: Number(form.isObligatory),
+      estimatedAttendees: Number(form.estimatedAttendees || 0),
+      actualAttendees: form.actualAttendees === "" ? null : Number(form.actualAttendees),
+      requiresEvaluation: Number(form.requiresEvaluation),
+      evaluationScore: form.evaluationScore === "" ? null : Number(form.evaluationScore),
+      status: dialogMode === "ejecucion" ? "completada" : form.status,
+    };
+    if (!form.actualDate) delete payload.actualDate;
     saveMutation.mutate(payload);
   };
 
@@ -128,14 +166,218 @@ export default function CronogramaProgramaCapacitacion() {
       </div>
       {metrics.overdue > 0 && <div className="border border-amber-300 bg-amber-50 dark:bg-amber-950/20 rounded-lg px-4 py-3 text-sm text-amber-900 dark:text-amber-200">{metrics.overdue} actividad{metrics.overdue > 1 ? "es" : ""} tiene{metrics.overdue > 1 ? "n" : ""} fecha vencida sin completar.</div>}
       <div className="flex border-b gap-5"><button className={`pb-3 text-sm font-medium border-b-2 ${view === "detalle" ? "border-primary text-primary" : "border-transparent text-muted-foreground"}`} onClick={() => setView("detalle")}>Vista detallada</button><button className={`pb-3 text-sm font-medium border-b-2 ${view === "matriz" ? "border-primary text-primary" : "border-transparent text-muted-foreground"}`} onClick={() => setView("matriz")}>Matriz enero–diciembre</button></div>
-      {view === "detalle" ? <section className="space-y-3">{trainings.length === 0 ? <Card><CardContent className="py-16 text-center"><CalendarDays className="h-10 w-10 mx-auto text-muted-foreground mb-3" /><h2 className="font-semibold">Aún no hay actividades</h2><p className="text-sm text-muted-foreground mt-1 mb-4">Programa la primera capacitación para comenzar a hacer seguimiento.</p><Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" />Programar actividad</Button></CardContent></Card> : trainings.slice().sort((a,b) => dateValue(a.scheduledDate).localeCompare(dateValue(b.scheduledDate))).map(training => <Card key={training.id}><CardContent className="p-4 md:p-5"><div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4"><div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><Badge variant={statusTone(training.status) as any}>{statusLabels[training.status] ?? training.status}</Badge><span className="text-xs text-muted-foreground">{training.trainingCategory}{training.isObligatory ? " · Obligatoria" : ""}</span></div><h2 className="font-semibold text-lg mt-2">{training.topic}</h2><p className="text-sm text-muted-foreground mt-1">{training.description || "Sin descripción registrada."}</p><div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4 text-sm"><div><span className="text-xs text-muted-foreground block">Programada</span>{dateValue(training.scheduledDate)}{training.scheduledTime ? ` · ${training.scheduledTime}` : ""}</div><div><span className="text-xs text-muted-foreground block">Fecha real</span>{training.actualDate ? dateValue(training.actualDate) : "Pendiente"}</div><div><span className="text-xs text-muted-foreground block">Responsable</span>{training.responsible || training.instructor}</div><div><span className="text-xs text-muted-foreground block">Participantes</span>{training.actualAttendees ?? 0} / {training.estimatedAttendees}</div></div>{(training.evaluationScore != null || training.evidenceUrl || training.attachmentUrl) && <div className="flex flex-wrap gap-3 mt-4 text-xs">{training.evaluationScore != null && <span className="text-muted-foreground">Evaluación: <strong className="text-foreground">{training.evaluationScore}/100</strong></span>}{training.evidenceUrl && <a href={training.evidenceUrl} target="_blank" rel="noreferrer" className="text-primary inline-flex items-center gap-1">Evidencia <ExternalLink className="h-3 w-3" /></a>}{training.attachmentUrl && <a href={training.attachmentUrl} target="_blank" rel="noreferrer" className="text-primary inline-flex items-center gap-1">Material <ExternalLink className="h-3 w-3" /></a>}</div>}</div><div className="flex gap-2 shrink-0"><Button size="icon" variant="outline" onClick={() => openEdit(training)} aria-label="Editar actividad"><Pencil className="h-4 w-4" /></Button><Button size="icon" variant="outline" onClick={() => setDeleteId(training.id)} aria-label="Eliminar actividad"><Trash2 className="h-4 w-4 text-destructive" /></Button></div></div></CardContent></Card>)}</section> : <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">{byMonth.map(month => <Card key={month.name} className={month.items.length ? "border-primary/30" : ""}><CardHeader className="pb-3"><CardTitle className="text-base flex justify-between">{month.name}<span className="text-xs font-normal text-muted-foreground">{month.items.length} actividad{month.items.length !== 1 ? "es" : ""}</span></CardTitle></CardHeader><CardContent className="space-y-2">{month.items.length ? month.items.map(t => <button key={t.id} onClick={() => openEdit(t)} className="w-full text-left rounded-md border p-3 hover:bg-muted/50"><div className="flex items-center justify-between gap-2"><span className="font-medium text-sm truncate">{t.topic}</span><span className={`h-2 w-2 rounded-full shrink-0 ${t.status === "completada" ? "bg-emerald-500" : t.status === "cancelada" ? "bg-red-500" : "bg-amber-500"}`} /></div><p className="text-xs text-muted-foreground mt-1">{dateValue(t.scheduledDate)} · {statusLabels[t.status]}</p></button>) : <p className="text-sm text-muted-foreground py-2">Sin actividades programadas.</p>}</CardContent></Card>)}</div>}
+      {view === "detalle" ? (
+        <section className="space-y-3">
+          {trainings.length === 0 ? (
+            <Card><CardContent className="py-16 text-center"><CalendarDays className="h-10 w-10 mx-auto text-muted-foreground mb-3" /><h2 className="font-semibold">Aún no hay actividades</h2><p className="text-sm text-muted-foreground mt-1 mb-4">Programa la primera capacitación para comenzar a hacer seguimiento.</p><Button onClick={openCreate}><Plus className="h-4 w-4 mr-2" />Programar actividad</Button></CardContent></Card>
+          ) : trainings.slice().sort((a, b) => dateValue(a.scheduledDate).localeCompare(dateValue(b.scheduledDate))).map(training => (
+            <Card key={training.id}>
+              <CardContent className="p-4 md:p-5">
+                <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2"><Badge variant={statusTone(training.status) as any}>{statusLabels[training.status] ?? training.status}</Badge><span className="text-xs text-muted-foreground">{training.trainingCategory}{training.isObligatory ? " · Obligatoria" : ""}</span></div>
+                    <h2 className="font-semibold text-lg mt-2">{training.topic}</h2>
+                    <p className="text-sm text-muted-foreground mt-1">{training.description || "Sin descripción registrada."}</p>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4 text-sm">
+                      <div><span className="text-xs text-muted-foreground block">Programada</span>{dateValue(training.scheduledDate)}{training.scheduledTime ? ` · ${training.scheduledTime}` : ""}</div>
+                      <div><span className="text-xs text-muted-foreground block">Fecha real</span>{training.actualDate ? dateValue(training.actualDate) : "Pendiente"}</div>
+                      <div><span className="text-xs text-muted-foreground block">Responsable</span>{training.responsible || training.instructor}</div>
+                      <div><span className="text-xs text-muted-foreground block">Asistentes reales / estimados</span>{training.actualAttendees == null ? "Pendiente" : training.actualAttendees} / {training.estimatedAttendees}</div>
+                    </div>
+                    {(training.evaluationScore != null || training.evidenceUrl || training.attachmentUrl) && (
+                      <div className="flex flex-wrap gap-3 mt-4 text-xs">
+                        {training.evaluationScore != null && <span className="text-muted-foreground">Evaluación: <strong className="text-foreground">{training.evaluationScore}/100</strong></span>}
+                        {training.evidenceUrl && <a href={training.evidenceUrl} target="_blank" rel="noreferrer" className="text-primary inline-flex items-center gap-1">Evidencia <ExternalLink className="h-3 w-3" /></a>}
+                        {training.attachmentUrl && <a href={training.attachmentUrl} target="_blank" rel="noreferrer" className="text-primary inline-flex items-center gap-1">Material <ExternalLink className="h-3 w-3" /></a>}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-2 shrink-0">
+                    {training.status !== "completada" && <Button size="sm" variant="outline" onClick={() => openExecution(training)}><CheckCircle2 className="h-4 w-4 mr-1" />Registrar ejecución</Button>}
+                    <Button size="icon" variant="outline" onClick={() => openEdit(training)} aria-label="Editar actividad"><Pencil className="h-4 w-4" /></Button>
+                    <Button size="icon" variant="outline" onClick={() => setDeleteId(training.id)} aria-label="Eliminar actividad"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </section>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">{byMonth.map(month => <Card key={month.name} className={month.items.length ? "border-primary/30" : ""}><CardHeader className="pb-3"><CardTitle className="text-base flex justify-between">{month.name}<span className="text-xs font-normal text-muted-foreground">{month.items.length} actividad{month.items.length !== 1 ? "es" : ""}</span></CardTitle></CardHeader><CardContent className="space-y-2">{month.items.length ? month.items.map(t => <button key={t.id} onClick={() => openEdit(t)} className="w-full text-left rounded-md border p-3 hover:bg-muted/50"><div className="flex items-center justify-between gap-2"><span className="font-medium text-sm truncate">{t.topic}</span><span className={`h-2 w-2 rounded-full shrink-0 ${t.status === "completada" ? "bg-emerald-500" : t.status === "cancelada" ? "bg-red-500" : "bg-amber-500"}`} /></div><p className="text-xs text-muted-foreground mt-1">{dateValue(t.scheduledDate)} · {statusLabels[t.status]}</p></button>) : <p className="text-sm text-muted-foreground py-2">Sin actividades programadas.</p>}</CardContent></Card>)}</div>
+      )}
     </div>
-    <TrainingDialog open={dialogOpen} onOpenChange={setDialogOpen} form={form} setForm={setForm} editing={!!editing} pending={saveMutation.isPending} onSubmit={submit} />
+     <TrainingDialog open={dialogOpen} onOpenChange={setDialogOpen} form={form} setForm={setForm} editing={!!editing} mode={dialogMode} onModeChange={setDialogMode} pending={saveMutation.isPending} onSubmit={submit} />
     <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>¿Eliminar actividad?</AlertDialogTitle><AlertDialogDescription>Esta acción eliminará el registro del cronograma y no se puede deshacer.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction className="bg-destructive text-destructive-foreground" onClick={() => deleteId && deleteMutation.mutate(deleteId)}>Eliminar</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
   </div>;
 }
 
-function TrainingDialog({ open, onOpenChange, form, setForm, editing, pending, onSubmit }: { open: boolean; onOpenChange: (open: boolean) => void; form: TrainingForm; setForm: React.Dispatch<React.SetStateAction<TrainingForm>>; editing: boolean; pending: boolean; onSubmit: () => void }) {
-  const field = (key: keyof TrainingForm, label: string, required = false, type = "text") => <div className="space-y-1.5"><Label>{label}{required ? " *" : ""}</Label><Input type={type} value={form[key]} onChange={e => setForm(prev => ({ ...prev, [key]: e.target.value }))} /></div>;
-  return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto"><DialogHeader><DialogTitle>{editing ? "Editar actividad" : "Programar actividad"}</DialogTitle><DialogDescription>Registra lo planeado y actualiza la ejecución cuando ocurra.</DialogDescription></DialogHeader><div className="grid md:grid-cols-2 gap-4 py-3">{field("topic", "Tema", true)}{field("trainingCategory", "Categoría", true)}{field("scheduledDate", "Fecha programada", true, "date")}{field("scheduledTime", "Hora programada", false, "time")}{field("duration", "Duración (horas)", true, "number")}{field("instructor", "Instructor", true)}{field("responsible", "Responsable")}{field("targetAudience", "Población objetivo", true)}{field("estimatedAttendees", "Asistentes estimados", false, "number")}{field("actualAttendees", "Asistentes reales", false, "number")}{field("actualDate", "Fecha real", false, "date")}{field("location", "Lugar")}{field("legalBasis", "Fundamento legal")}{field("evaluationScore", "Evaluación (0–100)", false, "number")}{field("evidenceUrl", "Enlace de evidencia")}{field("attachmentUrl", "Enlace de material")}<div className="space-y-1.5"><Label>Estado</Label><select className="flex h-10 w-full rounded-md border bg-background px-3 text-sm" value={form.status} onChange={e => setForm(prev => ({ ...prev, status: e.target.value }))}>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></div><div className="space-y-1.5"><Label>Modalidad</Label><select className="flex h-10 w-full rounded-md border bg-background px-3 text-sm" value={form.modality} onChange={e => setForm(prev => ({ ...prev, modality: e.target.value }))}><option value="presencial">Presencial</option><option value="virtual">Virtual</option><option value="mixta">Mixta</option></select></div><div className="md:col-span-2 space-y-1.5"><Label>Descripción</Label><Textarea value={form.description} onChange={e => setForm(prev => ({ ...prev, description: e.target.value }))} /></div><div className="md:col-span-2 space-y-1.5"><Label>Observaciones</Label><Textarea value={form.observations} onChange={e => setForm(prev => ({ ...prev, observations: e.target.value }))} /></div></div><DialogFooter><Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button><Button onClick={onSubmit} disabled={pending}>{pending ? "Guardando..." : editing ? "Guardar cambios" : "Programar actividad"}</Button></DialogFooter></DialogContent></Dialog>;
+function TrainingDialog({
+  open, onOpenChange, form, setForm, editing, mode, onModeChange, pending, onSubmit,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  form: TrainingForm;
+  setForm: React.Dispatch<React.SetStateAction<TrainingForm>>;
+  editing: boolean;
+  mode: "programacion" | "ejecucion";
+  onModeChange: (mode: "programacion" | "ejecucion") => void;
+  pending: boolean;
+  onSubmit: () => void;
+}) {
+  const { toast } = useToast();
+  const [request, setRequest] = useState("");
+  const [proposal, setProposal] = useState<Partial<TrainingForm> | null>(null);
+  const assistant = useMutation({
+    mutationFn: async (description: string) => apiRequest("POST", "/api/program-trainings/assistant-suggest", { description }),
+    onSuccess: (data: any) => setProposal(data),
+    onError: (error: Error) => toast({ title: "No se pudo preparar la propuesta", description: error.message, variant: "destructive" }),
+  });
+  useEffect(() => {
+    if (open) {
+      setRequest("");
+      setProposal(null);
+    }
+  }, [open]);
+  const update = (key: keyof TrainingForm, value: string) => setForm(prev => ({ ...prev, [key]: value }));
+  const field = (key: keyof TrainingForm, label: string, required = false, type = "text") => (
+    <div className="space-y-1.5" key={key}>
+      <Label>{label}{required ? " *" : ""}</Label>
+      <Input type={type} min={type === "number" ? 0 : undefined} value={form[key]} onChange={e => update(key, e.target.value)} />
+    </div>
+  );
+  const applyTemplate = (template: CapacitacionPredefinida) => {
+    setForm(prev => ({
+      ...prev,
+      topic: template.nombre,
+      description: template.contenidoMinimo.join("\n"),
+      trainingCategory: categoryForTemplate(template),
+      legalBasis: template.normativaBase,
+      duration: String(template.duracionHoras),
+      frequency: template.frecuencia,
+      targetAudience: template.dirigidoA.join(", "),
+      modality: template.modalidad.length === 1 ? template.modalidad[0] : prev.modality,
+      isObligatory: template.obligatoria ? "1" : "0",
+    }));
+    setProposal(null);
+  };
+  const applyProposal = () => {
+    if (proposal) setForm(prev => ({ ...prev, ...proposal }));
+    setProposal(null);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{mode === "ejecucion" ? "Registrar ejecución" : editing ? "Editar actividad" : "Programar actividad"}</DialogTitle>
+          <DialogDescription>
+            {mode === "ejecucion" ? "Registra los resultados reales después de realizar la actividad." : "Elige una plantilla o prepara un borrador para revisar antes de guardar."}
+          </DialogDescription>
+        </DialogHeader>
+
+        {editing && (
+          <div className="flex gap-2">
+            <Button type="button" variant={mode === "programacion" ? "default" : "outline"} onClick={() => onModeChange("programacion")}>Programación</Button>
+            <Button type="button" variant={mode === "ejecucion" ? "default" : "outline"} onClick={() => onModeChange("ejecucion")}>Registrar ejecución</Button>
+          </div>
+        )}
+
+        {mode === "programacion" ? (
+          <div className="space-y-4">
+            <div className="rounded-lg border bg-muted/20 p-4 space-y-3">
+              <div className="flex items-center gap-2 font-medium"><Bot className="h-4 w-4 text-primary" />Asistente para preparar la actividad</div>
+              <Select onValueChange={value => {
+                const template = CAPACITACIONES_OBLIGATORIAS.find(item => item.codigo === value);
+                if (template) applyTemplate(template);
+              }}>
+                <SelectTrigger><SelectValue placeholder="Precargar desde una capacitación del catálogo" /></SelectTrigger>
+                <SelectContent>
+                  {CAPACITACIONES_OBLIGATORIAS.map(item => <SelectItem key={item.codigo} value={item.codigo}>{item.nombre}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <div className="space-y-2">
+                <Label htmlFor="activity-assistant-request">O describe la actividad que necesitas</Label>
+                <Textarea id="activity-assistant-request" value={request} maxLength={1200} onChange={e => setRequest(e.target.value)} placeholder="Ej.: capacitación sobre manipulación segura de cargas para el personal de bodega." />
+                <Button type="button" variant="outline" disabled={!request.trim() || assistant.isPending} onClick={() => { setProposal(null); assistant.mutate(request.trim()); }}>
+                  {assistant.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                  {assistant.isPending ? "Preparando..." : "Preparar propuesta"}
+                </Button>
+              </div>
+              {proposal && (
+                <div className="rounded-md border bg-background p-3 space-y-2" role="status">
+                  <p className="text-sm font-medium">Propuesta para revisar</p>
+                  <p className="text-sm">{proposal.topic}</p>
+                  <p className="text-xs text-muted-foreground">{proposal.description}</p>
+                  <p className="text-xs">Categoría: {proposal.trainingCategory} · Población: {proposal.targetAudience}</p>
+                  <Button type="button" size="sm" onClick={applyProposal}>Usar propuesta</Button>
+                </div>
+              )}
+            </div>
+            <div className="grid md:grid-cols-2 gap-4">
+              {field("topic", "Tema", true)}
+              <div className="space-y-1.5">
+                <Label>Categoría *</Label>
+                <Select value={form.trainingCategory} onValueChange={value => update("trainingCategory", value)}>
+                  <SelectTrigger><SelectValue placeholder="Selecciona una categoría" /></SelectTrigger>
+                  <SelectContent>
+                    {!categoryOptions.includes(form.trainingCategory) && form.trainingCategory && <SelectItem value={form.trainingCategory}>{form.trainingCategory} · registro anterior</SelectItem>}
+                    {categoryOptions.map(value => <SelectItem key={value} value={value}>{value}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              {field("scheduledDate", "Fecha programada", true, "date")}
+              {field("scheduledTime", "Hora programada", false, "time")}
+              {field("duration", "Duración (horas)", true, "number")}
+              {field("instructor", "Instructor", true)}
+              {field("responsible", "Responsable")}
+              {field("targetAudience", "Población objetivo", true)}
+              {field("estimatedAttendees", "Asistentes estimados", false, "number")}
+              {field("location", "Lugar")}
+              {field("legalBasis", "Fundamento legal")}
+              <div className="space-y-1.5">
+                <Label>Frecuencia</Label>
+                <Select value={form.frequency} onValueChange={value => update("frequency", value)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{["unica", "anual", "semestral", "trimestral", "mensual"].map(value => <SelectItem key={value} value={value}>{value === "unica" ? "Única vez" : value[0].toUpperCase() + value.slice(1)}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Modalidad</Label>
+                <Select value={form.modality} onValueChange={value => update("modality", value)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{["presencial", "virtual", "mixta"].map(value => <SelectItem key={value} value={value}>{value[0].toUpperCase() + value.slice(1)}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Estado</Label>
+                <Select value={form.status} onValueChange={value => update("status", value)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{Object.entries(statusLabels).filter(([value]) => value !== "completada").map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2 pt-6"><input id="training-obligatory" type="checkbox" checked={form.isObligatory === "1"} onChange={e => update("isObligatory", e.target.checked ? "1" : "0")} /><Label htmlFor="training-obligatory">Actividad obligatoria</Label></div>
+              <div className="md:col-span-2 space-y-1.5"><Label>Descripción y contenido</Label><Textarea rows={4} value={form.description} onChange={e => update("description", e.target.value)} /></div>
+              {field("attachmentUrl", "Enlace de material")}
+              {field("materials", "Materiales planeados")}
+            </div>
+          </div>
+        ) : (
+          <div className="grid md:grid-cols-2 gap-4 py-3">
+            {field("actualDate", "Fecha real", true, "date")}
+            {field("actualTime", "Hora real", false, "time")}
+            {field("actualAttendees", "Asistentes reales", true, "number")}
+            {field("evaluationScore", "Evaluación (0–100)", false, "number")}
+            {field("evidenceUrl", "Enlace de evidencia")}
+            {field("equipment", "Equipos utilizados")}
+            <div className="md:col-span-2 space-y-1.5"><Label>Observaciones</Label><Textarea value={form.observations} onChange={e => update("observations", e.target.value)} /></div>
+          </div>
+        )}
+
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+          <Button type="button" onClick={onSubmit} disabled={pending}>{pending ? "Guardando..." : mode === "ejecucion" ? "Guardar ejecución" : editing ? "Guardar cambios" : "Programar actividad"}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 }
