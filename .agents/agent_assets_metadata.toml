@@ -1245,3 +1245,17 @@ mtime_ms = 1792676160477
 storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/1dd9677d-f662-4f73-ab1b-ac74b12c22ed/c594c088-9f03-4760-8fb0-0384c8d1e2ee"
 storage_version_token = "1792676178667757"
 content_type = "application/pdf"
+
+[[outputs]]
+id = "rHBtt2AqbhKZmmop0nttj"
+uri = "file://generated-artifacts/propuesta-gestion-sgsst-pesv/propuesta-gestion-operativa-estandar.pdf"
+type = "pdf"
+title = "Propuesta comercial — formato SST-Colombia"
+description = "Propuesta de una página con la estructura verde y dorada del formato comercial existente: alcance operativo, inversión separada de la suscripción, gestión de accesos y presentación de informes."
+logical_id = "53a8c85d-3849-49d0-8f70-a0a43fab2701"
+content_hash = "sha256:66009d1405d9c0466838d3d622da1e51de7c0742e6877cd62fbd42055afdf8a4"
+size = 5231
+mtime_ms = 1792676952517
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/53a8c85d-3849-49d0-8f70-a0a43fab2701/5f19140a-580b-4c9d-9f6a-f27b60c2e0a6"
+storage_version_token = "1792676981097203"
+content_type = "application/pdf"
