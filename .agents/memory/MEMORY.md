@@ -106,3 +106,4 @@
 - [Secuencia de informes PESV trimestrales](pesv-quarterly-report-sequencing.md) — implementar el siguiente informe descrito usando módulos existentes, sin diseñar por adelantado los restantes.
 - [Auditoría y patrón de informes](implementation-before-existing-audit.md) — auditar fuentes y comparar con informes de la misma familia antes de implementar; conservar empresa, estado, faltantes y enlace a la fuente.
 - [Certificaciones anuales SISI/PESV](sisi-pesv-annual-certifications.md) — incluir solo evidencias verificables y mantener aparte el acta del órgano social frente a P01.
+- [Servicio de gestión operativa SG-SST y PESV](managed-sgsst-service-scope.md) — oferta mensual adicional a la suscripción; detallar módulos, accesos por rol y radicación autorizada, según informes disponibles en producción.
