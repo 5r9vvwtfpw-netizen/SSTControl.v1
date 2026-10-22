@@ -7,4 +7,4 @@ Al entregar un PDF, no dar por hecho que abrir su tarjeta y usar «Guardar como�
 
 **Why:** Capturas del usuario mostraron formatos «Página web» en Safari y resultados de búsqueda sin menú de descarga, pese a que el PDF original sí existía y era válido. Repetir las mismas instrucciones no resolvió la entrega.
 
-**How to apply:** Comprobar primero el PDF real. Un botón JavaScript en una vista previa HTML puede no iniciar descargas; preferir un enlace directo que abra el PDF y permita usar el control de descarga del visor. Verificar que el enlace contiene el PDF correcto y no afirmar que el navegador del usuario lo descargó hasta que lo confirme. Si se opta por un enlace público, evaluar antes la exposición del documento y no publicarlo sin necesidad.
+**How to apply:** Comprobar primero el PDF real. Un botón JavaScript en una vista previa HTML puede no iniciar descargas; preferir una ruta temporal solo de desarrollo que envíe el PDF con `Content-Disposition: attachment`. Verificar tipo y bytes de la respuesta, mantener la ruta ausente en producción y no afirmar que el navegador del usuario terminó la descarga hasta que lo confirme.

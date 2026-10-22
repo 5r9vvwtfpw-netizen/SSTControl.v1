@@ -69,6 +69,18 @@ import { emailService } from "./services/email";
 const app = express();
 app.disable('x-powered-by');
 
+// One-off development download for the commercial proposal; never exposed in production.
+if (app.get("env") === "development") {
+  app.get("/__download-propuesta-comercial", (_req, res) => {
+    const proposalPath = path.join(process.cwd(), "Propuesta_comercial_servicio_integral_SG-SST_PESV.pdf");
+    if (!fs.existsSync(proposalPath)) {
+      return res.status(404).send("La propuesta PDF no está disponible.");
+    }
+    res.setHeader("Cache-Control", "no-store");
+    return res.download(proposalPath, "Propuesta_comercial_servicio_integral_SG-SST_PESV.pdf");
+  });
+}
+
 // CRITICAL: Register Stripe webhook route BEFORE express.json()
 // Webhooks need raw Buffer, not parsed JSON
 app.post(
