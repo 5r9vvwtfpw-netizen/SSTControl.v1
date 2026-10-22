@@ -79,6 +79,14 @@ if (app.get("env") === "development") {
     res.setHeader("Cache-Control", "no-store");
     return res.download(proposalPath, "Propuesta_comercial_servicio_integral_SG-SST_PESV.pdf");
   });
+  app.get("/__download-propuesta-temporada", (_req, res) => {
+    const proposalPath = path.join(process.cwd(), "Propuesta_comercial_temporada_SG-SST_PESV.pdf");
+    if (!fs.existsSync(proposalPath)) {
+      return res.status(404).send("La propuesta estacional PDF no está disponible.");
+    }
+    res.setHeader("Cache-Control", "no-store");
+    return res.download(proposalPath, "Propuesta_comercial_temporada_SG-SST_PESV.pdf");
+  });
 }
 
 // CRITICAL: Register Stripe webhook route BEFORE express.json()
