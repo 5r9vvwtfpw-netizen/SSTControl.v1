@@ -1217,3 +1217,31 @@ mtime_ms = 1792616842310
 storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/5711e726-4a5a-48ba-9c70-fa03e4fdfc47/a43935a6-2167-4f80-920b-3aa5fa6438e8"
 storage_version_token = "1792616924394879"
 content_type = "image/png"
+
+[[outputs]]
+id = "8QyJsniq6UVu-nrB3Qy5c"
+uri = "file://generated-artifacts/propuesta-gestion-sgsst-pesv/propuesta-comercial-gestion-sgsst-pesv.docx"
+type = "word_document"
+title = "Propuesta comercial editable"
+description = "Borrador editable del servicio de gestión operativa SG-SST y PESV, con alcance, condiciones de radicación, límites y tarifa propuesta."
+logical_id = "49e2ae6a-6651-4dd6-b5cd-abde137f439d"
+content_hash = "sha256:bcc4c957e4a8fe39d2564d59ecdb3faeec6f25cf702a2ff61392f2852adb3bb7"
+size = 4362
+mtime_ms = 1792675220909
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/49e2ae6a-6651-4dd6-b5cd-abde137f439d/b6d12287-70cc-4e05-b0e5-ca3a2064b8a1"
+storage_version_token = "1792675228402277"
+content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+
+[[outputs]]
+id = "39dXb5a0rY5jtlgn4HEG-"
+uri = "file://generated-artifacts/propuesta-gestion-sgsst-pesv/propuesta-comercial-gestion-sgsst-pesv.pdf"
+type = "pdf"
+title = "Propuesta comercial en PDF"
+description = "Copia en PDF para lectura y revisión detallada."
+logical_id = "1dd9677d-f662-4f73-ab1b-ac74b12c22ed"
+content_hash = "sha256:a8e092dff29ac793cf36fa63be5a54314e56efa64f61592a85a48b34ada6a559"
+size = 8296
+mtime_ms = 1792675201821
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/1dd9677d-f662-4f73-ab1b-ac74b12c22ed/5865b016-ccb9-4dca-8bf7-d4fa5d5b9af0"
+storage_version_token = "1792675229101200"
+content_type = "application/pdf"
