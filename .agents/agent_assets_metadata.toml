@@ -1264,14 +1264,14 @@ content_type = "application/pdf"
 id = "VvGp1MbSCllDkVNPnoK7n"
 uri = "file://Propuesta_comercial_servicio_integral_SG-SST_PESV.pdf"
 type = "pdf"
-title = "Propuesta comercial SG-SST y PESV — descargar PDF"
-description = "Archivo PDF de la oferta, con la suscripción y el servicio integral de gestión claramente separados."
+title = "PDF original — Propuesta comercial SG-SST y PESV"
+description = "Documento PDF de una página. No es la página HTML de descarga."
 logical_id = "812a1952-69e5-4fc8-8914-4171e45af81a"
 content_hash = "sha256:17bc09cb415df34661aee801e3a8c1a0544c347313e13c826fd290248dc122c9"
 size = 5206
 mtime_ms = 1792678237700
-storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/812a1952-69e5-4fc8-8914-4171e45af81a/8545212c-16fb-45dc-add2-f54598a3531b"
-storage_version_token = "1792678331568537"
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/812a1952-69e5-4fc8-8914-4171e45af81a/93c3dc51-d0dd-41e7-a0db-ed90ade8ae80"
+storage_version_token = "1792678759384666"
 content_type = "application/pdf"
 
 [[outputs]]
