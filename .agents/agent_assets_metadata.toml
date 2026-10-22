@@ -1273,3 +1273,17 @@ mtime_ms = 1792678237700
 storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/812a1952-69e5-4fc8-8914-4171e45af81a/8545212c-16fb-45dc-add2-f54598a3531b"
 storage_version_token = "1792678331568537"
 content_type = "application/pdf"
+
+[[outputs]]
+id = "BAT9nRZa_tzr7SI8n5v4V"
+uri = "file://Descargar_propuesta_comercial_PDF.html"
+type = "html"
+title = "Abrir descarga directa del PDF"
+description = "Página con un botón que genera la descarga del PDF real; verifiqué que contiene exactamente el PDF de la propuesta."
+logical_id = "30be60aa-52bb-4e90-b4c0-1d01d0014e2f"
+content_hash = "sha256:5dc171dcd8e8fd9a197ead52195f990752ca5367fc4830b14a28d7aeab9eeadc"
+size = 8684
+mtime_ms = 1792678463324
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/30be60aa-52bb-4e90-b4c0-1d01d0014e2f/5a1c5556-619d-424a-aa0c-1da27276fd33"
+storage_version_token = "1792678476795791"
+content_type = "text/html"
