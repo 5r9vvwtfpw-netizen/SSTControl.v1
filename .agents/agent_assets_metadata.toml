@@ -1287,3 +1287,17 @@ mtime_ms = 1792678463324
 storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/30be60aa-52bb-4e90-b4c0-1d01d0014e2f/5a1c5556-619d-424a-aa0c-1da27276fd33"
 storage_version_token = "1792678476795791"
 content_type = "text/html"
+
+[[outputs]]
+id = "T3H2i8kVuVrGoAx7GPUiA"
+uri = "file://Abrir_PDF_propuesta_comercial.html"
+type = "html"
+title = "Enlace directo al PDF — abrir propuesta"
+description = "Versión sin botones programados: el enlace abre el PDF real y permite descargarlo desde el visor."
+logical_id = "0a6096d9-fd67-4c68-a79a-8748f0600bc1"
+content_hash = "sha256:c60613b8a8412e3180f0417a89885c7a2992b11f6e1eaa9513ebcdfcf3906778"
+size = 7964
+mtime_ms = 1792678681081
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/0a6096d9-fd67-4c68-a79a-8748f0600bc1/4a955c40-ac1d-4eab-adad-56e624595275"
+storage_version_token = "1792678686125795"
+content_type = "text/html"
