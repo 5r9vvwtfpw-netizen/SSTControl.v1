@@ -55,6 +55,7 @@ import { registerNgoWebhookRoutes } from "./routes/ngo-webhook";
 import { registerCompanySedesRoutes } from "./routes/company-sedes";
 import { registerMissingSstReportsRoutes } from "./routes/missing-sst-reports";
 import { registerPropuestaComercialRoutes } from "./routes/propuesta-comercial";
+import { registerVersatilePropuestaRoutes } from "./routes/propuesta-comercial-versatil";
 import { registerInformeEjecutivoRoutes } from "./routes/informe-ejecutivo";
 import { registerPresentacionSgsstRoutes } from "./routes/presentacion-sgsst";
 import { registerCotizacionTransicionRoutes } from "./routes/cotizacion-transicion";
@@ -53712,6 +53713,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   registerNgoWebhookRoutes(app);
   registerCompanySedesRoutes(app);
   registerPropuestaComercialRoutes(app);
+  registerVersatilePropuestaRoutes(app);
   registerInformeEjecutivoRoutes(app);
   registerPresentacionSgsstRoutes(app);
   registerCotizacionTransicionRoutes(app);

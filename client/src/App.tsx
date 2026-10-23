@@ -210,7 +210,7 @@ import TicketsSoporte from "@/pages/TicketsSoporte";
 import AdminTicketsSoporte from "@/pages/AdminTicketsSoporte";
 import AdminUsuariosSoporte from "@/pages/AdminUsuariosSoporte";
 import AdminPromociones from "@/pages/AdminPromociones";
-import PropuestaComercial from "@/pages/PropuestaComercial";
+import PropuestaComercial from "@/pages/PropuestaComercialVersatil";
 import CotizacionTransicion from "@/pages/CotizacionTransicion";
 import InformeEjecutivo from "@/pages/InformeEjecutivo";
 import PresentacionSgsst from "@/pages/PresentacionSgsst";
