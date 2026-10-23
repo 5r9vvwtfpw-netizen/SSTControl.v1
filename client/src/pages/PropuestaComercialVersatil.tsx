@@ -35,10 +35,10 @@ function localDate() {
 
 function makeDefaults(): ProposalForm {
   return {
-    empresa: "",
-    nit: "",
-    destinatario: "",
-    ciudad: "",
+    empresa: "TRANSPORTE LIMICIO LTDA",
+    nit: "8301015242",
+    destinatario: "HECTOR JAIME ACOSTA CARDENAS",
+    ciudad: "BOGOTA",
     fechaEmision: localDate(),
     vigenciaDias: 15,
     titulo: "Gestión operativa y administrativa SG-SST y PESV",

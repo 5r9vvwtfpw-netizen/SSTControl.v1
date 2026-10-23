@@ -40,24 +40,29 @@ export const propuestaComercialSchema = z.object({
 export type PropuestaComercialInput = z.infer<typeof propuestaComercialSchema>;
 
 export const DEFAULT_PROPOSAL_SCOPE = [
-  "Administración operativa de los módulos SG-SST y PESV incluidos en la suscripción vigente de la empresa.",
-  "Actualización y organización de registros con base en la información y los soportes suministrados y validados por el cliente.",
-  "Seguimiento a trabajadores, estándares, plan anual de trabajo, capacitaciones, inspecciones, EPP, incidentes, comités, auditorías, acciones pendientes y registros PESV, según los módulos contratados.",
-  "Organización de cuentas individuales y accesos por rol para el equipo del cliente, dentro del cupo de usuarios de su plan.",
-  "Preparación y revisión de los informes disponibles para la empresa. La radicación en plataformas oficiales se realiza con autorización previa del cliente y se entrega el soporte disponible.",
+  "Alcance del Servicio Integral (SG-SST y PESV)",
+  "Administración de plataforma: Operación continua de los módulos SG-SST y PESV incluidos en la suscripción tecnológica vigente de la empresa.",
+  "Gestión documental: Actualización y organización de registros en el sistema, trabajando exclusivamente con la información y los soportes suministrados y validados por el cliente.",
+  "Seguimiento operativo: Monitoreo y control de la información de trabajadores, evaluación de estándares, plan anual de trabajo, capacitaciones, inspecciones, incidentes, comités, auditorías y acciones de mejora pendientes.",
+  "Gestión de accesos: Configuración, organización y administración de cuentas individuales y permisos por rol para el equipo designado por el cliente.",
+  "Radicaciones oficiales: Preparación y radicación oportuna de los informes reglamentarios ante las plataformas institucionales (ARL, Ministerio de Trabajo, SISI/PESV). Este proceso garantiza el cumplimiento en las fechas específicas y se ejecuta única y exclusivamente con la revisión y autorización previa del cliente.",
 ].join("\n");
 
 export const DEFAULT_PROPOSAL_OBJECT =
-  "Prestar un servicio complementario de gestión operativa de la plataforma SST-Colombia para apoyar al cliente en la administración y seguimiento de sus registros SG-SST y PESV, de acuerdo con la suscripción vigente y con la información que el cliente suministre y valide.";
+  "Ejecutar la gestión operativa y documental dentro de la plataforma SST-Colombia como servicio complementario a la suscripción tecnológica vigente. El objetivo es administrar y realizar el seguimiento continuo de los registros correspondientes al SG-SST y el PESV, operando de manera exclusiva con la información, evidencias y parámetros que el cliente suministre y valide previamente.";
 
 export const DEFAULT_PROPOSAL_DELIVERABLES = [
-  "Registros del software actualizados con la información validada por el cliente.",
-  "Seguimiento de actividades y pendientes de los módulos contratados.",
-  "Relación de informes preparados y, cuando exista autorización, constancia de radicación disponible.",
+  "Credenciales:",
+  "1.Gerencia: para las auditorias.",
+  "2.Mecánicos: para el mantenimiento de vehículos y maquinaria.",
+  "3. Inspecciones: para los vigias/brigadistas",
+  "4. Actas: del SST y PESV.",
+  "5. EPP: para entrega de dotaciones",
 ].join("\n");
 
 export const DEFAULT_PROPOSAL_TERMS = [
-  "Este servicio es adicional e independiente de la suscripción del software. La suscripción conserva su plan y valor vigente y se factura por separado.",
-  "El cliente suministra y valida oportunamente la información, los soportes y las autorizaciones necesarios.",
-  "La presentación de informes depende de la información disponible, de la aprobación del cliente y del acceso a las plataformas oficiales correspondientes.",
+  "Condiciones del Servicio",
+  "Independencia: Este servicio operativo es adicional e independiente; la suscripción del software conserva su plan y valor tarifario vigente.",
+  "Responsabilidad de la información: La ejecución efectiva del servicio requiere que el cliente suministre y valide de manera oportuna todos los datos, soportes y autorizaciones.",
+  "Radicación de informes: La presentación ante entidades oficiales está estrictamente sujeta a la información suministrada, la disponibilidad de acceso a las plataformas institucionales y la aprobación expresa de la alta gerencia del cliente.",
 ].join("\n");
