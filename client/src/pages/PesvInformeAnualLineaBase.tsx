@@ -1,13 +1,28 @@
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Download, FileText, TriangleAlert } from "lucide-react";
 import { Link } from "wouter";
-import type { FactorDesempenoSV } from "@shared/schema";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCompanyContext } from "@/hooks/use-company-context";
 import { openCompanyDocument } from "@/lib/company-context-url";
+
+type BaselineEvidenceState = {
+  companyName: string;
+  companyNit: string | null;
+  isTestCompany: boolean;
+  factors: Array<{
+    id: string;
+    codigo: string;
+    nombre: string;
+    categoria: string;
+    unidadMedida: string | null;
+    valorBase: string | null;
+    valorActual: string | null;
+    activo: number;
+  }>;
+};
 
 function formatValue(value: string | null, unit: string | null): string {
   if (value === null || value.trim() === "") return "Sin valor";
@@ -16,17 +31,16 @@ function formatValue(value: string | null, unit: string | null): string {
 
 export default function PesvInformeAnualLineaBase() {
   const { selectedCompany } = useCompanyContext();
-  const { data: factors = [], isLoading, isError, refetch } = useQuery<FactorDesempenoSV[]>({
-    queryKey: ["/api/factores-desempeno-sv", selectedCompany?.id],
-    enabled: Boolean(selectedCompany?.id),
+  const { data, isLoading, isError, refetch } = useQuery<BaselineEvidenceState>({
+    queryKey: ["/api/pesv/informes-anuales/linea-base/evidencias", selectedCompany?.id],
   });
 
+  const factors = data?.factors ?? [];
   const activeFactors = factors.filter((factor) => factor.activo !== 0);
   const withBaseValue = activeFactors.filter(
     (factor) => factor.valorBase !== null && factor.valorBase.trim() !== "",
   );
   const zeroBaseValues = withBaseValue.filter((factor) => Number(factor.valorBase) === 0);
-  const isDemoCompany = selectedCompany?.name.trim().toLocaleUpperCase("es-CO") === "DEMO-PRUEBA";
 
   return (
     <main className="mx-auto max-w-5xl space-y-6 p-4 md:p-6" data-testid="annual-pesv-baseline-report">
@@ -44,7 +58,7 @@ export default function PesvInformeAnualLineaBase() {
           Pregunta: ¿La empresa ha definido la línea base o primera medición del estado actual de la seguridad vial?
         </p>
         <p className="text-sm font-medium">Evidencia solicitada: Copia en PDF</p>
-        {isDemoCompany && <Badge variant="outline">Prueba funcional · DEMO-PRUEBA</Badge>}
+        {data?.isTestCompany && <Badge variant="outline">Prueba funcional · DEMO-PRUEBA</Badge>}
       </header>
 
       {isLoading ? (
@@ -63,8 +77,9 @@ export default function PesvInformeAnualLineaBase() {
             <CardHeader>
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <CardTitle>{selectedCompany?.name || "Empresa"}</CardTitle>
+                  <CardTitle>{data?.companyName || selectedCompany?.name || "Empresa"}</CardTitle>
                   <CardDescription>Fuente consultada: Factores de Desempeño de Seguridad Vial</CardDescription>
+                  {data?.companyNit && <CardDescription>NIT {data.companyNit}</CardDescription>}
                 </div>
                 <Badge variant="secondary">Requiere verificación</Badge>
               </div>

@@ -1329,3 +1329,31 @@ mtime_ms = 1792732553807
 storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/7ef57abe-9d79-457c-9f40-246a0d64d7f0/1d722649-0adc-44d2-a4e9-bed9b92526da"
 storage_version_token = "1792732585818534"
 content_type = "image/png"
+
+[[outputs]]
+id = "vNwb2VYhH_vvoXDF7CCyf"
+uri = "file://generated-artifacts/pesv-linea-base-demo-prueba/informe-prueba-funcional.html"
+type = "html"
+title = "Prueba funcional — informe anual n.º 7"
+description = "Evidencia de la prueba en DEMO-PRUEBA (desarrollo), con captura de pantalla y resultado. No declara cumplimiento ni altera factores de negocio."
+logical_id = "2e7661e3-b2ae-4401-a8d8-6367bcf87567"
+content_hash = "sha256:8ed8954612b75a876c338cc1d9c1c9afdfd548b34c5e88e4df061c1fea27f42a"
+size = 251229
+mtime_ms = 1792773398726
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/2e7661e3-b2ae-4401-a8d8-6367bcf87567/79351b24-305a-42f7-80d8-4b17d4369545"
+storage_version_token = "1792773474606237"
+content_type = "text/html"
+
+[[outputs]]
+id = "tuvuIPsQC3zlueZcwnJ0J"
+uri = "file://generated-artifacts/pesv-linea-base-demo-prueba/informe-anual-07-linea-base.png"
+type = "image"
+title = "Captura del informe anual n.º 7 en DEMO-PRUEBA"
+description = "Vista de prueba con 19 factores registrados y estado Requiere verificación."
+logical_id = "826fa76e-eaf2-4a24-8061-b7b958bcc971"
+content_hash = "sha256:5ce982728039a0c10590e9a08e074dd9c4620de1a0ea1ce0a905e25af571e86c"
+size = 187094
+mtime_ms = 1792773398718
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/826fa76e-eaf2-4a24-8061-b7b958bcc971/38e638d7-df9b-4907-85b7-a62452166ada"
+storage_version_token = "1792773475576119"
+content_type = "image/png"

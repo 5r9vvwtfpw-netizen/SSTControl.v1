@@ -4,6 +4,7 @@ import * as schema from "@shared/schema";
 import { db } from "../db";
 import { requireAuth as authRequireAuth, requirePermission } from "../auth";
 import { getAuthorizedReportCompanyId } from "../lib/report-company-context";
+import { isInternalTestCompany } from "../lib/internal-test-company";
 import {
   buildSiniestrosExcelBuffer,
   buildSiniestrosPdfBuffer,
@@ -243,6 +244,42 @@ export function registerPesvInformeRoutes(app: Express) {
         .from(schema.companies).where(eq(schema.companies.id, companyId)).limit(1);
       if (!company) return res.status(404).json({ message: "No se encontró la empresa seleccionada." });
       res.json({ companyName: company.name, companyNit: company.nit });
+    },
+  );
+
+  app.get(
+    "/api/pesv/informes-anuales/linea-base/evidencias",
+    authRequireAuth,
+    reportViewPermission,
+    async (req, res) => {
+      const companyId = getAuthorizedReportCompanyId(req);
+      if (!companyId) return res.status(403).json({ message: "Selecciona una empresa autorizada." });
+      const [company] = await db.select({
+        name: schema.companies.name,
+        nit: schema.companies.nit,
+      }).from(schema.companies).where(eq(schema.companies.id, companyId)).limit(1);
+      if (!company) return res.status(404).json({ message: "No se encontró la empresa seleccionada." });
+
+      const factors = await db.select({
+        id: schema.factoresDesempenoSV.id,
+        codigo: schema.factoresDesempenoSV.codigo,
+        nombre: schema.factoresDesempenoSV.nombre,
+        categoria: schema.factoresDesempenoSV.categoria,
+        unidadMedida: schema.factoresDesempenoSV.unidadMedida,
+        valorBase: schema.factoresDesempenoSV.valorBase,
+        valorActual: schema.factoresDesempenoSV.valorActual,
+        activo: schema.factoresDesempenoSV.activo,
+      }).from(schema.factoresDesempenoSV).where(and(
+        eq(schema.factoresDesempenoSV.companyId, companyId),
+        eq(schema.factoresDesempenoSV.activo, 1),
+      )).orderBy(schema.factoresDesempenoSV.codigo);
+
+      res.json({
+        companyName: company.name,
+        companyNit: company.nit,
+        isTestCompany: isInternalTestCompany(companyId),
+        factors,
+      });
     },
   );
 
