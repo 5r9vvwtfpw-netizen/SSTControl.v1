@@ -89,13 +89,16 @@ export async function generateVersatilePropuestaPdf(input: PropuestaComercialInp
       return;
     }
     for (const entry of entries) {
+      const renderedEntry = bullet && !entry.startsWith("* ")
+        ? `•  ${entry}`
+        : entry;
       doc.font("Helvetica").fontSize(9.5);
       const width = bullet ? 470 : 491;
-      const height = doc.heightOfString(entry, { width, lineGap: 2 }) + 7;
+      const height = doc.heightOfString(renderedEntry, { width, lineGap: 2 }) + 7;
       ensureSpace(height);
       doc.x = 52;
       doc.font("Helvetica").fontSize(9.5).fillColor(C.text)
-        .text(bullet ? `•  ${entry}` : entry, { width: 491, lineGap: 2 });
+        .text(renderedEntry, { width: 491, lineGap: 2 });
       doc.moveDown(0.35);
     }
   };

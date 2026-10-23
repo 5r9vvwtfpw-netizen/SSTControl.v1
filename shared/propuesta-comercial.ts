@@ -46,7 +46,7 @@ export const DEFAULT_PROPOSAL_SCOPE = [
   "Seguimiento operativo: Monitoreo y control de la información de trabajadores, evaluación de estándares, plan anual de trabajo, capacitaciones, inspecciones, incidentes, comités, auditorías y acciones de mejora pendientes.",
   "Gestión de accesos: Configuración, organización y administración de cuentas individuales y permisos por rol para el equipo designado por el cliente.",
   "Radicaciones oficiales: Preparación y radicación oportuna de los informes reglamentarios ante las plataformas institucionales (ARL, Ministerio de Trabajo, SISI/PESV). Este proceso garantiza el cumplimiento en las fechas específicas y se ejecuta única y exclusivamente con la revisión y autorización previa del cliente.",
-].join("\n");
+].map((paragraph) => `* ${paragraph}`).join("\n\n");
 
 export const DEFAULT_PROPOSAL_OBJECT =
   "Ejecutar la gestión operativa y documental dentro de la plataforma SST-Colombia como servicio complementario a la suscripción tecnológica vigente. El objetivo es administrar y realizar el seguimiento continuo de los registros correspondientes al SG-SST y el PESV, operando de manera exclusiva con la información, evidencias y parámetros que el cliente suministre y valide previamente.";
