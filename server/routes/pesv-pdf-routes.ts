@@ -727,6 +727,30 @@ export function registerPesvPdfRoutes(app: Express) {
         documentCode: 'PESV-SPF', logoBuffer
       });
 
+      const hasTestScenario = factores.some(f => f.observaciones?.includes('ESCENARIO DE PRUEBA PESV'));
+      if (hasTestScenario) {
+        const addScenarioPageLabel = () => {
+          doc.save();
+          doc.fillColor('#a12622').font('Helvetica-Bold').fontSize(7)
+            .text('PRUEBA FUNCIONAL — ESCENARIO, NO MEDICIÓN REAL NI EVIDENCIA DE CUMPLIMIENTO', 35, 14, {
+              width: doc.page.width - 70,
+              align: 'center',
+            });
+          doc.restore();
+        };
+        addScenarioPageLabel();
+        doc.on('pageAdded', addScenarioPageLabel);
+        doc.save();
+        doc.rect(35, y, doc.page.width - 70, 34).fill('#fff1cf');
+        doc.restore();
+        doc.fillColor('#7a3e00').font('Helvetica-Bold').fontSize(10)
+          .text('PRUEBA FUNCIONAL — VALORES DE ESCENARIO; NO SON MEDICIONES REALES NI EVIDENCIA DE CUMPLIMIENTO', 42, y + 9, {
+            width: doc.page.width - 84,
+            align: 'center',
+          });
+        y += 46;
+      }
+
       const rows = factores.map(f => [
         f.codigo, f.nombre, f.categoria || 'N/A',
         f.valorBase || 'N/A', f.metaAnual || 'N/A', f.valorActual || 'N/A'

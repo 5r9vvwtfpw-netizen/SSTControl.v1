@@ -20,9 +20,12 @@ type BaselineEvidenceState = {
     unidadMedida: string | null;
     valorBase: string | null;
     valorActual: string | null;
+    observaciones: string | null;
     activo: number;
   }>;
 };
+
+const TEST_SCENARIO_MARKER = "ESCENARIO DE PRUEBA PESV";
 
 function formatValue(value: string | null, unit: string | null): string {
   if (value === null || value.trim() === "") return "Sin valor";
@@ -41,6 +44,7 @@ export default function PesvInformeAnualLineaBase() {
     (factor) => factor.valorBase !== null && factor.valorBase.trim() !== "",
   );
   const zeroBaseValues = withBaseValue.filter((factor) => Number(factor.valorBase) === 0);
+  const hasTestScenarioValues = activeFactors.some((factor) => factor.observaciones?.includes(TEST_SCENARIO_MARKER));
 
   return (
     <main className="mx-auto max-w-5xl space-y-6 p-4 md:p-6" data-testid="annual-pesv-baseline-report">
@@ -85,6 +89,16 @@ export default function PesvInformeAnualLineaBase() {
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
+              {hasTestScenarioValues && (
+                <Alert>
+                  <TriangleAlert className="h-4 w-4" />
+                  <AlertTitle>Valores de escenario de prueba</AlertTitle>
+                  <AlertDescription>
+                    Los valores marcados como escenario se usan para probar la pantalla y el PDF. No son mediciones reales,
+                    no permiten determinar el cumplimiento de la empresa y no deben entregarse como evidencia.
+                  </AlertDescription>
+                </Alert>
+              )}
               <Alert>
                 <TriangleAlert className="h-4 w-4" />
                 <AlertTitle>La información disponible no permite confirmar por sí sola una línea base</AlertTitle>

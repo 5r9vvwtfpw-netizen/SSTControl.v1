@@ -268,6 +268,7 @@ export function registerPesvInformeRoutes(app: Express) {
         unidadMedida: schema.factoresDesempenoSV.unidadMedida,
         valorBase: schema.factoresDesempenoSV.valorBase,
         valorActual: schema.factoresDesempenoSV.valorActual,
+        observaciones: schema.factoresDesempenoSV.observaciones,
         activo: schema.factoresDesempenoSV.activo,
       }).from(schema.factoresDesempenoSV).where(and(
         eq(schema.factoresDesempenoSV.companyId, companyId),
