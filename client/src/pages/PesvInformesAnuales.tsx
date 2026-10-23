@@ -35,6 +35,12 @@ const annualCertifications = [
     title: "Actas de seguimiento al PESV por la Alta Dirección",
     description: "Descarga las actas A02 aprobadas y registradas en la aplicación",
   },
+  {
+    number: 7,
+    href: "/pesv/informes-anuales/linea-base",
+    title: "Línea base del estado de la seguridad vial",
+    description: "Consulta los factores de desempeño registrados y su copia en PDF",
+  },
 ];
 
 export default function PesvInformesAnuales() {
