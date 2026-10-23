@@ -34,6 +34,7 @@ export const routePermissions: Record<string, Permission[]> = {
   "/admin-portales": ["billing:global_view"], // Solo superadmin (administración de portales LSO y empleados)
   "/admin-login-activity": ["billing:global_view"], // Solo superadmin (actividad de login)
   "/propuesta-comercial": ["billing:global_view"], // Solo superadmin (generador de propuestas comerciales PDF)
+  "/propuesta-operativa-administrativa": ["billing:global_view"], // Solo superadmin (propuesta de gestión operativa y administrativa)
   "/cotizacion-transicion": ["billing:global_view"], // Solo superadmin (cotización de transición SST/PESV)
   "/informe-ejecutivo": ["billing:global_view"], // Solo superadmin (informe ejecutivo PDF)
   "/presentacion-sgsst": ["billing:global_view"], // Solo superadmin (presentación comercial SG-SST PDF)

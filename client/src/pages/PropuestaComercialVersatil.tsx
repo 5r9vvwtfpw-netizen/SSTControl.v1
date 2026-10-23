@@ -41,7 +41,7 @@ function makeDefaults(): ProposalForm {
     ciudad: "",
     fechaEmision: localDate(),
     vigenciaDias: 15,
-    titulo: "Gestión operativa del SG-SST y PESV",
+    titulo: "Gestión operativa y administrativa SG-SST y PESV",
     objeto: DEFAULT_PROPOSAL_OBJECT,
     alcance: DEFAULT_PROPOSAL_SCOPE,
     entregables: DEFAULT_PROPOSAL_DELIVERABLES,
@@ -161,7 +161,7 @@ export default function PropuestaComercialVersatil() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-bold">
-            <FileText className="h-6 w-6 text-green-700" /> Propuesta Comercial
+            <FileText className="h-6 w-6 text-green-700" /> Propuesta Operativa y Administrativa
           </h1>
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
             Completa la información del cliente y la oferta. Los datos de SST-Colombia permanecen fijos.

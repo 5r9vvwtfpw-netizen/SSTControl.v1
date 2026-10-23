@@ -77,6 +77,7 @@ const phvaMenus: Record<PHVASection, MenuGroup[]> = {
       items: [
         { label: "Panel de Facturación", path: "/dashboard-facturacion" },
         { label: "Propuesta Comercial", path: "/propuesta-comercial" },
+        { label: "Propuesta Operativa y Administrativa", path: "/propuesta-operativa-administrativa" },
         { label: "Cotización Transición SST/PESV", path: "/cotizacion-transicion" },
         { label: "Informe Ejecutivo", path: "/informe-ejecutivo" },
         { label: "Presentación SG-SST", path: "/presentacion-sgsst" },

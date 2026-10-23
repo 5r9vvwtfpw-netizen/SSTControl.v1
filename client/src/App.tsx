@@ -210,7 +210,8 @@ import TicketsSoporte from "@/pages/TicketsSoporte";
 import AdminTicketsSoporte from "@/pages/AdminTicketsSoporte";
 import AdminUsuariosSoporte from "@/pages/AdminUsuariosSoporte";
 import AdminPromociones from "@/pages/AdminPromociones";
-import PropuestaComercial from "@/pages/PropuestaComercialVersatil";
+import PropuestaComercial from "@/pages/PropuestaComercial";
+import PropuestaOperativaAdministrativa from "@/pages/PropuestaComercialVersatil";
 import CotizacionTransicion from "@/pages/CotizacionTransicion";
 import InformeEjecutivo from "@/pages/InformeEjecutivo";
 import PresentacionSgsst from "@/pages/PresentacionSgsst";
@@ -409,6 +410,7 @@ function Router() {
       <ProtectedRoute path="/admin-usuarios-soporte" component={AdminUsuariosSoporte} />
       <ProtectedRoute path="/admin-promociones" component={AdminPromociones} />
       <ProtectedRoute path="/propuesta-comercial" component={PropuestaComercial} />
+      <ProtectedRoute path="/propuesta-operativa-administrativa" component={PropuestaOperativaAdministrativa} />
       <ProtectedRoute path="/cotizacion-transicion" component={CotizacionTransicion} />
       <ProtectedRoute path="/informe-ejecutivo" component={InformeEjecutivo} />
       <ProtectedRoute path="/presentacion-sgsst" component={PresentacionSgsst} />
