@@ -61,7 +61,7 @@ const formatMoney = (amount: number) =>
   `$${Math.round(amount).toLocaleString("es-CO", { maximumFractionDigits: 0 })}`;
 
 function sanitizeText(value: string, max: number) {
-  return value.replace(/[\u0000-\u001f\u007f-\u009f]/g, "").slice(0, max);
+  return value.replace(/[\u0000-\u0009\u000b-\u001f\u007f-\u009f]/g, "").slice(0, max);
 }
 
 export default function PropuestaComercialVersatil() {

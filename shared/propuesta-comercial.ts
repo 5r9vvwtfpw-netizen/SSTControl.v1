@@ -4,7 +4,7 @@ const textField = (label: string, max: number, required = false) =>
   z.string()
     .trim()
     .max(max, `${label}: máximo ${max} caracteres.`)
-    .refine((value) => !/[\u0000-\u001f\u007f-\u009f]/.test(value), `${label}: contiene caracteres no válidos.`)
+    .refine((value) => !/[\u0000-\u0009\u000b-\u001f\u007f-\u009f]/.test(value), `${label}: contiene caracteres no válidos.`)
     .refine((value) => !required || value.length > 0, `${label} es obligatorio.`);
 
 export const propuestaComercialSchema = z.object({

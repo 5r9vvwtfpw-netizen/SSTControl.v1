@@ -1301,3 +1301,31 @@ mtime_ms = 1792678681081
 storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/0a6096d9-fd67-4c68-a79a-8748f0600bc1/4a955c40-ac1d-4eab-adad-56e624595275"
 storage_version_token = "1792678686125795"
 content_type = "text/html"
+
+[[outputs]]
+id = "TmXxWmh1toBaUGSLMlBqb"
+uri = "file://generated-artifacts/propuesta-comercial-demo-prueba/PRUEBA_FUNCIONAL_Propuesta_Comercial_DEMO-PRUEBA.pdf"
+type = "pdf"
+title = "Evidencia funcional — propuesta DEMO-PRUEBA"
+description = "PDF de dos páginas marcado como prueba funcional, no oferta vigente. Incluye alcance, condiciones e IVA calculado."
+logical_id = "8eaa15e2-4342-4536-92a9-323f5e83cf49"
+content_hash = "sha256:5d4ee2ffe2e2fdb08285aaec66167f414c29a5ccd990a9f186062644ed4a7c48"
+size = 5481
+mtime_ms = 1792732519815
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/8eaa15e2-4342-4536-92a9-323f5e83cf49/264121aa-642a-4c1e-9cef-a1b605a0f50b"
+storage_version_token = "1792732584902191"
+content_type = "application/pdf"
+
+[[outputs]]
+id = "wR-SKR9zsOI7bMSSmCd5S"
+uri = "file://generated-artifacts/propuesta-comercial-demo-prueba/vista-previa-1.png"
+type = "image"
+title = "Vista previa de la propuesta de prueba"
+description = "Primera página del PDF generado para DEMO-PRUEBA."
+logical_id = "7ef57abe-9d79-457c-9f40-246a0d64d7f0"
+content_hash = "sha256:e81c7f26d4c1266a8d93f36fe8bee441321ca99e0376e6640dd1f6e42dbb57bc"
+size = 195126
+mtime_ms = 1792732553807
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/7ef57abe-9d79-457c-9f40-246a0d64d7f0/1d722649-0adc-44d2-a4e9-bed9b92526da"
+storage_version_token = "1792732585818534"
+content_type = "image/png"
