@@ -10,10 +10,12 @@ import type {
 } from "@shared/schema";
 import {
   addParagraph,
+  addSignatureFooter,
   addSectionBar,
   addSimpleTable,
   addStandardHeader,
   checkPageBreak,
+  type PdfSigners,
 } from "../services/pdf-standardizer";
 import { setupTrialWatermarkOnAllPages } from "../services/pdf-watermark";
 
@@ -25,6 +27,7 @@ type DiagnosisPdfData = {
   vehicles: Vehicle[];
   drivers: Driver[];
   routes: SafeRoute[];
+  signers: PdfSigners;
   isTestCompany: boolean;
   watermark?: boolean;
 };
@@ -241,9 +244,11 @@ export async function buildPesvOrganizationalDiagnosisPdfBuffer(data: DiagnosisP
   );
   y = addParagraph(
     doc,
-    "Documento generado a partir de los registros actuales del sistema. Debe ser revisado y validado por la empresa antes de radicarlo en SISI/PESV. No incluye firmas ni constituye aprobación.",
+    "Los firmantes y las firmas gráficas se toman de la configuración de la empresa y de la asignación vigente del LSO. El documento debe revisarse antes de radicarlo en SISI/PESV.",
     { y, bold: true },
   );
+
+  await addSignatureFooter(doc, data.signers, true);
 
   doc.end();
   return finished;

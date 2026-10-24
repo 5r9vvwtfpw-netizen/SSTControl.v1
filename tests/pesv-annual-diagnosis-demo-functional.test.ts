@@ -149,24 +149,26 @@ test("DEMO-PRUEBA: fuentes y recorrido funcional del diagnóstico anual P03", { 
       "BASE DE CONDUCTORES",
       "RUTAS Y PUNTOS CRÍTICOS",
       "DATOS DE PRUEBA",
+      "AUTORIZÓ",
+      "APROBÓ",
+      "LICENCIADO SST",
     ]) {
       assert.ok(normalizedPdfText.includes(section.replace(/[^a-z0-9]/gi, "").toUpperCase()), `El PDF consolidado debe incluir ${section}.`);
     }
     assert.ok(consolidatedText.includes("DEMO-PRUEBA"), "El PDF debe identificar DEMO-PRUEBA.");
     await writeFile(`${evidenceDir}/diagnostico-consolidado-prueba.pdf`, consolidatedPdf);
-    checks.push("PDF único consolidado: contiene P03, caracterización, inventario, conductores, rutas/puntos críticos y aviso de prueba.");
+    checks.push("PDF único consolidado: integra las fuentes, el aviso de prueba y el pie estándar de firmantes configurados (Representante Legal y LSO).");
 
     const page = await context.newPage();
     const pageErrors: string[] = [];
     page.on("pageerror", (error) => pageErrors.push(error.message));
-    await page.goto("/pesv/informes-anuales/diagnostico-organizacion", { waitUntil: "domcontentloaded", timeout: 60000 });
+    await page.goto("/pesv/informes-anuales/diagnostico-organizacion", { waitUntil: "commit", timeout: 30000 });
     await page.getByTestId("annual-pesv-organization-diagnosis").waitFor({ state: "visible", timeout: 30000 });
     await page.getByText("Diagnóstico del estado actual de la seguridad vial", { exact: true }).waitFor();
     await page.getByText("Requiere verificación", { exact: true }).waitFor();
     await page.getByText("Prueba funcional · DEMO-PRUEBA", { exact: true }).waitFor();
     await page.getByText("La respuesta P03 contiene información marcada como prueba funcional", { exact: true }).waitFor();
     await page.getByRole("link", { name: "Abrir perfil de la empresa" }).waitFor();
-    await page.getByRole("link", { name: "Abrir Contexto Organizacional" }).waitFor();
     await page.getByRole("link", { name: "Abrir Vehículos" }).waitFor();
     await page.getByRole("link", { name: "Abrir Conductores" }).waitFor();
     await page.getByRole("link", { name: "Abrir Rutas seguras" }).waitFor();

@@ -26,6 +26,7 @@ import {
   type AnnualCertificationCode,
 } from "../reports/pesv-annual-certification-report";
 import { buildPesvOrganizationalDiagnosisPdfBuffer } from "../reports/pesv-organizational-diagnosis-report";
+import { getSignersForCompany } from "../services/pdf-standardizer";
 
 const ANNUAL_PESV_CERTIFICATIONS: Record<AnnualCertificationCode, {
   title: string;
@@ -425,6 +426,7 @@ export function registerPesvInformeRoutes(app: Express) {
           )).orderBy(asc(schema.safeRoutes.routeName)),
         ]);
 
+        const signers = await getSignersForCompany(companyId, true);
         const subscription = await storage.getSubscriptionByCompany(companyId);
         const trial = getTrialStatus(subscription?.status || "trial", subscription?.trialEnd || null, true, true);
         const buffer = await buildPesvOrganizationalDiagnosisPdfBuffer({
@@ -435,6 +437,7 @@ export function registerPesvInformeRoutes(app: Express) {
           vehicles,
           drivers,
           routes,
+          signers,
           isTestCompany: isInternalTestCompany(companyId),
           watermark: trial.requiresWatermark,
         });
