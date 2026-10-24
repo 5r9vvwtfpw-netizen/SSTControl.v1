@@ -15,6 +15,7 @@ import { storage } from '../storage';
 import { withPdfSemaphore } from '../services/pdf-semaphore';
 import { getAuthorizedReportCompanyId } from '../lib/report-company-context';
 import { MAQUINARIA_CHECKLIST } from '@shared/pesv-maquinaria-checklist';
+import { SPF_PESV_TRACEABILITY } from '@shared/iso39001-mapping';
 
 function getEffectiveCompanyId(req: Request): string | null {
   const user = (req as any).user;
@@ -750,6 +751,12 @@ export function registerPesvPdfRoutes(app: Express) {
           });
         y += 46;
       }
+
+      y = addParagraph(
+        doc,
+        `Trazabilidad normativa de los factores SPF: ${SPF_PESV_TRACEABILITY.resolution}, Paso ${SPF_PESV_TRACEABILITY.pesvStep} — ${SPF_PESV_TRACEABILITY.pesvStepTitle}; ISO 39001:2012, cláusula ${SPF_PESV_TRACEABILITY.isoClause} — ${SPF_PESV_TRACEABILITY.isoTitle}.`,
+        { y, fontSize: 8 },
+      );
 
       const rows = factores.map(f => [
         f.codigo, f.nombre, f.categoria || 'N/A',

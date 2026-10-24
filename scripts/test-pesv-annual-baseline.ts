@@ -174,11 +174,13 @@ try {
   const extractedPdfText = spawnSync("pdftotext", ["-", "-"], { input: pdfBuffer, encoding: "utf8" });
   if (extractedPdfText.status !== 0
     || !extractedPdfText.stdout.includes("PRUEBA FUNCIONAL")
-    || !extractedPdfText.stdout.includes("NO SON MEDICIONES REALES")) {
+    || !extractedPdfText.stdout.includes("NO SON MEDICIONES REALES")
+    || !extractedPdfText.stdout.includes("Paso P04")
+    || !extractedPdfText.stdout.includes("cláusula 6.3")) {
     throw new Error("El PDF no incluye el aviso que impide confundir el escenario con evidencia real.");
   }
   await writeFile(`${evidenceDir}/factores-desempeno-escenario-prueba.pdf`, pdfBuffer);
-  checks.push("El PDF se generó y contiene la marca visible de escenario de prueba.");
+  checks.push("El PDF contiene la marca de escenario de prueba y la trazabilidad PESV P04 / ISO 39001:2012, cláusula 6.3.");
 
   const html = `<!doctype html><html lang="es"><meta charset="utf-8"><title>Prueba funcional informe anual 7</title>
 <style>body{font:16px/1.55 system-ui,sans-serif;color:#183127;background:#f4f8f5;margin:0 auto;padding:32px;max-width:1150px}h1{font-size:1.8rem}.tag{display:inline-block;background:#d8efe1;border-radius:24px;padding:6px 12px}li{margin:8px 0}figure{background:#fff;border:1px solid #dae7de;padding:12px;border-radius:12px}img{display:block;width:100%;height:auto}.note{padding:16px;border-left:4px solid #a36b00;background:#fff6d9}</style>

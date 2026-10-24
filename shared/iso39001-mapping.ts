@@ -72,6 +72,18 @@ export const PASO_TO_ISO39001: Record<string, string[]> = {
 };
 
 /**
+ * Referencia común para los factores SPF del módulo PESV.
+ * P04 se relaciona con la cláusula ISO 39001:2012 6.3 en el mapeo anterior.
+ */
+export const SPF_PESV_TRACEABILITY = {
+  resolution: 'Resolución 40595 de 2022',
+  pesvStep: 'P04',
+  pesvStepTitle: 'Evaluación del riesgo vial',
+  isoClause: '6.3',
+  isoTitle: 'Factores de desempeño de seguridad vial (SPF)',
+} as const;
+
+/**
  * Mapeo inverso: cláusula ISO 39001 → pasos PESV
  */
 export const ISO39001_TO_PASOS: Record<string, string[]> = Object.entries(PASO_TO_ISO39001).reduce(

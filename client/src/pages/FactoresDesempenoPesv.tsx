@@ -20,6 +20,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { BackToPesvEvaluationButton } from "@/components/BackToPesvEvaluationButton";
 import { z } from "zod";
+import { SPF_PESV_TRACEABILITY } from "@shared/iso39001-mapping";
 
 const CATEGORIA_CONFIG = {
   exposicion_riesgo: { label: "Exposición al Riesgo", icon: AlertTriangle, className: "bg-orange-500/10 text-orange-700 dark:text-orange-400" },
@@ -1183,6 +1184,13 @@ export default function FactoresDesempenoPesv() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
+                  <div className="flex flex-wrap items-center gap-1 text-xs" data-testid={`text-trazabilidad-${factor.id}`}>
+                    <Badge variant="outline">PESV {SPF_PESV_TRACEABILITY.pesvStep}</Badge>
+                    <Badge variant="outline">ISO 39001:2012 · {SPF_PESV_TRACEABILITY.isoClause}</Badge>
+                    <span className="text-muted-foreground">
+                      {SPF_PESV_TRACEABILITY.resolution} · {SPF_PESV_TRACEABILITY.pesvStepTitle}
+                    </span>
+                  </div>
                   {factor.descripcion && (
                     <p className="text-sm text-muted-foreground line-clamp-2">{factor.descripcion}</p>
                   )}

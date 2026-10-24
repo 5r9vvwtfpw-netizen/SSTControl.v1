@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCompanyContext } from "@/hooks/use-company-context";
 import { openCompanyDocument } from "@/lib/company-context-url";
+import { SPF_PESV_TRACEABILITY } from "@shared/iso39001-mapping";
 
 type BaselineEvidenceState = {
   companyName: string;
@@ -126,11 +127,12 @@ export default function PesvInformeAnualLineaBase() {
 
               {activeFactors.length > 0 ? (
                 <div className="overflow-x-auto rounded-md border">
-                  <table className="w-full min-w-[620px] text-left text-sm">
+                  <table className="w-full min-w-[820px] text-left text-sm">
                     <thead className="bg-muted/50">
                       <tr>
                         <th className="p-3 font-medium">Código</th>
                         <th className="p-3 font-medium">Factor</th>
+                        <th className="p-3 font-medium">Paso / estándar relacionado</th>
                         <th className="p-3 font-medium">Valor base registrado</th>
                         <th className="p-3 font-medium">Valor actual</th>
                       </tr>
@@ -140,6 +142,13 @@ export default function PesvInformeAnualLineaBase() {
                         <tr key={factor.id} className="border-t">
                           <td className="p-3">{factor.codigo}</td>
                           <td className="p-3">{factor.nombre}</td>
+                          <td className="p-3">
+                            <div className="font-medium">
+                              {SPF_PESV_TRACEABILITY.resolution} · Paso {SPF_PESV_TRACEABILITY.pesvStep}
+                            </div>
+                            <div className="text-xs text-muted-foreground">{SPF_PESV_TRACEABILITY.pesvStepTitle}</div>
+                            <div className="mt-1 text-xs">ISO 39001:2012 · cláusula {SPF_PESV_TRACEABILITY.isoClause}</div>
+                          </td>
                           <td className="p-3">{formatValue(factor.valorBase, factor.unidadMedida)}</td>
                           <td className="p-3">{formatValue(factor.valorActual, factor.unidadMedida)}</td>
                         </tr>
@@ -159,7 +168,7 @@ export default function PesvInformeAnualLineaBase() {
 
               <div className="flex flex-wrap justify-end gap-2">
                 <Button variant="outline" asChild>
-                  <Link href="/pesv/factores-desempeno">Abrir Factores de Desempeño</Link>
+                  <Link href="/pesv/factores-desempeno">P04. Abrir factores de desempeño</Link>
                 </Button>
                 <Button
                   onClick={() => openCompanyDocument("/api/factores-desempeno-sv/pdf", selectedCompany?.id)}
