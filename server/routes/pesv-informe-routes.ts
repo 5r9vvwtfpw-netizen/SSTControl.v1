@@ -284,6 +284,98 @@ export function registerPesvInformeRoutes(app: Express) {
     },
   );
 
+  app.get(
+    "/api/pesv/informes-anuales/diagnostico-organizacion/evidencias",
+    authRequireAuth,
+    reportViewPermission,
+    async (req, res) => {
+      try {
+        const companyId = getAuthorizedReportCompanyId(req);
+        if (!companyId) return res.status(403).json({ message: "Selecciona una empresa autorizada." });
+
+        const [company] = await db.select({
+          name: schema.companies.name,
+          nit: schema.companies.nit,
+          ciiuCode: schema.companies.ciiuCode,
+        }).from(schema.companies).where(eq(schema.companies.id, companyId)).limit(1);
+        if (!company) return res.status(404).json({ message: "No se encontró la empresa seleccionada." });
+
+        const [evaluation] = await db.select({
+          id: schema.evaluacionesPesv.id,
+          anio: schema.evaluacionesPesv.anio,
+          mes: schema.evaluacionesPesv.mes,
+        }).from(schema.evaluacionesPesv)
+          .where(eq(schema.evaluacionesPesv.companyId, companyId))
+          .orderBy(desc(schema.evaluacionesPesv.createdAt))
+          .limit(1);
+
+        const [p03Response] = evaluation
+          ? await db.select({
+              cumple: schema.respuestasPasosPesv.cumple,
+              noAplica: schema.respuestasPasosPesv.noAplica,
+              evidencias: schema.respuestasPasosPesv.evidencias,
+              observaciones: schema.respuestasPasosPesv.observaciones,
+            }).from(schema.respuestasPasosPesv).where(and(
+              eq(schema.respuestasPasosPesv.evaluacionId, evaluation.id),
+              eq(schema.respuestasPasosPesv.pasoId, "P03"),
+            )).limit(1)
+          : [];
+
+        const [contextFactors, vehicles, drivers, routes] = await Promise.all([
+          db.select({ id: schema.contextoOrganizacionalPesv.id })
+            .from(schema.contextoOrganizacionalPesv)
+            .where(and(
+              eq(schema.contextoOrganizacionalPesv.companyId, companyId),
+              eq(schema.contextoOrganizacionalPesv.activo, 1),
+            )),
+          db.select({ status: schema.vehicles.status })
+            .from(schema.vehicles)
+            .where(eq(schema.vehicles.companyId, companyId)),
+          db.select({ status: schema.drivers.status })
+            .from(schema.drivers)
+            .where(eq(schema.drivers.companyId, companyId)),
+          db.select({
+            isActive: schema.safeRoutes.isActive,
+            criticalPoints: schema.safeRoutes.criticalPoints,
+          }).from(schema.safeRoutes).where(eq(schema.safeRoutes.companyId, companyId)),
+        ]);
+
+        const hasCriticalPointData = (value: string | null): boolean => {
+          if (!value?.trim()) return false;
+          try {
+            const parsed: unknown = JSON.parse(value);
+            if (Array.isArray(parsed)) return parsed.length > 0;
+            if (parsed && typeof parsed === "object") return Object.keys(parsed).length > 0;
+            return Boolean(parsed);
+          } catch {
+            return true;
+          }
+        };
+
+        res.json({
+          companyName: company.name,
+          companyNit: company.nit,
+          hasCiiu: Boolean(company.ciiuCode?.trim()),
+          isTestCompany: isInternalTestCompany(companyId),
+          evaluation: evaluation ?? null,
+          p03Response: p03Response ?? null,
+          contextFactorCount: contextFactors.length,
+          vehicleCount: vehicles.length,
+          activeVehicleCount: vehicles.filter((vehicle) => vehicle.status === "activo").length,
+          driverCount: drivers.length,
+          activeDriverCount: drivers.filter((driver) => driver.status === "activo").length,
+          activeRouteCount: routes.filter((route) => route.isActive === 1).length,
+          activeRoutesWithCriticalPoints: routes.filter((route) =>
+            route.isActive === 1 && hasCriticalPointData(route.criticalPoints)
+          ).length,
+        });
+      } catch (error) {
+        console.error("Error consultando diagnóstico anual PESV P03:", error);
+        res.status(500).json({ message: "No fue posible consultar las fuentes del diagnóstico P03." });
+      }
+    },
+  );
+
   async function loadAnnualCertification(req: Request, res: Response) {
     const reportCode = req.params.reportCode as AnnualCertificationCode;
     const definition = ANNUAL_PESV_CERTIFICATIONS[reportCode];

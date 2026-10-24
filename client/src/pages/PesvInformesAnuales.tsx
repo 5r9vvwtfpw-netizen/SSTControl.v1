@@ -41,6 +41,12 @@ const annualCertifications = [
     title: "Línea base del estado de la seguridad vial",
     description: "Consulta los factores de desempeño registrados y su copia en PDF",
   },
+  {
+    number: 8,
+    href: "/pesv/informes-anuales/diagnostico-organizacion",
+    title: "Diagnóstico del estado actual de la seguridad vial",
+    description: "Consulta P03, las fuentes disponibles y los soportes que faltan",
+  },
 ];
 
 export default function PesvInformesAnuales() {
