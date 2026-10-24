@@ -26,6 +26,7 @@ import {
   type AnnualCertificationCode,
 } from "../reports/pesv-annual-certification-report";
 import { buildPesvOrganizationalDiagnosisPdfBuffer } from "../reports/pesv-organizational-diagnosis-report";
+import { buildPesvAnnualRiskControlPdfBuffer } from "../reports/pesv-annual-risk-control-report";
 import { getSignersForCompany } from "../services/pdf-standardizer";
 
 const ANNUAL_PESV_CERTIFICATIONS: Record<AnnualCertificationCode, {
@@ -449,6 +450,158 @@ export function registerPesvInformeRoutes(app: Express) {
       } catch (error) {
         console.error("Error generando diagnóstico consolidado anual PESV:", error);
         res.status(500).json({ message: "No fue posible generar el PDF consolidado del diagnóstico." });
+      }
+    },
+  );
+
+  app.get(
+    "/api/pesv/informes-anuales/riesgos-seguridad-vial/evidencias",
+    authRequireAuth,
+    reportViewPermission,
+    async (req, res) => {
+      try {
+        const companyId = getAuthorizedReportCompanyId(req);
+        if (!companyId) return res.status(403).json({ message: "Selecciona una empresa autorizada." });
+
+        const [company] = await db.select({
+          id: schema.companies.id,
+          name: schema.companies.name,
+          nit: schema.companies.nit,
+        }).from(schema.companies).where(eq(schema.companies.id, companyId)).limit(1);
+        if (!company) return res.status(404).json({ message: "No se encontró la empresa seleccionada." });
+
+        const [evaluation] = await db.select({
+          id: schema.evaluacionesPesv.id,
+          anio: schema.evaluacionesPesv.anio,
+          mes: schema.evaluacionesPesv.mes,
+          estado: schema.evaluacionesPesv.estado,
+        }).from(schema.evaluacionesPesv)
+          .where(eq(schema.evaluacionesPesv.companyId, companyId))
+          .orderBy(desc(schema.evaluacionesPesv.createdAt))
+          .limit(1);
+
+        const [p04Response, criteria, documents, risks, treatments] = await Promise.all([
+          evaluation
+            ? db.select({
+                cumple: schema.respuestasPasosPesv.cumple,
+                noAplica: schema.respuestasPasosPesv.noAplica,
+                evidencias: schema.respuestasPasosPesv.evidencias,
+                observaciones: schema.respuestasPasosPesv.observaciones,
+              }).from(schema.respuestasPasosPesv).where(and(
+                eq(schema.respuestasPasosPesv.evaluacionId, evaluation.id),
+                eq(schema.respuestasPasosPesv.pasoId, "P04"),
+              )).limit(1).then((rows) => rows[0] ?? null)
+            : Promise.resolve(null),
+          evaluation
+            ? db.select().from(schema.pesvCriteriosVerificacion).where(and(
+                eq(schema.pesvCriteriosVerificacion.evaluacionId, evaluation.id),
+                eq(schema.pesvCriteriosVerificacion.pasoId, "P04"),
+              )).orderBy(asc(schema.pesvCriteriosVerificacion.criterioIndex))
+            : Promise.resolve([]),
+          evaluation
+            ? db.select().from(schema.pesvEvidenciasDocumentos).where(and(
+                eq(schema.pesvEvidenciasDocumentos.evaluacionId, evaluation.id),
+                eq(schema.pesvEvidenciasDocumentos.pasoId, "P04"),
+              )).orderBy(asc(schema.pesvEvidenciasDocumentos.evidenciaIndex))
+            : Promise.resolve([]),
+          db.select().from(schema.riesgosViales)
+            .where(eq(schema.riesgosViales.companyId, companyId))
+            .orderBy(asc(schema.riesgosViales.codigo)),
+          db.select().from(schema.tratamientosRiesgoVial)
+            .where(eq(schema.tratamientosRiesgoVial.companyId, companyId))
+            .orderBy(asc(schema.tratamientosRiesgoVial.createdAt)),
+        ]);
+
+        res.json({
+          companyName: company.name,
+          companyNit: company.nit,
+          isTestCompany: isInternalTestCompany(companyId),
+          evaluation: evaluation ?? null,
+          p04Response,
+          criteria,
+          documents,
+          risks,
+          treatments,
+        });
+      } catch (error) {
+        console.error("Error consultando informe anual PESV P04:", error);
+        res.status(500).json({ message: "No fue posible consultar las fuentes de evaluación y control de riesgos P04." });
+      }
+    },
+  );
+
+  app.get(
+    "/api/pesv/informes-anuales/riesgos-seguridad-vial.pdf",
+    authRequireAuth,
+    reportViewPermission,
+    async (req, res) => {
+      try {
+        const companyId = getAuthorizedReportCompanyId(req);
+        if (!companyId) return res.status(403).json({ message: "Selecciona una empresa autorizada." });
+        const [company] = await db.select().from(schema.companies)
+          .where(eq(schema.companies.id, companyId)).limit(1);
+        if (!company) return res.status(404).json({ message: "No se encontró la empresa seleccionada." });
+
+        const [evaluation] = await db.select({
+          id: schema.evaluacionesPesv.id,
+          anio: schema.evaluacionesPesv.anio,
+          mes: schema.evaluacionesPesv.mes,
+          estado: schema.evaluacionesPesv.estado,
+        }).from(schema.evaluacionesPesv)
+          .where(eq(schema.evaluacionesPesv.companyId, companyId))
+          .orderBy(desc(schema.evaluacionesPesv.createdAt))
+          .limit(1);
+
+        const [p04Response, criteria, documents, risks, treatments] = await Promise.all([
+          evaluation
+            ? db.select().from(schema.respuestasPasosPesv).where(and(
+                eq(schema.respuestasPasosPesv.evaluacionId, evaluation.id),
+                eq(schema.respuestasPasosPesv.pasoId, "P04"),
+              )).then((rows) => rows[0] ?? null)
+            : Promise.resolve(null),
+          evaluation
+            ? db.select().from(schema.pesvCriteriosVerificacion).where(and(
+                eq(schema.pesvCriteriosVerificacion.evaluacionId, evaluation.id),
+                eq(schema.pesvCriteriosVerificacion.pasoId, "P04"),
+              )).orderBy(asc(schema.pesvCriteriosVerificacion.criterioIndex))
+            : Promise.resolve([]),
+          evaluation
+            ? db.select().from(schema.pesvEvidenciasDocumentos).where(and(
+                eq(schema.pesvEvidenciasDocumentos.evaluacionId, evaluation.id),
+                eq(schema.pesvEvidenciasDocumentos.pasoId, "P04"),
+              )).orderBy(asc(schema.pesvEvidenciasDocumentos.evidenciaIndex))
+            : Promise.resolve([]),
+          db.select().from(schema.riesgosViales)
+            .where(eq(schema.riesgosViales.companyId, companyId))
+            .orderBy(asc(schema.riesgosViales.codigo)),
+          db.select().from(schema.tratamientosRiesgoVial)
+            .where(eq(schema.tratamientosRiesgoVial.companyId, companyId))
+            .orderBy(asc(schema.tratamientosRiesgoVial.createdAt)),
+        ]);
+
+        const signers = await getSignersForCompany(companyId, true);
+        const subscription = await storage.getSubscriptionByCompany(companyId);
+        const trial = getTrialStatus(subscription?.status || "trial", subscription?.trialEnd || null, true, true);
+        const buffer = await buildPesvAnnualRiskControlPdfBuffer({
+          company,
+          evaluation: evaluation ?? null,
+          p04Response: p04Response ?? null,
+          criteria,
+          documents,
+          risks,
+          treatments,
+          signers,
+          isTestCompany: isInternalTestCompany(companyId),
+          watermark: trial.requiresWatermark,
+        });
+        const safeCompanyName = company.name.replace(/[^a-zA-Z0-9_-]/g, "_");
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Content-Disposition", `attachment; filename="riesgos_viales_p04_${safeCompanyName}.pdf"`);
+        res.setHeader("Content-Length", buffer.length);
+        res.send(buffer);
+      } catch (error) {
+        console.error("Error generando informe anual PESV P04:", error);
+        res.status(500).json({ message: "No fue posible generar el PDF consolidado de evaluación y control de riesgos." });
       }
     },
   );

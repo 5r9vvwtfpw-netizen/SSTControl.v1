@@ -47,6 +47,12 @@ const annualCertifications = [
     title: "Diagnóstico del estado actual de la seguridad vial",
     description: "Consulta P03, las fuentes disponibles y los soportes que faltan",
   },
+  {
+    number: 9,
+    href: "/pesv/informes-anuales/riesgos-seguridad-vial",
+    title: "Evaluación y control de riesgos en seguridad vial",
+    description: "Consolida P04, los tratamientos registrados y sus evidencias en un PDF",
+  },
 ];
 
 export default function PesvInformesAnuales() {

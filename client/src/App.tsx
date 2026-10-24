@@ -114,6 +114,7 @@ import PesvInformeAnualPolitica from "@/pages/PesvInformeAnualPolitica";
 import PesvInformeAnualSeguimientoDireccion from "@/pages/PesvInformeAnualSeguimientoDireccion";
 import PesvInformeAnualLineaBase from "@/pages/PesvInformeAnualLineaBase";
 import PesvInformeAnualDiagnostico from "@/pages/PesvInformeAnualDiagnostico";
+import PesvInformeAnualRiesgosControl from "@/pages/PesvInformeAnualRiesgosControl";
 import PesvMejoraContinua from "@/pages/PesvMejoraContinua";
 import PesvRevisionDireccion from "@/pages/PesvRevisionDireccion";
 import PesvCapacitaciones from "@/pages/PesvCapacitaciones";
@@ -449,6 +450,7 @@ function Router() {
       <DevelopmentOnlyAnnualRoute path="/pesv/informes-anuales/seguimiento-direccion" component={PesvInformeAnualSeguimientoDireccion} featureName="Actas de seguimiento del PESV por la Alta Dirección" />
       <DevelopmentOnlyAnnualRoute path="/pesv/informes-anuales/linea-base" component={PesvInformeAnualLineaBase} featureName="Línea base de seguridad vial" />
       <DevelopmentOnlyAnnualRoute path="/pesv/informes-anuales/diagnostico-organizacion" component={PesvInformeAnualDiagnostico} featureName="Diagnóstico de la organización P03" />
+      <DevelopmentOnlyAnnualRoute path="/pesv/informes-anuales/riesgos-seguridad-vial" component={PesvInformeAnualRiesgosControl} featureName="Evaluación y control de riesgos viales P04" />
       <SubscriptionProtectedRoute path="/pesv/capacitaciones" component={PesvCapacitaciones} feature="hasPESV" featureName="Módulo PESV - Capacitaciones" />
       <SubscriptionProtectedRoute path="/pesv/induccion-virtual" component={PesvInduccionVirtual} feature="hasPESV" featureName="Módulo PESV - Inducción Virtual" />
       <SubscriptionProtectedRoute path="/pesv/auditorias" component={PesvAuditorias} feature="hasPESV" featureName="Módulo PESV - Auditorías" />
