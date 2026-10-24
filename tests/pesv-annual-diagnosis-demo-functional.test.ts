@@ -135,23 +135,26 @@ test("DEMO-PRUEBA: fuentes y recorrido funcional del diagnóstico anual P03", { 
     );
     checks.push(`Evaluación PESV ${evaluationDetail.anio} y respuesta P03: enlazadas correctamente.`);
 
-    const pdfs = [
-      { name: "contexto organizacional", path: "/api/contexto-organizacional-pesv/pdf" },
-      { name: "inventario de vehículos", path: "/api/pesv/vehiculos/pdf" },
-      { name: "base de conductores", path: "/api/pesv/conductores/pdf" },
-      { name: "rutas seguras", path: "/api/pesv/rutas-seguras/pdf" },
-      { name: "evaluación PESV", path: `/api/evaluaciones-pesv/${evaluation.id}/pdf` },
-    ];
-    for (const pdf of pdfs) {
-      const response = await context.request.get(pdf.path);
-      const bytes = Buffer.from(await response.body());
-      assert.equal(response.status(), 200, `El PDF de ${pdf.name} debe responder 200.`);
-      assert.match(response.headers()["content-type"] || "", /application\/pdf/);
-      assert.equal(bytes.subarray(0, 5).toString("ascii"), "%PDF-", `El PDF de ${pdf.name} debe tener cabecera válida.`);
-      const extracted = execFileSync("pdftotext", ["-", "-"], { input: bytes, encoding: "utf8" });
-      assert.ok(extracted.trim().length > 30, `El PDF de ${pdf.name} debe contener texto.`);
-      checks.push(`PDF fuente de ${pdf.name}: generado y legible.`);
+    const consolidatedResponse = await context.request.get("/api/pesv/informes-anuales/diagnostico-organizacion.pdf");
+    const consolidatedPdf = Buffer.from(await consolidatedResponse.body());
+    assert.equal(consolidatedResponse.status(), 200, "El PDF consolidado debe responder 200.");
+    assert.match(consolidatedResponse.headers()["content-type"] || "", /application\/pdf/);
+    assert.equal(consolidatedPdf.subarray(0, 5).toString("ascii"), "%PDF-");
+    const consolidatedText = execFileSync("pdftotext", ["-", "-"], { input: consolidatedPdf, encoding: "utf8" });
+    const normalizedPdfText = consolidatedText.replace(/[^a-z0-9]/gi, "").toUpperCase();
+    for (const section of [
+      "DIAGNÓSTICO CONSOLIDADO",
+      "CARACTERIZACIÓN DE LA EMPRESA",
+      "INVENTARIO DE VEHÍCULOS",
+      "BASE DE CONDUCTORES",
+      "RUTAS Y PUNTOS CRÍTICOS",
+      "DATOS DE PRUEBA",
+    ]) {
+      assert.ok(normalizedPdfText.includes(section.replace(/[^a-z0-9]/gi, "").toUpperCase()), `El PDF consolidado debe incluir ${section}.`);
     }
+    assert.ok(consolidatedText.includes("DEMO-PRUEBA"), "El PDF debe identificar DEMO-PRUEBA.");
+    await writeFile(`${evidenceDir}/diagnostico-consolidado-prueba.pdf`, consolidatedPdf);
+    checks.push("PDF único consolidado: contiene P03, caracterización, inventario, conductores, rutas/puntos críticos y aviso de prueba.");
 
     const page = await context.newPage();
     const pageErrors: string[] = [];
@@ -161,24 +164,27 @@ test("DEMO-PRUEBA: fuentes y recorrido funcional del diagnóstico anual P03", { 
     await page.getByText("Diagnóstico del estado actual de la seguridad vial", { exact: true }).waitFor();
     await page.getByText("Requiere verificación", { exact: true }).waitFor();
     await page.getByText("Prueba funcional · DEMO-PRUEBA", { exact: true }).waitFor();
+    await page.getByText("La respuesta P03 contiene información marcada como prueba funcional", { exact: true }).waitFor();
     await page.getByRole("link", { name: "Abrir perfil de la empresa" }).waitFor();
     await page.getByRole("link", { name: "Abrir Contexto Organizacional" }).waitFor();
-    await page.getByRole("link", { name: "Abrir inventario de vehículos" }).waitFor();
-    await page.getByRole("link", { name: "Abrir base de conductores" }).waitFor();
-    await page.getByRole("link", { name: "Abrir rutas seguras" }).waitFor();
-    await page.getByText("No hay un PDF único del diagnóstico completo", { exact: true }).waitFor();
+    await page.getByRole("link", { name: "Abrir Vehículos" }).waitFor();
+    await page.getByRole("link", { name: "Abrir Conductores" }).waitFor();
+    await page.getByRole("link", { name: "Abrir Rutas seguras" }).waitFor();
+    await page.getByRole("link", { name: "Abrir Contexto Organizacional" }).waitFor();
+    await page.getByTestId("button-download-pesv-consolidated-diagnosis").waitFor();
+    assert.equal(await page.getByRole("button", { name: /PDF/i }).count(), 1, "El informe debe ofrecer un único botón para PDF.");
     assert.deepEqual(pageErrors, [], "La interfaz no debe producir errores de JavaScript.");
     screenshot = Buffer.from(await page.locator("main[data-testid='annual-pesv-organization-diagnosis']").screenshot({ animations: "disabled" }));
     await writeFile(`${evidenceDir}/informe-anual-08-pantalla.png`, screenshot);
-    checks.push("Pantalla autenticada: identifica DEMO-PRUEBA, mantiene la advertencia y enlaza los seis módulos fuente.");
+    checks.push("Pantalla autenticada: identifica DEMO-PRUEBA, mantiene la advertencia, enlaza los seis módulos y ofrece un solo botón de PDF.");
 
     const html = `<!doctype html><html lang="es"><meta charset="utf-8"><title>Prueba funcional P03 — DEMO-PRUEBA</title>
 <style>body{font:16px/1.55 system-ui,sans-serif;color:#183127;background:#f4f8f5;margin:0 auto;padding:32px;max-width:1150px}h1{font-size:1.8rem}.tag{display:inline-block;background:#d8efe1;border-radius:24px;padding:6px 12px}li{margin:8px 0}.note{padding:16px;border-left:4px solid #a36b00;background:#fff6d9}figure{background:#fff;border:1px solid #dae7de;padding:12px;border-radius:12px}img{display:block;width:100%;height:auto}</style>
 <h1>Prueba funcional — informe anual n.º 8: diagnóstico P03</h1>
 <p class="tag">DEMO-PRUEBA · Desarrollo · ${new Date().toISOString().slice(0, 10)} · COMPLETADA</p>
-<p>Se consultaron el perfil de empresa, P03, contexto organizacional, vehículos, conductores y rutas. Los documentos fuente PDF se generaron correctamente.</p>
+<p>Se consultaron el perfil de empresa, P03, contexto organizacional, vehículos, conductores y rutas. Se generó un único PDF consolidado.</p>
 <ul>${checks.map((check) => `<li>${check.replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]!)}</li>`).join("")}</ul>
-<p class="note"><b>Resultado:</b> se verificó el flujo y la trazabilidad de módulos. El informe conserva “Requiere verificación”; el test no certifica que exista un documento consolidado ni que el diagnóstico sea real o completo.</p>
+<p class="note"><b>Resultado:</b> se verificó el flujo y la trazabilidad de módulos. El PDF consolidado está marcado como prueba funcional y no debe radicarse como evidencia real.</p>
 <figure><img src="data:image/png;base64,${screenshot!.toString("base64")}" alt="Informe P03 autenticado en DEMO-PRUEBA"><figcaption>Vista autenticada del informe anual n.º 8.</figcaption></figure></html>`;
     await writeFile(`${evidenceDir}/evidencia-prueba-funcional.html`, html);
     await writeFile(`${evidenceDir}/resultado.json`, JSON.stringify({
@@ -198,9 +204,9 @@ test("DEMO-PRUEBA: fuentes y recorrido funcional del diagnóstico anual P03", { 
       checks,
       fuentesDeNegocioModificadas: false,
       afirmacionDeCumplimiento: false,
-      evidencia: ["informe-anual-08-pantalla.png", "evidencia-prueba-funcional.html"],
+      evidencia: ["diagnostico-consolidado-prueba.pdf", "informe-anual-08-pantalla.png", "evidencia-prueba-funcional.html"],
     }, null, 2));
-    console.log(JSON.stringify({ resultado: "COMPLETADA", empresa: company.name, checks, evidenciaDir }, null, 2));
+    console.log(JSON.stringify({ resultado: "COMPLETADA", empresa: company.name, checks, evidencia: evidenceDir }, null, 2));
     await context.close();
   } finally {
     await browser?.close().catch(() => undefined);

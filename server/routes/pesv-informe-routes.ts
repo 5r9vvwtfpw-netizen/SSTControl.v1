@@ -1,5 +1,5 @@
 import type { Express, Request, Response } from "express";
-import { and, desc, eq, gte, lte, ne, or } from "drizzle-orm";
+import { and, asc, desc, eq, gte, lte, ne, or } from "drizzle-orm";
 import * as schema from "@shared/schema";
 import { db } from "../db";
 import { requireAuth as authRequireAuth, requirePermission } from "../auth";
@@ -25,6 +25,7 @@ import {
   type AnnualCertificationAnswer,
   type AnnualCertificationCode,
 } from "../reports/pesv-annual-certification-report";
+import { buildPesvOrganizationalDiagnosisPdfBuffer } from "../reports/pesv-organizational-diagnosis-report";
 
 const ANNUAL_PESV_CERTIFICATIONS: Record<AnnualCertificationCode, {
   title: string;
@@ -372,6 +373,79 @@ export function registerPesvInformeRoutes(app: Express) {
       } catch (error) {
         console.error("Error consultando diagnóstico anual PESV P03:", error);
         res.status(500).json({ message: "No fue posible consultar las fuentes del diagnóstico P03." });
+      }
+    },
+  );
+
+  app.get(
+    "/api/pesv/informes-anuales/diagnostico-organizacion.pdf",
+    authRequireAuth,
+    reportViewPermission,
+    async (req, res) => {
+      try {
+        const companyId = getAuthorizedReportCompanyId(req);
+        if (!companyId) return res.status(403).json({ message: "Selecciona una empresa autorizada." });
+
+        const [company] = await db.select().from(schema.companies)
+          .where(eq(schema.companies.id, companyId)).limit(1);
+        if (!company) return res.status(404).json({ message: "No se encontró la empresa seleccionada." });
+
+        const [evaluation] = await db.select({
+          id: schema.evaluacionesPesv.id,
+          anio: schema.evaluacionesPesv.anio,
+          mes: schema.evaluacionesPesv.mes,
+          estado: schema.evaluacionesPesv.estado,
+        }).from(schema.evaluacionesPesv)
+          .where(eq(schema.evaluacionesPesv.companyId, companyId))
+          .orderBy(desc(schema.evaluacionesPesv.createdAt))
+          .limit(1);
+
+        const [p03Response] = evaluation
+          ? await db.select({
+              cumple: schema.respuestasPasosPesv.cumple,
+              noAplica: schema.respuestasPasosPesv.noAplica,
+              evidencias: schema.respuestasPasosPesv.evidencias,
+              observaciones: schema.respuestasPasosPesv.observaciones,
+            }).from(schema.respuestasPasosPesv).where(and(
+              eq(schema.respuestasPasosPesv.evaluacionId, evaluation.id),
+              eq(schema.respuestasPasosPesv.pasoId, "P03"),
+            )).limit(1)
+          : [];
+
+        const [contextFactors, vehicles, drivers, routes] = await Promise.all([
+          db.select().from(schema.contextoOrganizacionalPesv).where(and(
+            eq(schema.contextoOrganizacionalPesv.companyId, companyId),
+            eq(schema.contextoOrganizacionalPesv.activo, 1),
+          )).orderBy(asc(schema.contextoOrganizacionalPesv.tipoFactor), asc(schema.contextoOrganizacionalPesv.nombre)),
+          db.select().from(schema.vehicles).where(eq(schema.vehicles.companyId, companyId)).orderBy(asc(schema.vehicles.plate)),
+          db.select().from(schema.drivers).where(eq(schema.drivers.companyId, companyId)).orderBy(asc(schema.drivers.name)),
+          db.select().from(schema.safeRoutes).where(and(
+            eq(schema.safeRoutes.companyId, companyId),
+            eq(schema.safeRoutes.isActive, 1),
+          )).orderBy(asc(schema.safeRoutes.routeName)),
+        ]);
+
+        const subscription = await storage.getSubscriptionByCompany(companyId);
+        const trial = getTrialStatus(subscription?.status || "trial", subscription?.trialEnd || null, true, true);
+        const buffer = await buildPesvOrganizationalDiagnosisPdfBuffer({
+          company,
+          evaluation: evaluation ?? null,
+          p03Response: p03Response ?? null,
+          contextFactors,
+          vehicles,
+          drivers,
+          routes,
+          isTestCompany: isInternalTestCompany(companyId),
+          watermark: trial.requiresWatermark,
+        });
+        const safeCompanyName = company.name.replace(/[^a-zA-Z0-9_-]/g, "_");
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Content-Disposition", `attachment; filename="diagnostico_pesv_p03_${safeCompanyName}.pdf"`);
+        res.setHeader("Content-Length", buffer.length);
+        res.send(buffer);
+      } catch (error) {
+        console.error("Error generando diagnóstico consolidado anual PESV:", error);
+        res.status(500).json({ message: "No fue posible generar el PDF consolidado del diagnóstico." });
       }
     },
   );

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Download, FileText, TriangleAlert } from "lucide-react";
+import { ArrowLeft, Download, TriangleAlert } from "lucide-react";
 import { Link } from "wouter";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -43,37 +43,6 @@ export default function PesvInformeAnualDiagnostico() {
     queryKey: ["/api/pesv/informes-anuales/diagnostico-organizacion/evidencias", selectedCompany?.id],
   });
 
-  const sourceLinks = [
-    {
-      label: "Abrir Contexto Organizacional",
-      href: "/pesv/contexto-organizacional",
-      pdf: "/api/contexto-organizacional-pesv/pdf",
-      available: (data?.contextFactorCount ?? 0) > 0,
-      pdfLabel: "PDF de contexto organizacional",
-    },
-    {
-      label: "Abrir inventario de vehículos",
-      href: "/pesv/vehiculos",
-      pdf: "/api/pesv/vehiculos/pdf",
-      available: (data?.vehicleCount ?? 0) > 0,
-      pdfLabel: "PDF de vehículos",
-    },
-    {
-      label: "Abrir base de conductores",
-      href: "/pesv/conductores",
-      pdf: "/api/pesv/conductores/pdf",
-      available: (data?.driverCount ?? 0) > 0,
-      pdfLabel: "PDF de conductores",
-    },
-    {
-      label: "Abrir rutas seguras",
-      href: "/pesv/rutas-seguras",
-      pdf: "/api/pesv/rutas-seguras/pdf",
-      available: (data?.activeRouteCount ?? 0) > 0,
-      pdfLabel: "PDF de rutas seguras",
-    },
-  ];
-
   const evidenceRows = data ? [
     {
       title: "Caracterización de la empresa",
@@ -81,6 +50,8 @@ export default function PesvInformeAnualDiagnostico() {
         ? "El perfil tiene actividad económica registrada; no se encontró un documento de caracterización adjunto."
         : "Falta registrar la actividad económica y aportar el documento de caracterización.",
       count: data.hasCiiu ? "Dato de empresa registrado" : "Dato pendiente",
+      source: "Perfil de la empresa",
+      href: selectedCompany?.id ? `/empresas/${selectedCompany.id}` : "/empresas",
     },
     {
       title: "Inventario de vehículos",
@@ -88,6 +59,8 @@ export default function PesvInformeAnualDiagnostico() {
         ? `${data.vehicleCount} vehículo(s) registrados; ${data.activeVehicleCount} con estado activo. La cantidad no acredita por sí sola que la matriz esté actualizada.`
         : "No hay vehículos registrados para esta empresa.",
       count: `${data.vehicleCount} registrados`,
+      source: "Vehículos",
+      href: "/pesv/vehiculos",
     },
     {
       title: "Base de datos de conductores",
@@ -95,6 +68,8 @@ export default function PesvInformeAnualDiagnostico() {
         ? `${data.driverCount} conductor(es) registrados; ${data.activeDriverCount} con estado activo. Revisar que la base corresponda al diagnóstico vigente.`
         : "No hay conductores registrados para esta empresa.",
       count: `${data.driverCount} registrados`,
+      source: "Conductores",
+      href: "/pesv/conductores",
     },
     {
       title: "Rutas y puntos críticos",
@@ -102,8 +77,19 @@ export default function PesvInformeAnualDiagnostico() {
         ? `${data.activeRoutesWithCriticalPoints} ruta(s) activa(s) tienen puntos críticos registrados. Esto no sustituye la revisión del diagnóstico de infraestructura vial.`
         : "No se encontraron rutas activas con puntos críticos registrados.",
       count: `${data.activeRouteCount} rutas activas`,
+      source: "Rutas seguras",
+      href: "/pesv/rutas-seguras",
+    },
+    {
+      title: "Contexto organizacional complementario",
+      detail: `${data.contextFactorCount} factor(es) activos registrados; aportan información contextual y no reemplazan la caracterización de la empresa.`,
+      count: `${data.contextFactorCount} factores`,
+      source: "Contexto Organizacional",
+      href: "/pesv/contexto-organizacional",
     },
   ] : [];
+  const containsFunctionalTest = [data?.p03Response?.evidencias, data?.p03Response?.observaciones]
+    .some((text) => /PRUEBA FUNCIONAL|ESCENARIO DE PRUEBA/i.test(text || ""));
 
   return (
     <main className="mx-auto max-w-5xl space-y-6 p-4 md:p-6" data-testid="annual-pesv-organization-diagnosis">
@@ -150,15 +136,19 @@ export default function PesvInformeAnualDiagnostico() {
             <CardContent className="space-y-4">
               <Alert>
                 <TriangleAlert className="h-4 w-4" />
-                <AlertTitle>Los registros consultados no conforman una copia completa del diagnóstico</AlertTitle>
+                <AlertTitle>
+                  {containsFunctionalTest
+                    ? "La respuesta P03 contiene información marcada como prueba funcional"
+                    : "Los registros consultados no conforman una copia completa del diagnóstico"}
+                </AlertTitle>
                 <AlertDescription>
-                  La aplicación conserva datos en módulos separados, pero no registra un documento único que reúna y
-                  valide los cuatro componentes. El PDF de Contexto Organizacional solo contiene factores internos y
-                  externos; no debe entregarse como si fuera el diagnóstico completo.
+                  El PDF consolidado reúne los datos registrados en los módulos fuente. Debe revisarse antes de presentarlo:
+                  la información compilada no valida por sí sola la vigencia del inventario ni el diagnóstico técnico de las rutas.
+                  {containsFunctionalTest && " Los datos de prueba no son evidencia real para presentar a SISI/PESV."}
                 </AlertDescription>
               </Alert>
 
-              <div className="rounded-md border p-4">
+              <div className="rounded-md border bg-muted/20 p-4">
                 <p className="text-sm text-muted-foreground">Valoración P03 en la evaluación más reciente</p>
                 <p className="mt-1 font-medium">
                   {data.evaluation ? `Evaluación ${data.evaluation.anio}` : "No hay evaluación PESV registrada"}
@@ -166,7 +156,9 @@ export default function PesvInformeAnualDiagnostico() {
                 </p>
                 {data.p03Response?.evidencias && (
                   <p className="mt-2 text-sm text-muted-foreground">
-                    Evidencia descrita en P03: {data.p03Response.evidencias}
+                    {containsFunctionalTest
+                      ? "P03 tiene una descripción de evidencia marcada como prueba; no es un archivo adjunto ni acredita cumplimiento."
+                      : "P03 tiene una descripción de evidencia, pero no se almacena como archivo adjunto."}
                   </p>
                 )}
                 {data.p03Response?.observaciones && (
@@ -179,66 +171,75 @@ export default function PesvInformeAnualDiagnostico() {
                     <Link href={`/pesv/evaluacion/${data.evaluation.id}`}>Abrir evaluación P03</Link>
                   </Button>
                 )}
-                {data.evaluation && (
-                  <Button
-                    variant="ghost"
-                    className="ml-3 h-auto px-0 text-primary underline-offset-4 hover:underline"
-                    onClick={() => openCompanyDocument(`/api/evaluaciones-pesv/${data.evaluation!.id}/pdf`, selectedCompany?.id)}
-                  >
-                    Abrir PDF de evaluación PESV
-                  </Button>
-                )}
               </div>
 
-              <div className="space-y-3">
-                <h2 className="text-base font-semibold">Fuentes y componentes que deben revisarse</h2>
-                <Button variant="outline" asChild>
-                  <Link href={selectedCompany?.id ? `/empresas/${selectedCompany.id}` : "/empresas"}>
-                    Abrir perfil de la empresa
-                  </Link>
-                </Button>
-                {evidenceRows.map((row) => (
-                  <div key={row.title} className="rounded-md border p-4">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="font-medium">{row.title}</p>
-                      <Badge variant="outline">{row.count}</Badge>
-                    </div>
-                    <p className="mt-2 text-sm text-muted-foreground">{row.detail}</p>
-                  </div>
-                ))}
-              </div>
-
-              <div className="space-y-3 border-t pt-4">
-                <div>
-                  <h2 className="font-semibold">Módulos y documentos fuente</h2>
-                  <p className="text-sm text-muted-foreground">
-                    Consulta cada fuente por separado. Estos PDF no se presentan como un diagnóstico consolidado.
-                  </p>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="rounded-md border p-4">
+                  <p className="text-sm text-muted-foreground">Factores de contexto activos</p>
+                  <p className="text-2xl font-semibold">{data.contextFactorCount}</p>
                 </div>
-                {sourceLinks.map((source) => (
-                  <div key={source.href} className="flex flex-col justify-between gap-2 rounded-md border p-3 sm:flex-row sm:items-center">
-                    <Button variant="ghost" className="h-auto justify-start px-0 text-primary underline-offset-4 hover:underline" asChild>
-                      <Link href={source.href}>{source.label}</Link>
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={!source.available}
-                      onClick={() => openCompanyDocument(source.pdf, selectedCompany?.id)}
-                    >
-                      <Download className="mr-2 h-4 w-4" />
-                      {source.pdfLabel}
-                    </Button>
-                  </div>
-                ))}
-                <Alert>
-                  <FileText className="h-4 w-4" />
-                  <AlertTitle>No hay un PDF único del diagnóstico completo</AlertTitle>
-                  <AlertDescription>
-                    El informe muestra el estado de los datos disponibles y sus fuentes. Hace falta documentar y validar
-                    la caracterización y el diagnóstico de rutas y puntos críticos antes de presentar una copia completa.
-                  </AlertDescription>
-                </Alert>
+                <div className="rounded-md border p-4">
+                  <p className="text-sm text-muted-foreground">Vehículos activos / registrados</p>
+                  <p className="text-2xl font-semibold">{data.activeVehicleCount} / {data.vehicleCount}</p>
+                </div>
+                <div className="rounded-md border p-4">
+                  <p className="text-sm text-muted-foreground">Conductores activos / registrados</p>
+                  <p className="text-2xl font-semibold">{data.activeDriverCount} / {data.driverCount}</p>
+                </div>
+                <div className="rounded-md border p-4">
+                  <p className="text-sm text-muted-foreground">Rutas activas con puntos críticos</p>
+                  <p className="text-2xl font-semibold">{data.activeRoutesWithCriticalPoints} / {data.activeRouteCount}</p>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto rounded-md border">
+                <table className="w-full min-w-[760px] text-left text-sm">
+                  <thead className="bg-muted/50">
+                    <tr>
+                      <th className="p-3 font-medium">Componente solicitado</th>
+                      <th className="p-3 font-medium">Estado / información registrada</th>
+                      <th className="p-3 font-medium">Módulo fuente</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {evidenceRows.map((row) => (
+                      <tr key={row.title} className="border-t">
+                        <td className="p-3 font-medium">{row.title}</td>
+                        <td className="p-3">
+                          <div className="mb-1"><Badge variant="outline">{row.count}</Badge></div>
+                          <span className="text-muted-foreground">{row.detail}</span>
+                        </td>
+                        <td className="p-3">
+                          <Button variant="outline" size="sm" asChild>
+                            <Link href={row.href}>Abrir {row.source}</Link>
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <Alert>
+                <TriangleAlert className="h-4 w-4" />
+                <AlertTitle>El PDF consolidado debe ser revisado antes de presentarlo</AlertTitle>
+                <AlertDescription>
+                  Incluye en un solo archivo la ficha de empresa, la evaluación P03, los registros de vehículos y conductores,
+                  las rutas con sus puntos críticos y el contexto organizacional. No agrega firmas ni declara cumplimiento.
+                </AlertDescription>
+              </Alert>
+
+              <div className="flex flex-wrap justify-end gap-2 border-t pt-4">
+                <Button
+                  onClick={() => openCompanyDocument(
+                    "/api/pesv/informes-anuales/diagnostico-organizacion.pdf",
+                    selectedCompany?.id,
+                  )}
+                  data-testid="button-download-pesv-consolidated-diagnosis"
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  Descargar diagnóstico consolidado PDF
+                </Button>
               </div>
             </CardContent>
           </Card>
