@@ -110,14 +110,32 @@ test("DEMO-PRUEBA: fuentes y PDF consolidado del informe anual P04", { skip: !en
 
     const page = await context.newPage();
     const pageErrors: string[] = [];
+    const failedRequests: string[] = [];
+    const documentResponses: string[] = [];
     page.on("pageerror", (error) => pageErrors.push(error.message));
     page.on("console", (message) => {
       if (message.type() === "error") pageErrors.push(message.text());
     });
-    await page.goto("/pesv/informes-anuales/riesgos-seguridad-vial", { waitUntil: "commit", timeout: 30000 });
+    page.on("requestfailed", (request) => failedRequests.push(`${request.method()} ${request.url()}: ${request.failure()?.errorText}`));
+    page.on("response", (response) => {
+      if (response.request().resourceType() === "document" || response.request().resourceType() === "script") {
+        documentResponses.push(`${response.status()} ${response.request().resourceType()} ${response.url()}`);
+      }
+    });
+    await page.goto("/pesv/informes-anuales/riesgos-seguridad-vial", { waitUntil: "domcontentloaded", timeout: 30000 });
     const reportMain = page.locator("main").first();
     await reportMain.waitFor({ state: "visible", timeout: 10000 }).catch(async () => {
-      throw new Error(`La página no se mostró. URL=${page.url()} BODY=${(await page.locator("body").innerText()).slice(0, 1200)} ERRORES=${pageErrors.join(" | ")}`);
+      const diagnostics = await page.evaluate(() => ({
+        readyState: document.readyState,
+        title: document.title,
+        body: document.body?.innerHTML.slice(0, 3000),
+        roots: [...document.querySelectorAll("#root, #app, [data-reactroot]")].map((element) => ({
+          tag: element.tagName,
+          id: element.id,
+          html: element.innerHTML.slice(0, 1500),
+        })),
+      }));
+      throw new Error(`La página no se mostró. URL=${page.url()} DOM=${JSON.stringify(diagnostics)} RESPUESTAS=${documentResponses.join(" | ")} SOLICITUDES_FALLIDAS=${failedRequests.join(" | ")} ERRORES=${pageErrors.join(" | ")}`);
     });
     const mainText = await reportMain.innerText();
     assert.ok(mainText.includes("Evaluación y control de riesgos en seguridad vial"), "La pantalla debe mostrar el título del informe.");
