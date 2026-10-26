@@ -137,6 +137,23 @@ export const loginRateLimiter = rateLimit({
 });
 
 /**
+ * MFA code resend limiter - count successful sends too, since every accepted
+ * resend can trigger a new email and replaces the previous active challenge.
+ */
+export const loginCodeResendRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 3,
+  message: {
+    error: "Has solicitado varios códigos. Espera 15 minutos antes de pedir otro.",
+    retryAfter: "15 minutes",
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: false,
+  skipFailedRequests: false,
+});
+
+/**
  * Password reset rate limiter
  * Allows 3 password reset requests per hour per IP
  * Prevents email bombing and abuse

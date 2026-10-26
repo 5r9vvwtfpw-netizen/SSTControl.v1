@@ -14,7 +14,7 @@ import { users } from "@shared/schema";
 import { eq, sql, and } from "drizzle-orm";
 import { z } from "zod";
 import { isIP } from "net";
-import { loginRateLimiter, passwordResetRateLimiter, registrationRateLimiter } from "./middleware/rate-limit";
+import { loginCodeResendRateLimiter, loginRateLimiter, passwordResetRateLimiter, registrationRateLimiter } from "./middleware/rate-limit";
 import logger from "./lib/logger";
 import { enrichSessionLocation, processSecurityAlert } from "./services/security-access";
 import { isInternalTestCompany } from "./lib/internal-test-company";
@@ -1212,6 +1212,61 @@ export function setupAuth(app: Express) {
     } catch (error) {
       logger.error({ error }, "[MFA] Error verificando código de login");
       return res.status(500).json({ error: "No se pudo verificar el código de seguridad." });
+    }
+  });
+
+  app.post("/api/login/resend-code", loginCodeResendRateLimiter, async (req, res) => {
+    const validation = z.object({
+      challengeId: z.string().uuid(),
+    }).safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ error: "La solicitud de reenvío no es válida." });
+    }
+
+    try {
+      const result = await db.execute(sql`
+        SELECT c.id, c.user_id, c.expires_at, c.attempts, c.used_at, c.channel
+        FROM login_verification_challenges c
+        WHERE c.id = ${validation.data.challengeId}
+        LIMIT 1
+      `);
+      const challenge: any = (result as any).rows?.[0];
+      if (!challenge || challenge.used_at) {
+        return res.status(400).json({ error: "Esta solicitud de verificación ya no está activa. Inicia sesión nuevamente." });
+      }
+      if (new Date(challenge.expires_at).getTime() < Date.now()) {
+        return res.status(400).json({ error: "El código expiró. Inicia sesión nuevamente para recibir otro." });
+      }
+      if (Number(challenge.attempts) >= LOGIN_CODE_MAX_ATTEMPTS) {
+        return res.status(429).json({ error: "Se superó el número máximo de intentos. Inicia sesión nuevamente." });
+      }
+
+      const user = await storage.getUser(challenge.user_id);
+      if (!user || !requiresTwoFactor(user.role, user.companyId)) {
+        return res.status(400).json({ error: "La verificación ya no corresponde a una cuenta válida." });
+      }
+      if (challenge.channel === "support" && user.role !== "soporte") {
+        return res.status(403).json({ error: "Esta verificación no corresponde al portal de soporte." });
+      }
+
+      const nextChallenge = await createLoginVerificationChallenge(user, challenge.channel);
+      if ("error" in nextChallenge) {
+        return res.status(502).json({
+          error: nextChallenge.error,
+          code: "MFA_CODE_RESEND_FAILED",
+        });
+      }
+      logger.info({ channel: challenge.channel }, "[MFA] Solicitud de reenvío aceptada por el proveedor de correo");
+      return res.status(202).json({
+        requiresVerification: true,
+        ...nextChallenge,
+      });
+    } catch (error) {
+      logger.error({ err: error }, "[MFA] Error al reenviar código de login");
+      return res.status(503).json({
+        error: "No se pudo reenviar el código de seguridad. Intenta nuevamente.",
+        code: "MFA_CODE_RESEND_UNAVAILABLE",
+      });
     }
   });
 

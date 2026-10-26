@@ -16,6 +16,7 @@ type AuthContextType = {
   error: Error | null;
   loginMutation: UseMutationResult<LoginResult, Error, LoginData>;
   verifyLoginCodeMutation: UseMutationResult<SelectUser, Error, VerifyLoginCodeData>;
+  resendLoginCodeMutation: UseMutationResult<LoginVerificationRequired, Error, { challengeId: string }>;
   logoutMutation: UseMutationResult<void, Error, void>;
   registerMutation: UseMutationResult<SelectUser, Error, RegisterData>;
 };
@@ -178,6 +179,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   });
 
+  const resendLoginCodeMutation = useMutation<LoginVerificationRequired, Error, { challengeId: string }>({
+    mutationFn: async ({ challengeId }) => {
+      const res = await fetch("/api/login/resend-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ challengeId }),
+        credentials: "include",
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error || "No se pudo reenviar el código");
+      return body;
+    },
+    onError: (error) => {
+      toast({
+        title: "No se pudo reenviar el código",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const registerMutation = useMutation({
     mutationFn: async (credentials: RegisterData) => {
       const res = await apiRequest("POST", "/api/register", credentials);
@@ -251,9 +273,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     error,
     loginMutation,
     verifyLoginCodeMutation,
+    resendLoginCodeMutation,
     logoutMutation,
     registerMutation,
-  }), [user, isLoading, error, loginMutation, verifyLoginCodeMutation, logoutMutation, registerMutation]);
+  }), [user, isLoading, error, loginMutation, verifyLoginCodeMutation, resendLoginCodeMutation, logoutMutation, registerMutation]);
 
   return (
     <AuthContext.Provider value={contextValue}>

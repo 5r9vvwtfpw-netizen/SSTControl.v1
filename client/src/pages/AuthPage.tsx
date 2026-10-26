@@ -36,7 +36,7 @@ const riskLevelInfo: Record<string, { name: string; color: string }> = {
 };
 
 export default function AuthPage() {
-  const { user, loginMutation, verifyLoginCodeMutation, registerMutation } = useAuth();
+  const { user, loginMutation, verifyLoginCodeMutation, resendLoginCodeMutation, registerMutation } = useAuth();
   const [location] = useLocation();
   const [activeTab, setActiveTab] = useState<string>("login");
   const [loginData, setLoginData] = useState({ username: "", password: "" });
@@ -333,6 +333,22 @@ export default function AuthPage() {
     });
   };
 
+  const handleResendLoginCode = () => {
+    if (!pendingLoginVerification) return;
+    resendLoginCodeMutation.mutate(
+      { challengeId: pendingLoginVerification.challengeId },
+      {
+        onSuccess: (data) => {
+          setPendingLoginVerification({
+            challengeId: data.challengeId,
+            maskedEmail: data.maskedEmail,
+          });
+          setLoginVerificationCode("");
+        },
+      },
+    );
+  };
+
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -485,7 +501,7 @@ export default function AuthPage() {
                       <Mail className="h-4 w-4 text-green-700" />
                       <AlertTitle>Verificación de seguridad</AlertTitle>
                       <AlertDescription>
-                        Enviamos un código de 6 dígitos a {pendingLoginVerification.maskedEmail}. Vence en 10 minutos.
+                        La solicitud de envío del código de 6 dígitos fue aceptada para {pendingLoginVerification.maskedEmail}; vence en 10 minutos. Si no llega, revisa Spam y usa «Reenviar código». Cada reenvío reemplaza el código anterior.
                       </AlertDescription>
                     </Alert>
                     <div className="space-y-2">
@@ -510,6 +526,16 @@ export default function AuthPage() {
                       data-testid="button-verify-login-code"
                     >
                       {verifyLoginCodeMutation.isPending ? "Verificando..." : "Verificar e ingresar"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      onClick={handleResendLoginCode}
+                      disabled={resendLoginCodeMutation.isPending}
+                      data-testid="button-resend-login-code"
+                    >
+                      {resendLoginCodeMutation.isPending ? "Reenviando..." : "Reenviar código"}
                     </Button>
                     <Button
                       type="button"
