@@ -192,6 +192,11 @@ export default function CrearEmpresaCiiuFirst() {
 
   const parsedRegWorkers = regWorkers ? parseInt(regWorkers, 10) : NaN;
   const parsedRegVehicles = regVehicles ? parseInt(regVehicles, 10) : NaN;
+  const isFreshRegistration = typeof window !== "undefined" &&
+    sessionStorage.getItem("sst_new_registration") === "true";
+  const hasValidRegistrationWorkers = !isNaN(parsedRegWorkers) && parsedRegWorkers >= 1;
+  const registrationWorkersTakePriority =
+    (isFreshRegistration || hasAllRegistrationData) && hasValidRegistrationWorkers;
 
   const form = useForm<CreateCompanyForm>({
     resolver: zodResolver(createCompanySchema),
@@ -207,7 +212,9 @@ export default function CrearEmpresaCiiuFirst() {
       address: regAddress || "",
       contactPhone: regPhone || "",
       contactEmail: regEmail || "",
-      numberOfWorkers: quoteData?.employees || (!isNaN(parsedRegWorkers) && parsedRegWorkers >= 1 ? parsedRegWorkers : (isNaN(initialWorkers) || initialWorkers < 1 ? 1 : initialWorkers)),
+      numberOfWorkers: registrationWorkersTakePriority
+        ? parsedRegWorkers
+        : (quoteData?.employees || (hasValidRegistrationWorkers ? parsedRegWorkers : (isNaN(initialWorkers) || initialWorkers < 1 ? 1 : initialWorkers))),
       riskLevel: (quoteData?.riskLevel || regRisk || "I") as "I" | "II" | "III" | "IV" | "V",
       numberOfVehicles: quoteData?.vehicles || (!isNaN(parsedRegVehicles) ? parsedRegVehicles : 0),
     },

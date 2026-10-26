@@ -8,3 +8,9 @@ Any code path that inserts/updates a `companies` row (self-registration onboardi
 **Why:** The self-registration route (`/api/my-company`) built its insert payload by hand and never called the automation helper, so any company registering without manually picking a risk level silently fell back to risk "I" (7 standards) regardless of CIIU code — even for high-risk activities like mining (CIIU 0510, risk V, 61 standards). A zod `.default("I")` on the `riskLevel` field made this worse by masking the missing automation call entirely.
 
 **How to apply:** When adding or auditing any company-creation/update endpoint, grep for `prepareCompanyWithCiiuAutomation` usage and confirm it wraps the final data object passed to `storage.createCompany`/`updateCompany`. Do not rely on schema-level defaults for `riskLevel` — leave it `.optional()` with no default so the automation helper can detect "no manual risk level given" via `!companyData.riskLevel`. This automation only affects risk level / standards chapter — it must never touch pricing/quote fields, which are driven solely by `numberOfWorkers`.
+
+During onboarding, a fresh worker count explicitly entered in the registration form must take precedence over an older quote's employee count when pre-filling company setup.
+
+**Why:** Quote data can contain an older or smaller employee count; prioritizing it over the just-submitted registration value can silently save the wrong workforce and standards chapter.
+
+**How to apply:** When both values are present, use the registration count when the company setup is prefilled from a fresh registration; retain quote count as fallback for quote-only onboarding.
