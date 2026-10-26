@@ -1,12 +1,12 @@
 PRUEBA FUNCIONAL H07/H08 — DEMO-PRUEBA — DESARROLLO
-Marcador: PRUEBA FUNCIONAL H07-H08 DEMO-PRUEBA 2026-10-12
+Marcador: PRUEBA FUNCIONAL H07-H08 DEMO-PRUEBA 2026-10-26
 Período: 2026-10-01 a 2026-12-31
 Ruta H08: Ruta de validación H08 2026-T4
 Vehículo usado para el registro GPS: PF37C20B
-Registro de monitoreo GPS: 4435076e-9ab3-4177-85dd-be0bcc0675c7 (exceso detectado: 1)
+Registro de monitoreo GPS: 19092645-cd7e-4d49-b590-f7f8f00a5186 (exceso detectado: 1)
 Gasto GPS de validación: 7412faac-b93d-48a4-a8d5-7546ff49973f
 Alerta de velocidad: creada automáticamente a partir del registro GPS.
-Estado del informe: H08=1; gastos=1; monitoreo=1; alertas=1.
+Estado del informe: H08=1; gastos=1; monitoreo=2; alertas=2.
 Pendientes del informe: ninguno
 Descarga PDF: protegida con HTTP 409 hasta confirmación expresa del Representante Legal; no se emitió una certificación firmada durante esta prueba.
 Los registros y archivos de validación permanecen en DEMO-PRUEBA para revisión.

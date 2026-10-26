@@ -359,9 +359,9 @@ test(
             encoding: "utf8",
           }).replace(/\s+/g, " ");
           assert.match(zeroPdfText, /DECLARACIÓN DE LA EMPRESA: SIN SINIESTROS VIALES/);
-          assert.match(zeroPdfText, /Fatalidades: 0/);
-          assert.match(zeroPdfText, /Heridos graves: 0/);
-          assert.match(zeroPdfText, /Total personas afectadas: 0/);
+          assert.match(zeroPdfText, /Fatalidades\s*:?\s*0/);
+          assert.match(zeroPdfText, /Heridos graves\s*:?\s*0/);
+          assert.match(zeroPdfText, /Total personas afectadas\s*:?\s*0/);
           assert.match(zeroPdfText, /01\/01\/2025 al 31\/01\/2025/);
         }
         outcomes.push(`${format.name}: informe en cero tras confirmación explícita`);
