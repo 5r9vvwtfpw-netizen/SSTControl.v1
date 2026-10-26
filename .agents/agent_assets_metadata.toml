@@ -1441,3 +1441,17 @@ mtime_ms = 1792999480356
 storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/900e3f35-a05d-40af-a5df-fbb48a11a332/76e58998-9954-482b-b89c-1b3c490b266a"
 storage_version_token = "1792999493987320"
 content_type = "image/png"
+
+[[outputs]]
+id = "kY3ujY4DbJCCoGIWqUzwh"
+uri = "file://generated-artifacts/pesv-informe-anual-11-prueba-funcional.pdf"
+type = "pdf"
+title = "Evidencia de prueba funcional — Informe SISI/PESV n.º 11"
+description = "Muestra de validación en DEMO-PRUEBA. Verifica un objetivo P05, una comunicación, 4 destinatarios y 3 lecturas confirmadas. Está marcada como prueba y no es evidencia empresarial real."
+logical_id = "95a5c230-dbe8-48fb-89d9-4eeeaf465046"
+content_hash = "sha256:8fbe2f1ca3ddf2ba978b697de3a365ca848c1321667636c08a61d0351ae0bd66"
+size = 3879
+mtime_ms = 1793001681837
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/95a5c230-dbe8-48fb-89d9-4eeeaf465046/06eab26b-fcf9-4789-be34-72e55da2c661"
+storage_version_token = "1793001700996328"
+content_type = "application/pdf"
