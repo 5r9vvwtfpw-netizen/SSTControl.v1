@@ -49,7 +49,12 @@ export default function PesvInformeAnualObjetivosMetas() {
   const [objectiveForm, setObjectiveForm] = useState({ codigo: "", titulo: "", anio: "", metaCuantitativa: "" });
   const { data, isLoading, isError, error, refetch } = useQuery<Evidence>({
     queryKey: ["/api/pesv/informes-anuales/objetivos-metas/estado", selectedCompany?.id],
-    queryFn: async () => (await apiRequest("GET", "/api/pesv/informes-anuales/objetivos-metas/estado")).json(),
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (selectedCompany?.id) params.set("companyId", selectedCompany.id);
+      const query = params.toString();
+      return (await apiRequest("GET", `/api/pesv/informes-anuales/objetivos-metas/estado${query ? `?${query}` : ""}`)).json();
+    },
     enabled: Boolean(selectedCompany?.id),
   });
   const createObjective = useMutation({
@@ -74,6 +79,7 @@ export default function PesvInformeAnualObjetivosMetas() {
       await downloadAuthenticatedReport({
         url: "/api/pesv/informes-anuales/objetivos-metas.pdf",
         filename: "divulgacion_objetivos_metas_pesv.pdf",
+        companyId: selectedCompany?.id,
       });
       toast({ title: "PDF descargado", description: "Se descargó el consolidado de evidencia disponible." });
     } catch (error: any) {
