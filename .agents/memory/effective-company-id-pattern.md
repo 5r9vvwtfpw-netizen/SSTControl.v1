@@ -62,3 +62,9 @@ New-tab document requests cannot carry `X-Company-Id`; every company-scoped `/ap
 **Why:** A functional superadmin session produced valid PDFs for the tested report endpoints only when the selected company was included in the URL; direct links without it returned authorization or company-context errors.
 
 **How to apply:** Use the shared active-company document URL/open helper for tenant PDF links, and keep regular company accounts scoped by their authenticated account when no global company selection exists.
+
+The PESV dashboard is a company-context summary, not a global superadmin report. Scope its operational metrics and evaluation counts to the active company, while preserving the separate global evaluation list for superadmin.
+
+**Why:** Combining globally returned inspections, incidents, and evaluations with company-scoped records made the `/pesv` panel contradict its active-company header.
+
+**How to apply:** Include the effective company ID in dashboard query keys and requests. For endpoints that intentionally return global data when unfiltered, pass an explicit company filter and preserve the global behavior for dedicated list pages.
