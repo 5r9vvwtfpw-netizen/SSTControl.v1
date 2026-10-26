@@ -1385,3 +1385,31 @@ mtime_ms = 1792849260727
 storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/9e276ed3-7f8b-4208-a08e-4c2a1060dee1/abf83fef-ceb4-46a0-af18-52745ab839eb"
 storage_version_token = "1792849285491902"
 content_type = "application/pdf"
+
+[[outputs]]
+id = "xt1EbEpVIErhwRtBBkIkD"
+uri = "file://generated-artifacts/pesv-riesgos-anual-demo-prueba/informe-anual-09-pantalla.png"
+type = "image"
+title = "Captura de la prueba funcional — Informe anual n.º 9"
+description = "Pantalla autenticada del informe en DEMO-PRUEBA. Captura de desarrollo, identificada como prueba funcional; no es evidencia regulatoria real."
+logical_id = "f1eebd78-bee5-4a6d-b738-0ced8f55179a"
+content_hash = "sha256:9cfdea094194c27e3c66de343a84f76471748faf3ce1c413f75aaf1257d5c035"
+size = 141777
+mtime_ms = 1792994501359
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/f1eebd78-bee5-4a6d-b738-0ced8f55179a/a14930a2-8f01-482e-9c40-3e4e983208d8"
+storage_version_token = "1792994514999743"
+content_type = "image/png"
+
+[[outputs]]
+id = "5gebyAbuF3Ps-6lC7fep3"
+uri = "file://generated-artifacts/pesv-riesgos-anual-demo-prueba/riesgos-p04-consolidado-prueba.pdf"
+type = "pdf"
+title = "PDF generado en la prueba funcional — DEMO-PRUEBA"
+description = "PDF consolidado utilizado para verificar la generación del informe anual n.º 9. Marcado como datos de prueba; no presentar como evidencia regulatoria real."
+logical_id = "2741cefe-5508-4921-a31f-1780b0f841ef"
+content_hash = "sha256:f35dad258cd0c2c6d5dbb18a5ff12397245e0ae461bc8e70d1e398f93a611da2"
+size = 778852
+mtime_ms = 1792994494013
+storage_uri = "gcs://replit-rams-assets-picard/rams/assets/repl:5f8baa74-5960-4508-942a-4984e77c197f/2741cefe-5508-4921-a31f-1780b0f841ef/b84a9601-4f10-4e75-9b42-bf4ff4d1d147"
+storage_version_token = "1792994515792751"
+content_type = "application/pdf"
