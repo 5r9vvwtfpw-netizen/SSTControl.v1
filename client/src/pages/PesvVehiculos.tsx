@@ -215,8 +215,11 @@ export default function PesvVehiculos() {
 
   const createVehicleMutation = useMutation({
     mutationFn: async (data: z.infer<typeof insertVehicleSchema>) => {
-      const payload = isAdmin && formData.companyId 
-        ? { ...data, companyId: formData.companyId }
+      if (isAdmin && !effectiveCompanyId) {
+        throw new Error("Seleccione una empresa activa antes de registrar el vehículo.");
+      }
+      const payload = isAdmin
+        ? { ...data, companyId: effectiveCompanyId! }
         : data;
       const res = await apiRequest("POST", "/api/vehicles", payload);
       return res.json();
@@ -328,6 +331,15 @@ export default function PesvVehiculos() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!editingVehicle && isAdmin && !effectiveCompanyId) {
+      toast({
+        title: "Empresa requerida",
+        description: "Seleccione una empresa activa antes de registrar el vehículo.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     if (!formData.insuranceExpiry) {
       toast({ title: "Campo requerido", description: "Ingrese la fecha de vencimiento del Seguro.", variant: "destructive" });
