@@ -1,6 +1,6 @@
-import type { Express } from "express";
+import type { Express, Request } from "express";
 import { db } from "../db";
-import { companySedes, workers, insertCompanySedeSchema } from "@shared/schema";
+import { companySedes, companies, workers, insertCompanySedeSchema } from "@shared/schema";
 import { eq, and, sql } from "drizzle-orm";
 import { requireAuth as authRequireAuth, requirePermission } from "../auth";
 import { z } from "zod";
@@ -10,20 +10,36 @@ const assignSedeSchema = z.object({
   sedeId: z.string().min(1).nullable(),
 });
 
+function getSedeCompanyId(req: Request): string | null {
+  const user = req.user as any;
+  if (!user) return null;
+
+  if (user.role === "superadmin") {
+    const selectedCompanyId = req.headers["x-company-id"];
+    return typeof selectedCompanyId === "string" && selectedCompanyId.trim()
+      ? selectedCompanyId.trim()
+      : null;
+  }
+
+  return typeof user.companyId === "string" && user.companyId
+    ? user.companyId
+    : null;
+}
+
 export function registerCompanySedesRoutes(app: Express) {
   app.get("/api/company-sedes", authRequireAuth, requirePermission("companies:view"), async (req, res) => {
     try {
-      const user = req.user as any;
-      if (!user.companyId) return res.json([]);
+      const companyId = getSedeCompanyId(req);
+      if (!companyId) return res.json([]);
 
       const sedes = await db.select().from(companySedes)
-        .where(eq(companySedes.companyId, user.companyId))
+        .where(eq(companySedes.companyId, companyId))
         .orderBy(companySedes.isMain, companySedes.name);
 
       const sedesWithCount = await Promise.all(sedes.map(async (sede) => {
         const [result] = await db.select({ count: sql<number>`count(*)::int` })
           .from(workers)
-          .where(and(eq(workers.sedeId, sede.id), eq(workers.companyId, user.companyId)));
+          .where(and(eq(workers.sedeId, sede.id), eq(workers.companyId, companyId)));
         return { ...sede, workerCount: result?.count || 0 };
       }));
 
@@ -48,9 +64,21 @@ export function registerCompanySedesRoutes(app: Express) {
   app.post("/api/company-sedes", authRequireAuth, requirePermission("companies:create"), async (req, res) => {
     try {
       const user = req.user as any;
-      if (!user.companyId) return res.status(400).json({ error: "Usuario sin empresa" });
+      const companyId = getSedeCompanyId(req);
+      if (!companyId) {
+        const error = user.role === "superadmin"
+          ? "Seleccione una empresa activa antes de crear la sede"
+          : "Usuario sin empresa";
+        return res.status(400).json({ error });
+      }
 
-      const parsed = insertCompanySedeSchema.safeParse({ ...req.body, companyId: user.companyId });
+      const [company] = await db.select({ id: companies.id })
+        .from(companies)
+        .where(eq(companies.id, companyId))
+        .limit(1);
+      if (!company) return res.status(404).json({ error: "Empresa no encontrada" });
+
+      const parsed = insertCompanySedeSchema.safeParse({ ...req.body, companyId });
       if (!parsed.success) return res.status(400).json({ error: parsed.error.errors });
 
       const [sede] = await db.insert(companySedes).values(parsed.data).returning();

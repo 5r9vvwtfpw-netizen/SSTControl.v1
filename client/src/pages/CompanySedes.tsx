@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useCompanyContext } from "@/hooks/use-company-context";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -57,12 +58,18 @@ type SedeWithCount = CompanySede & { workerCount: number };
 
 export default function CompanySedes() {
   const { toast } = useToast();
+  const { effectiveCompanyId } = useCompanyContext();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingSede, setEditingSede] = useState<SedeWithCount | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
   const { data: sedes = [], isLoading } = useQuery<SedeWithCount[]>({
-    queryKey: ["/api/company-sedes"],
+    queryKey: ["/api/company-sedes", effectiveCompanyId],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/company-sedes");
+      return response.json();
+    },
+    enabled: !!effectiveCompanyId,
   });
 
   const form = useForm<SedeFormValues>({
