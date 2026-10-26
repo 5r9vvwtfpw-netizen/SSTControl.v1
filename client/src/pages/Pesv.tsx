@@ -168,7 +168,7 @@ export default function Pesv() {
               </CardTitle>
               <CardDescription>Evaluaciones de los 24 pasos según Resolución 40595/2022</CardDescription>
             </div>
-            <Link href="/evaluaciones-pesv">
+            <Link href="/pesv/evaluaciones">
               <Button variant="outline" size="sm" data-testid="button-ver-evaluaciones">
                 Ver evaluaciones
                 <ArrowRight className="h-4 w-4 ml-2" />
@@ -219,7 +219,7 @@ export default function Pesv() {
           {(!evaluaciones || evaluaciones.length === 0) && (
             <div className="mt-4 text-center py-4 text-muted-foreground text-sm">
               No hay evaluaciones registradas. 
-              <Link href="/evaluaciones-pesv" className="text-primary ml-1 hover:underline">
+              <Link href="/pesv/evaluaciones" className="text-primary ml-1 hover:underline" data-testid="link-crear-primera-evaluacion">
                 Crear primera evaluación
               </Link>
             </div>
