@@ -21,10 +21,10 @@ import { calculateChapter } from "@shared/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { colombianDepartments, getColombianMunicipalities } from "@/data/colombia-divipola";
 
-const chapterInfo: Record<string, { name: string; standards: number; description: string }> = {
-  "1": { name: "Estándares Mínimos", standards: 7, description: "Empresas de 1-10 trabajadores con Riesgo I, II o III" },
-  "2": { name: "Estándares Intermedios", standards: 21, description: "Empresas de 11-50 trabajadores con Riesgo I, II o III" },
-  "3": { name: "Estándares Completos", standards: 61, description: "Empresas con más de 50 trabajadores o con Riesgo IV/V" }
+const chapterInfo: Record<string, { name: string; count: number; countLabel: string; description: string }> = {
+  "1": { name: "Estándares Mínimos", count: 7, countLabel: "estándares", description: "Empresas de 1-10 trabajadores con Riesgo I, II o III" },
+  "2": { name: "Estándares Intermedios", count: 21, countLabel: "estándares", description: "Empresas de 11-50 trabajadores con Riesgo I, II o III" },
+  "3": { name: "Estándares Completos", count: 60, countLabel: "ítems puntuables", description: "Empresas con más de 50 trabajadores o con Riesgo IV/V" }
 };
 
 const riskLevelInfo: Record<string, { name: string; color: string }> = {
@@ -798,7 +798,7 @@ export default function AuthPage() {
                           <p className="text-xs text-muted-foreground">{ciiuClassification.description}</p>
                           <div className="flex items-center gap-2 flex-wrap">
                             <Badge variant="secondary" className="text-xs">
-                              {currentChapterInfo.standards} estándares
+                              {currentChapterInfo.count} {currentChapterInfo.countLabel}
                             </Badge>
                             <Badge variant="secondary" className="text-xs">
                               {currentChapterInfo.name}
@@ -813,7 +813,7 @@ export default function AuthPage() {
                     <Alert variant="destructive" className="border-orange-300 bg-orange-50 dark:bg-orange-950/30 py-2" data-testid="alert-high-risk-register">
                       <AlertTriangle className="h-4 w-4" />
                       <AlertDescription className="text-xs">
-                        Actividad de <strong>Alto Riesgo</strong>: aplican los 61 estándares completos de la Resolución 0312/2019, independientemente del número de trabajadores.
+                        Actividad de <strong>Alto Riesgo</strong>: aplican los 60 ítems puntuables del artículo 27 de la Resolución 0312/2019, independientemente del número de trabajadores. El simulacro anual se verifica como subrequisito del 5.1.1, sin puntaje independiente.
                       </AlertDescription>
                     </Alert>
                   )}
