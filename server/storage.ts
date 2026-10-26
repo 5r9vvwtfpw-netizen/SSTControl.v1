@@ -3012,9 +3012,7 @@ export class DbStorage implements IStorage {
           inArray(schema.workers.status, ['activo', 'inactivo'])
         ));
       const actualCount = result?.count ?? 0;
-      await db.update(schema.companies)
-        .set({ numberOfWorkers: actualCount })
-        .where(eq(schema.companies.id, companyId));
+      await this.updateCompany(companyId, { numberOfWorkers: actualCount });
       logger.info({ companyId, actualCount }, '[WorkerSync] company.numberOfWorkers actualizado');
     } catch (e) {
       logger.warn({ err: e, companyId }, '[WorkerSync] No se pudo sincronizar numberOfWorkers');

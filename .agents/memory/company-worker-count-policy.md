@@ -8,3 +8,9 @@ El número vigente mostrado al editar una empresa no es una cifra que el cliente
 **Why:** El usuario señaló que un cliente podría actualizar otros datos de la empresa y, por confusión, escribir menos trabajadores de los registrados. Aunque el servidor rechace discrepancias, permitir la edición da una impresión equivocada y dispara mensajes de precio que no corresponden a esa operación.
 
 **How to apply:** Mantener el conteo de la ficha empresarial en solo lectura al editar. Los cambios de personal ocurren en Trabajadores; las revisiones del cupo o precio tienen su propio flujo. En el alta inicial puede solicitarse una cantidad declarada para la prueba o la cotización, pero no debe confundirse con la nómina registrada después.
+
+Cuando la sincronización de Trabajadores actualice el número vigente, también debe recalcular `calculatedChapter` usando el nivel de riesgo guardado; no escribir solo `numberOfWorkers` directamente.
+
+**Why:** Un conteo sincronizado superior a 50 puede convivir con un capítulo antiguo y dejar a la empresa viendo solo 7 estándares aunque ya tenga más de 50 trabajadores activos.
+
+**How to apply:** En cada alta, retiro o cambio de estado que sincronice trabajadores, usar la ruta de actualización de empresa que recalcula el capítulo, y verificar que la combinación vigente de conteo y riesgo determina el capítulo guardado.
