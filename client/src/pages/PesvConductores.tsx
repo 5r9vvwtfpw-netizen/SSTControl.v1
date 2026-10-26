@@ -334,7 +334,13 @@ export default function PesvConductores() {
 
   const createDriverMutation = useMutation({
     mutationFn: async (data: z.infer<typeof insertDriverSchema>) => {
-      const res = await apiRequest("POST", "/api/drivers", data);
+      if (isAdmin && !activeCompanyId) {
+        throw new Error("Seleccione una empresa activa antes de registrar el conductor.");
+      }
+      const payload = isAdmin
+        ? { ...data, companyId: activeCompanyId! }
+        : data;
+      const res = await apiRequest("POST", "/api/drivers", payload);
       return res.json();
     },
     onSuccess: () => {
@@ -405,6 +411,15 @@ export default function PesvConductores() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!editingDriver && isAdmin && !activeCompanyId) {
+      toast({
+        title: "Empresa requerida",
+        description: "Seleccione una empresa activa antes de registrar el conductor.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     if (!formData.licenseExpiry) {
       toast({ title: "Campo requerido", description: "Ingrese la fecha de vencimiento de la licencia de conducción.", variant: "destructive" });
