@@ -49,6 +49,8 @@ export default function PesvInformeAnualObjetivosMetas() {
   const [objectiveForm, setObjectiveForm] = useState({ codigo: "", titulo: "", anio: "", metaCuantitativa: "" });
   const { data, isLoading, isError, refetch } = useQuery<Evidence>({
     queryKey: ["/api/pesv/informes-anuales/objetivos-metas/estado", selectedCompany?.id],
+    queryFn: async () => (await apiRequest("GET", "/api/pesv/informes-anuales/objetivos-metas/estado")).json(),
+    enabled: Boolean(selectedCompany?.id),
   });
   const createObjective = useMutation({
     mutationFn: () => apiRequest("POST", "/api/objetivos-sv", {
