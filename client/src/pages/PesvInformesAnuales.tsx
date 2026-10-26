@@ -53,6 +53,12 @@ const annualCertifications = [
     title: "Evaluación y control de riesgos en seguridad vial",
     description: "Consolida P04, los tratamientos registrados y sus evidencias en un PDF",
   },
+  {
+    number: 10,
+    href: "/pesv/informes-anuales/matriz-riesgos-viales",
+    title: "Matriz de riesgos de seguridad vial",
+    description: "Descarga una copia Excel de la matriz P04 y sus tratamientos registrados",
+  },
 ];
 
 export default function PesvInformesAnuales() {

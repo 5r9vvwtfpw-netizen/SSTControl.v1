@@ -9,13 +9,14 @@ const enabled = process.env.RUN_PESV_ANNUAL_RISK_CONTROL_DEMO_FUNCTIONAL === "1"
 const evidenceDir = "generated-artifacts/pesv-riesgos-anual-demo-prueba";
 const baseUrl = "http://127.0.0.1:5000";
 
-test("DEMO-PRUEBA: fuentes y PDF consolidado del informe anual P04", { skip: !enabled }, async () => {
+test("DEMO-PRUEBA: informes anuales P04 n.º 9 y n.º 10", { skip: !enabled }, async () => {
   assert.equal(process.env.NODE_ENV, "development", "La prueba solo se permite en desarrollo.");
-  const [{ db }, schema, { hashPassword }, { chromium }] = await Promise.all([
+  const [{ db }, schema, { hashPassword }, { chromium }, XLSXModule] = await Promise.all([
     import("../server/db"),
     import("../shared/schema"),
     import("../server/auth"),
     import("playwright"),
+    import("xlsx-js-style"),
   ]);
   const [company] = await db.select({ id: schema.companies.id, name: schema.companies.name })
     .from(schema.companies).where(eq(schema.companies.name, "DEMO-PRUEBA")).limit(1);
@@ -71,7 +72,10 @@ test("DEMO-PRUEBA: fuentes y PDF consolidado del informe anual P04", { skip: !en
     assert.ok(report.documents.every((item) => item.pasoId === "P04"));
     const sourceRisks = await db.select({ id: schema.riesgosViales.id, activo: schema.riesgosViales.activo })
       .from(schema.riesgosViales).where(eq(schema.riesgosViales.companyId, company.id));
-    const sourceTreatments = await db.select({ riesgoVialId: schema.tratamientosRiesgoVial.riesgoVialId })
+    const sourceTreatments = await db.select({
+      id: schema.tratamientosRiesgoVial.id,
+      riesgoVialId: schema.tratamientosRiesgoVial.riesgoVialId,
+    })
       .from(schema.tratamientosRiesgoVial).where(eq(schema.tratamientosRiesgoVial.companyId, company.id));
     assert.deepEqual(
       report.risks.map(({ id, activo }) => ({ id, activo })).sort((a, b) => a.id.localeCompare(b.id)),
@@ -82,6 +86,46 @@ test("DEMO-PRUEBA: fuentes y PDF consolidado del informe anual P04", { skip: !en
       sourceTreatments.map(({ riesgoVialId }) => riesgoVialId).sort(),
     );
     checks.push(`La consulta del informe coincide con los datos de origen: ${report.risks.length} riesgos y ${report.treatments.length} tratamientos; evaluación, criterios y adjuntos restringidos a P04.`);
+
+    const matrixResponse = await context.request.get("/api/pesv/informes-anuales/matriz-riesgos-viales/evidencias");
+    const matrixBody = await matrixResponse.text();
+    assert.equal(matrixResponse.status(), 200, matrixBody);
+    const matrixEvidence = await matrixResponse.json() as {
+      companyName: string;
+      isTestCompany: boolean;
+      risks: Array<{ id: string; codigo: string }>;
+      treatments: Array<{ id: string; riesgoVialId: string }>;
+    };
+    assert.equal(matrixEvidence.companyName, "DEMO-PRUEBA");
+    assert.equal(matrixEvidence.isTestCompany, true);
+    assert.deepEqual(
+      matrixEvidence.risks.map(({ id }) => id).sort(),
+      sourceRisks.map(({ id }) => id).sort(),
+    );
+    assert.deepEqual(
+      matrixEvidence.treatments.map(({ id, riesgoVialId }) => ({ id, riesgoVialId })).sort((a, b) => a.id.localeCompare(b.id)),
+      sourceTreatments.sort((a, b) => a.id.localeCompare(b.id)),
+    );
+    checks.push(`La fuente del informe n.º 10 coincide con DEMO-PRUEBA: ${matrixEvidence.risks.length} riesgos y ${matrixEvidence.treatments.length} tratamientos.`);
+
+    const xlsxResponse = await context.request.get("/api/pesv/informes-anuales/matriz-riesgos-viales.xlsx");
+    assert.equal(xlsxResponse.status(), 200, "La copia Excel debe responder 200.");
+    assert.match(xlsxResponse.headers()["content-type"] || "", /spreadsheetml\.sheet/);
+    const xlsxBuffer = Buffer.from(await xlsxResponse.body());
+    assert.equal(xlsxBuffer.subarray(0, 2).toString("ascii"), "PK", "El archivo debe ser un contenedor XLSX válido.");
+    const workbook = XLSXModule.default.read(xlsxBuffer, { type: "buffer" });
+    assert.deepEqual(workbook.SheetNames, ["Información", "Matriz de riesgos", "Tratamientos"]);
+    const workbookText = workbook.SheetNames
+      .map((name) => XLSXModule.default.utils.sheet_to_json(workbook.Sheets[name], { header: 1 }).flat().join(" "))
+      .join(" ");
+    assert.match(workbookText, /DEMO-PRUEBA/);
+    assert.match(workbookText, /no presentar como evidencia real/i);
+    const exportedRiskRows = XLSXModule.default.utils.sheet_to_json(workbook.Sheets["Matriz de riesgos"], { header: 1 });
+    const exportedTreatmentRows = XLSXModule.default.utils.sheet_to_json(workbook.Sheets["Tratamientos"], { header: 1 });
+    assert.equal(exportedRiskRows.length, matrixEvidence.risks.length + 1, "La hoja debe contener todos los riesgos y el encabezado.");
+    assert.equal(exportedTreatmentRows.length, matrixEvidence.treatments.length + 1, "La hoja debe contener todos los tratamientos y el encabezado.");
+    await writeFile(`${evidenceDir}/matriz-riesgos-viales-demo-prueba.xlsx`, xlsxBuffer);
+    checks.push("El Excel abre con tres hojas; incluye matriz, tratamientos y aviso DEMO-PRUEBA.");
 
     const pdfResponse = await context.request.get("/api/pesv/informes-anuales/riesgos-seguridad-vial.pdf");
     assert.equal(pdfResponse.status(), 200, "El PDF consolidado debe responder 200.");
@@ -147,6 +191,19 @@ test("DEMO-PRUEBA: fuentes y PDF consolidado del informe anual P04", { skip: !en
     screenshot = Buffer.from(await reportMain.screenshot({ animations: "disabled" }));
     await writeFile(`${evidenceDir}/informe-anual-09-pantalla.png`, screenshot);
     checks.push("Pantalla autenticada: pregunta, empresa, estado, resumen, fuentes y acción única de descarga visibles.");
+
+    await page.goto("/pesv/informes-anuales/matriz-riesgos-viales", { waitUntil: "domcontentloaded", timeout: 30000 });
+    const matrixMain = page.locator("main").first();
+    await matrixMain.waitFor({ state: "visible", timeout: 10000 });
+    const matrixMainText = await matrixMain.innerText();
+    assert.ok(matrixMainText.includes("Matriz de riesgos de seguridad vial"), "La pantalla debe mostrar el informe anual n.º 10.");
+    assert.ok(matrixMainText.includes("Copia en archivo Excel"), "La pantalla debe indicar el formato solicitado.");
+    await page.getByRole("link", { name: "Abrir Matriz de Riesgos Viales" }).waitFor();
+    await page.getByTestId("button-download-pesv-annual-risk-matrix").waitFor();
+    assert.deepEqual(pageErrors, [], "Las pantallas no deben producir errores de JavaScript.");
+    screenshot = Buffer.from(await matrixMain.screenshot({ animations: "disabled" }));
+    await writeFile(`${evidenceDir}/informe-anual-10-matriz-riesgos.png`, screenshot);
+    checks.push("Pantalla autenticada del informe n.º 10: pregunta, empresa, estado, resumen, fuente y descarga Excel visibles.");
     await context.close();
 
     await writeFile(`${evidenceDir}/resultado.json`, JSON.stringify({
@@ -157,6 +214,9 @@ test("DEMO-PRUEBA: fuentes y PDF consolidado del informe anual P04", { skip: !en
       tratamientos: report.treatments.length,
       criteriosP04: report.criteria.length,
       soportesP04: report.documents.length,
+      riesgosInforme10: matrixEvidence.risks.length,
+      tratamientosInforme10: matrixEvidence.treatments.length,
+      hojasExcelInforme10: workbook.SheetNames,
       checks,
       fuentesDeNegocioModificadas: false,
       afirmacionDeCumplimiento: false,

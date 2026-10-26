@@ -27,6 +27,7 @@ import {
 } from "../reports/pesv-annual-certification-report";
 import { buildPesvOrganizationalDiagnosisPdfBuffer } from "../reports/pesv-organizational-diagnosis-report";
 import { buildPesvAnnualRiskControlPdfBuffer } from "../reports/pesv-annual-risk-control-report";
+import { buildPesvAnnualRiskMatrixExcelBuffer } from "../reports/pesv-annual-risk-matrix-excel";
 import { getSignersForCompany } from "../services/pdf-standardizer";
 
 const ANNUAL_PESV_CERTIFICATIONS: Record<AnnualCertificationCode, {
@@ -225,6 +226,37 @@ function companyFileSlug(companyName: string): string {
     .toLowerCase()
     .slice(0, 48);
   return slug || "empresa";
+}
+
+async function loadAnnualRiskMatrixDataset(companyId: string) {
+  const [company] = await db.select({
+    name: schema.companies.name,
+    nit: schema.companies.nit,
+  }).from(schema.companies).where(eq(schema.companies.id, companyId)).limit(1);
+  if (!company) return null;
+
+  const [risks, treatments, workers] = await Promise.all([
+    db.select().from(schema.riesgosViales)
+      .where(eq(schema.riesgosViales.companyId, companyId))
+      .orderBy(asc(schema.riesgosViales.codigo)),
+    db.select().from(schema.tratamientosRiesgoVial)
+      .where(eq(schema.tratamientosRiesgoVial.companyId, companyId))
+      .orderBy(asc(schema.tratamientosRiesgoVial.createdAt)),
+    db.select({ id: schema.workers.id, name: schema.workers.name })
+      .from(schema.workers).where(eq(schema.workers.companyId, companyId)),
+  ]);
+  const workerNames = new Map(workers.map((worker) => [worker.id, worker.name]));
+  return {
+    company,
+    risks: risks.map((risk) => ({
+      ...risk,
+      responsableName: risk.responsableId ? workerNames.get(risk.responsableId) ?? null : null,
+    })),
+    treatments: treatments.map((treatment) => ({
+      ...treatment,
+      responsableName: treatment.responsableId ? workerNames.get(treatment.responsableId) ?? null : null,
+    })),
+  };
 }
 
 export function registerPesvInformeRoutes(app: Express) {
@@ -602,6 +634,55 @@ export function registerPesvInformeRoutes(app: Express) {
       } catch (error) {
         console.error("Error generando informe anual PESV P04:", error);
         res.status(500).json({ message: "No fue posible generar el PDF consolidado de evaluación y control de riesgos." });
+      }
+    },
+  );
+
+  app.get(
+    "/api/pesv/informes-anuales/matriz-riesgos-viales/evidencias",
+    authRequireAuth,
+    reportViewPermission,
+    async (req, res) => {
+      try {
+        const companyId = getAuthorizedReportCompanyId(req);
+        if (!companyId) return res.status(403).json({ message: "Selecciona una empresa autorizada." });
+        const dataset = await loadAnnualRiskMatrixDataset(companyId);
+        if (!dataset) return res.status(404).json({ message: "No se encontró la empresa seleccionada." });
+        res.json({
+          companyName: dataset.company.name,
+          companyNit: dataset.company.nit,
+          isTestCompany: isInternalTestCompany(companyId),
+          risks: dataset.risks,
+          treatments: dataset.treatments,
+        });
+      } catch (error) {
+        console.error("Error consultando informe anual PESV de matriz vial:", error);
+        res.status(500).json({ message: "No fue posible consultar la matriz de riesgos viales." });
+      }
+    },
+  );
+
+  app.get(
+    "/api/pesv/informes-anuales/matriz-riesgos-viales.xlsx",
+    authRequireAuth,
+    reportViewPermission,
+    async (req, res) => {
+      try {
+        const companyId = getAuthorizedReportCompanyId(req);
+        if (!companyId) return res.status(403).json({ message: "Selecciona una empresa autorizada." });
+        const dataset = await loadAnnualRiskMatrixDataset(companyId);
+        if (!dataset) return res.status(404).json({ message: "No se encontró la empresa seleccionada." });
+        const buffer = buildPesvAnnualRiskMatrixExcelBuffer({
+          ...dataset,
+          isTestCompany: isInternalTestCompany(companyId),
+        });
+        res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        res.setHeader("Content-Disposition", `attachment; filename="matriz_riesgos_viales_${companyFileSlug(dataset.company.name)}.xlsx"`);
+        res.setHeader("Content-Length", buffer.length);
+        res.send(buffer);
+      } catch (error) {
+        console.error("Error generando copia Excel de matriz vial:", error);
+        res.status(500).json({ message: "No fue posible generar la copia Excel de la matriz de riesgos viales." });
       }
     },
   );
