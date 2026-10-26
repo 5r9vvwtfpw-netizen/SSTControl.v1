@@ -34,6 +34,7 @@ import { MAQUINARIA_CHECKLIST } from "@shared/pesv-maquinaria-checklist";
 import { getPortalPendingCount } from "./services/portal-pending-count";
 import { getAuditContext } from "./lib/audit-logger";
 import { logger } from "./lib/logger";
+import { filterFodaLinkedActions, getFodaTypeFromFactor } from "./services/foda-context-actions";
 import { validateDailyAlcoholSubmission } from "./lib/pesv-daily-alcohol-validation";
 import { validateManagementReviewApproval } from "./lib/management-review-approval";
 import { registerBillingRoutes } from "./routes/billing";
@@ -53011,6 +53012,46 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // ==========================================
   // ANÁLISIS DE CONTEXTO - ISO 45001:2018 Cláusula 4.1
   // ==========================================
+
+  const getFodaContextActionsForCompany = async (companyId: string) => {
+    const [companyActions, factorRows] = await Promise.all([
+      db.select()
+        .from(accionesMejoraContexto)
+        .where(eq(accionesMejoraContexto.companyId, companyId))
+        .orderBy(desc(accionesMejoraContexto.createdAt)),
+      db.select({
+        id: factoresContexto.id,
+        companyId: analisisContexto.companyId,
+        esFortaleza: factoresContexto.esFortaleza,
+        esDebilidad: factoresContexto.esDebilidad,
+        esOportunidad: factoresContexto.esOportunidad,
+        esAmenaza: factoresContexto.esAmenaza,
+      })
+        .from(factoresContexto)
+        .innerJoin(analisisContexto, eq(factoresContexto.analisisContextoId, analisisContexto.id))
+        .where(eq(analisisContexto.companyId, companyId)),
+    ]);
+
+    return filterFodaLinkedActions(companyActions, factorRows, companyId);
+  };
+
+  const getFodaFactorForCompany = async (factorId: string, companyId: string) => {
+    const [factor] = await db.select({
+      id: factoresContexto.id,
+      analisisContextoId: factoresContexto.analisisContextoId,
+      esFortaleza: factoresContexto.esFortaleza,
+      esDebilidad: factoresContexto.esDebilidad,
+      esOportunidad: factoresContexto.esOportunidad,
+      esAmenaza: factoresContexto.esAmenaza,
+    })
+      .from(factoresContexto)
+      .innerJoin(analisisContexto, eq(factoresContexto.analisisContextoId, analisisContexto.id))
+      .where(and(
+        eq(factoresContexto.id, factorId),
+        eq(analisisContexto.companyId, companyId),
+      ));
+    return factor || null;
+  };
   
   app.get("/api/analisis-contexto", requireAuth, async (req, res) => {
     try {
@@ -53042,6 +53083,29 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     } catch (error: any) {
       console.error("[GET /api/analisis-contexto/:id] Error:", error.message);
       res.status(500).send("Error al obtener análisis de contexto");
+    }
+  });
+
+  app.get("/api/analisis-contexto/:id/factores", requireAuth, async (req, res) => {
+    try {
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(403).send("Usuario no asociado a empresa");
+      const [analisis] = await db.select({ id: analisisContexto.id })
+        .from(analisisContexto)
+        .where(and(
+          eq(analisisContexto.id, req.params.id),
+          eq(analisisContexto.companyId, companyId),
+        ));
+      if (!analisis) return res.status(404).send("Análisis no encontrado");
+
+      const factores = await db.select()
+        .from(factoresContexto)
+        .where(eq(factoresContexto.analisisContextoId, analisis.id))
+        .orderBy(factoresContexto.createdAt);
+      res.json(factores);
+    } catch (error: any) {
+      console.error("[GET /api/analisis-contexto/:id/factores] Error:", error.message);
+      res.status(500).send("Error al obtener factores de contexto");
     }
   });
 
@@ -53096,9 +53160,34 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   // Factores de contexto
+  app.get("/api/factores-contexto", requireAuth, async (req, res) => {
+    try {
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(403).send("Usuario no asociado a empresa");
+      const rows = await db.select({ factor: factoresContexto })
+        .from(factoresContexto)
+        .innerJoin(analisisContexto, eq(factoresContexto.analisisContextoId, analisisContexto.id))
+        .where(eq(analisisContexto.companyId, companyId))
+        .orderBy(desc(factoresContexto.createdAt));
+      res.json(rows.map(({ factor }) => factor));
+    } catch (error: any) {
+      console.error("[GET /api/factores-contexto] Error:", error.message);
+      res.status(500).send("Error al obtener factores de contexto");
+    }
+  });
+
   app.post("/api/analisis-contexto/:id/factores", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(403).send("Usuario no asociado a empresa");
+      const [analisis] = await db.select({ id: analisisContexto.id })
+        .from(analisisContexto)
+        .where(and(
+          eq(analisisContexto.id, id),
+          eq(analisisContexto.companyId, companyId),
+        ));
+      if (!analisis) return res.status(404).send("Análisis no encontrado");
       const [result] = await db.insert(factoresContexto)
         .values({
           ...req.body,
@@ -53115,9 +53204,17 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   app.patch("/api/factores-contexto/:id", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(403).send("Usuario no asociado a empresa");
+      const factor = await getFodaFactorForCompany(id, companyId);
+      if (!factor) return res.status(404).send("Factor no encontrado");
+      const { analisisContextoId: _ignoredAnalysisId, ...updates } = req.body;
       const [result] = await db.update(factoresContexto)
-        .set({ ...req.body, updatedAt: new Date() })
-        .where(eq(factoresContexto.id, id))
+        .set({ ...updates, updatedAt: new Date() })
+        .where(and(
+          eq(factoresContexto.id, id),
+          eq(factoresContexto.analisisContextoId, factor.analisisContextoId),
+        ))
         .returning();
       if (!result) return res.status(404).send("Factor no encontrado");
       res.json(result);
@@ -53130,8 +53227,15 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   app.delete("/api/factores-contexto/:id", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(403).send("Usuario no asociado a empresa");
+      const factor = await getFodaFactorForCompany(id, companyId);
+      if (!factor) return res.status(404).send("Factor no encontrado");
       const [result] = await db.delete(factoresContexto)
-        .where(eq(factoresContexto.id, id))
+        .where(and(
+          eq(factoresContexto.id, id),
+          eq(factoresContexto.analisisContextoId, factor.analisisContextoId),
+        ))
         .returning();
       if (!result) return res.status(404).send("Factor no encontrado");
       res.json({ success: true });
@@ -53148,10 +53252,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     try {
       const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(403).send("Usuario no asociado a empresa");
-      const acciones = await db.select()
-        .from(accionesMejoraContexto)
-        .where(eq(accionesMejoraContexto.companyId, companyId))
-        .orderBy(desc(accionesMejoraContexto.createdAt));
+      const acciones = await getFodaContextActionsForCompany(companyId);
       
       // Cargar logo y obtener firmantes
       const logoBuffer = await loadCompanyLogo(companyId);
@@ -53173,10 +53274,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const signers = await getSignersForCompany(companyId, true);
 
       // ── Fuente 1: Acciones FODA / Contexto Organizacional ────────────────
-      const accionesContexto = await db.select()
-        .from(accionesMejoraContexto)
-        .where(eq(accionesMejoraContexto.companyId, companyId))
-        .orderBy(desc(accionesMejoraContexto.createdAt));
+      const accionesContexto = await getFodaContextActionsForCompany(companyId);
 
       // ── Fuente 2: Acciones de Mejora SST (de evaluaciones SST) ───────────
       const evaluacionesSstComp = await db.select({ id: schema.evaluacionesSst.id })
@@ -53408,10 +53506,10 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
   app.get("/api/acciones-mejora-contexto/:id", requireAuth, async (req, res) => {
     try {
-      const { id } = req.params;
-      const [accion] = await db.select()
-        .from(accionesMejoraContexto)
-        .where(eq(accionesMejoraContexto.id, id));
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(403).send("Usuario no asociado a empresa");
+      const acciones = await getFodaContextActionsForCompany(companyId);
+      const accion = acciones.find((item) => item.id === req.params.id);
       if (!accion) return res.status(404).send("Acción de mejora no encontrada");
       res.json(accion);
     } catch (error: any) {
@@ -53425,10 +53523,18 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const companyId = getEffectiveCompanyId(req);
       if (!companyId) return res.status(403).send("Usuario no asociado a empresa");
       const data = insertAccionMejoraContextoSchema.parse(req.body);
+      if (!data.factorContextoId) {
+        return res.status(400).send("La acción debe estar vinculada a un factor FODA de la empresa activa");
+      }
+      const factor = await getFodaFactorForCompany(data.factorContextoId, companyId);
+      if (!factor) return res.status(400).send("El factor FODA no pertenece a la empresa activa");
+      const tipoFoda = getFodaTypeFromFactor(factor);
+      if (!tipoFoda) return res.status(400).send("Clasifica el factor FODA antes de crear la acción");
       const [accion] = await db.insert(accionesMejoraContexto)
         .values({
           ...data,
           companyId,
+          tipoFoda,
           fechaIdentificacion: data.fechaIdentificacion instanceof Date
             ? data.fechaIdentificacion.toISOString().slice(0, 10) : data.fechaIdentificacion,
           fechaInicio: data.fechaInicio instanceof Date
@@ -53449,9 +53555,24 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   app.patch("/api/acciones-mejora-contexto/:id", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(403).send("Usuario no asociado a empresa");
+      const acciones = await getFodaContextActionsForCompany(companyId);
+      const existing = acciones.find((item) => item.id === id);
+      if (!existing) return res.status(404).send("Acción de mejora no encontrada");
+      const factorContextoId = req.body.factorContextoId ?? existing.factorContextoId;
+      if (!factorContextoId) return res.status(400).send("La acción debe permanecer vinculada a un factor FODA");
+      const factor = await getFodaFactorForCompany(factorContextoId, companyId);
+      if (!factor) return res.status(400).send("El factor FODA no pertenece a la empresa activa");
+      const tipoFoda = getFodaTypeFromFactor(factor);
+      if (!tipoFoda) return res.status(400).send("Clasifica el factor FODA antes de actualizar la acción");
+      const { companyId: _ignoredCompanyId, ...updates } = req.body;
       const [updated] = await db.update(accionesMejoraContexto)
-        .set({ ...req.body, updatedAt: new Date() })
-        .where(eq(accionesMejoraContexto.id, id))
+        .set({ ...updates, factorContextoId, tipoFoda, updatedAt: new Date() })
+        .where(and(
+          eq(accionesMejoraContexto.id, id),
+          eq(accionesMejoraContexto.companyId, companyId),
+        ))
         .returning();
       if (!updated) return res.status(404).send("Acción de mejora no encontrada");
       res.json(updated);
@@ -53464,8 +53585,17 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   app.delete("/api/acciones-mejora-contexto/:id", requireAuth, async (req, res) => {
     try {
       const { id } = req.params;
+      const companyId = getEffectiveCompanyId(req);
+      if (!companyId) return res.status(403).send("Usuario no asociado a empresa");
+      const acciones = await getFodaContextActionsForCompany(companyId);
+      if (!acciones.some((item) => item.id === id)) {
+        return res.status(404).send("Acción de mejora no encontrada");
+      }
       const [result] = await db.delete(accionesMejoraContexto)
-        .where(eq(accionesMejoraContexto.id, id))
+        .where(and(
+          eq(accionesMejoraContexto.id, id),
+          eq(accionesMejoraContexto.companyId, companyId),
+        ))
         .returning();
       if (!result) return res.status(404).send("Acción de mejora no encontrada");
       res.json({ success: true });
@@ -53670,10 +53800,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       if (!companyId) return res.status(403).send("Usuario no asociado a empresa");
       
       // Acciones desde análisis de contexto (FODA)
-      const accionesContexto = await db.select()
-        .from(accionesMejoraContexto)
-        .where(eq(accionesMejoraContexto.companyId, companyId))
-        .orderBy(desc(accionesMejoraContexto.createdAt));
+      const accionesContexto = await getFodaContextActionsForCompany(companyId);
       
       // Cargar logo y obtener firmantes
       const logoBuffer = await loadCompanyLogo(companyId);
