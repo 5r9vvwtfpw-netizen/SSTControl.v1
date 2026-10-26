@@ -15,9 +15,10 @@ import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Plus, GraduationCap, Search, Sparkles, RefreshCw, Users, UserPlus, UsersRound, Trash2, Bot } from "lucide-react";
 import { EvaluacionPesvContextHeader } from "@/components/EvaluacionPesvContextHeader";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest, getSelectedCompanyId, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
+import { useCompanyContext } from "@/hooks/use-company-context";
 import { hasCompanyAdminAccess, canWrite } from "@shared/permissions";
 import type { EvaluacionPesv, RoadSafetyTraining, Worker } from "@shared/schema";
 
@@ -139,6 +140,8 @@ interface PesvAsistentesDialogProps {
 
 function PesvAsistentesDialog({ isOpen, onClose, training, workers, evaluacionId }: PesvAsistentesDialogProps) {
   const { toast } = useToast();
+  const { effectiveCompanyId } = useCompanyContext();
+  const companyContextId = getSelectedCompanyId() ?? effectiveCompanyId ?? "";
   const [selectedWorkerId, setSelectedWorkerId] = useState("");
   const [selectedCargo, setSelectedCargo] = useState("");
 
@@ -147,14 +150,19 @@ function PesvAsistentesDialog({ isOpen, onClose, training, workers, evaluacionId
     queryClient.invalidateQueries({ queryKey: ["/api/evaluaciones-pesv", evaluacionId, "capacitaciones", "worker-counts"] });
   };
 
-  const { data: attendees = [], isLoading } = useQuery<any[]>({
-    queryKey: ["/api/road-safety-trainings", training.id, "worker-attendees"],
+  const {
+    data: attendees = [],
+    isLoading,
+    isFetching,
+    isError: attendeesError,
+    refetch: refetchAttendees,
+  } = useQuery<any[]>({
+    queryKey: ["/api/road-safety-trainings", training.id, "worker-attendees", companyContextId],
     queryFn: async () => {
-      const res = await fetch(`/api/road-safety-trainings/${training.id}/worker-attendees`, { credentials: "include" });
-      if (!res.ok) throw new Error("Error al cargar asistentes");
+      const res = await apiRequest("GET", `/api/road-safety-trainings/${training.id}/worker-attendees`);
       return res.json();
     },
-    enabled: isOpen,
+    enabled: isOpen && Boolean(companyContextId),
   });
 
   const addMutation = useMutation({
@@ -162,9 +170,16 @@ function PesvAsistentesDialog({ isOpen, onClose, training, workers, evaluacionId
       const res = await apiRequest("POST", `/api/road-safety-trainings/${training.id}/invite-workers`, { workerIds });
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       invalidate();
-      toast({ title: "Trabajador agregado", description: "El trabajador ha sido agregado a la capacitación", className: "bg-green-50 border-green-200" });
+      const added = data?.invitations?.length ?? 0;
+      toast({
+        title: added > 0 ? "Trabajador agregado" : "El trabajador ya estaba inscrito",
+        description: added > 0
+          ? "El trabajador ha sido agregado a la capacitación."
+          : "No se creó otra inscripción porque ya existía.",
+        className: "bg-green-50 border-green-200",
+      });
       setSelectedWorkerId("");
     },
     onError: (error: Error) => {
@@ -257,7 +272,7 @@ function PesvAsistentesDialog({ isOpen, onClose, training, workers, evaluacionId
             </div>
             <Button
               onClick={() => selectedWorkerId && addMutation.mutate([selectedWorkerId])}
-              disabled={!selectedWorkerId || addMutation.isPending}
+              disabled={!selectedWorkerId || addMutation.isPending || isLoading || isFetching || attendeesError || !companyContextId}
               className="gap-1"
               data-testid="button-add-attendee"
             >
@@ -284,7 +299,7 @@ function PesvAsistentesDialog({ isOpen, onClose, training, workers, evaluacionId
                 <Button
                   variant="outline"
                   size="sm"
-                  disabled={!selectedCargo || addBulkMutation.isPending}
+                  disabled={!selectedCargo || addBulkMutation.isPending || isLoading || isFetching || attendeesError || !companyContextId}
                   onClick={() => {
                     const ids = availableWorkers
                       .filter(w => (w.position || "").toLowerCase() === selectedCargo.toLowerCase())
@@ -305,7 +320,7 @@ function PesvAsistentesDialog({ isOpen, onClose, training, workers, evaluacionId
                 <Button
                   variant="outline"
                   size="sm"
-                  disabled={addBulkMutation.isPending}
+                  disabled={addBulkMutation.isPending || isLoading || isFetching || attendeesError || !companyContextId}
                   onClick={() => addBulkMutation.mutate(availableWorkers.map(w => w.id))}
                   data-testid="button-agregar-todos"
                   className="gap-1"
@@ -323,7 +338,16 @@ function PesvAsistentesDialog({ isOpen, onClose, training, workers, evaluacionId
             <h4 className="font-medium mb-2">
               Trabajadores Inscritos ({attendees.length})
             </h4>
-            {isLoading ? (
+            {attendeesError || !companyContextId ? (
+              <div className="text-center py-6 text-destructive" role="alert">
+                <p>{companyContextId ? "No se pudo cargar la lista de inscritos." : "No hay una empresa activa para consultar los inscritos."}</p>
+                {attendeesError && (
+                  <Button variant="outline" size="sm" className="mt-3" onClick={() => refetchAttendees()}>
+                    Reintentar
+                  </Button>
+                )}
+              </div>
+            ) : isLoading ? (
               <div className="text-center py-4 text-muted-foreground">Cargando...</div>
             ) : attendees.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
@@ -415,6 +439,8 @@ function PesvAsistentesDialog({ isOpen, onClose, training, workers, evaluacionId
 export default function PesvCapacitacionesEvaluacion() {
   const { evaluacionId } = useParams<{ evaluacionId: string }>();
   const { user } = useAuth();
+  const { effectiveCompanyId } = useCompanyContext();
+  const companyContextId = getSelectedCompanyId() ?? effectiveCompanyId ?? "";
   const { toast } = useToast();
   const isAdmin = user?.role ? canWrite(user.role, 'road_safety_trainings') : false;
 
@@ -457,29 +483,28 @@ export default function PesvCapacitacionesEvaluacion() {
   });
 
   const { data: workers = [] } = useQuery<Worker[]>({
-    queryKey: ["/api/workers"],
+    queryKey: ["/api/workers", companyContextId],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/workers");
+      return res.json();
+    },
+    enabled: Boolean(companyContextId),
   });
 
-  const { data: allWorkerCounts = {} } = useQuery<Record<string, number>>({
-    queryKey: ["/api/evaluaciones-pesv", evaluacionId, "capacitaciones", "worker-counts"],
+  const {
+    data: allWorkerCounts = {},
+    isError: allWorkerCountsError,
+  } = useQuery<Record<string, number>>({
+    queryKey: ["/api/evaluaciones-pesv", evaluacionId, "capacitaciones", "worker-counts", companyContextId],
     queryFn: async () => {
-      const counts: Record<string, number> = {};
-      for (const training of trainings) {
-        try {
-          const res = await fetch(`/api/road-safety-trainings/${training.id}/worker-attendees`, { credentials: "include" });
-          if (res.ok) {
-            const data = await res.json();
-            counts[training.id] = Array.isArray(data) ? data.length : 0;
-          } else {
-            counts[training.id] = 0;
-          }
-        } catch {
-          counts[training.id] = 0;
-        }
-      }
-      return counts;
+      const entries = await Promise.all(trainings.map(async training => {
+        const res = await apiRequest("GET", `/api/road-safety-trainings/${training.id}/worker-attendees`);
+        const data = await res.json();
+        return [training.id, Array.isArray(data) ? data.length : 0] as const;
+      }));
+      return Object.fromEntries(entries);
     },
-    enabled: trainings.length > 0,
+    enabled: trainings.length > 0 && Boolean(companyContextId),
   });
 
   const createMutation = useMutation({
@@ -816,7 +841,8 @@ export default function PesvCapacitacionesEvaluacion() {
                   id={training.id}
                   title={training.title}
                   date={new Date(training.trainingDate).toLocaleDateString("es-CO")}
-                  attendees={allWorkerCounts[training.id] ?? 0}
+                  attendees={allWorkerCountsError || !companyContextId ? undefined : allWorkerCounts[training.id]}
+                  countError={allWorkerCountsError || !companyContextId}
                   totalWorkers={training.totalAttendees}
                   status={training.status as any}
                   canEdit={isAdmin}
