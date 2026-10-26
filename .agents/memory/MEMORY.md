@@ -51,6 +51,7 @@
 - [Seguridad de la configuración Replit](replit-config-secret-hygiene.md) — .replit exige reemplazo validado; retirar secretos versionados no limpia el historial ni evita su rotación.
 - [PDF report discovery before implementation](pdf-report-discovery.md) — auditar generadores, rutas indirectas y botones antes de crear informes; CRUD o adjuntos PDF no prueban que exista un reporte.
 - [Estadísticas en informes SG-SST](sst-report-presentation.md) — destacar indicadores de objetivos y ausentismo junto a informes reales, sin atribuir cifras a empresas aún no activas.
+- [Estado y conteos del informe ISO 45001](iso45001-report-status-and-counts.md) — usar el máximo de estándares aplicables, contar cada estándar una vez y exigir estado final además de respuestas completas.
 - [Estándares SST con puntaje cero](sst-zero-score-standards.md) — un estándar aplicable con peso 0 también requiere respuesta; filtrar por puntaje positivo deja evaluaciones incompletas aunque muestren 100%.
 - [Modelo de emisor y empresas del informe ejecutivo](executive-report-parties.md) — SST Colombia emite el informe; las empresas ingresadas son tanto destinatarias como objeto del contenido, sin un tercer bloque duplicado.
 - [Alcance externo SG-SST](sst-pesv-software-scope.md) — explicar una gestión SST ágil y sistematizada, no listar automatizaciones ni revelar reglas internas.

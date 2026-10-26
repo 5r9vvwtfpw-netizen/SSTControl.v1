@@ -283,7 +283,12 @@ import * as schema from "@shared/schema";
 import type { UserRole, User, RevisionDireccionPesv, InsertRevisionDireccionPesv } from "@shared/schema";
 import { calculateChapter, getEmpresaTipoFromChapterAndRisk, getTrialStatus, getChapterDescription } from "@shared/utils";
 import { isStandardPersistent, getPersistentStandardCodes } from "../shared/sst-inheritance";
-import { STANDARD_TO_ISO45001, ISO45001_CLAUSES, ISO45001_REPORT_STRUCTURE, ISO45001_TO_STANDARDS } from "@shared/iso45001-mapping";
+import { ISO45001_CLAUSES, ISO45001_REPORT_STRUCTURE, ISO45001_TO_STANDARDS } from "@shared/iso45001-mapping";
+import {
+  buildIso45001ReportMetrics,
+  buildIso45001ReportDeclaration,
+  getIso45001ReportStatusLabel,
+} from "./services/iso45001-report-metrics";
 import { PASO_TO_ISO39001, ISO39001_CLAUSES, ISO39001_REPORT_STRUCTURE, ISO39001_TO_PASOS } from "@shared/iso39001-mapping";
 import { PASOS_PESV } from "@shared/pasos-pesv";
 import { prepareCompanyWithCiiuAutomation, processCiiuAutomation } from "@shared/ciiu-company-automation";
@@ -30771,16 +30776,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Cargar todos los estándares y respuestas
       const allEstandares = await storage.getEstandaresByTipoEmpresa(evaluacion.tipoEmpresa);
       const allRespuestas = await storage.getRespuestasEstandaresByEvaluacionId(evaluacion.id);
-      const respuestaMap = new Map(allRespuestas.map((r: any) => [r.estandarId, r]));
-
-      // Calcular cumplimiento global
-      let puntajeTotal = 0;
-      let puntajeMaximoTotal = 0;
-      allRespuestas.forEach((r: any) => {
-        puntajeTotal += r.puntajeObtenido || 0;
-        puntajeMaximoTotal += r.puntajeMaximo || 0;
-      });
-      const porcentajeGlobal = puntajeMaximoTotal > 0 ? Math.round((puntajeTotal / puntajeMaximoTotal) * 100) : 0;
+      const reportMetrics = buildIso45001ReportMetrics(
+        allEstandares,
+        allRespuestas,
+        evaluacion.tipoEmpresa,
+        evaluacion.estado,
+      );
+      const estandaresUnicos = reportMetrics.standards;
+      const respuestaMap = reportMetrics.responsesByStandardId;
+      const puntajeTotal = reportMetrics.scoreObtained;
+      const puntajeMaximoTotal = reportMetrics.maxScore;
+      const porcentajeGlobal = reportMetrics.percentage;
+      const totalEstandares = estandaresUnicos.length;
+      const todosRespondidos = totalEstandares > 0 && reportMetrics.unansweredCount === 0;
+      const avanceLabel = `${reportMetrics.answeredCount}/${totalEstandares} estándares respondidos (${reportMetrics.progressPercentage.toFixed(1)}%)`;
+      const estadoReporte = getIso45001ReportStatusLabel(evaluacion.estado, reportMetrics);
+      const declaracionNormativa = buildIso45001ReportDeclaration(
+        company.name,
+        evaluacion.anio,
+        evaluacion.estado,
+        reportMetrics,
+      );
 
       // Iniciar PDF
       const doc = new PDFDocument({ margin: 50, size: 'A4', bufferPages: true });
@@ -30819,7 +30835,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       doc.fontSize(22).font('Helvetica-Bold').fillColor('#ffffff')
-        .text('REPORTE DE CUMPLIMIENTO', margin, 30, { width: pageWidth, align: 'right' });
+        .text(reportMetrics.isComplete ? 'REPORTE DE EVALUACIÓN' : 'BORRADOR DE EVALUACIÓN', margin, 30, { width: pageWidth, align: 'right' });
       doc.fontSize(16).font('Helvetica-Bold').fillColor('#bfdbfe')
         .text('ISO 45001:2018', margin, 58, { width: pageWidth, align: 'right' });
       doc.fontSize(10).font('Helvetica').fillColor('#bfdbfe')
@@ -30841,8 +30857,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       y = doc.y + 20;
 
       // Indicador global
-      const globalColor = porcentajeGlobal >= 86 ? green : porcentajeGlobal >= 61 ? orange : red;
-      const globalLabel = porcentajeGlobal >= 86 ? 'ACEPTABLE' : porcentajeGlobal >= 61 ? 'MODERADAMENTE ACEPTABLE' : 'CRÍTICO';
+      const globalColor = !reportMetrics.isComplete
+        ? orange
+        : porcentajeGlobal >= 86 ? green : porcentajeGlobal >= 61 ? orange : red;
+      const globalLabel = !reportMetrics.isComplete
+        ? todosRespondidos ? 'BORRADOR — NO FINALIZADA' : 'BORRADOR INCOMPLETO'
+        : porcentajeGlobal >= 86 ? 'ACEPTABLE' : porcentajeGlobal >= 61 ? 'MODERADAMENTE ACEPTABLE' : 'CRÍTICO';
+
+      const stateBoxFill = reportMetrics.isComplete ? '#f0fdf4' : '#fff7ed';
+      const stateTextColor = reportMetrics.isComplete ? green : orange;
+      doc.rect(margin, y, pageWidth, 34).fill(stateBoxFill).stroke(reportMetrics.isComplete ? '#bbf7d0' : '#fed7aa');
+      doc.fontSize(9).font('Helvetica-Bold').fillColor(stateTextColor)
+        .text(`ESTADO: ${estadoReporte}`, margin + 10, y + 6, { width: pageWidth - 20 });
+      doc.fontSize(8).font('Helvetica').fillColor(gray)
+        .text(`Avance: ${avanceLabel}  |  Sin respuesta: ${reportMetrics.unansweredCount}`, margin + 10, y + 19, { width: pageWidth - 20 });
+      y += 44;
 
       doc.rect(margin, y, pageWidth, 60).fill(bluePale).stroke('#bfdbfe');
       doc.fontSize(28).font('Helvetica-Bold').fillColor(globalColor)
@@ -30869,39 +30898,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       y += 20;
 
       for (const chapter of ISO45001_REPORT_STRUCTURE) {
-        // Recolectar todos los estándares del capítulo
-        const chapterStandardCodes: string[] = [];
-        chapter.clauses.forEach(clause => {
-          (ISO45001_TO_STANDARDS[clause] || []).forEach(code => {
-            if (!chapterStandardCodes.includes(code)) chapterStandardCodes.push(code);
-          });
-        });
+        const chapterMetrics = reportMetrics.chapterMetricsByChapter.get(chapter.chapter);
+        if (!chapterMetrics?.standardCount) continue;
 
-        // Calcular cumplimiento del capítulo
-        let chapterPuntaje = 0;
-        let chapterMaximo = 0;
-        let chapterCumple = 0;
-        let chapterTotal = 0;
-
-        const estandaresDelCapitulo = allEstandares.filter((e: any) =>
-          chapterStandardCodes.includes(e.numeroEstandar)
-        );
-
-        estandaresDelCapitulo.forEach((e: any) => {
-          const resp = respuestaMap.get(e.id);
-          chapterTotal++;
-          if (resp) {
-            chapterPuntaje += resp.puntajeObtenido || 0;
-            chapterMaximo += resp.puntajeMaximo || 0;
-            if ((resp.puntajeObtenido || 0) > 0) chapterCumple++;
-          } else {
-            chapterMaximo += e.puntajeTipo3 || e.puntajeTipo2 || e.puntajeTipo1 || 0;
-          }
-        });
-
-        if (chapterTotal === 0) continue;
-
-        const chapterPct = chapterMaximo > 0 ? Math.round((chapterPuntaje / chapterMaximo) * 100) : 0;
+        const chapterPct = chapterMetrics.maxScore > 0
+          ? Math.round((chapterMetrics.scoreObtained / chapterMetrics.maxScore) * 100)
+          : 0;
         const chapterColor = chapterPct >= 86 ? green : chapterPct >= 61 ? orange : red;
         const rowBg = ISO45001_REPORT_STRUCTURE.indexOf(chapter) % 2 === 0 ? '#f8fafc' : '#ffffff';
 
@@ -30911,9 +30913,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         doc.fontSize(8).font('Helvetica').fillColor('#1e293b')
           .text(chapter.title, margin + 70, y + 5, { width: 220 });
         doc.fontSize(8).font('Helvetica').fillColor(gray)
-          .text(`${chapterCumple}/${chapterTotal}`, margin + 295, y + 5, { width: 65, align: 'center' });
+          .text(`${chapterMetrics.compliantCount}/${chapterMetrics.standardCount}`, margin + 295, y + 5, { width: 65, align: 'center' });
         doc.fontSize(8).font('Helvetica').fillColor(gray)
-          .text(`${chapterCumple}`, margin + 360, y + 5, { width: 50, align: 'center' });
+          .text(`${chapterMetrics.compliantCount}`, margin + 360, y + 5, { width: 50, align: 'center' });
         doc.fontSize(8).font('Helvetica-Bold').fillColor(chapterColor)
           .text(`${chapterPct}%`, margin + 415, y + 5, { width: 50, align: 'center' });
         y += 18;
@@ -30923,6 +30925,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           y = margin;
         }
       }
+
+      doc.fontSize(7).font('Helvetica').fillColor(gray)
+        .text('En el resumen, cada estándar se cuenta una sola vez y se asigna al primer capítulo del reporte que lo relaciona. El detalle conserva las demás cláusulas ISO vinculadas.', margin, y + 4, { width: pageWidth });
+      y = doc.y + 16;
 
       y += 20;
 
@@ -30946,7 +30952,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (!clauseInfo) continue;
 
           const clauseStandardCodes = ISO45001_TO_STANDARDS[clauseCode] || [];
-          const estandaresClausula = allEstandares.filter((e: any) =>
+          const estandaresClausula = estandaresUnicos.filter((e: any) =>
             clauseStandardCodes.includes(e.numeroEstandar)
           );
           if (estandaresClausula.length === 0) continue;
@@ -31020,11 +31026,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .text('DECLARACIÓN DE ALINEACIÓN NORMATIVA', margin, y);
       y += 14;
       doc.fontSize(8).font('Helvetica').fillColor(gray)
-        .text(`El Sistema de Gestión de Seguridad y Salud en el Trabajo de ${company.name} ha sido implementado y evaluado conforme a la Resolución 0312 de 2019 del Ministerio del Trabajo de Colombia, la cual se encuentra estructuralmente alineada con la norma internacional ISO 45001:2018 "Sistemas de gestión de la seguridad y salud en el trabajo". Los estándares documentados en este reporte cubren los requisitos de los Capítulos 4 a 10 de la norma ISO 45001:2018.`, margin, y, { width: pageWidth, align: 'justify' });
+        .text(
+          declaracionNormativa,
+          margin,
+          y,
+          { width: pageWidth, align: 'justify' },
+        );
       y = doc.y + 12;
 
       doc.fontSize(7).font('Helvetica').fillColor('#94a3b8')
-        .text(`Generado por SST Colombia (SADGI S.A.S.) | NIT 902.036.337-4 | ${new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' })} | ISO 45001:2018 Compliance Report`, margin, y, { width: pageWidth, align: 'center' });
+        .text(`Generado por SST Colombia (SADGI S.A.S.) | NIT 902.036.337-4 | ${new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' })} | ISO 45001:2018 Evaluation Report`, margin, y, { width: pageWidth, align: 'center' });
 
       // Bloque de firmas (LSO + Elaboró + Autorizó) — ISO 45001 §7.5.2 requiere autorización
       const signers = await getSignersForCompany(companyId, true);
