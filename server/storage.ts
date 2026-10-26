@@ -5,6 +5,7 @@ import { Pool as NeonPool, neonConfig } from "@neondatabase/serverless";
 import { Pool as PgPool } from "pg";
 import * as schema from "@shared/schema";
 import { calculateChapter } from "@shared/utils";
+import { normalizeCopasstPeriodStatus } from "@shared/copasst-period-status";
 import { logAuditEvent, type AuditContext } from './lib/audit-logger';
 import logger from './lib/logger';
 import { validateInvoiceData, validateCompanyForBilling, validateSubscriptionForBilling } from './lib/billing-validator';
@@ -15227,20 +15228,24 @@ export class DbStorage implements IStorage {
   }
 
   async createCopasstPeriodo(periodo: InsertCopasstPeriodo): Promise<CopasstPeriodo> {
+    const normalizedPeriodo = {
+      ...periodo,
+      estado: normalizeCopasstPeriodStatus(periodo.estado),
+    };
     // If creating a new active period, deactivate any existing active periods for this company
-    if (periodo.estado === 'activo' && periodo.companyId) {
+    if (normalizedPeriodo.estado === 'activo' && normalizedPeriodo.companyId) {
       await db.update(schema.copasstPeriodos)
         .set({ estado: 'vencido' })
         .where(
           and(
-            eq(schema.copasstPeriodos.companyId, periodo.companyId),
+            eq(schema.copasstPeriodos.companyId, normalizedPeriodo.companyId),
             eq(schema.copasstPeriodos.estado, 'activo')
           )
         );
     }
     
     const [newPeriodo] = await db.insert(schema.copasstPeriodos)
-      .values(periodo)
+      .values(normalizedPeriodo)
       .returning();
     return newPeriodo;
   }

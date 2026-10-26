@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { openCompanyDocument } from "@/lib/company-context-url";
+import { normalizeCopasstPeriodStatus } from "@shared/copasst-period-status";
 import {
   CopasstPeriodo, InsertCopasstPeriodo, insertCopasstPeriodoSchema,
   CopasstMiembro, InsertCopasstMiembro, insertCopasstMiembroSchema,
@@ -251,7 +252,7 @@ export default function CopasstGestion() {
       tipoComite: '',
       fechaInicio: "",
       fechaFin: "",
-      estado: '',
+      estado: "activo",
     },
   });
 
@@ -592,7 +593,11 @@ export default function CopasstGestion() {
       toast({ variant: "destructive", title: "Error", description: "No hay empresa seleccionada" });
       return;
     }
-    createPeriodoMutation.mutate({ ...data, companyId: effectiveCompanyId });
+    createPeriodoMutation.mutate({
+      ...data,
+      estado: normalizeCopasstPeriodStatus(data.estado),
+      companyId: effectiveCompanyId,
+    });
   };
 
   const onSubmitEleccion = (data: Omit<InsertCopasstEleccion, 'companyId'>) => {
