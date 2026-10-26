@@ -121,6 +121,7 @@ export const routePermissions: Record<string, Permission[]> = {
   "/pesv/informes": ["road_incidents:view"],
   "/pesv/informes-trimestrales": ["road_incidents:view"],
   "/pesv/informes-anuales": ["road_incidents:view"],
+  "/pesv/informes-anuales/objetivos-metas": ["road_incidents:view"],
   "/pesv/informes-trimestrales/medidas-prevencion": ["road_incidents:view"],
   "/pesv/capacitaciones": ["road_trainings:view", "road_safety_trainings:view"],
   "/pesv/induccion-virtual": ["road_trainings:view", "road_safety_trainings:view"],

@@ -59,6 +59,12 @@ const annualCertifications = [
     title: "Matriz de riesgos de seguridad vial",
     description: "Descarga una copia Excel de la matriz P04 y sus tratamientos registrados",
   },
+  {
+    number: 11,
+    href: "/pesv/informes-anuales/objetivos-metas",
+    title: "Divulgación de objetivos y metas del PESV",
+    description: "Relaciona objetivos P05 con comunicaciones y lecturas confirmadas; descarga el consolidado en PDF",
+  },
 ];
 
 export default function PesvInformesAnuales() {

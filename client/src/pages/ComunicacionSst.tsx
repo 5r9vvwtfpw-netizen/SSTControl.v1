@@ -23,7 +23,8 @@ import {
   Worker,
   User,
   insertPlanComunicacionSstSchema,
-  insertComunicacionSstSchema
+  insertComunicacionSstSchema,
+  ObjetivoSV,
 } from "@shared/schema";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -978,6 +979,11 @@ function EnviarComunicacionTab({ prefilledData, onPrefilledDataApplied }: Enviar
   });
 
   const isLessonDisclosure = form.watch("relacionadoCon") === "pesv_leccion_aprendida";
+  const isObjectiveDisclosure = form.watch("relacionadoCon") === "pesv_objetivo";
+  const { data: roadSafetyObjectives = [], isError: roadSafetyObjectivesError } = useQuery<ObjetivoSV[]>({
+    queryKey: ["/api/objetivos-sv"],
+    enabled: isObjectiveDisclosure,
+  });
   const { data: lessonInvestigations = [], isError: lessonInvestigationsError } = useQuery<Array<{
     id: string;
     eventDate: string;
@@ -1029,6 +1035,14 @@ function EnviarComunicacionTab({ prefilledData, onPrefilledDataApplied }: Enviar
   const onSubmit = (data: z.infer<typeof formSchemaComunicacion>) => {
     if (data.relacionadoCon === "pesv_leccion_aprendida" && !data.relacionadoId) {
       toast({ title: "Selecciona la investigación", description: "Vincula la lección con su investigación de origen.", variant: "destructive" });
+      return;
+    }
+    if (data.relacionadoCon === "pesv_objetivo" && !data.relacionadoId) {
+      toast({ title: "Selecciona el objetivo P05", description: "Vincula la comunicación con el objetivo o meta que se divulga.", variant: "destructive" });
+      return;
+    }
+    if (data.relacionadoCon === "pesv_objetivo" && data.requiereConfirmacionLectura !== 1) {
+      toast({ title: "Activa la confirmación de lectura", description: "La divulgación de objetivos debe registrar las lecturas confirmadas.", variant: "destructive" });
       return;
     }
     if (selectedWorkers.length === 0) {
@@ -1198,6 +1212,52 @@ function EnviarComunicacionTab({ prefilledData, onPrefilledDataApplied }: Enviar
                   </FormItem>
                 )}
               />
+              <FormField
+                control={form.control}
+                name="relacionadoCon"
+                render={({ field }) => (
+                  <FormItem className="flex items-start gap-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value === "pesv_objetivo"}
+                        onCheckedChange={(checked) => {
+                          field.onChange(checked ? "pesv_objetivo" : null);
+                          form.setValue("relacionadoId", null);
+                          if (checked) form.setValue("requiereConfirmacionLectura", 1);
+                        }}
+                      />
+                    </FormControl>
+                    <div className="space-y-1">
+                      <FormLabel>Divulgación de objetivos y metas del PESV (P05)</FormLabel>
+                      <FormDescription>Vincula esta comunicación con un objetivo y solicita confirmación de lectura.</FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
+              {isObjectiveDisclosure && (
+                <FormField
+                  control={form.control}
+                  name="relacionadoId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Objetivo o meta del PESV *</FormLabel>
+                      <Select value={field.value || ""} onValueChange={field.onChange}>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Selecciona el objetivo P05" /></SelectTrigger></FormControl>
+                        <SelectContent>
+                          {roadSafetyObjectives.map((objective) => (
+                            <SelectItem key={objective.id} value={objective.id}>
+                              {objective.codigo} · {objective.titulo} ({objective.anio})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {roadSafetyObjectivesError && <FormDescription className="text-destructive">No se pudieron cargar los objetivos P05.</FormDescription>}
+                      {!roadSafetyObjectivesError && roadSafetyObjectives.length === 0 && <FormDescription>No hay objetivos P05 registrados para esta empresa.</FormDescription>}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
               {isLessonDisclosure && (
                 <FormField
                   control={form.control}

@@ -38252,6 +38252,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { trabajadoresDestinatarios, ...comunicacionData } = req.body;
       
       const validatedData = insertComunicacionSstSchema.parse(comunicacionData);
+      if (validatedData.relacionadoCon === "pesv_objetivo") {
+        if (!validatedData.relacionadoId || validatedData.requiereConfirmacionLectura !== 1) {
+          return res.status(400).json({ error: "La divulgación P05 requiere un objetivo vinculado y confirmación de lectura." });
+        }
+        const [objective] = await db.select({ id: schema.objetivosSV.id })
+          .from(schema.objetivosSV)
+          .where(and(
+            eq(schema.objetivosSV.id, validatedData.relacionadoId),
+            eq(schema.objetivosSV.companyId, companyId),
+          )).limit(1);
+        if (!objective) return res.status(400).json({ error: "El objetivo PESV no pertenece a la empresa seleccionada." });
+      }
       const comunicacion = await storage.createComunicacionSst(
         validatedData, 
         companyId, 
@@ -38930,6 +38942,18 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       const { trabajadoresDestinatarios, ...comunicacionData } = req.body;
       
       const validatedData = insertComunicacionSstSchema.parse(comunicacionData);
+      if (validatedData.relacionadoCon === "pesv_objetivo") {
+        if (!validatedData.relacionadoId || validatedData.requiereConfirmacionLectura !== 1) {
+          return res.status(400).json({ error: "La divulgación P05 requiere un objetivo vinculado y confirmación de lectura." });
+        }
+        const [objective] = await db.select({ id: schema.objetivosSV.id })
+          .from(schema.objetivosSV)
+          .where(and(
+            eq(schema.objetivosSV.id, validatedData.relacionadoId),
+            eq(schema.objetivosSV.companyId, companyId),
+          )).limit(1);
+        if (!objective) return res.status(400).json({ error: "El objetivo PESV no pertenece a la empresa seleccionada." });
+      }
       const comunicacion = await storage.createComunicacionSst(
         validatedData, 
         companyId, 
@@ -56914,7 +56938,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // ===== Objetivos de Seguridad Vial Routes =====
   
   // GET /api/objetivos-sv - List all road safety objectives for company
-  app.get("/api/objetivos-sv", requireAuth, async (req, res) => {
+  app.get("/api/objetivos-sv", requireAuth, requirePermission("road_incidents:view"), async (req, res) => {
     try {
       const effectiveCompanyId = getEffectiveCompanyId(req);
       if (!effectiveCompanyId) {
@@ -56934,7 +56958,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   // POST /api/objetivos-sv - Create new road safety objective
-  app.post("/api/objetivos-sv", requireAuth, async (req, res) => {
+  app.post("/api/objetivos-sv", requireAuth, requirePermission("road_incidents:create"), async (req, res) => {
     try {
       const effectiveCompanyId = getEffectiveCompanyId(req);
       if (!effectiveCompanyId) {
@@ -56958,7 +56982,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   // GET /api/objetivos-sv/:id - Get single road safety objective
-  app.get("/api/objetivos-sv/:id", requireAuth, async (req, res) => {
+  app.get("/api/objetivos-sv/:id", requireAuth, requirePermission("road_incidents:view"), async (req, res) => {
     try {
       const effectiveCompanyId = getEffectiveCompanyId(req);
       if (!effectiveCompanyId) {
@@ -56984,7 +57008,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   // PATCH /api/objetivos-sv/:id - Update road safety objective
-  app.patch("/api/objetivos-sv/:id", requireAuth, async (req, res) => {
+  app.patch("/api/objetivos-sv/:id", requireAuth, requirePermission("road_incidents:edit"), async (req, res) => {
     try {
       const effectiveCompanyId = getEffectiveCompanyId(req);
       if (!effectiveCompanyId) {
@@ -57016,7 +57040,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   });
 
   // DELETE /api/objetivos-sv/:id - Delete road safety objective
-  app.delete("/api/objetivos-sv/:id", requireAuth, async (req, res) => {
+  app.delete("/api/objetivos-sv/:id", requireAuth, requirePermission("road_incidents:delete"), async (req, res) => {
     try {
       const effectiveCompanyId = getEffectiveCompanyId(req);
       if (!effectiveCompanyId) {

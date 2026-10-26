@@ -28,6 +28,7 @@ import {
 import { buildPesvOrganizationalDiagnosisPdfBuffer } from "../reports/pesv-organizational-diagnosis-report";
 import { buildPesvAnnualRiskControlPdfBuffer } from "../reports/pesv-annual-risk-control-report";
 import { buildPesvAnnualRiskMatrixExcelBuffer } from "../reports/pesv-annual-risk-matrix-excel";
+import { buildPesvAnnualObjectivesDisclosurePdfBuffer } from "../reports/pesv-annual-objectives-disclosure-report";
 import { getSignersForCompany } from "../services/pdf-standardizer";
 
 const ANNUAL_PESV_CERTIFICATIONS: Record<AnnualCertificationCode, {
@@ -1241,6 +1242,99 @@ export function registerPesvInformeRoutes(app: Express) {
       } catch (error: any) {
         console.error("Error generando PDF de siniestros PESV:", error);
         res.status(500).json({ message: "No fue posible generar el archivo PDF." });
+      }
+    },
+  );
+
+  async function loadAnnualObjectivesDisclosure(req: Request, res: Response) {
+    const companyId = getAuthorizedReportCompanyId(req);
+    if (!companyId) {
+      res.status(403).json({ message: "Selecciona una empresa autorizada para consultar el informe." });
+      return null;
+    }
+    const [company] = await db.select().from(schema.companies)
+      .where(eq(schema.companies.id, companyId)).limit(1);
+    if (!company) {
+      res.status(404).json({ message: "No se encontró la empresa seleccionada." });
+      return null;
+    }
+    const objectives = await db.select().from(schema.objetivosSV)
+      .where(eq(schema.objetivosSV.companyId, companyId))
+      .orderBy(asc(schema.objetivosSV.anio), asc(schema.objetivosSV.codigo));
+    const rows = await Promise.all(objectives.map(async (objective) => {
+      const communications = await db.select({
+        id: schema.comunicacionesSst.id,
+        asunto: schema.comunicacionesSst.asunto,
+        contenido: schema.comunicacionesSst.contenido,
+        fechaEnvio: schema.comunicacionesSst.fechaEnvio,
+        publicoObjetivo: schema.comunicacionesSst.publicoObjetivo,
+        mediosUtilizados: schema.comunicacionesSst.mediosUtilizados,
+        totalDestinatarios: schema.comunicacionesSst.totalDestinatarios,
+        totalLecturas: schema.comunicacionesSst.totalLecturas,
+        requiereConfirmacionLectura: schema.comunicacionesSst.requiereConfirmacionLectura,
+      }).from(schema.comunicacionesSst).where(and(
+        eq(schema.comunicacionesSst.companyId, companyId),
+        eq(schema.comunicacionesSst.relacionadoCon, "pesv_objetivo"),
+        eq(schema.comunicacionesSst.relacionadoId, objective.id),
+      )).orderBy(desc(schema.comunicacionesSst.fechaEnvio));
+      return { objective, communications };
+    }));
+    return { company, rows };
+  }
+
+  app.get(
+    "/api/pesv/informes-anuales/objetivos-metas/estado",
+    authRequireAuth,
+    reportViewPermission,
+    async (req, res) => {
+      try {
+        const dataset = await loadAnnualObjectivesDisclosure(req, res);
+        if (!dataset) return;
+        res.json({
+          companyName: dataset.company.name,
+          companyNit: dataset.company.nit,
+          objectives: dataset.rows,
+          totals: {
+            objectives: dataset.rows.length,
+            communications: dataset.rows.reduce((sum, row) => sum + row.communications.length, 0),
+            recipients: dataset.rows.reduce((sum, row) => sum + row.communications.reduce((inner, item) => inner + item.totalDestinatarios, 0), 0),
+            confirmedReads: dataset.rows.reduce((sum, row) => sum + row.communications.reduce((inner, item) => inner + item.totalLecturas, 0), 0),
+          },
+        });
+      } catch (error) {
+        console.error("Error consultando divulgación de objetivos PESV:", error);
+        res.status(500).json({ message: "No fue posible consultar la evidencia de divulgación." });
+      }
+    },
+  );
+
+  app.get(
+    "/api/pesv/informes-anuales/objetivos-metas.pdf",
+    authRequireAuth,
+    reportViewPermission,
+    async (req, res) => {
+      try {
+        const dataset = await loadAnnualObjectivesDisclosure(req, res);
+        if (!dataset) return;
+        const subscription = await storage.getSubscriptionByCompany(dataset.company.id);
+        const trial = getTrialStatus(subscription?.status || "trial", subscription?.trialEnd || null, true, true);
+        const buffer = await buildPesvAnnualObjectivesDisclosurePdfBuffer({
+          company: dataset.company,
+          objectives: dataset.rows.map(({ objective, communications }) => ({
+            objective: { ...objective, responsableNombre: null },
+            communications,
+          })),
+          signers: await getSignersForCompany(dataset.company.id),
+          isTestCompany: await isInternalTestCompany(dataset.company.id),
+          watermark: trial.requiresWatermark,
+        });
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Content-Disposition", `attachment; filename="divulgacion_objetivos_metas_pesv_${companyFileSlug(dataset.company.name)}.pdf"`);
+        res.setHeader("Content-Length", buffer.length);
+        res.send(buffer);
+      } catch (error) {
+        console.error("Error generando PDF de divulgación de objetivos PESV:", error);
+        res.status(500).json({ message: "No fue posible generar el PDF de divulgación." });
       }
     },
   );
