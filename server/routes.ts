@@ -28513,6 +28513,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         descripcion: e.descripcion,
         puntaje: e[puntajeField],
       }));
+      const verificacionesInternas = estandares.filter(e => e.numeroEstandar === "5.1.3").length;
+      const totalItemsPuntuables = estandares.length - verificacionesInternas;
       
       // Respuesta con metadatos
       res.json({
@@ -28524,9 +28526,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           riskLevel
         },
         resumen: {
-          totalEstandares: estandares.length,
+          totalEstandares: totalItemsPuntuables,
+          totalItemsPuntuables,
+          totalVerificaciones: estandares.length,
+          verificacionesInternas,
           puntajeMaximo,
-          descripcion: `${estandares.length} estándares aplicables según Resolución 0312/2019`
+          descripcion: verificacionesInternas > 0
+            ? `${totalItemsPuntuables} ítems puntuables según el artículo 27 y ${verificacionesInternas} verificación interna de simulacro incluida en el artículo 16`
+            : `${totalItemsPuntuables} ítems puntuables aplicables según la Resolución 0312/2019`
         },
         estandares: standardsList
       });

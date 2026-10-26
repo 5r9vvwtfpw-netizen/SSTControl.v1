@@ -744,6 +744,7 @@ export default function DetalleEvaluacionSst() {
   );
 
   const totalEstandares = estandares.length;
+  const tieneVerificacionSimulacro = estandares.some(e => e.numeroEstandar === "5.1.3");
   const estandaresEvaluados = respuestas.filter(
     respuesta => respuesta.lastVerifiedAt && respuesta.requiresRefresh === 0
   ).length;
@@ -918,7 +919,9 @@ export default function DetalleEvaluacionSst() {
           <CardContent>
             <div className="text-2xl font-bold">{progreso}%</div>
             <p className="text-xs text-muted-foreground mt-1">
-              {estandaresEvaluados} de {totalEstandares} estándares
+              {estandaresEvaluados} de {totalEstandares} {tieneVerificacionSimulacro
+                ? "verificaciones (60 ítems puntuables y simulacro anual del 5.1.1)"
+                : "estándares"}
             </p>
             <Progress value={progreso} className="mt-2" />
           </CardContent>
@@ -1150,7 +1153,7 @@ export default function DetalleEvaluacionSst() {
             <AlertDialogDescription className="text-base">
               {progreso < 100 ? (
                 <>
-                  <span className="font-semibold text-amber-600">Atención:</span> Solo ha evaluado {progreso}% de los estándares ({estandaresEvaluados} de {totalEstandares}).
+                  <span className="font-semibold text-amber-600">Atención:</span> Solo ha completado {progreso}% {tieneVerificacionSimulacro ? "de las verificaciones" : "de los estándares"} ({estandaresEvaluados} de {totalEstandares}){tieneVerificacionSimulacro ? "; el simulacro anual se verifica dentro del 5.1.1 y no suma puntaje aparte" : ""}.
                   <br /><br />
                   ¿Está seguro de que desea finalizar la evaluación con estándares pendientes? Los estándares no evaluados contarán como "No Cumple" (0 puntos).
                 </>

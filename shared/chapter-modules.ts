@@ -20,7 +20,8 @@
  * 
  * Capítulo 1 (7 estándares): Plan Microempresa (≤10 trabajadores, riesgo I/II/III)
  * Capítulo 2 (21 estándares): Plan Pequeña Empresa (11-50 trabajadores, riesgo I/II/III)
- * Capítulo 3 (61 estándares): Plan Mediana o Gran Empresa (>50 trabajadores o riesgo IV/V)
+ * Capítulo 3 (60 ítems puntuables): Plan Mediana o Gran Empresa (>50 trabajadores o riesgo IV/V).
+ * La comprobación del simulacro anual se conserva dentro del estándar 5.1.1, sin puntaje independiente.
  */
 
 export type ChapterType = 1 | 2 | 3;
@@ -208,7 +209,7 @@ const CHAPTER_2_ADDITIONAL_MODULES = [
   "/salud",
 ];
 
-// Módulos adicionales para Capítulo 3 (61 estándares) - TODOS los módulos
+// Módulos adicionales para Capítulo 3 (60 ítems puntuables) - TODOS los módulos
 const CHAPTER_3_ADDITIONAL_MODULES = [
   // Gestión avanzada
   "/evaluacion-proveedores",

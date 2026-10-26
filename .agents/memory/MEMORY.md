@@ -110,3 +110,4 @@
 - [Certificaciones anuales SISI/PESV](sisi-pesv-annual-certifications.md) — incluir solo evidencias verificables y mantener aparte el acta del órgano social frente a P01.
 - [Servicio de gestión operativa SG-SST y PESV](managed-sgsst-service-scope.md) — oferta mensual adicional a la suscripción; detallar módulos, accesos por rol y radicación autorizada, según informes disponibles en producción.
 - [Informes anuales SISI/PESV](sisi-pesv-annual-reports.md) — reutilizar módulos fuente y respetar el formato de evidencia solicitado; nunca duplicar capturas ni inferir cumplimiento por cantidad de registros.
+- [Resolución 0312: simulacro y puntaje](resolucion-0312-simulacro-scoring.md) — el simulacro anual es subrequisito del plan 5.1.1; conservar su verificación pero no puntuarlo como un tercer ítem del Art. 27.

@@ -162,7 +162,7 @@ export default function EstandaresSst() {
             <div className="text-xs text-muted-foreground">Recursos y gestión integral</div>
           </div>
           <div className="space-y-1">
-            <div className="font-medium text-sm">Hacer (50%)</div>
+            <div className="font-medium text-sm">Hacer (60%)</div>
             <div className="text-xs text-muted-foreground">Gestión de salud y peligros</div>
           </div>
           <div className="space-y-1">

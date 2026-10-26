@@ -581,7 +581,7 @@ export default function CrearEmpresaCiiuFirst() {
                         <AlertTriangle className="h-4 w-4" />
                         <AlertTitle>Actividad de Alto Riesgo Detectada</AlertTitle>
                         <AlertDescription className="text-sm">
-                          Las empresas con actividades de Riesgo IV o V deben cumplir con los <strong>61 estándares completos</strong> de la Resolución 0312/2019, independientemente del número de trabajadores. Esto incluye requisitos adicionales de vigilancia epidemiológica, programas de prevención y controles más estrictos.
+                          Las empresas con actividades de Riesgo IV o V deben cumplir los <strong>60 ítems puntuables</strong> del capítulo III de la Resolución 0312/2019, independientemente del número de trabajadores. El simulacro anual se conserva como verificación interna del plan de emergencias (5.1.1), sin puntaje separado.
                         </AlertDescription>
                       </Alert>
                     )}

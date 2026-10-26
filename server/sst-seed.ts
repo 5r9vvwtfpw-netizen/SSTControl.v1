@@ -65,7 +65,7 @@ const componentesSst = [
 ];
 
 // Estándares mínimos SST según Resolución 0312/2019 - Artículo 16
-// 61 estándares mínimos organizados en 7 componentes
+// 60 ítems puntuables organizados en 7 componentes, más la verificación interna del simulacro anual
 // Puntajes multiplicados por 10 (0.5% = 5 puntos, 1% = 10 puntos, etc.)
 // null = no aplica para ese tipo de empresa
 const estandaresSst = [
@@ -852,8 +852,8 @@ const estandaresSst = [
     marcoLegal: "Decreto 1072 de 2015, artículo 2.2.4.6.25",
     puntajeTipo1: null,
     puntajeTipo2: null,
-    puntajeTipo3: 4,
-    puntajeTipo4: 4,
+    puntajeTipo3: 5,
+    puntajeTipo4: 5,
     criteriosVerificacion: "Plan de emergencias documentado; Análisis de vulnerabilidad; Procedimientos operativos normalizados",
     orden: 51,
   },
@@ -867,8 +867,8 @@ const estandaresSst = [
     marcoLegal: "Decreto 1072 de 2015, artículo 2.2.4.6.25; Ley 1523 de 2012",
     puntajeTipo1: null,
     puntajeTipo2: null,
-    puntajeTipo3: 3,
-    puntajeTipo4: 3,
+    puntajeTipo3: 5,
+    puntajeTipo4: 5,
     criteriosVerificacion: "Acta de conformación de brigada; Certificados de capacitación de brigadistas; Inventario de dotación de brigada",
     orden: 52,
   },
@@ -877,13 +877,13 @@ const estandaresSst = [
     activo: 1,
     componenteId: "comp-sst-5",
     numeroEstandar: "5.1.3",
-    nombre: "Simulacros de emergencias",
-    descripcion: "Realizar simulacros como mínimo una (1) vez al año con la participación de todos los trabajadores, y evaluar su efectividad para mejorar el plan de emergencias.",
-    marcoLegal: "Decreto 1072 de 2015, artículo 2.2.4.6.25; Ley 1523 de 2012; Resolución 0312 de 2019",
+    nombre: "Simulacros de emergencias (verificación interna del 5.1.1)",
+    descripcion: "Verificación interna del subrequisito del artículo 16 de la Resolución 0312 de 2019: el plan de prevención, preparación y respuesta ante emergencias debe incluir simulacros como mínimo una vez al año. Se conserva como una comprobación separada, pero no constituye un ítem puntuable adicional del artículo 27.",
+    marcoLegal: "Resolución 0312 de 2019, artículo 16 (subrequisito del 5.1.1); Decreto 1072 de 2015, artículo 2.2.4.6.25",
     puntajeTipo1: null,
     puntajeTipo2: null,
-    puntajeTipo3: 3,
-    puntajeTipo4: 3,
+    puntajeTipo3: 0,
+    puntajeTipo4: 0,
     criteriosVerificacion: "Registros de simulacros realizados; Informe de evaluación del simulacro; Plan de mejora del plan de emergencias basado en resultados del simulacro",
     orden: 53,
   },
@@ -1292,6 +1292,29 @@ export async function seedSstCatalog() {
         .where(eq(schema.estandaresSst.numeroEstandar, numeroEstandar));
     }
     console.log(`✅ ${tipo1Updates.length} estándares tipo1 sincronizados con puntajes correctos`);
+
+    // El artículo 27 puntúa el plan de emergencias y la brigada. El simulacro
+    // se conserva como verificación interna exigida por el artículo 16 dentro
+    // del plan 5.1.1, sin crear un tercer ítem puntuable.
+    const tipo34EmergencyUpdates = [
+      { numeroEstandar: "5.1.1", puntajeTipo3: 5, puntajeTipo4: 5 },
+      { numeroEstandar: "5.1.2", puntajeTipo3: 5, puntajeTipo4: 5 },
+      { numeroEstandar: "5.1.3", puntajeTipo3: 0, puntajeTipo4: 0 },
+    ];
+    for (const update of tipo34EmergencyUpdates) {
+      await db.update(schema.estandaresSst)
+        .set({
+          puntajeTipo3: update.puntajeTipo3,
+          puntajeTipo4: update.puntajeTipo4,
+          ...(update.numeroEstandar === "5.1.3" ? {
+            nombre: "Simulacros de emergencias (verificación interna del 5.1.1)",
+            descripcion: "Verificación interna del subrequisito del artículo 16 de la Resolución 0312 de 2019: el plan de prevención, preparación y respuesta ante emergencias debe incluir simulacros como mínimo una vez al año. Se conserva como una comprobación separada, pero no constituye un ítem puntuable adicional del artículo 27.",
+            marcoLegal: "Resolución 0312 de 2019, artículo 16 (subrequisito del 5.1.1); Decreto 1072 de 2015, artículo 2.2.4.6.25",
+          } : {}),
+        })
+        .where(eq(schema.estandaresSst.numeroEstandar, update.numeroEstandar));
+    }
+    console.log("✅ Ítems 5.1.1 y 5.1.2 ajustados a la tabla del artículo 27; 5.1.3 conservado sin puntaje independiente");
     
     console.log("🎉 Seed de datos maestros SST completado exitosamente");
     

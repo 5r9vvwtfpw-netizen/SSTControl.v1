@@ -116,7 +116,7 @@ export function getChapterStandards(chapter: "1" | "2" | "3"): number {
   const standards = {
     "1": 7,
     "2": 21,
-    "3": 61,
+    "3": 60,
   };
   return standards[chapter];
 }
@@ -129,7 +129,7 @@ export function getChapterDescription(chapter: "1" | "2" | "3"): string {
   const descriptions = {
     "1": "1-10 trabajadores, Riesgo I/II/III - 7 estándares",
     "2": "11-50 trabajadores, Riesgo I/II/III - 21 estándares",
-    "3": ">50 trabajadores o Riesgo IV/V - 61 estándares",
+    "3": ">50 trabajadores o Riesgo IV/V - 60 ítems puntuables; el simulacro anual se verifica por separado como subrequisito del 5.1.1",
   };
   return descriptions[chapter];
 }
