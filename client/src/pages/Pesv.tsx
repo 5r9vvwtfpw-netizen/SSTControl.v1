@@ -3,20 +3,47 @@ import { Link } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useCompanyContext } from "@/hooks/use-company-context";
 import { 
   Car, Users, ClipboardCheck, AlertTriangle, 
   GraduationCap, FileCheck,
   Activity, BarChart3, ArrowRight, ClipboardList
 } from "lucide-react";
 
+function usePesvCompanyRecords(
+  endpoint: string,
+  companyId: string,
+  includeCompanyQuery = false,
+) {
+  return useQuery<unknown[]>({
+    queryKey: [endpoint, companyId],
+    enabled: Boolean(companyId),
+    queryFn: async () => {
+      const query = includeCompanyQuery
+        ? `?companyId=${encodeURIComponent(companyId)}`
+        : "";
+      const response = await fetch(`${endpoint}${query}`, {
+        credentials: "include",
+        headers: { "X-Company-Id": companyId },
+      });
+      if (!response.ok) {
+        throw new Error(`No fue posible cargar los datos de ${endpoint}`);
+      }
+      return response.json();
+    },
+  });
+}
+
 export default function Pesv() {
-  const { data: vehicles = [] } = useQuery<unknown[]>({ queryKey: ["/api/vehicles"] });
-  const { data: drivers = [] } = useQuery<unknown[]>({ queryKey: ["/api/drivers"] });
-  const { data: inspections = [] } = useQuery<unknown[]>({ queryKey: ["/api/vehicle-inspections"] });
-  const { data: incidents = [] } = useQuery<unknown[]>({ queryKey: ["/api/road-incidents"] });
-  const { data: trainings = [] } = useQuery<unknown[]>({ queryKey: ["/api/road-safety-trainings"] });
-  const { data: audits = [] } = useQuery<unknown[]>({ queryKey: ["/api/pesv-audits"] });
-  const { data: evaluaciones = [] } = useQuery<unknown[]>({ queryKey: ["/api/evaluaciones-pesv"] });
+  const { effectiveCompanyId, selectedCompany } = useCompanyContext();
+  const companyId = effectiveCompanyId || "";
+  const { data: vehicles = [] } = usePesvCompanyRecords("/api/vehicles", companyId);
+  const { data: drivers = [] } = usePesvCompanyRecords("/api/drivers", companyId);
+  const { data: inspections = [] } = usePesvCompanyRecords("/api/vehicle-inspections", companyId, true);
+  const { data: incidents = [] } = usePesvCompanyRecords("/api/road-incidents", companyId, true);
+  const { data: trainings = [] } = usePesvCompanyRecords("/api/road-safety-trainings", companyId);
+  const { data: audits = [] } = usePesvCompanyRecords("/api/pesv-audits", companyId);
+  const { data: evaluaciones = [] } = usePesvCompanyRecords("/api/evaluaciones-pesv", companyId, true);
 
   const activeVehicles = vehicles?.filter((v: any) => v.status === "activo").length || 0;
   const activeDrivers = drivers?.filter((d: any) => d.status === "activo").length || 0;
@@ -52,6 +79,11 @@ export default function Pesv() {
         <h1 className="text-3xl font-bold" data-testid="text-pesv-title">Plan Estratégico de Seguridad Vial (PESV)</h1>
         <p className="text-muted-foreground mt-1">
           Gestión integral de seguridad vial según Decreto 1252/2021 y Resolución 40595/2022
+        </p>
+        <p className="text-sm text-muted-foreground mt-1" data-testid="text-pesv-company-scope">
+          {companyId
+            ? `Indicadores de la empresa activa${selectedCompany?.name ? `: ${selectedCompany.name}` : ""}.`
+            : "Selecciona una empresa activa para consultar los indicadores PESV."}
         </p>
       </div>
       
@@ -125,7 +157,7 @@ export default function Pesv() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{upcomingTrainings}</div>
+            <div className="text-2xl font-bold" data-testid="text-trainings-upcoming">{upcomingTrainings}</div>
             <p className="text-xs text-muted-foreground">programadas</p>
           </CardContent>
         </Card>
@@ -138,7 +170,7 @@ export default function Pesv() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalInjuries}</div>
+            <div className="text-2xl font-bold" data-testid="text-injuries-total">{totalInjuries}</div>
             <p className="text-xs text-muted-foreground">en todos los siniestros</p>
           </CardContent>
         </Card>
@@ -151,7 +183,7 @@ export default function Pesv() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{audits?.length || 0}</div>
+            <div className="text-2xl font-bold" data-testid="text-pesv-audits-count">{audits?.length || 0}</div>
             <p className="text-xs text-muted-foreground">realizadas</p>
           </CardContent>
         </Card>

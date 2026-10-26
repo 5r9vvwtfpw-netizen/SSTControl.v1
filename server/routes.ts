@@ -11230,15 +11230,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/vehicle-inspections", requireAuth, async (req, res) => {
     const userCompanyId = getEffectiveCompanyId(req);
     const isAdmin = hasGlobalAccess(req.user!.role);
-    
-    if (isAdmin) {
+    const requestedCompanyId = typeof req.query.companyId === "string" ? req.query.companyId : "";
+
+    if (requestedCompanyId && userCompanyId && requestedCompanyId !== userCompanyId) {
+      return res.status(403).send("La empresa consultada no coincide con la empresa activa");
+    }
+
+    if (isAdmin && !requestedCompanyId) {
       const inspections = await storage.getAllVehicleInspections();
       res.json(inspections);
     } else {
-      if (!userCompanyId) {
+      const companyId = isAdmin ? requestedCompanyId : userCompanyId;
+      if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
-      const inspections = await storage.getVehicleInspections(userCompanyId);
+      const inspections = await storage.getVehicleInspections(companyId);
       res.json(inspections);
     }
   });
@@ -11412,15 +11418,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/road-incidents", requireAuth, async (req, res) => {
     const userCompanyId = getEffectiveCompanyId(req);
     const isAdmin = hasGlobalAccess(req.user!.role);
-    
-    if (isAdmin) {
+    const requestedCompanyId = typeof req.query.companyId === "string" ? req.query.companyId : "";
+
+    if (requestedCompanyId && userCompanyId && requestedCompanyId !== userCompanyId) {
+      return res.status(403).send("La empresa consultada no coincide con la empresa activa");
+    }
+
+    if (isAdmin && !requestedCompanyId) {
       const incidents = await storage.getAllRoadIncidents();
       res.json(incidents);
     } else {
-      if (!userCompanyId) {
+      const companyId = isAdmin ? requestedCompanyId : userCompanyId;
+      if (!companyId) {
         return res.status(403).send("Usuario no asociado a una empresa");
       }
-      const incidents = await storage.getRoadIncidents(userCompanyId);
+      const incidents = await storage.getRoadIncidents(companyId);
       res.json(incidents);
     }
   });
