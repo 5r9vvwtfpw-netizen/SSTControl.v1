@@ -14,3 +14,9 @@ Cuando la sincronización de Trabajadores actualice el número vigente, también
 **Why:** Un conteo sincronizado superior a 50 puede convivir con un capítulo antiguo y dejar a la empresa viendo solo 7 estándares aunque ya tenga más de 50 trabajadores activos.
 
 **How to apply:** En cada alta, retiro o cambio de estado que sincronice trabajadores, usar la ruta de actualización de empresa que recalcula el capítulo, y verificar que la combinación vigente de conteo y riesgo determina el capítulo guardado.
+
+Si cambia el capítulo de una empresa, las evaluaciones SST que sigan en progreso conservan su `tipoEmpresa` anterior; deben migrarse al tipo nuevo y recalcular la escala de respuestas existentes, preservando sus respuestas.
+
+**Why:** La evaluación guarda su tipo de empresa como instantánea. Corregir solo el capítulo de la empresa no amplía una evaluación que se creó con el tipo anterior.
+
+**How to apply:** Al corregir un capítulo, localizar evaluaciones SST en progreso, migrar solo las que tengan un tipo obsoleto, recalcular puntuaciones con la escala vigente y verificar que las respuestas existentes no se borren.
