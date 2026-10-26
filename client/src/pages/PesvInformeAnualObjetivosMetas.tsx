@@ -47,7 +47,7 @@ export default function PesvInformeAnualObjetivosMetas() {
   const { toast } = useToast();
   const [showObjectiveForm, setShowObjectiveForm] = useState(false);
   const [objectiveForm, setObjectiveForm] = useState({ codigo: "", titulo: "", anio: "", metaCuantitativa: "" });
-  const { data, isLoading, isError, refetch } = useQuery<Evidence>({
+  const { data, isLoading, isError, error, refetch } = useQuery<Evidence>({
     queryKey: ["/api/pesv/informes-anuales/objetivos-metas/estado", selectedCompany?.id],
     queryFn: async () => (await apiRequest("GET", "/api/pesv/informes-anuales/objetivos-metas/estado")).json(),
     enabled: Boolean(selectedCompany?.id),
@@ -92,12 +92,30 @@ export default function PesvInformeAnualObjetivosMetas() {
         <p className="max-w-3xl text-muted-foreground">¿Los objetivos y metas son del conocimiento del personal de la organización?</p>
         <p className="text-sm font-medium">Evidencia solicitada: copias de las evidencias de difusión en PDF.</p>
       </header>
-      <Button variant="outline" asChild>
-        <Link href="/comunicacion-sst">Registrar difusión en Comunicación SST</Link>
-      </Button>
-      <Button variant="outline" onClick={() => setShowObjectiveForm((visible) => !visible)}>
-        {showObjectiveForm ? "Cerrar registro de objetivo" : "Registrar objetivo P05"}
-      </Button>
+      <Card>
+        <CardHeader>
+          <CardTitle>Cómo preparar y revisar este informe</CardTitle>
+          <CardDescription>El PDF reúne información existente de P05 y de las comunicaciones vinculadas; no crea evidencias por sí solo.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <ol className="list-decimal space-y-1 pl-5 text-sm text-muted-foreground">
+            <li>Registra el objetivo o la meta en P05.</li>
+            <li>En Comunicación SST, registra la difusión y vincúlala con ese objetivo.</li>
+            <li>Vuelve aquí y descarga el PDF consolidado para revisar la evidencia registrada.</li>
+          </ol>
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={downloadPdf} data-testid="button-download-pesv-objectives-disclosure-pdf">
+              <Download className="mr-2 h-4 w-4" />Descargar informe PDF
+            </Button>
+            <Button variant="outline" asChild>
+              <Link href="/comunicacion-sst">Registrar difusión en Comunicación SST</Link>
+            </Button>
+            <Button variant="outline" onClick={() => setShowObjectiveForm((visible) => !visible)}>
+              {showObjectiveForm ? "Cerrar registro de objetivo" : "Registrar objetivo P05"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
       {showObjectiveForm && (
         <Card>
           <CardHeader><CardTitle>Registrar objetivo o meta en P05</CardTitle><CardDescription>Se guarda en la fuente PESV P05 para vincularla luego con una comunicación.</CardDescription></CardHeader>
@@ -125,8 +143,11 @@ export default function PesvInformeAnualObjetivosMetas() {
         <Card><CardContent className="p-6 text-muted-foreground">Consultando objetivos P05 y comunicaciones vinculadas…</CardContent></Card>
       ) : isError ? (
         <Alert variant="destructive">
-          <TriangleAlert className="h-4 w-4" /><AlertTitle>No se pudo consultar la evidencia</AlertTitle>
-          <AlertDescription><Button variant="outline" size="sm" onClick={() => refetch()}>Reintentar</Button></AlertDescription>
+          <TriangleAlert className="h-4 w-4" /><AlertTitle>No se pudieron cargar los registros de P05 y Comunicación SST</AlertTitle>
+          <AlertDescription className="space-y-2">
+            <p>{error instanceof Error ? error.message : "Verifica la empresa seleccionada y vuelve a intentar."}</p>
+            <Button variant="outline" size="sm" onClick={() => refetch()}>Reintentar consulta</Button>
+          </AlertDescription>
         </Alert>
       ) : data ? (
         <>
@@ -145,9 +166,6 @@ export default function PesvInformeAnualObjetivosMetas() {
                   <CardDescription>Fuente: PESV P05 y Comunicación SST</CardDescription>
                   {data.companyNit && <CardDescription>NIT {data.companyNit}</CardDescription>}
                 </div>
-                <Button onClick={downloadPdf} data-testid="button-download-pesv-objectives-disclosure-pdf">
-                  <Download className="mr-2 h-4 w-4" />Descargar PDF consolidado
-                </Button>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
