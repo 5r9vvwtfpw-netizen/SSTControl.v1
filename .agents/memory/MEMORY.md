@@ -42,6 +42,7 @@
 - [Development module access](development-module-access.md) — en desarrollo se omiten gates comerciales para probar módulos; producción conserva capítulo, suscripción y menú.
 - [Empresa interna de pruebas en producción](internal-production-test-company.md) — DEMO-PRUEBA requiere registrar trabajadores sin suscripción; la excepción debe limitarse a su identidad exacta.
 - [Blank form validation](blank-form-validation.md) — los campos de negocio empiezan vacíos y los obligatorios requieren validación explícita antes de mutar.
+- [Plan anual: protección contra duplicados](annual-work-plan-loading-guard.md) — esperar la consulta real antes de mostrar el calendario vacío o habilitar generación; no regenerar borrando actividades existentes al reintentar.
 - [Mechanic tenant context](mechanic-tenant-context.md) — rutas por scopes activos, caché separada por empresa y selección persistida validada después de cargar autorizaciones.
 - [Safari login autofill](safari-login-autofill.md) — Safari puede mostrar credenciales que React no recibió; el submit debe leer los valores reales del formulario.
 - [Passport LocalStrategy failures](passport-local-error-handling.md) — capturar dentro del verificador las fallas async de BD y llamar `done(error)`; si no, el login puede quedar sin respuesta.

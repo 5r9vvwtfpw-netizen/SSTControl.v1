@@ -133,12 +133,22 @@ export default function DetallePlanTrabajo() {
     enabled: !!id,
   });
 
-  const { data: actividades = [], isLoading: loadingActividades } = useQuery<ActividadPlanTrabajo[]>({
+  const {
+    data: actividades = [],
+    isLoading: loadingActividades,
+    isFetching: fetchingActividades,
+    isError: errorActividades,
+  } = useQuery<ActividadPlanTrabajo[]>({
     queryKey: ["/api/planes-trabajo-anual", id, "actividades"],
     enabled: !!id,
   });
 
-  const { data: insights } = useQuery<PlanInsights>({
+  const {
+    data: insights,
+    isLoading: loadingInsights,
+    isFetching: fetchingInsights,
+    isError: errorInsights,
+  } = useQuery<PlanInsights>({
     queryKey: ["/api/planes-trabajo-anual", id, "insights"],
     enabled: !!id,
   });
@@ -151,6 +161,11 @@ export default function DetallePlanTrabajo() {
   const { data: accionesMejora = [] } = useQuery<AccionMejora[]>({
     queryKey: ["/api/acciones-mejora"],
   });
+
+  const calendarDataPending =
+    actividades.length === 0 &&
+    (loadingActividades || fetchingActividades || loadingInsights || fetchingInsights);
+  const calendarDataFailed = errorActividades || errorInsights;
 
   const actividadForm = useForm<z.infer<typeof insertActividadPlanTrabajoSchema>>({
     resolver: zodResolver(insertActividadPlanTrabajoSchema),
@@ -186,10 +201,11 @@ export default function DetallePlanTrabajo() {
       });
     },
     onError: (error: Error) => {
+      const alreadyGenerated = error.message.includes("ya tiene actividades");
       toast({
-        title: "Error",
+        title: alreadyGenerated ? "Calendario ya guardado" : "Error al generar calendario",
         description: error.message,
-        variant: "destructive",
+        ...(alreadyGenerated ? {} : { variant: "destructive" as const }),
       });
     },
   });
@@ -490,6 +506,19 @@ export default function DetallePlanTrabajo() {
         </TabsList>
 
         <TabsContent value="dashboard" className="space-y-6">
+          {calendarDataPending ? (
+            <Card data-testid="calendar-data-loading">
+              <CardContent className="py-8 text-center text-muted-foreground">
+                Cargando las actividades guardadas del plan…
+              </CardContent>
+            </Card>
+          ) : calendarDataFailed ? (
+            <Card className="border-amber-300" data-testid="calendar-data-error">
+              <CardContent className="py-6 text-sm text-muted-foreground">
+                No se pudo confirmar el estado actual del calendario. No genere otro todavía; recargue la página o revise su acceso para evitar duplicar actividades.
+              </CardContent>
+            </Card>
+          ) : (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Card>
               <CardHeader className="pb-3">
@@ -547,8 +576,9 @@ export default function DetallePlanTrabajo() {
               </CardContent>
             </Card>
           </div>
+          )}
 
-          {actividades.length === 0 && (
+          {!calendarDataPending && !calendarDataFailed && actividades.length === 0 && (
             <Card className="border-2 border-dashed border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/20">
               <CardContent className="py-8">
                 <div className="flex items-start gap-4">
@@ -585,7 +615,7 @@ export default function DetallePlanTrabajo() {
             </Card>
           )}
 
-          {insights?.byCiclo && (
+          {!calendarDataPending && !calendarDataFailed && insights?.byCiclo && (
             <Card>
               <CardHeader>
                 <CardTitle>Cumplimiento por Ciclo PHVA</CardTitle>

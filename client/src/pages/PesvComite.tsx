@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Plus, Pencil, Trash2, ArrowLeft, Users, FileText, FileDown, Stamp, CalendarDays, CheckCircle2, XCircle, AlertCircle, Calendar, Printer } from "lucide-react";
 import { useState } from "react";
 import { getTodayDateString } from "@/lib/utils/formatters";
+import { formatDateCO } from "@/lib/utils/formatters";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { ComiteIntegrantePesv, ActaComitePesv, Worker, ActoAdministrativoPesv, CronogramaReunionPesv, ResponsibleDesignation, Company } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -859,42 +860,54 @@ function CronogramaTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
                 <Trash2 className="h-4 w-4 mr-2" /> Eliminar {anio}
               </Button>
             )}
-            <Dialog open={generarDialogOpen} onOpenChange={setGenerarDialogOpen}>
-              <DialogTrigger asChild>
-                <Button data-testid="button-generar-cronograma"><CalendarDays className="h-4 w-4 mr-2" /> Generar Cronograma {anio}</Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Generar Cronograma de Reuniones {anio}</DialogTitle>
-                  <DialogDescription>Se crearán las reuniones automáticamente según la frecuencia seleccionada</DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Frecuencia de Reuniones *</Label>
-                    <Select value={generarForm.frecuencia} onValueChange={v => setGenerarForm({ ...generarForm, frecuencia: v })}>
-                      <SelectTrigger data-testid="select-frecuencia"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="mensual">Mensual (12 reuniones/año)</SelectItem>
-                        <SelectItem value="bimestral">Bimestral (6 reuniones/año)</SelectItem>
-                        <SelectItem value="trimestral">Trimestral (4 reuniones/año)</SelectItem>
-                        <SelectItem value="semestral">Semestral (2 reuniones/año)</SelectItem>
-                      </SelectContent>
-                    </Select>
+            {cronograma.length === 0 ? (
+              <Dialog open={generarDialogOpen} onOpenChange={setGenerarDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button data-testid="button-generar-cronograma"><CalendarDays className="h-4 w-4 mr-2" /> Generar Cronograma {anio}</Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Generar Cronograma de Reuniones {anio}</DialogTitle>
+                    <DialogDescription>Se crearán las reuniones automáticamente según la frecuencia seleccionada</DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Frecuencia de Reuniones *</Label>
+                      <Select value={generarForm.frecuencia} onValueChange={v => setGenerarForm({ ...generarForm, frecuencia: v })}>
+                        <SelectTrigger data-testid="select-frecuencia"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="mensual">Mensual (12 reuniones/año)</SelectItem>
+                          <SelectItem value="bimestral">Bimestral (6 reuniones/año)</SelectItem>
+                          <SelectItem value="trimestral">Trimestral (4 reuniones/año)</SelectItem>
+                          <SelectItem value="semestral">Semestral (2 reuniones/año)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Tema Principal (se puede dejar en blanco)</Label>
+                      <Input value={generarForm.temaPrincipal} onChange={e => setGenerarForm({ ...generarForm, temaPrincipal: e.target.value })} placeholder="Ej: Seguimiento PESV" data-testid="input-tema-principal" />
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Tema Principal (opcional)</Label>
-                    <Input value={generarForm.temaPrincipal} onChange={e => setGenerarForm({ ...generarForm, temaPrincipal: e.target.value })} placeholder="Ej: Seguimiento PESV" data-testid="input-tema-principal" />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setGenerarDialogOpen(false)}>Cancelar</Button>
-                  <Button onClick={() => generarMutation.mutate({ anio, ...generarForm })} disabled={generarMutation.isPending} data-testid="button-submit-generar">Generar</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setGenerarDialogOpen(false)}>Cancelar</Button>
+                    <Button onClick={() => generarMutation.mutate({ anio, ...generarForm })} disabled={generarMutation.isPending} data-testid="button-submit-generar">Generar</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            ) : (
+              <Badge variant="secondary" data-testid="badge-cronograma-guardado">
+                Cronograma de {anio} guardado
+              </Badge>
+            )}
           </div>
         )}
       </div>
+
+      {cronograma.length > 0 && (
+        <p className="text-sm text-muted-foreground" data-testid="text-cronograma-existente">
+          Ya hay {cronograma.length} reuniones guardadas para {anio}. Puede editar cada reunión; para reemplazar todo el cronograma, elimine el año y luego genere uno nuevo.
+        </p>
+      )}
 
       {isLoading ? (
         <div className="text-center py-8 text-muted-foreground">Cargando...</div>
@@ -910,7 +923,7 @@ function CronogramaTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
         <>
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 mb-4">
             {MESES.map((mes, idx) => {
-              const reunionesMes = cronograma.filter(r => new Date(r.fechaProgramada).getMonth() === idx);
+              const reunionesMes = cronograma.filter(r => Number(r.fechaProgramada.slice(5, 7)) - 1 === idx);
               if (reunionesMes.length === 0) return (
                 <div key={idx} className="p-2 rounded-md border border-dashed text-center">
                   <div className="text-xs text-muted-foreground">{mes}</div>
@@ -926,7 +939,7 @@ function CronogramaTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
                   onClick={() => isAdmin && handleEditReunion(r)}
                   data-testid={`cronograma-mes-${idx}`}>
                   <div className="text-xs font-medium">{mes}</div>
-                  <div className="text-xs mt-1">{new Date(r.fechaProgramada).getDate()}</div>
+                  <div className="text-xs mt-1">{Number(r.fechaProgramada.slice(8, 10))}</div>
                   {isRealized ? <CheckCircle2 className="h-3 w-3 mx-auto mt-1 text-green-600" /> : isPast ? <XCircle className="h-3 w-3 mx-auto mt-1 text-red-500" /> : <Calendar className="h-3 w-3 mx-auto mt-1 text-blue-500" />}
                 </div>
               );
@@ -947,10 +960,10 @@ function CronogramaTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
               </TableHeader>
               <TableBody>
                 {cronograma.map(r => {
-                  const isPast = new Date(r.fechaProgramada) < new Date() && r.estado === "programada";
+                  const isPast = r.fechaProgramada < getTodayDateString() && r.estado === "programada";
                   return (
                     <TableRow key={r.id} className={isPast ? "bg-red-50/50 dark:bg-red-950/10" : ""} data-testid={`row-cronograma-${r.id}`}>
-                      <TableCell className="font-medium">{new Date(r.fechaProgramada).toLocaleDateString()}</TableCell>
+                      <TableCell className="font-medium">{formatDateCO(r.fechaProgramada)}</TableCell>
                       <TableCell>{r.temaPrincipal || "—"}</TableCell>
                       <TableCell>
                         <Badge variant={ESTADOS_REUNION[r.estado]?.variant || "outline"}>
@@ -1013,8 +1026,8 @@ function CronogramaTab({ isAdmin, toast }: { isAdmin: boolean; toast: any }) {
                 <SelectContent>
                   <SelectItem value="none">Sin acta vinculada</SelectItem>
                   {actas.map(acta => (
-                    <SelectItem key={acta.id} value={acta.id}>
-                      Acta {acta.numeroActa} · {new Date(acta.fechaReunion).toLocaleDateString()} · {acta.estado}
+                      <SelectItem key={acta.id} value={acta.id}>
+                       Acta {acta.numeroActa} · {formatDateCO(acta.fechaReunion)} · {acta.estado}
                     </SelectItem>
                   ))}
                 </SelectContent>

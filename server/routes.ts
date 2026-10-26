@@ -32706,7 +32706,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (existingActividades.length > 0) {
         if (!forceRegenerate) {
-          return res.status(400).send('El plan ya tiene actividades programadas. Use force=true para regenerar.');
+          return res.status(409).json({
+            error: 'Este plan ya tiene actividades guardadas. No se crearon duplicados. Actualice la página para consultar el calendario existente.',
+          });
         }
         // Eliminar actividades existentes si force=true
         for (const act of existingActividades) {
