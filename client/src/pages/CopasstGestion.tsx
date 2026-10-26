@@ -1,17 +1,18 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { openCompanyDocument } from "@/lib/company-context-url";
+import { useCompanyContext } from "@/hooks/use-company-context";
 import { normalizeCopasstPeriodStatus } from "@shared/copasst-period-status";
 import {
   CopasstPeriodo, InsertCopasstPeriodo, insertCopasstPeriodoSchema,
   CopasstMiembro, InsertCopasstMiembro, insertCopasstMiembroSchema,
   CopasstEleccion, InsertCopasstEleccion, insertCopasstEleccionSchema,
   CopasstCandidato, InsertCopasstCandidato, insertCopasstCandidatoSchema,
-  CopasstActa, InsertCopasstActa, insertCopasstActaSchema, Worker, User as UserType, Company
+  CopasstActa, InsertCopasstActa, insertCopasstActaSchema, Worker, Company
 } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -85,7 +86,6 @@ export default function CopasstGestion() {
   const [isRegisterCandidateOpen, setIsRegisterCandidateOpen] = useState(false);
   const [isGuidedActaOpen, setIsGuidedActaOpen] = useState(false);
   const [guidedActa, setGuidedActa] = useState<CopasstActa | null>(null);
-  const [selectedCompanyId, setSelectedCompanyId] = useState<string>("");
 
   // States for actas management
   const [isCreateActaOpen, setIsCreateActaOpen] = useState(false);
@@ -102,27 +102,12 @@ export default function CopasstGestion() {
   const [editSelectedActaPresidente, setEditSelectedActaPresidente] = useState<Worker | null>(null);
   const [editSelectedActaSecretaria, setEditSelectedActaSecretaria] = useState<Worker | null>(null);
 
-  // Get current user and companies
-  const { data: user } = useQuery<UserType>({
-    queryKey: ["/api/user"],
-  });
-
+  // Use the same validated active company context as the application shell.
+  const { effectiveCompanyId: contextCompanyId } = useCompanyContext();
+  const effectiveCompanyId = contextCompanyId || "";
   const { data: companies = [] } = useQuery<Company[]>({
     queryKey: ["/api/companies"],
   });
-
-  // Determine effective companyId (for superadmin, use selected company, first company, or user's company as fallback)
-  const isSuperAdmin = user?.role === "superadmin";
-  const effectiveCompanyId = isSuperAdmin 
-    ? (selectedCompanyId || companies[0]?.id || user?.companyId || "") 
-    : (user?.companyId || "");
-
-  // Set default company for superadmin when companies load
-  useEffect(() => {
-    if (isSuperAdmin && companies.length > 0 && !selectedCompanyId) {
-      setSelectedCompanyId(companies[0].id);
-    }
-  }, [isSuperAdmin, companies, selectedCompanyId]);
 
   const { data: activePeriodo, isLoading: loadingPeriodo } = useQuery<CopasstPeriodo | null>({
     queryKey: ["/api/copasst-periodos/activo", effectiveCompanyId],
