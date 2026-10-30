@@ -34,7 +34,28 @@ export function setSessionParser(parser: any): void {
 }
 
 export function initializeWebSocket(server: Server): void {
-  wss = new WebSocketServer({ server, path: "/ws/notifications" });
+  // Use noServer and claim only the notifications path. A WebSocketServer
+  // attached directly with { server, path } rejects every other upgrade with
+  // HTTP 400. In Development that intercepted Vite's HMR socket, leaving the
+  // Replit Preview blank before React could mount.
+  wss = new WebSocketServer({ noServer: true });
+
+  server.on("upgrade", (request, socket, head) => {
+    let pathname: string;
+    try {
+      pathname = new URL(request.url || "/", "http://localhost").pathname;
+    } catch {
+      return;
+    }
+
+    if (pathname !== "/ws/notifications") {
+      return;
+    }
+
+    wss?.handleUpgrade(request, socket, head, (ws) => {
+      wss?.emit("connection", ws, request);
+    });
+  });
 
   wss.on("connection", async (ws: AuthenticatedWebSocket, req: IncomingMessage) => {
     ws.isAlive = true;

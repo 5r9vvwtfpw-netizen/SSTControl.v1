@@ -67,3 +67,15 @@ test("production diagnostics and unsigned Stripe fallback stay disabled", async 
   assert.doesNotMatch(indexSource, /from ["']xlsx["']/);
 });
 
+test("notification WebSocket does not intercept Vite HMR upgrades", async () => {
+  const fs = await import("node:fs/promises");
+  const websocketSource = await fs.readFile("server/websocket.ts", "utf8");
+
+  assert.match(websocketSource, /new WebSocketServer\(\{ noServer: true \}\)/);
+  assert.match(websocketSource, /pathname !== "\/ws\/notifications"/);
+  assert.doesNotMatch(
+    websocketSource,
+    /new WebSocketServer\(\{\s*server,\s*path:\s*"\/ws\/notifications"/,
+  );
+});
+
