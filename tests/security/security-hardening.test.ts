@@ -64,5 +64,6 @@ test("production diagnostics and unsigned Stripe fallback stay disabled", async 
   assert.match(routesSource, /randomInt\(100000, 1_000_000\)/);
   assert.match(routesSource, /send-verification", registrationRateLimiter/);
   assert.match(routesSource, /verify-code", loginRateLimiter/);
+  assert.doesNotMatch(indexSource, /from ["']xlsx["']/);
 });
 

@@ -51,7 +51,7 @@ export function registerCompanySedesRoutes(app: Express) {
       if (!user.companyId) return res.status(400).json({ error: "Usuario sin empresa" });
 
       const parsed = insertCompanySedeSchema.safeParse({ ...req.body, companyId: user.companyId });
-      if (!parsed.success) return res.status(400).json({ error: parsed.error.errors });
+      if (!parsed.success) return res.status(400).json({ error: parsed.error.issues });
 
       const [sede] = await db.insert(companySedes).values(parsed.data).returning();
       res.status(201).json(sede);
@@ -68,7 +68,7 @@ export function registerCompanySedesRoutes(app: Express) {
       if (!existing) return res.status(404).json({ error: "Sede no encontrada" });
 
       const parsed = updateSedeSchema.safeParse(req.body);
-      if (!parsed.success) return res.status(400).json({ error: parsed.error.errors });
+      if (!parsed.success) return res.status(400).json({ error: parsed.error.issues });
 
       const [updated] = await db.update(companySedes)
         .set(parsed.data)
@@ -104,7 +104,7 @@ export function registerCompanySedesRoutes(app: Express) {
     try {
       const user = req.user as any;
       const parsed = assignSedeSchema.safeParse(req.body);
-      if (!parsed.success) return res.status(400).json({ error: parsed.error.errors });
+      if (!parsed.success) return res.status(400).json({ error: parsed.error.issues });
 
       const { sedeId } = parsed.data;
 

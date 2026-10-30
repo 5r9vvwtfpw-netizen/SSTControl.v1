@@ -264,7 +264,7 @@ export function registerBillingRoutes(app: Express) {
       res.status(201).json(subscription);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ error: error.errors });
+        return res.status(400).json({ error: error.issues });
       }
       console.error('Error creating subscription:', error);
       res.status(500).json({ error: "Error al crear suscripción" });
@@ -290,7 +290,7 @@ export function registerBillingRoutes(app: Express) {
       res.json(updated);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ error: error.errors });
+        return res.status(400).json({ error: error.issues });
       }
       console.error('Error updating subscription:', error);
       res.status(500).json({ error: "Error al actualizar suscripción" });
@@ -341,7 +341,7 @@ export function registerBillingRoutes(app: Express) {
       });
     } catch (error: any) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ error: error.errors });
+        return res.status(400).json({ error: error.issues });
       }
       console.error('Error creating trial subscription:', error);
       res.status(500).json({ error: error.message || "Error al crear prueba gratuita" });
@@ -415,7 +415,7 @@ export function registerBillingRoutes(app: Express) {
       });
     } catch (error: any) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ error: error.errors });
+        return res.status(400).json({ error: error.issues });
       }
       console.error('Error assigning trial subscription:', error);
       res.status(500).json({ error: error.message || "Error al asignar trial" });
@@ -948,7 +948,7 @@ export function registerBillingRoutes(app: Express) {
       res.status(201).json(paymentSource);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ error: error.errors });
+        return res.status(400).json({ error: error.issues });
       }
       console.error('Error creating payment source:', error);
       res.status(500).json({ error: "Error al crear método de pago" });

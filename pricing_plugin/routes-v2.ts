@@ -34,7 +34,7 @@ router.post("/create-checkout-v2", async (req: Request, res: Response) => {
     if (!parsed.success) {
       return res.status(400).json({ 
         error: "Datos inválidos", 
-        details: parsed.error.errors 
+        details: parsed.error.issues
       });
     }
 

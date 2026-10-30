@@ -101,7 +101,7 @@ router.post("/generate-token", async (req: Request, res: Response) => {
     
     const parsed = jwtPromotionPayloadSchema.omit({ exp: true }).safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ error: "Payload inválido", details: parsed.error.errors });
+      return res.status(400).json({ error: "Payload inválido", details: parsed.error.issues });
     }
     
     const expiresInMinutes = req.body.expiresInMinutes || 30;
@@ -151,7 +151,7 @@ router.post("/coupons", async (req: Request, res: Response) => {
     });
     
     if (!parsed.success) {
-      return res.status(400).json({ error: "Datos inválidos", details: parsed.error.errors });
+      return res.status(400).json({ error: "Datos inválidos", details: parsed.error.issues });
     }
     
     const coupon = await createCoupon(parsed.data);

@@ -6,7 +6,7 @@
  * trabajador y empresa registrados en el sistema.
  */
 
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 
 export interface FuratData {
   empresa: {
@@ -65,38 +65,64 @@ const VALUE_COL = 1;
 const LABEL_COL2 = 3;
 const VALUE_COL2 = 4;
 
-function cell(ws: XLSX.WorkSheet, row: number, col: number, value: string, style?: any) {
-  const ref = XLSX.utils.encode_cell({ r: row, c: col });
-  ws[ref] = { v: value, t: "s", s: style };
+function argb(rgb?: string) {
+  if (!rgb) return undefined;
+  return rgb.length === 6 ? `FF${rgb}` : rgb;
 }
 
-function mergeCells(ws: XLSX.WorkSheet, r1: number, c1: number, r2: number, c2: number) {
-  if (!ws["!merges"]) ws["!merges"] = [];
-  ws["!merges"].push({ s: { r: r1, c: c1 }, e: { r: r2, c: c2 } });
+function cell(ws: ExcelJS.Worksheet, row: number, col: number, value: string, style?: any) {
+  const target = ws.getCell(row + 1, col + 1);
+  target.value = value;
+  if (!style) return;
+  if (style.font) {
+    target.font = {
+      bold: style.font.bold,
+      italic: style.font.italic,
+      size: style.font.sz,
+      color: style.font.color?.rgb ? { argb: argb(style.font.color.rgb)! } : undefined,
+    };
+  }
+  if (style.fill?.fgColor?.rgb) {
+    target.fill = { type: "pattern", pattern: "solid", fgColor: { argb: argb(style.fill.fgColor.rgb)! } };
+  }
+  if (style.alignment) target.alignment = style.alignment;
+  if (style.border) {
+    const border: Partial<ExcelJS.Borders> = {};
+    for (const side of ["top", "bottom", "left", "right"] as const) {
+      if (style.border[side]) {
+        border[side] = {
+          style: style.border[side].style,
+          color: style.border[side].color?.rgb
+            ? { argb: argb(style.border[side].color.rgb)! }
+            : undefined,
+        };
+      }
+    }
+    target.border = border;
+  }
+}
+
+function mergeCells(ws: ExcelJS.Worksheet, r1: number, c1: number, r2: number, c2: number) {
+  ws.mergeCells(r1 + 1, c1 + 1, r2 + 1, c2 + 1);
 }
 
 function addSection(
-  ws: XLSX.WorkSheet,
+  ws: ExcelJS.Worksheet,
   row: number,
   title: string,
   colCount: number = 5
 ): number {
-  const ref = XLSX.utils.encode_cell({ r: row, c: 0 });
-  ws[ref] = {
-    v: title,
-    t: "s",
-    s: {
+  cell(ws, row, 0, title, {
       font: { bold: true, color: { rgb: "FFFFFF" }, sz: 11 },
       fill: { fgColor: { rgb: "1F4E79" } },
       alignment: { horizontal: "center", vertical: "center" },
-    },
-  };
+  });
   mergeCells(ws, row, 0, row, colCount - 1);
   return row + 1;
 }
 
 function addRow(
-  ws: XLSX.WorkSheet,
+  ws: ExcelJS.Worksheet,
   row: number,
   label1: string,
   value1: string,
@@ -138,7 +164,7 @@ function addRow(
 }
 
 function addFullRow(
-  ws: XLSX.WorkSheet,
+  ws: ExcelJS.Worksheet,
   row: number,
   label: string,
   value: string,
@@ -170,9 +196,7 @@ function addFullRow(
   cell(ws, row, VALUE_COL, value, valueStyle);
   mergeCells(ws, row, VALUE_COL, row, 4);
 
-  if (tall && ws["!rows"]) {
-    ws["!rows"][row] = { hpt: 48 };
-  }
+  if (tall) ws.getRow(row + 1).height = 48;
 
   return row + 1;
 }
@@ -227,62 +251,46 @@ function normalizeSexo(s: string | null): string {
   return map[s] || s;
 }
 
-export function generateFuratExcel(data: FuratData): Buffer {
-  const wb = XLSX.utils.book_new();
-  const ws: XLSX.WorkSheet = {};
-
-  ws["!cols"] = [
-    { wch: 30 },
-    { wch: 22 },
-    { wch: 4 },
-    { wch: 28 },
-    { wch: 22 },
+export async function generateFuratExcel(data: FuratData): Promise<Buffer> {
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet("FURAT");
+  ws.columns = [
+    { width: 30 },
+    { width: 22 },
+    { width: 4 },
+    { width: 28 },
+    { width: 22 },
   ];
-  ws["!rows"] = new Array(60).fill({ hpt: 20 });
+  for (let row = 1; row <= 60; row++) ws.getRow(row).height = 20;
 
   let r = 0;
 
   // ── ENCABEZADO PRINCIPAL ────────────────────────────────────────────────
-  const titleRef = XLSX.utils.encode_cell({ r, c: 0 });
-  ws[titleRef] = {
-    v: "FORMATO ÚNICO DE REPORTE DE ACCIDENTE DE TRABAJO (FURAT)",
-    t: "s",
-    s: {
+  cell(ws, r, 0, "FORMATO ÚNICO DE REPORTE DE ACCIDENTE DE TRABAJO (FURAT)", {
       font: { bold: true, sz: 13, color: { rgb: "FFFFFF" } },
       fill: { fgColor: { rgb: "0D2D5E" } },
       alignment: { horizontal: "center", vertical: "center" },
-    },
-  };
+  });
   mergeCells(ws, r, 0, r, 4);
-  ws["!rows"][r] = { hpt: 28 };
+  ws.getRow(r + 1).height = 28;
   r++;
 
-  const sub1Ref = XLSX.utils.encode_cell({ r, c: 0 });
-  ws[sub1Ref] = {
-    v: "Resolución 1570 de 2005 — Ministerio de la Protección Social de Colombia",
-    t: "s",
-    s: {
+  cell(ws, r, 0, "Resolución 1570 de 2005 — Ministerio de la Protección Social de Colombia", {
       font: { italic: true, sz: 9, color: { rgb: "FFFFFF" } },
       fill: { fgColor: { rgb: "1F4E79" } },
       alignment: { horizontal: "center", vertical: "center" },
-    },
-  };
+  });
   mergeCells(ws, r, 0, r, 4);
   r++;
 
-  const sub2Ref = XLSX.utils.encode_cell({ r, c: 0 });
   const arlLabel = data.empresa.arl
     ? `ARL: ${data.empresa.arl}`
     : "ARL: No configurada — configure en Afiliaciones";
-  ws[sub2Ref] = {
-    v: `Generado por SST Colombia | Fecha: ${new Date().toLocaleDateString("es-CO")} | ${arlLabel}`,
-    t: "s",
-    s: {
+  cell(ws, r, 0, `Generado por SST Colombia | Fecha: ${new Date().toLocaleDateString("es-CO")} | ${arlLabel}`, {
       font: { sz: 9, color: { rgb: "555555" } },
       fill: { fgColor: { rgb: "EBF5FB" } },
       alignment: { horizontal: "center", vertical: "center" },
-    },
-  };
+  });
   mergeCells(ws, r, 0, r, 4);
   r += 2;
 
@@ -324,18 +332,13 @@ export function generateFuratExcel(data: FuratData): Buffer {
   r = addSection(ws, r, "SECCIÓN 4 — REPORTE Y OBLIGACIONES LEGALES");
   r = addRow(ws, r, "Fecha de reporte al empleador", data.reporte.fechaReporteEmpleador, "Elaborado por", data.reporte.elaboradoPor || "No especificado");
 
-  const notaRef = XLSX.utils.encode_cell({ r, c: 0 });
-  ws[notaRef] = {
-    v: "⚠ OBLIGACIÓN LEGAL: El empleador debe reportar el accidente a la ARL y EPS dentro de los DOS (2) días hábiles siguientes a la ocurrencia (Decreto 1295/1994 Art. 62). El incumplimiento puede generar multas de hasta 500 SMLMV.",
-    t: "s",
-    s: {
+  cell(ws, r, 0, "⚠ OBLIGACIÓN LEGAL: El empleador debe reportar el accidente a la ARL y EPS dentro de los DOS (2) días hábiles siguientes a la ocurrencia (Decreto 1295/1994 Art. 62). El incumplimiento puede generar multas de hasta 500 SMLMV.", {
       font: { bold: true, sz: 9, color: { rgb: "7B1C1C" } },
       fill: { fgColor: { rgb: "FDECEA" } },
       alignment: { wrapText: true, vertical: "center", horizontal: "center" },
-    },
-  };
+  });
   mergeCells(ws, r, 0, r, 4);
-  ws["!rows"][r] = { hpt: 40 };
+  ws.getRow(r + 1).height = 40;
   r += 2;
 
   // ── SECCIÓN 5: FIRMAS ───────────────────────────────────────────────────
@@ -354,51 +357,35 @@ export function generateFuratExcel(data: FuratData): Buffer {
 
   // Espacio de firmas
   for (let fr = 0; fr < 4; fr++) {
-    ws["!rows"][r + fr] = { hpt: 20 };
+    ws.getRow(r + fr + 1).height = 20;
   }
-  const spacerRef = XLSX.utils.encode_cell({ r, c: 0 });
-  ws[spacerRef] = { v: "", t: "s" };
+  cell(ws, r, 0, "");
   mergeCells(ws, r, 0, r + 3, 1);
-  const spacerRef2 = XLSX.utils.encode_cell({ r, c: 3 });
-  ws[spacerRef2] = { v: "", t: "s" };
+  cell(ws, r, 3, "");
   mergeCells(ws, r, 3, r + 3, 4);
   r += 4;
 
-  const sig1Ref = XLSX.utils.encode_cell({ r, c: 0 });
-  ws[sig1Ref] = { v: "Firma del Trabajador Accidentado", t: "s", s: firmaLabelStyle };
+  cell(ws, r, 0, "Firma del Trabajador Accidentado", firmaLabelStyle);
   mergeCells(ws, r, 0, r, 1);
 
-  const sig2Ref = XLSX.utils.encode_cell({ r, c: 3 });
-  ws[sig2Ref] = { v: "Firma del Representante del Empleador", t: "s", s: firmaLabelStyle };
+  cell(ws, r, 3, "Firma del Representante del Empleador", firmaLabelStyle);
   mergeCells(ws, r, 3, r, 4);
   r += 2;
 
-  const name1Ref = XLSX.utils.encode_cell({ r, c: 0 });
-  ws[name1Ref] = { v: `Nombre: ${data.trabajador.nombre}`, t: "s", s: { font: { sz: 9 }, alignment: { horizontal: "center" } } };
+  cell(ws, r, 0, `Nombre: ${data.trabajador.nombre}`, { font: { sz: 9 }, alignment: { horizontal: "center" } });
   mergeCells(ws, r, 0, r, 1);
 
-  const name2Ref = XLSX.utils.encode_cell({ r, c: 3 });
-  ws[name2Ref] = { v: `Nombre: ${data.empresa.representanteLegal || "________________________"}`, t: "s", s: { font: { sz: 9 }, alignment: { horizontal: "center" } } };
+  cell(ws, r, 3, `Nombre: ${data.empresa.representanteLegal || "________________________"}`, { font: { sz: 9 }, alignment: { horizontal: "center" } });
   mergeCells(ws, r, 3, r, 4);
   r += 2;
 
   // ── NOTA AL PIE ─────────────────────────────────────────────────────────
-  const footerRef = XLSX.utils.encode_cell({ r, c: 0 });
-  ws[footerRef] = {
-    v: "Documento generado por SST Colombia (SADGI S.A.S.) | Sistema de Gestión SST | sst-colombia.com.co | Para uso interno y envío a ARL/EPS",
-    t: "s",
-    s: {
+  cell(ws, r, 0, "Documento generado por SST Colombia (SADGI S.A.S.) | Sistema de Gestión SST | sst-colombia.com.co | Para uso interno y envío a ARL/EPS", {
       font: { sz: 8, italic: true, color: { rgb: "888888" } },
       alignment: { horizontal: "center" },
-    },
-  };
+  });
   mergeCells(ws, r, 0, r, 4);
 
-  // Rango de la hoja
-  ws["!ref"] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: r, c: 4 } });
-
-  XLSX.utils.book_append_sheet(wb, ws, "FURAT");
-
-  const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
-  return buf;
+  const buf = await wb.xlsx.writeBuffer();
+  return Buffer.from(buf);
 }

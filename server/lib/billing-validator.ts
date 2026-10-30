@@ -29,11 +29,11 @@ export const invoiceInsertSchema = z.object({
   currency: z.string().default('COP'),
   
   // Período de facturación - requeridos
-  periodStart: z.date({ required_error: 'periodStart es requerido' }),
-  periodEnd: z.date({ required_error: 'periodEnd es requerido' }),
+  periodStart: z.date({ error: 'periodStart es requerido' }),
+  periodEnd: z.date({ error: 'periodEnd es requerido' }),
   
   // Fechas
-  dueDate: z.date({ required_error: 'dueDate es requerido' }),
+  dueDate: z.date({ error: 'dueDate es requerido' }),
   
   // Datos del cliente - requeridos
   customerName: z.string().min(1, 'customerName es requerido'),
@@ -81,7 +81,7 @@ export function validateInvoiceData(data: unknown): ValidatedInvoiceData {
     
   } catch (error: any) {
     if (error instanceof z.ZodError) {
-      const fieldErrors = error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ');
+      const fieldErrors = error.issues.map(e => `${e.path.join('.')}: ${e.message}`).join(', ');
       logger.error({ ...context, errors: fieldErrors }, '[BILLING-VALIDATION-ERROR] Invalid invoice data');
       throw new Error(`[BILLING-VALIDATION-ERROR] Datos de factura inválidos: ${fieldErrors}`);
     }

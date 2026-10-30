@@ -113,7 +113,7 @@ router.post("/admin/pricing", requireRole(["admin"]), async (req: Request, res: 
 
     const parsed = schema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ error: "Invalid pricing values", details: parsed.error.errors });
+      return res.status(400).json({ error: "Invalid pricing values", details: parsed.error.issues });
     }
 
     await db
@@ -146,7 +146,7 @@ router.post("/subscriptions", requireRole(["admin"]), async (req: Request, res: 
 
     const parsed = schema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ error: "Invalid request data", details: parsed.error.errors });
+      return res.status(400).json({ error: "Invalid request data", details: parsed.error.issues });
     }
 
     const config = await getActiveConfig();
@@ -370,7 +370,7 @@ router.post("/checkout", async (req: Request, res: Response) => {
 
     const parsed = schema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ error: "Invalid request data", details: parsed.error.errors });
+      return res.status(400).json({ error: "Invalid request data", details: parsed.error.issues });
     }
 
     if (user.companyId !== parsed.data.customerId && user.role !== 'admin') {

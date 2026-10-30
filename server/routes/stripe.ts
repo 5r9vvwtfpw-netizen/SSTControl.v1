@@ -306,7 +306,7 @@ export function registerStripeRoutes(app: Express) {
       });
     } catch (error: any) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ error: error.errors });
+        return res.status(400).json({ error: error.issues });
       }
       logger.error({ err: error }, 'Error creating quote-based Stripe checkout session');
       res.status(500).json({ error: "Error al crear sesión de checkout" });
@@ -347,7 +347,7 @@ export function registerStripeRoutes(app: Express) {
       res.json({ url });
     } catch (error: any) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ error: error.errors });
+        return res.status(400).json({ error: error.issues });
       }
       logger.error({ err: error }, 'Error creating Stripe portal session');
       res.status(500).json({ error: "Error al crear sesión del portal" });
@@ -439,7 +439,7 @@ export function registerStripeRoutes(app: Express) {
       });
     } catch (error: any) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ error: error.errors });
+        return res.status(400).json({ error: error.issues });
       }
       logger.error({ err: error }, 'Error canceling subscription');
       res.status(500).json({ error: "Error al cancelar suscripción" });
@@ -561,7 +561,7 @@ export function registerStripeRoutes(app: Express) {
       });
     } catch (error: any) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ error: error.errors });
+        return res.status(400).json({ error: error.issues });
       }
       logger.error({ err: error }, 'Error creating extra seat checkout session');
       res.status(500).json({ error: "Error al crear sesión de pago para usuario adicional" });

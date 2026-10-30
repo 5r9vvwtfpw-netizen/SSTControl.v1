@@ -2834,8 +2834,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Ya existe una empresa registrada con ese NIT. Por favor verifique el número o contacte a soporte si cree que es un error." });
       }
       // Manejar errores de validación de Zod
-      if (error.errors && Array.isArray(error.errors)) {
-        const messages = error.errors.map((e: any) => e.message).join(". ");
+      if (error.issues && Array.isArray(error.issues)) {
+        const messages = error.issues.map((e: any) => e.message).join(". ");
         return res.status(400).json({ error: messages });
       }
       res.status(400).json({ error: error.message || "Error al crear la empresa" });
@@ -5120,7 +5120,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(condition);
     } catch (error: any) {
       if (error.name === 'ZodError') {
-        return res.status(400).json({ errors: error.errors });
+        return res.status(400).json({ errors: error.issues });
       }
       res.status(500).send("Error al crear condición de salud: " + error.message);
     }
@@ -5468,7 +5468,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
       };
 
-      const excelBuffer = generateFuratExcel(furatData);
+      const excelBuffer = await generateFuratExcel(furatData);
 
       const workerNameSlug = worker.name.replace(/\s+/g, "_").substring(0, 20);
       const dateSlug = accident.date ? accident.date.toString().substring(0, 10) : "sin_fecha";
@@ -6804,7 +6804,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error creating absence:", error);
       if (error.name === 'ZodError') {
-        return res.status(400).json({ errors: error.errors });
+        return res.status(400).json({ errors: error.issues });
       }
       res.status(500).send(error.message);
     }
@@ -12278,8 +12278,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       // Helper function to transform Zod validation errors to user-friendly Spanish messages
       const formatZodErrorForBulkImport = (error: any): string => {
-        if (error && error.errors && Array.isArray(error.errors)) {
-          return error.errors.map((e: any) => {
+        if (error && error.issues && Array.isArray(error.issues)) {
+          return error.issues.map((e: any) => {
             const fieldName = e.path?.[0] || 'campo';
             const message = e.message || 'Error de validación';
             return `Campo '${fieldName}': ${message}`;
@@ -17400,7 +17400,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(programa);
     } catch (error: any) {
       if (error.name === 'ZodError') {
-        return res.status(400).send(error.errors);
+        return res.status(400).send(error.issues);
       }
       res.status(400).send(error.message);
     }
@@ -17441,7 +17441,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(programa);
     } catch (error: any) {
       if (error.name === 'ZodError') {
-        return res.status(400).send(error.errors);
+        return res.status(400).send(error.issues);
       }
       res.status(400).send(error.message);
     }
@@ -17584,7 +17584,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(evento);
     } catch (error: any) {
       if (error.name === 'ZodError') {
-        return res.status(400).send(error.errors);
+        return res.status(400).send(error.issues);
       }
       res.status(400).send(error.message);
     }
@@ -17618,7 +17618,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(evento);
     } catch (error: any) {
       if (error.name === 'ZodError') {
-        return res.status(400).send(error.errors);
+        return res.status(400).send(error.issues);
       }
       res.status(400).send(error.message);
     }
@@ -17731,7 +17731,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(asistente);
     } catch (error: any) {
       if (error.name === 'ZodError') {
-        return res.status(400).send(error.errors);
+        return res.status(400).send(error.issues);
       }
       res.status(400).send(error.message);
     }
@@ -17748,7 +17748,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(asistente);
     } catch (error: any) {
       if (error.name === 'ZodError') {
-        return res.status(400).send(error.errors);
+        return res.status(400).send(error.issues);
       }
       res.status(400).send(error.message);
     }
@@ -18023,7 +18023,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(registro);
     } catch (error: any) {
       if (error.name === 'ZodError') {
-        return res.status(400).send(error.errors);
+        return res.status(400).send(error.issues);
       }
       res.status(400).send(error.message);
     }
@@ -18059,7 +18059,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(registro);
     } catch (error: any) {
       if (error.name === 'ZodError') {
-        return res.status(400).send(error.errors);
+        return res.status(400).send(error.issues);
       }
       res.status(400).send(error.message);
     }
@@ -18550,7 +18550,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(afiliacion);
     } catch (error: any) {
       if (error.name === 'ZodError') {
-        return res.status(400).send(error.errors);
+        return res.status(400).send(error.issues);
       }
       res.status(400).send(error.message);
     }
@@ -39686,7 +39686,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       res.status(201).json(record);
     } catch (error: any) {
       if (error.name === 'ZodError') {
-        return res.status(400).send(error.errors);
+        return res.status(400).send(error.issues);
       }
       console.error('Error creating consent record:', error);
       res.status(500).send('Error interno al crear registro de consentimiento');
@@ -39722,7 +39722,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       res.json(record);
     } catch (error: any) {
       if (error.name === 'ZodError') {
-        return res.status(400).send(error.errors);
+        return res.status(400).send(error.issues);
       }
       console.error('Error updating consent record:', error);
       res.status(500).send('Error interno al actualizar registro de consentimiento');
@@ -39829,7 +39829,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       res.status(201).json(request);
     } catch (error: any) {
       if (error.name === 'ZodError') {
-        return res.status(400).send(error.errors);
+        return res.status(400).send(error.issues);
       }
       console.error('Error creating ARCO request:', error);
       res.status(500).send('Error interno al crear solicitud ARCO');
@@ -39865,7 +39865,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       res.json(request);
     } catch (error: any) {
       if (error.name === 'ZodError') {
-        return res.status(400).send(error.errors);
+        return res.status(400).send(error.issues);
       }
       console.error('Error updating ARCO request:', error);
       res.status(500).send('Error interno al actualizar solicitud ARCO');
@@ -45308,7 +45308,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
       const parsed = chatMessageSchema.safeParse(req.body);
       if (!parsed.success) {
-        return res.status(400).json({ error: parsed.error.errors[0]?.message || "Datos inválidos" });
+        return res.status(400).json({ error: parsed.error.issues[0]?.message || "Datos inválidos" });
       }
 
       const { content, channel: msgChannel, replyToId, ticketRef, attachments, mentions } = parsed.data;
@@ -48806,7 +48806,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     } catch (error: any) {
       console.error("[POST /api/epp/catalog] Error:", error.message);
       if (error.name === 'ZodError') {
-        return res.status(400).json({ error: "Datos inválidos", details: error.errors });
+        return res.status(400).json({ error: "Datos inválidos", details: error.issues });
       }
       res.status(500).send("Error al crear EPP personalizado");
     }
@@ -48906,7 +48906,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     } catch (error: any) {
       console.error("[POST /api/epp/deliveries] Error:", error.message);
       if (error.name === 'ZodError') {
-        return res.status(400).json({ error: "Datos inválidos", details: error.errors });
+        return res.status(400).json({ error: "Datos inválidos", details: error.issues });
       }
       res.status(500).send("Error al registrar entrega de EPP");
     }
@@ -48945,7 +48945,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
     } catch (error: any) {
       console.error("[PATCH /api/epp/deliveries/:id] Error:", error.message);
       if (error.name === 'ZodError') {
-        return res.status(400).json({ error: "Datos inválidos", details: error.errors });
+        return res.status(400).json({ error: "Datos inválidos", details: error.issues });
       }
       res.status(500).send("Error al actualizar entrega de EPP");
     }
@@ -55930,7 +55930,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
       res.status(201).json(video);
     } catch (error: any) {
       if (error.name === "ZodError") {
-        return res.status(400).json({ error: "Datos inválidos", details: error.errors });
+        return res.status(400).json({ error: "Datos inválidos", details: error.issues });
       }
       if (error.code === "23505") {
         return res.status(409).json({ error: "Ya existe un video configurado para esta ruta" });

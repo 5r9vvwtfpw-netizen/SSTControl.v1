@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "wouter";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -520,7 +520,29 @@ export default function CopasstCms() {
   };
 
   // Exportar banco de preguntas a Excel (SST-2026-0019)
-  const handleExportarPreguntas = () => {
+  const downloadWorkbook = async (workbook: ExcelJS.Workbook, filename: string) => {
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = filename;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const rowsToWorksheet = (workbook: ExcelJS.Workbook, name: string, rows: Record<string, unknown>[]) => {
+    const worksheet = workbook.addWorksheet(name);
+    const headers = Object.keys(rows[0] || {});
+    worksheet.columns = headers.map((header) => ({ header, key: header, width: 24 }));
+    worksheet.addRows(rows);
+    worksheet.getRow(1).font = { bold: true };
+    return worksheet;
+  };
+
+  const handleExportarPreguntas = async () => {
     try {
       const data = (preguntas || []).map((p) => ({
         Enunciado: p.enunciadoHtml.replace(/<[^>]*>/g, ''),
@@ -533,10 +555,9 @@ export default function CopasstCms() {
         Puntos: p.puntos,
         Activo: p.activo ? "Sí" : "No",
       }));
-      const ws = XLSX.utils.json_to_sheet(data);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Preguntas");
-      XLSX.writeFile(wb, `banco_preguntas_${new Date().toISOString().split("T")[0]}.xlsx`);
+      const workbook = new ExcelJS.Workbook();
+      rowsToWorksheet(workbook, "Preguntas", data);
+      await downloadWorkbook(workbook, `banco_preguntas_${new Date().toISOString().split("T")[0]}.xlsx`);
       toast({ title: "Exportación exitosa", description: `${data.length} preguntas exportadas` });
     } catch (error) {
       toast({ title: "Error al exportar", variant: "destructive" });
@@ -544,7 +565,7 @@ export default function CopasstCms() {
   };
 
   // Descargar plantilla de ejemplo para importar preguntas (SST-2026-0007/0008)
-  const handleDescargarPlantillaPreguntas = () => {
+  const handleDescargarPlantillaPreguntas = async () => {
     try {
       const ejemplos = [
         {
@@ -570,10 +591,9 @@ export default function CopasstCms() {
           Activo: "Sí"
         }
       ];
-      const ws = XLSX.utils.json_to_sheet(ejemplos);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Plantilla");
-      XLSX.writeFile(wb, "plantilla_banco_preguntas.xlsx");
+      const workbook = new ExcelJS.Workbook();
+      rowsToWorksheet(workbook, "Plantilla", ejemplos);
+      await downloadWorkbook(workbook, "plantilla_banco_preguntas.xlsx");
       toast({ title: "Plantilla descargada", description: "Usa esta plantilla como guía para importar preguntas" });
     } catch (error) {
       toast({ title: "Error al descargar plantilla", variant: "destructive" });
@@ -584,17 +604,33 @@ export default function CopasstCms() {
   const handleImportarPreguntas = () => {
     const input = document.createElement("input");
     input.type = "file";
-    input.accept = ".xlsx,.xls";
+    input.accept = ".xlsx";
     input.onchange = async (e: any) => {
       const file = e.target.files?.[0];
       if (!file) return;
       try {
+        if (file.size > 5 * 1024 * 1024) {
+          throw new Error("El archivo supera el límite de 5 MB");
+        }
         const data = await file.arrayBuffer();
-        const workbook = XLSX.read(data);
-        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+        const workbook = new ExcelJS.Workbook();
+        await workbook.xlsx.load(data as ArrayBuffer);
+        const worksheet = workbook.worksheets[0];
+        if (!worksheet) throw new Error("El archivo no contiene hojas");
+        if (worksheet.rowCount > 1001) throw new Error("El archivo supera el límite de 1000 preguntas");
+        const headers = worksheet.getRow(1).values as unknown[];
+        const jsonData: Record<string, string>[] = [];
+        worksheet.eachRow((excelRow, rowNumber) => {
+          if (rowNumber === 1) return;
+          const row: Record<string, string> = {};
+          excelRow.eachCell((excelCell, columnNumber) => {
+            const header = String(headers[columnNumber] || "").trim();
+            if (header) row[header] = excelCell.text;
+          });
+          if (Object.keys(row).length) jsonData.push(row);
+        });
         let imported = 0;
-        for (const row of jsonData as any[]) {
+        for (const row of jsonData) {
           const preguntaData = {
             enunciadoHtml: row.Enunciado || "",
             tipoPregunta: row.Tipo || "seleccion_multiple",

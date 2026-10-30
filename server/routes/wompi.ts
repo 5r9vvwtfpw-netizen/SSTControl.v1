@@ -171,7 +171,7 @@ export function registerWompiRoutes(app: Express) {
     if (!parsed.success) {
       return res.status(400).json({
         error: "Datos inválidos",
-        details: parsed.error.errors.map((e) => e.message),
+        details: parsed.error.issues.map((e) => e.message),
       });
     }
 

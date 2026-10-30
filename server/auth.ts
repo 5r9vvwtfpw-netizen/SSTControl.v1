@@ -528,7 +528,7 @@ export function setupAuth(app: Express) {
       // Validate request body with Zod schema
       const validationResult = registrationSchema.safeParse(req.body);
       if (!validationResult.success) {
-        const errors = validationResult.error.errors.map(e => e.message).join(", ");
+        const errors = validationResult.error.issues.map(e => e.message).join(", ");
         return res.status(400).json({ error: errors });
       }
       const { username, password, email, fullName, companyName, plan, quoteToken } = validationResult.data;

@@ -58,7 +58,7 @@ import { BackToCronogramaButton } from "@/components/BackToCronogramaButton";
 const formSchema = z.object({
   date: z.string().min(1, "Fecha requerida"),
   resourceType: z.enum(["humano", "fisico", "financiero"], {
-    required_error: "Tipo de recurso requerido",
+    error: "Tipo de recurso requerido",
   }),
   // Campos recursos humanos
   workerId: z.string().optional(), // ID del trabajador seleccionado
