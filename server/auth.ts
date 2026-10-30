@@ -1114,7 +1114,7 @@ export function setupAuth(app: Express) {
   });
 
   // Reset password with token
-  app.post("/api/auth/reset-password", async (req, res) => {
+  app.post("/api/auth/reset-password", passwordResetRateLimiter, async (req, res) => {
     try {
       const { token, newPassword } = req.body;
       
@@ -1122,8 +1122,8 @@ export function setupAuth(app: Express) {
         return res.status(400).json({ error: "Token inválido" });
       }
 
-      if (!newPassword || typeof newPassword !== "string" || newPassword.length < 6) {
-        return res.status(400).json({ error: "La contraseña debe tener al menos 6 caracteres" });
+      if (!newPassword || typeof newPassword !== "string" || newPassword.length < 10) {
+        return res.status(400).json({ error: "La contraseña debe tener al menos 10 caracteres" });
       }
 
       // Find user by reset token

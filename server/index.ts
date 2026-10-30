@@ -53,10 +53,12 @@ import { landingPageRouter } from "../plugins/landing-page-integration";
 import { demoEngineRouter, initializeDemoRooms, startDemoHousekeepingCron, isDemoEnabled } from "../plugins/demo-engine";
 import { accountingService, isExcludedFromAccounting } from "./services/accounting-integration";
 import { emailService } from "./services/email";
+import { securityHeaders } from "./middleware/security-headers";
 
 
 const app = express();
 app.disable('x-powered-by');
+app.use(securityHeaders);
 
 // CRITICAL: Register Stripe webhook route BEFORE express.json()
 // Webhooks need raw Buffer, not parsed JSON
@@ -69,6 +71,11 @@ app.post(
 
     if (!signature) {
       return res.status(400).json({ error: 'Missing stripe-signature' });
+    }
+
+    if (!endpointSecret) {
+      logger.error('Stripe webhook: verification secret is not configured');
+      return res.status(503).json({ error: 'Webhook verification unavailable' });
     }
 
     try {
@@ -92,13 +99,7 @@ app.post(
         return res.status(500).json({ error: 'Webhook processing error' });
       }
 
-      let event;
-      if (endpointSecret) {
-        event = stripe.webhooks.constructEvent(rawBody, sig, endpointSecret);
-      } else {
-        event = JSON.parse(rawBody.toString());
-        logger.warn('Stripe webhook: No endpoint secret configured, skipping signature verification');
-      }
+      const event = stripe.webhooks.constructEvent(rawBody, sig, endpointSecret);
 
       logger.info({ eventType: event.type, eventId: event.id }, 'Stripe webhook received');
 

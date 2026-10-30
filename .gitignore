@@ -8,3 +8,10 @@ vite.config.ts.*
 *.zip
 *.tar.gz
 sst-colombia-*
+
+# Generated artifacts and database/source backups must stay outside Git.
+/generated-artifacts/
+backups/*.sql
+data-export.sql
+server/*.bak
+server/*.backup*

@@ -50,7 +50,8 @@ import { calcularIndicador, parsePeriodoToDateRange } from "./indicadores-calcul
 import { z } from "zod";
 import multer from "multer";
 import { ObjectStorageService, ObjectNotFoundError, objectStorageService } from "./objectStorage";
-import { randomUUID } from "crypto";
+import { randomInt, randomUUID } from "crypto";
+import { loginRateLimiter, registrationRateLimiter } from "./middleware/rate-limit";
 import { isIP } from "net";
 import path from "path";
 import fs from "fs";
@@ -2310,14 +2311,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // In-memory store: email → { code, expiresAt }
   const emailVerifCodes = new Map<string, { code: string; expiresAt: number }>();
 
-  app.post("/api/auth/send-verification", async (req, res) => {
+  app.post("/api/auth/send-verification", registrationRateLimiter, async (req, res) => {
     try {
       const { email } = req.body as { email?: string };
       if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         return res.status(400).json({ error: "Correo electrónico inválido" });
       }
 
-      const code = Math.floor(100000 + Math.random() * 900000).toString();
+      const code = randomInt(100000, 1_000_000).toString();
       const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
       emailVerifCodes.set(email.toLowerCase(), { code, expiresAt });
 
@@ -2350,7 +2351,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/auth/verify-code", async (req, res) => {
+  app.post("/api/auth/verify-code", loginRateLimiter, async (req, res) => {
     try {
       const { email, code } = req.body as { email?: string; code?: string };
       if (!email || !code) {
@@ -49969,9 +49970,13 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
   // LSO Directory JWT API routes (new authentication method)
   app.use("/api/lso-directory-jwt", lsoDirectoryJwtRoutes);
 
-  registerDbDiagnosticRoutes(app);
-  app.use(companyCreationDiagnosticRoutes);
-  app.use(writeTestDiagnosticRoutes);
+  // These endpoints expose database topology and tenant metadata. They are
+  // useful during local development, but must never be mounted in production.
+  if (process.env.NODE_ENV !== "production") {
+    registerDbDiagnosticRoutes(app);
+    app.use(companyCreationDiagnosticRoutes);
+    app.use(writeTestDiagnosticRoutes);
+  }
   registerBillingRoutes(app);
   registerSubscriptionCheckRoutes(app);
 
@@ -50007,11 +50012,7 @@ Cubre las comunicaciones internas (entre niveles de la organización) y externas
 
   // ========== DIAGNOSTIC ENDPOINT ==========
   // Endpoint de diagnóstico para verificar conexión de BD
-  app.get("/api/db-diagnostic", async (req, res) => {
-    const diagKey = req.query.key;
-    if (diagKey !== "sst-diag-2026") {
-      return res.status(403).json({ error: "Acceso denegado" });
-    }
+  if (process.env.NODE_ENV !== "production") app.get("/api/db-diagnostic", async (req, res) => {
     try {
       const isProduction = process.env.NODE_ENV === "production";
       const hasAwsRds = !!(process.env.AWS_RDS_HOST && process.env.AWS_RDS_PASSWORD);
